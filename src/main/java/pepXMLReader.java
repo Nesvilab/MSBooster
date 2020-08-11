@@ -17,6 +17,8 @@ public class pepXMLReader {
     int[] scanNumbers;
     String[] XMLpeptides;
     int[] targetOrDecoy;
+    String[] allHitsPDeep;
+    String[] eScores;
 
     public pepXMLReader(String path) {
         pathname = path;
@@ -34,7 +36,7 @@ public class pepXMLReader {
         return a;
     }
 
-    public void createPDeepFile(String outfile) {
+    public void createPDeepList() {
 
         // iterate over the parsed search results
         List<MsmsRunSummary> runSummaries = analysis.getMsmsRunSummary();
@@ -43,7 +45,7 @@ public class pepXMLReader {
             List<SpectrumQuery> spectrumQueries = runSummary.getSpectrumQuery();
 
             //initialize array of peptide hit info
-            String[] allHits = new String[spectrumQueries.size()];
+            allHitsPDeep = new String[spectrumQueries.size()];
             int allHitsIndex = -1;
             for (SpectrumQuery sq : spectrumQueries) {
                 allHitsIndex++;
@@ -93,28 +95,7 @@ public class pepXMLReader {
                     }
                 }
                 String hitToAdd = pep + "\t" + modifications + "\t" + charge;
-                allHits[allHitsIndex] = hitToAdd;
-            }
-
-            //remove duplicates from allHits
-            //can reduce number of hits to a third
-            HashSet<String> hSetHits = new HashSet<>();
-            Collections.addAll(hSetHits, allHits);
-
-            //write to file
-            try {
-                FileWriter myWriter = new FileWriter(outfile);
-                myWriter.write("peptide" + "\t" + "modification" + "\t" + "charge\n");
-
-                for (String hSetHit : hSetHits) {
-                    myWriter.write(hSetHit + "\n");
-                }
-
-                myWriter.close();
-                System.out.println("Successfully wrote to the file.");
-            } catch (IOException e) {
-                System.out.println("An error occurred.");
-                e.printStackTrace();
+                allHitsPDeep[allHitsIndex] = hitToAdd;
             }
         }
     }
@@ -244,9 +225,115 @@ public class pepXMLReader {
         }
     }
 
-    public static void main(String[] args) {
-        pepXMLReader x = new pepXMLReader("23aug2017_hela_serum_timecourse_4mz_narrow_1_rank1.pepXML");
-        List<MsmsRunSummary> runSummaries = x.analysis.getMsmsRunSummary();
-        System.out.println(runSummaries.size());
+    //method to return iterable of scan numbers
+    public String[] getEScore() {
+        if (this.eScores == null) {
+            String[] e = new String[0];
+
+            List<MsmsRunSummary> runSummaries = analysis.getMsmsRunSummary();
+            for (MsmsRunSummary runSummary : runSummaries) {
+                List<SpectrumQuery> spectrumQueries = runSummary.getSpectrumQuery();
+                int i = 0;
+                e = new String[spectrumQueries.size()];
+
+                for (SpectrumQuery sq : spectrumQueries) {
+                    List<SearchResult> results = sq.getSearchResult();
+                    for (SearchResult result : results) {
+                        List<SearchHit> hits = result.getSearchHit();
+                        for (SearchHit hit : hits) {
+                            e[i] = hit.getSearchScore().get(2).getValueStr();
+                            i++;
+                        }
+                    }
+                }
+            }
+            this.eScores = e;
+            return e;
+        } else {
+            return this.eScores;
+        }
+    }
+
+    public void createPrositFile(String outfile) {
+
+        // iterate over the parsed search results
+        List<MsmsRunSummary> runSummaries = analysis.getMsmsRunSummary();
+        for (MsmsRunSummary runSummary : runSummaries) {
+
+            List<SpectrumQuery> spectrumQueries = runSummary.getSpectrumQuery();
+
+            //initialize array of peptide hit info
+            String[] allHits = new String[spectrumQueries.size()];
+            int allHitsIndex = -1;
+            for (SpectrumQuery sq : spectrumQueries) {
+                allHitsIndex++;
+
+                //get charge and initialize other variables
+                String pep = "";
+                String charge = String.valueOf(sq.getAssumedCharge());
+                boolean skip = false;
+
+                List<SearchResult> results = sq.getSearchResult();
+
+                for (SearchResult result : results) {
+                    List<SearchHit> hits = result.getSearchHit();
+
+                    for (SearchHit hit : hits) {
+                        pep = hit.getPeptide();
+
+                        ModificationInfo modinfo = hit.getModificationInfo();
+                        if (modinfo != null) {
+                            //n term acetylation
+                            if (modinfo.getModNtermMass() != null) {
+                                //Prosit does not support n-term acetylation
+                                skip = true;
+                            } else { //safe to continue
+                                //modifications besides n term acetylation
+                                List<ModAminoacidMass> mods = modinfo.getModAminoacidMass();
+                                int modSize = mods.size();
+                                if (modSize != 0) {
+                                    for (ModAminoacidMass mod : mods) {
+                                        if (mod.getMass() == 147.0354) { //just check for oxidized Met
+                                            pep = pep.substring(0, mod.getPosition()) + 'm' +
+                                                    pep.substring(mod.getPosition());
+                                        }
+                                    }
+                                    pep = pep.replace("m", "M(ox)");
+                                }
+                            }
+                        }
+                    }
+                }
+                //if (! skip) {
+                String hitToAdd = pep + "," + 27 + "," + charge; //HeLa run with 27 NCE
+                allHits[allHitsIndex] = hitToAdd;
+                //}
+            }
+
+            //remove duplicates from allHits
+            //can reduce number of hits to a third
+            HashSet<String> hSetHits = new HashSet<>();
+            Collections.addAll(hSetHits, allHits);
+            //hSetHits.removeAll(Collections.singleton(null));
+
+            //write to file
+            //empty line may be issue
+            try {
+                FileWriter myWriter = new FileWriter(outfile);
+                myWriter.write("modified_sequence" + "," + "collision_energy" + "," + "precursor_charge\n");
+
+                for (String hSetHit : hSetHits) {
+                    myWriter.write(hSetHit + "\n");
+                }
+
+                myWriter.close();
+                System.out.println("Successfully wrote to the file.");
+            } catch (IOException e) {
+                System.out.println("An error occurred.");
+                e.printStackTrace();
+            }
+        }
     }
 }
+
+

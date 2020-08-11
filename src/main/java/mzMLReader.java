@@ -7,6 +7,10 @@ import umich.ms.fileio.filetypes.mzml.MZMLFile;
 
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.Map;
 
 public class mzMLReader{
     Path path;
@@ -49,4 +53,76 @@ public class mzMLReader{
         IScan scan = scans.getScanByNum(scanNum);
         return scan.fetchSpectrum().getMZs();
     }
+
+    //getting fragment frequency distribution
+    //final output might be edited to optionally add something to multiply at the end
+    //this might be useful since the mz intensities are on a different scale
+    public double[] getMzFreq(double bin, int window) {
+        int scanLimit = scans.getScanCount();
+        int scanNum = 0;
+        HashMap<Integer, int[]> mzCounts = new HashMap<>();
+
+        while (scanNum < scanLimit) {
+            try {
+                IScan ms2Scan = scans.getNextScanAtMsLevel(scanNum, 2);
+
+                //increase count by 1
+                double[] mzs = ms2Scan.fetchSpectrum().getMZs();
+                for (double mz : mzs) {
+                    int binIndex = (int) Math.floor(mz / bin);
+
+                    int[] value = mzCounts.get(binIndex);
+                    if (value == null) {
+                        mzCounts.put(binIndex, new int[] {1});
+                    } else {
+                        value[0]++;
+                    }
+                }
+
+                //increase scan number
+                scanNum = ms2Scan.getNum();
+            } catch(Exception e) {
+                break;
+            }
+        }
+
+        //find max binIndex
+        int maxKey = Collections.max(mzCounts.keySet());
+
+        //create list
+        int[] countsList = new int[maxKey];
+        for (Map.Entry<Integer, int[]> entry : mzCounts.entrySet()) {
+            int binIndex = entry.getKey();
+            int counts = entry.getValue()[0];
+
+            countsList[binIndex - 1] = counts;
+        }
+
+        //sliding window average
+        double[] averagedCountsList = new double[maxKey];
+        for (int i = 0; i < maxKey; i++) {
+            double newLeft = Math.max(0, i - window);
+            double newRight = Math.min(maxKey, i + window + 1);
+            double sum = 0;
+
+            for (int j = (int) newLeft; j < newRight; j++) {
+                sum += countsList[j];
+            }
+            double avg = sum / (newRight - newLeft);
+            if (avg > 0) {
+                averagedCountsList[i] = 1 / avg;
+            } else {
+                averagedCountsList[i] = 0; //fragment never detected, just ignore
+            }
+        }
+        return averagedCountsList;
+    }
+
+    public static void main(String[] args) throws FileParsingException {
+        mzMLReader x = new mzMLReader("C://Users/kevin/Documents/proteomics/mzml/" +
+                "23aug2017_hela_serum_timecourse_4mz_narrow_1.mzml");
+        System.out.println(Arrays.toString(x.getMzFreq(1, 1)));
+
+    }
+
 }

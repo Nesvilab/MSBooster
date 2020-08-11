@@ -36,6 +36,9 @@ public class mgfFileReader {
             double[] mzs = new double[spectrum.size()];
             spectrum.getIntensities(intensities);
             spectrum.getMzs(mzs);
+
+            //if we decide to filter out low intensity fragments, do it here
+
             intensityDict.put(peptide, intensities);
             mzDict.put(peptide, mzs);
         }

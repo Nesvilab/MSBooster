@@ -3,18 +3,13 @@ import org.apache.commons.lang.ArrayUtils;
 import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.HashSet;
 
-public class FileCreator {
-    String directoryName;
-    String[] files;
+import static org.apache.commons.io.FileUtils.listFiles;
 
-    public FileCreator(String directoryName) {
-        this.directoryName = directoryName;
-        File directoryPath = new File(directoryName);
-        files = directoryPath.list();
-    }
+public class FileCreator {
 
     public static void createPDeepFile(String[] allHits, String outfile) {
         //remove duplicates from allHits
@@ -41,20 +36,25 @@ public class FileCreator {
         }
     }
 
-    public static void main(String[] args) {
+    public static void main(String[] args) throws IOException {
         //get all files to be analyzed
-        FileCreator x = new FileCreator("C:/Users/yangkl/OneDriveUmich/proteomics/pepxml/rank4/");
+        //FileCreator x = new FileCreator("C:/Users/kevin/OneDriveUmich/proteomics/pepxml/rank4/");
+        Collection<File> x = listFiles(new File("C:/Users/kevin/OneDriveUmich/proteomics/pepxml/"),
+                new String[]{"pepXML"}, true);
 
         //read in pepXML files
         String[] allHits = new String[0];
-        for (String fileName : x.files) {
-            pepXMLReader xmlReader = new pepXMLReader(x.directoryName + fileName);
-            xmlReader.createPDeepList();
+        for (File f : x) {
+            String fileName = f.getCanonicalPath();
+            System.out.println(fileName);
+            pepXMLReader xmlReader = new pepXMLReader(fileName);
+            //xmlReader.createPDeepList();
+            xmlReader.createPDeepListNoMods();
             allHits = (String[]) ArrayUtils.addAll(allHits, xmlReader.allHitsPDeep);
         }
 
         //create file for pDeep2 prediction
-        createPDeepFile(allHits, "rank4_peptides_for_pDeep.txt"); //actually a tsv file
+        createPDeepFile(allHits, "C:/Users/kevin/Downloads/proteomics/peptides_for_pDeep_noMods.tsv"); //actually a tsv file
 
         //got predictions for all peptides in pepXML
         //python predict.py

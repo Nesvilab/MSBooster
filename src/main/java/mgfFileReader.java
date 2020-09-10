@@ -6,58 +6,61 @@ import java.io.File;
 import java.io.IOException;
 import java.util.HashMap;
 
-
 public class mgfFileReader {
-    String fname;
-    HashMap<String, double[]> intensityDict;
-    HashMap<String, double[]> mzDict;
-    boolean alreadyCreated;
+    //mgfFileReader can handle both single files and entire directories
 
-    public mgfFileReader(String filename) {
-        fname = filename;
-        intensityDict = new HashMap<>();
-        mzDict = new HashMap<>();
-        alreadyCreated = false;
-    }
+    final String[] filenames;
+    HashMap<String, double[]> allPredMZs = new HashMap<>();
+    HashMap<String, double[]> allPredIntensities = new HashMap<>();
 
-    public void createDicts() throws IOException {
-        String mgfFilename = fname;
-        MgfReader reader = new MgfReader(new File(mgfFilename), PeakList.Precision.DOUBLE);
+    public mgfFileReader(String files) throws IOException {
+        File predsDirectory = new File(files);
+        String[] predsFiles = predsDirectory.list();
 
-        // hasNext() returns true if there is more spectrum to read
-        while (reader.hasNext()) {
-
-            // next() returns the next spectrum or throws an IOException is something went wrong
-            MsnSpectrum spectrum = reader.next();
-
-            // do some stuff with your spectrum
-            String peptide = spectrum.getComment();
-            double[] intensities = new double[spectrum.size()];
-            double[] mzs = new double[spectrum.size()];
-            spectrum.getIntensities(intensities);
-            spectrum.getMzs(mzs);
-
-            //if we decide to filter out low intensity fragments, do it here
-
-            intensityDict.put(peptide, intensities);
-            mzDict.put(peptide, mzs);
+        if (predsFiles == null) { //if user provided a file, not a directory
+            filenames = new String[] {files};
+        } else { //user provides directory
+            String[] newPredsFiles = new String[predsFiles.length];
+            for (int i = 0; i < predsFiles.length; i++) {
+                newPredsFiles[i] = files + '/' + predsFiles[i];
+            }
+            filenames = newPredsFiles;
         }
 
-        reader.close();
-        alreadyCreated = true;
+        this.createDicts();
     }
 
-    public HashMap<String, double[]> getIntensityDict() throws IOException {
-        if (! alreadyCreated) {
-            this.createDicts();
+    private void createDicts() throws IOException {
+        for (String fname : filenames) {
+            MgfReader reader = new MgfReader(new File(fname), PeakList.Precision.DOUBLE);
+
+            // hasNext() returns true if there is more spectrum to read
+            while (reader.hasNext()) {
+
+                // next() returns the next spectrum or throws an IOException is something went wrong
+                MsnSpectrum spectrum = reader.next();
+
+                // do some stuff with your spectrum
+                String peptide = spectrum.getComment();
+                double[] intensities = new double[spectrum.size()];
+                double[] mzs = new double[spectrum.size()];
+                spectrum.getIntensities(intensities);
+                spectrum.getMzs(mzs);
+
+                //if we decide to filter out low intensity fragments, do it here
+
+                allPredMZs.put(peptide, mzs);
+                allPredIntensities.put(peptide, intensities);
+            }
+            reader.close();
         }
-        return intensityDict;
     }
 
     public HashMap<String, double[]> getMzDict() throws IOException {
-        if (! alreadyCreated) {
-            this.createDicts();
-        }
-        return mzDict;
+        return allPredMZs;
+    }
+
+    public HashMap<String, double[]> getIntensityDict() throws IOException {
+        return allPredIntensities;
     }
 }

@@ -1,0 +1,115 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+
+    <groupId>org.example</groupId>
+    <artifactId>MSFraggerDIA_postprocess</artifactId>
+    <version>1.0-SNAPSHOT</version>
+
+    <properties>
+        <maven.compiler.source>1.8</maven.compiler.source>
+        <maven.compiler.target>1.8</maven.compiler.target>
+        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+
+        <ver.batmass.io>1.17.4</ver.batmass.io>
+    </properties>
+
+    <dependencies>
+        <dependency>
+            <groupId>com.github.chhh</groupId>
+            <artifactId>batmass-io</artifactId>
+            <version>${ver.batmass.io}</version>
+            <exclusions>
+                <exclusion>
+                    <groupId>org.slf4j</groupId>
+                    <artifactId>slf4j-api</artifactId>
+                </exclusion>
+                <exclusion>
+                    <groupId>org.slf4j</groupId>
+                    <artifactId>slf4j-simple</artifactId>
+                </exclusion>
+            </exclusions>
+        </dependency>
+
+        <!-- To include the proteomic module -->
+        <dependency>
+            <groupId>org.expasy.mzjava</groupId>
+            <artifactId>mzjava-proteomics</artifactId>
+            <version>1.1.0</version>
+        </dependency>
+
+        <!-- To include the hadoop proteomic module -->
+        <dependency>
+            <groupId>org.expasy.mzjava</groupId>
+            <artifactId>mzjava-hadoop-proteomics</artifactId>
+            <version>1.1.0</version>
+        </dependency>
+
+        <dependency>
+            <groupId>net.sf.supercsv</groupId>
+            <artifactId>super-csv</artifactId>
+            <version>2.4.0</version>
+        </dependency>
+
+    </dependencies>
+
+    <build>
+        <plugins>
+            <plugin>
+                <artifactId>maven-assembly-plugin</artifactId>
+                <configuration>
+                    <archive>
+                        <manifest>
+                            <mainClass/>
+                        </manifest>
+                    </archive>
+                    <descriptorRefs>
+                        <descriptorRef>jar-with-dependencies</descriptorRef>
+                    </descriptorRefs>
+                </configuration>
+                <executions>
+                    <execution>
+                        <goals>
+                            <goal>single</goal>
+                        </goals>
+                        <id>make-assembly</id>
+                        <phase>package</phase>
+                    </execution>
+                </executions>
+                <version>3.3.0</version>
+            </plugin>
+
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-install-plugin</artifactId>
+                <version>3.0.0-M1</version>
+                <executions>
+                    <execution>
+                        <configuration>
+                            <artifactId>batmass-io</artifactId>
+                            <file>${basedir}/lib/batmass-io-${ver.batmass.io}.jar</file>
+                            <generatePom>true</generatePom>
+                            <groupId>com.github.chhh</groupId>
+                            <packaging>jar</packaging>
+                            <version>${ver.batmass.io}</version>
+                        </configuration>
+                        <goals>
+                            <goal>install-file</goal>
+                        </goals>
+                        <id>install-external1</id>
+                        <phase>clean</phase>
+                    </execution>
+                </executions>
+            </plugin>
+        </plugins>
+    </build>
+
+    <repositories>
+        <repository>
+            <id>Expasy MzJava</id>
+            <url>http://mzjava.expasy.org/maven</url>
+        </repository>
+    </repositories>
+</project>

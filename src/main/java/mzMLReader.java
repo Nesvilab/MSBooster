@@ -5,16 +5,20 @@ import umich.ms.datatypes.scancollection.impl.ScanCollectionDefault;
 import umich.ms.fileio.exceptions.FileParsingException;
 import umich.ms.fileio.filetypes.mzml.MZMLFile;
 
+import java.io.IOException;
+import java.lang.reflect.InvocationTargetException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.Map;
+import java.util.*;
 
 public class mzMLReader{
-    Path path;
-    ScanCollectionDefault scans;
+    final Path path;
+    final ScanCollectionDefault scans;
+    double[] mzFreqs; //this can never be changed once set. It would be difficult if mzFreqs could change, as weighted
+                      //similarity measures might be calculated using different weights. If you want to use different
+                      //weights, just make new mzmlReader object
+
+    HashMap<Integer, mzmlScanNumber> scanNumberObjects = new HashMap<>();
 
     public mzMLReader(String filename) throws FileParsingException {
 
@@ -58,71 +62,154 @@ public class mzMLReader{
     //final output might be edited to optionally add something to multiply at the end
     //this might be useful since the mz intensities are on a different scale
     public double[] getMzFreq(double bin, int window) {
-        int scanLimit = scans.getScanCount();
-        int scanNum = 0;
-        HashMap<Integer, int[]> mzCounts = new HashMap<>();
+        if (mzFreqs != null) {
+            return this.mzFreqs;
+        } else {
+            int scanLimit = scans.getScanCount();
+            int scanNum = 0;
+            HashMap<Integer, int[]> mzCounts = new HashMap<>();
 
-        while (scanNum < scanLimit) {
-            try {
-                IScan ms2Scan = scans.getNextScanAtMsLevel(scanNum, 2);
+            while (scanNum < scanLimit) {
+                try {
+                    IScan ms2Scan = scans.getNextScanAtMsLevel(scanNum, 2);
 
-                //increase count by 1
-                double[] mzs = ms2Scan.fetchSpectrum().getMZs();
-                for (double mz : mzs) {
-                    int binIndex = (int) Math.floor(mz / bin);
+                    //increase count by 1
+                    double[] mzs = ms2Scan.fetchSpectrum().getMZs();
+                    for (double mz : mzs) {
+                        int binIndex = (int) Math.floor(mz / bin);
 
-                    int[] value = mzCounts.get(binIndex);
-                    if (value == null) {
-                        mzCounts.put(binIndex, new int[] {1});
-                    } else {
-                        value[0]++;
+                        int[] value = mzCounts.get(binIndex);
+                        if (value == null) {
+                            mzCounts.put(binIndex, new int[]{1});
+                        } else {
+                            value[0]++;
+                        }
                     }
+
+                    //increase scan number
+                    scanNum = ms2Scan.getNum();
+                } catch (Exception e) {
+                    break;
                 }
+            }
 
-                //increase scan number
-                scanNum = ms2Scan.getNum();
+            //find max binIndex
+            int maxKey = Collections.max(mzCounts.keySet());
+
+            //create list
+            int[] countsList = new int[maxKey];
+            for (Map.Entry<Integer, int[]> entry : mzCounts.entrySet()) {
+                int binIndex = entry.getKey();
+                int counts = entry.getValue()[0];
+
+                countsList[binIndex - 1] = counts;
+            }
+
+            //sliding window average
+            double[] averagedCountsList = new double[maxKey];
+            for (int i = 0; i < maxKey; i++) {
+                double newLeft = Math.max(0, i - window);
+                double newRight = Math.min(maxKey, i + window + 1);
+                double sum = 0;
+
+                for (int j = (int) newLeft; j < newRight; j++) {
+                    sum += countsList[j];
+                }
+                double avg = sum / (newRight - newLeft);
+                if (avg > 0) {
+                    averagedCountsList[i] = 1 / avg;
+                } else {
+                    averagedCountsList[i] = 0; //fragment never detected, just ignore
+                }
+            }
+            this.mzFreqs = averagedCountsList;
+            return averagedCountsList;
+        }
+    }
+
+    public void createScanNumObjects() throws FileParsingException {
+        HashMap<Integer, mzmlScanNumber> scanMap = new HashMap<>();
+        int scanNum = -1;
+        IScan scan = scans.getNextScan(scanNum);
+        while (scan != null) {
+            scanNum = scan.getNum();
+            scanMap.put(scanNum, new mzmlScanNumber(this, scanNum));
+            scan = scans.getNextScan(scanNum);
+        }
+        scanNumberObjects = scanMap;
+    }
+
+    public mzmlScanNumber getScanNumObject(int scanNum) {
+        return scanNumberObjects.get(scanNum);
+    }
+
+    //can consider method for setting single pepxml entry
+    public void setPepxmlEntries(pepXMLReader xmlReader, int rank,
+                                 HashMap<String, double[]> allPredMZs, HashMap<String, double[]> allPredIntensities) {
+        String[] peptides = xmlReader.getXMLpeptides();
+        int[] tdArray = xmlReader.getTargetOrDecoy();
+        int[] scanNums = xmlReader.getScanNumbers();
+        int iterations = scanNums.length;
+
+        for (int i = 0; i < iterations; i++) {
+            try {
+                scanNumberObjects.get(scanNums[i]).setPeptideObject(peptides[i], rank, tdArray[i],
+                        allPredMZs, allPredIntensities);
             } catch(Exception e) {
-                break;
+                System.out.println("failed for " + peptides[i]);
             }
         }
-
-        //find max binIndex
-        int maxKey = Collections.max(mzCounts.keySet());
-
-        //create list
-        int[] countsList = new int[maxKey];
-        for (Map.Entry<Integer, int[]> entry : mzCounts.entrySet()) {
-            int binIndex = entry.getKey();
-            int counts = entry.getValue()[0];
-
-            countsList[binIndex - 1] = counts;
-        }
-
-        //sliding window average
-        double[] averagedCountsList = new double[maxKey];
-        for (int i = 0; i < maxKey; i++) {
-            double newLeft = Math.max(0, i - window);
-            double newRight = Math.min(maxKey, i + window + 1);
-            double sum = 0;
-
-            for (int j = (int) newLeft; j < newRight; j++) {
-                sum += countsList[j];
-            }
-            double avg = sum / (newRight - newLeft);
-            if (avg > 0) {
-                averagedCountsList[i] = 1 / avg;
-            } else {
-                averagedCountsList[i] = 0; //fragment never detected, just ignore
-            }
-        }
-        return averagedCountsList;
     }
 
-    public static void main(String[] args) throws FileParsingException {
-        mzMLReader x = new mzMLReader("C://Users/kevin/Documents/proteomics/mzml/" +
-                "23aug2017_hela_serum_timecourse_4mz_narrow_1.mzml");
-        System.out.println(Arrays.toString(x.getMzFreq(1, 1)));
+    public static void main(String[] args) throws FileParsingException, IOException, NoSuchMethodException,
+            IllegalAccessException, InvocationTargetException {
+        //get predictions
+        System.out.println("getting predictions");
+        mgfFileReader mgf = new mgfFileReader("preds/");
 
+        //initialize counter
+        HashMap<String, Integer> rankCounts = new HashMap<>();
+        for (String key : new String[]{"11", "00", "10", "01"}) {
+            rankCounts.put(key, 0);
+        }
+
+        //iterate over pepxml files
+        for (int window = 1; window < 7; window++) {
+            System.out.println("working on file " + window);
+
+            mzMLReader mzml = new mzMLReader("C:/Users/kevin/OneDriveUmich/proteomics/mzml/" +
+                    "23aug2017_hela_serum_timecourse_4mz_narrow_" + window +".mzml");
+            mzml.createScanNumObjects();
+
+            //given all ranked pepxml files associated with mzml, add all entries
+            for (int i = 1; i < 5; i++) {
+                String path = "C:/Users/kevin/OneDriveUmich/proteomics/pepxml/rank" +
+                        i + "/23aug2017_hela_serum_timecourse_4mz_narrow_" + window + "_rank" + i + ".pepXML";
+                System.out.println("setting pepXML entries for " + path);
+                pepXMLReader xmlReader = new pepXMLReader(path);
+
+                mzml.setPepxmlEntries(xmlReader, i, mgf.allPredMZs, mgf.allPredIntensities);
+            }
+
+            //read one pepXML
+            String path = "C:/Users/kevin/OneDriveUmich/proteomics/pepxml/rank1/" +
+                    "23aug2017_hela_serum_timecourse_4mz_narrow_" + window + "_rank1.pepXML";
+            System.out.println("counting rank changes for " + path);
+            pepXMLReader xmlReader = new pepXMLReader(path);
+            int[] nums = xmlReader.getScanNumbers();
+
+            //add to counter
+            for (int num : nums) {
+                int ogRank = mzml.getScanNumObject(num).targetDecoyOrder()[0];
+                ArrayList x = mzml.getScanNumObject(num).targetDecoyOrder("dotProduct");
+                int newRank = (int) x.get(0);
+
+                String key = String.valueOf(ogRank) + String.valueOf(newRank);
+                int oldCount = rankCounts.get(key);
+                rankCounts.put(key, oldCount + 1);
+            }
+        }
+
+        System.out.println(rankCounts.entrySet());
     }
-
 }

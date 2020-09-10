@@ -100,6 +100,73 @@ public class pepXMLReader {
         }
     }
 
+    public void createPDeepListNoMods() {
+
+        // iterate over the parsed search results
+        List<MsmsRunSummary> runSummaries = analysis.getMsmsRunSummary();
+        for (MsmsRunSummary runSummary : runSummaries) {
+
+            List<SpectrumQuery> spectrumQueries = runSummary.getSpectrumQuery();
+
+            //initialize array of peptide hit info
+            allHitsPDeep = new String[spectrumQueries.size()];
+            int allHitsIndex = -1;
+            for (SpectrumQuery sq : spectrumQueries) {
+                allHitsIndex++;
+
+                //get charge and initialize other variables
+                String pep = "";
+                String modifications = "";
+                String charge = String.valueOf(sq.getAssumedCharge());
+
+                List<SearchResult> results = sq.getSearchResult();
+
+                for (SearchResult result : results) {
+                    List<SearchHit> hits = result.getSearchHit();
+
+                    for (SearchHit hit : hits) {
+                        pep = hit.getPeptide();
+                        modifications = "";
+
+                        ModificationInfo modinfo = hit.getModificationInfo();
+                        if (modinfo != null) {
+
+                            //modifications besides n term acetylation
+                            List<ModAminoacidMass> mods = modinfo.getModAminoacidMass();
+                            for (int i = 0; i < mods.size(); i++) {
+                                ModAminoacidMass mod = mods.get(i);
+                                if (mod.getMass() == 147.0354) {
+                                    mods.remove(i);
+                                }
+                            }
+
+                            int modSize = mods.size();
+                            if (modSize != 0) {
+                                int[] pos = new int[modSize];
+                                double[] modMass = new double[modSize];
+
+                                int i = 0;
+                                for (ModAminoacidMass mod : mods) {
+                                    pos[i] = mod.getPosition();
+                                    modMass[i] = mod.getMass();
+                                    i ++;
+                                }
+
+                                //format new modifications
+                                modFormatter mf = new modFormatter(pos, modMass);
+
+                                //add formatted new modifications onto modifications string
+                                modifications += mf.format();
+                            }
+                        }
+                    }
+                }
+                String hitToAdd = pep + "\t" + modifications + "\t" + charge;
+                allHitsPDeep[allHitsIndex] = hitToAdd;
+            }
+        }
+    }
+
     //method to return iterable of scan numbers
     public int[] getScanNumbers() {
         if (this.scanNumbers == null) {
@@ -333,6 +400,16 @@ public class pepXMLReader {
                 e.printStackTrace();
             }
         }
+    }
+
+    public static void main(String[] args) {
+        pepXMLReader x = new pepXMLReader("C:/Users/kevin/Downloads/proteomics/expect/rank1/" +
+                "23aug2017_hela_serum_timecourse_4mz_narrow_1_rank1.pepXML");
+        System.out.println(x.getScanNumbers().length);
+
+        pepXMLReader y = new pepXMLReader("C:/Users/kevin/Downloads/proteomics/hyperscore/" +
+                "23aug2017_hela_serum_timecourse_4mz_narrow_1_rank1.pepXML");
+        System.out.println(y.getScanNumbers().length);
     }
 }
 

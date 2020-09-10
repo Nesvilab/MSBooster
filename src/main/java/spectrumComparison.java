@@ -1,6 +1,9 @@
+import org.apache.commons.lang.ArrayUtils;
 import org.apache.commons.math.stat.correlation.PearsonsCorrelation;
 
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashMap;
 
 public class spectrumComparison {
     double[] expMZs;
@@ -9,8 +12,8 @@ public class spectrumComparison {
     double[] predIntensities;
     double ppm;
     double[] matchedIntensities;
-    double[] normMatchedIntensities;
-    double[] normPredIntensities;
+    double[] unitNormMatchedIntensities;
+    double[] unitNormPredIntensities;
 
     public spectrumComparison(double[] eMZs, double[] eIntensities,
                               double[] pMZs, double[] pIntensities,
@@ -20,7 +23,13 @@ public class spectrumComparison {
         predMZs = pMZs;
         predIntensities = pIntensities;
         ppm =  ppmTolerance / 1000000;
+        //could also consider just getting rid of low pred intensities before matching
+        //this.filterIntensities(0.01);
+
         matchedIntensities = this.getMatchedIntensities();
+
+        //predIntensities = this.rankIntensities(predIntensities);
+        //matchedIntensities = this.rankIntensities(matchedIntensities);
     }
 
     public double[] getMatchedIntensities() {
@@ -82,7 +91,7 @@ public class spectrumComparison {
         return weights;
     }
 
-    public static double[] subNormalize(double[] vector) {
+    private static double[] subNormalize(double[] vector) {
         //if we wish to normalize to unit vector
         double magnitude = 0;
         for (double i : vector) {
@@ -101,9 +110,43 @@ public class spectrumComparison {
         return newVector;
     }
 
-    public void normalize() {
-        normPredIntensities = subNormalize(predIntensities);
-        normMatchedIntensities = subNormalize(matchedIntensities);
+    public void unitNormalize() { //only use after filtering
+        unitNormPredIntensities = subNormalize(predIntensities);
+        unitNormMatchedIntensities = subNormalize(matchedIntensities);
+    }
+
+    public void filterIntensities(double min) {
+
+        ArrayList<Double> removableIntensities = new ArrayList<>();
+        ArrayList<Double> removableMZs = new ArrayList<>();
+
+        for (int i = 0; i < predIntensities.length; i++) {
+            double intensity = predIntensities[i];
+            double mz = predMZs[i];
+
+            if (intensity < min) {
+                removableIntensities.add(intensity);
+                removableMZs.add(mz);
+            }
+        }
+
+        for (int i = 0; i < removableIntensities.size(); i++) {
+            predIntensities = ArrayUtils.removeElement(predIntensities, removableIntensities.get(i));
+            predMZs = ArrayUtils.removeElement(predMZs, removableMZs.get(i));
+        }
+    }
+
+    public double[] rankIntensities(double[] vector) { //need to adapt for unitNorm vectors too
+        double[] ranks = new double[vector.length];
+
+        double[] sortedVector = vector;
+        Arrays.sort(sortedVector);
+
+        for (int i = 0; i < sortedVector.length; i++) {
+            ranks[i] = ArrayUtils.indexOf(sortedVector, vector[i]) + 1;
+        }
+
+        return ranks;
     }
 
     public double cosineSimilarity() {
@@ -166,17 +209,17 @@ public class spectrumComparison {
     }
 
     public double euclideanDistance() {
-        if (normPredIntensities == null) {
-            this.normalize();
+        if (unitNormPredIntensities == null) {
+            this.unitNormalize();
         }
 
         //max distance between two points in the positive quadrant with unit vectors is sqrt(2)
-        if (Arrays.stream(normMatchedIntensities).sum() == 0) {
+        if (Arrays.stream(unitNormMatchedIntensities).sum() == 0) {
             return 1 - Math.sqrt(2);
         } else {
             double numSum = 0;
             for (int i = 0; i < predMZs.length; i++) {
-                double diff = normPredIntensities[i] - normMatchedIntensities[i];
+                double diff = unitNormPredIntensities[i] - unitNormMatchedIntensities[i];
                 double square = diff * diff;
                 numSum += square;
             }
@@ -185,19 +228,19 @@ public class spectrumComparison {
     }
 
     public double weightedEuclideanDistance(double[] weights) {
-        if (normPredIntensities == null) {
-            this.normalize();
+        if (unitNormPredIntensities == null) {
+            this.unitNormalize();
         }
 
-        if (Arrays.stream(normMatchedIntensities).sum() == 0) {
+        if (Arrays.stream(unitNormMatchedIntensities).sum() == 0) {
             return 1 - Math.sqrt(2);
         } else {
             //now we need to normalize again by weights
-            double[] newNormPred = new double[normPredIntensities.length];
-            double[] newNormMatched = new double[normMatchedIntensities.length];
-            for (int i = 0; i < normPredIntensities.length; i++) {
-                newNormPred[i] = weights[i] * normPredIntensities[i];
-                newNormMatched[i] = weights[i] * normMatchedIntensities[i];
+            double[] newNormPred = new double[unitNormPredIntensities.length];
+            double[] newNormMatched = new double[unitNormMatchedIntensities.length];
+            for (int i = 0; i < unitNormPredIntensities.length; i++) {
+                newNormPred[i] = weights[i] * unitNormPredIntensities[i];
+                newNormMatched[i] = weights[i] * unitNormMatchedIntensities[i];
             }
 
             newNormPred = subNormalize(newNormPred);
@@ -215,19 +258,19 @@ public class spectrumComparison {
     }
 
     public double brayCurtis() {
-        if (normPredIntensities == null) {
-            this.normalize();
+        if (unitNormPredIntensities == null) {
+            this.unitNormalize();
         }
 
         //check if no matched peaks
-        if (Arrays.stream(normMatchedIntensities).sum() == 0) {
+        if (Arrays.stream(unitNormMatchedIntensities).sum() == 0) {
             return 0;
         } else {
             double num = 0;
             double den = 0;
             for (int i = 0; i < predMZs.length; i++) {
-                double exp = normMatchedIntensities[i];
-                double pred = normPredIntensities[i];
+                double exp = unitNormMatchedIntensities[i];
+                double pred = unitNormPredIntensities[i];
 
                 num += Math.abs(exp - pred);
                 den += (exp + pred);
@@ -237,19 +280,19 @@ public class spectrumComparison {
     }
 
     public double weightedBrayCurtis(double[] weights) {
-        if (normPredIntensities == null) {
-            this.normalize();
+        if (unitNormPredIntensities == null) {
+            this.unitNormalize();
         }
 
         //check if no matched peaks
-        if (Arrays.stream(normMatchedIntensities).sum() == 0) {
+        if (Arrays.stream(unitNormMatchedIntensities).sum() == 0) {
             return 0;
         } else {
             double num = 0;
             double den = 0;
             for (int i = 0; i < predMZs.length; i++) {
-                double exp = normMatchedIntensities[i];
-                double pred = normPredIntensities[i];
+                double exp = unitNormMatchedIntensities[i];
+                double pred = unitNormPredIntensities[i];
 
                 num += weights[i] * Math.abs(exp - pred);
                 den += weights[i] * (exp + pred);
@@ -285,4 +328,72 @@ public class spectrumComparison {
         }
     }
 
+    public double dotProduct() {
+        if (Arrays.stream(matchedIntensities).sum() == 0) {
+            return 0;
+        } else {
+            double predMax = 1 / Arrays.stream(predIntensities).max().getAsDouble();
+            double matchedMax = 1 / Arrays.stream(matchedIntensities).max().getAsDouble();
+            double multiplier = predMax * matchedMax;
+
+            double num = 0;
+            for (int i = 0; i < predMZs.length; i++) {
+                num += predIntensities[i] * matchedIntensities[i] * multiplier;
+            }
+
+            return num;
+        }
+    }
+
+    public double weightedDotProduct(double[] weights) {
+        if (Arrays.stream(matchedIntensities).sum() == 0) {
+            return 0;
+        } else {
+            double[] newPred = new double[predIntensities.length];
+            double[] newMatched = new double[matchedIntensities.length];
+            for (int i = 0; i < predIntensities.length; i++) {
+                newPred[i] = weights[i] * predIntensities[i];
+                newMatched[i] = weights[i] * matchedIntensities[i];
+            }
+
+            double predMax = 1 / Arrays.stream(newPred).max().getAsDouble();
+            double matchedMax = 1 / Arrays.stream(newMatched).max().getAsDouble();
+            double multiplier = predMax * matchedMax;
+
+            double num = 0;
+            for (int i = 0; i < predMZs.length; i++) {
+                num += newPred[i] * newMatched[i] * multiplier;
+            }
+
+            return num;
+        }
+    }
+
+    public HashMap<String, Double> getAllSimilarities(double[] mzFreqs, int binwidth) {
+
+        HashMap<String, Double> sims = new HashMap<>();
+
+        sims.put("cosine", this.cosineSimilarity());
+        sims.put("contrast", this.spectralContrastAngle());
+        sims.put("euclidean", this.euclideanDistance());
+        sims.put("bray-curtis", this.brayCurtis());
+        sims.put("pearson", this.pearsonCorr());
+        sims.put("dot", this.dotProduct());
+
+
+        //weighted
+        double[] weights = this.getWeights(mzFreqs, binwidth);
+        sims.put("weightCosine", this.weightedCosineSimilarity(weights));
+        sims.put("weightContrast", this.weightedSpectralContrastAngle(weights));
+        sims.put("weightEuclidean", this.weightedEuclideanDistance(weights));
+        sims.put("weightBray-curtis", this.weightedBrayCurtis(weights));
+        sims.put("weightPearson", this.weightedPearsonCorr(weights));
+        sims.put("weightDot", this.weightedDotProduct(weights));
+
+        return sims;
+    }
+
+    public static void main(String[] args) {
+
+    }
 }

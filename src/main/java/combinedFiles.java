@@ -65,7 +65,7 @@ public class combinedFiles {
             mzMLReader mzMLscans = new mzMLReader(mzmlDirectoryName + mzmlPath);
 
             //get mzFreq
-            double[] mzFreqs = mzMLscans.getMzFreq(1, 1);
+            double[] mzFreqs = mzMLscans.getMzFreq(binwidth, 1);
 
             //iterate through all pepXMLhits
             int pepXMLhits = scanNums.length;
@@ -104,16 +104,22 @@ public class combinedFiles {
                     double sim8 = specAngle.weightedBrayCurtis(weights);
                     double sim9 = specAngle.weightedPearsonCorr(weights);
 
+                    //dot product
+                    double sim10 = specAngle.dotProduct();
+                    double sim11 = specAngle.weightedDotProduct(weights);
+
                     //get expectation score and target or decoy
                     String eScore = eScores[i];
                     int tdSingle = td[i];
 
-                    sa[i] = pep + "\t" + sim0 + "\t" +
-                            sim1 + "\t" + sim2 + "\t" +
-                            sim3 + "\t" + sim4 + "\t" +
-                            sim5 + "\t" + sim6 + "\t" +
-                            sim7 + "\t" + sim8 + "\t" +
-                            sim9 + "\t" + eScore + "\t" + tdSingle;
+                    sa[i] = pep + "\t" +
+                            sim0 + "\t" + sim1 + "\t" +
+                            sim2 + "\t" + sim3 + "\t" +
+                            sim4 + "\t" + sim5 + "\t" +
+                            sim6 + "\t" + sim7 + "\t" +
+                            sim8 + "\t" + sim9 + "\t" +
+                            sim10 + "\t" + sim11 + "\t" +
+                            eScore + "\t" + tdSingle;
 
                 } catch(Exception e) {
                     System.out.println(pep); //probably was not supported by pDeep2 prediction (ex. amino acid U)
@@ -136,6 +142,7 @@ public class combinedFiles {
                     "bray-curtis" + "\t" + "pearson" + "\t" + "weight_cosine" + "\t" +
                     "weight_spectral_contrast" + "\t" + "weight_euclidean" + "\t" +
                     "weight_bray-curtis" + "\t" + "weight_pearson" + "\t" +
+                    "dot_product" + "\t" + "weight_dot" + "\t" +
                     "eScore" + "\t" + "target=1/decoy=0\n");
 
             for (String s : allSpectralAngles) {

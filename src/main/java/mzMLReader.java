@@ -19,6 +19,8 @@ public class mzMLReader{
                       //weights, just make new mzmlReader object
 
     HashMap<Integer, mzmlScanNumber> scanNumberObjects = new HashMap<>();
+    HashMap<Double, ArrayList<Integer>> windowStartDict = new HashMap<>();
+    HashMap<String, ArrayList<Integer>> peptideToScanNums = new HashMap<>();
 
     public mzMLReader(String filename) throws FileParsingException {
 
@@ -61,7 +63,7 @@ public class mzMLReader{
     //getting fragment frequency distribution
     //final output might be edited to optionally add something to multiply at the end
     //this might be useful since the mz intensities are on a different scale
-    public double[] getMzFreq(double bin, int window) {
+    public double[] getMzFreq() {
         if (mzFreqs != null) {
             return this.mzFreqs;
         } else {
@@ -76,7 +78,7 @@ public class mzMLReader{
                     //increase count by 1
                     double[] mzs = ms2Scan.fetchSpectrum().getMZs();
                     for (double mz : mzs) {
-                        int binIndex = (int) Math.floor(mz / bin);
+                        int binIndex = (int) Math.floor(mz / constants.binwidth);
 
                         int[] value = mzCounts.get(binIndex);
                         if (value == null) {
@@ -108,8 +110,8 @@ public class mzMLReader{
             //sliding window average
             double[] averagedCountsList = new double[maxKey];
             for (int i = 0; i < maxKey; i++) {
-                double newLeft = Math.max(0, i - window);
-                double newRight = Math.min(maxKey, i + window + 1);
+                double newLeft = Math.max(0, i - constants.mzFreqWindow);
+                double newRight = Math.min(maxKey, i + constants.mzFreqWindow + 1);
                 double sum = 0;
 
                 for (int j = (int) newLeft; j < newRight; j++) {
@@ -130,11 +132,19 @@ public class mzMLReader{
     public void createScanNumObjects() throws FileParsingException {
         HashMap<Integer, mzmlScanNumber> scanMap = new HashMap<>();
         int scanNum = -1;
-        IScan scan = scans.getNextScan(scanNum);
+        IScan scan = scans.getNextScanAtMsLevel(scanNum, 2);
         while (scan != null) {
             scanNum = scan.getNum();
-            scanMap.put(scanNum, new mzmlScanNumber(this, scanNum));
-            scan = scans.getNextScan(scanNum);
+            double windowStart = scan.getPrecursor().getMzRangeStart();
+            scanMap.put(scanNum, new mzmlScanNumber(this, scanNum, windowStart));
+            scan = scans.getNextScanAtMsLevel(scanNum, 2);
+
+            //for later use in getting spectra from same window
+            if (windowStartDict.containsKey(windowStart)) {
+                windowStartDict.get(windowStart).add(scanNum);
+            } else {
+                windowStartDict.put(windowStart, new ArrayList<Integer>(Arrays.asList(scanNum)));
+            }
         }
         scanNumberObjects = scanMap;
     }
@@ -153,15 +163,24 @@ public class mzMLReader{
 
         for (int i = 0; i < iterations; i++) {
             try {
-                scanNumberObjects.get(scanNums[i]).setPeptideObject(peptides[i], rank, tdArray[i],
+                int scanNum = scanNums[i];
+                String pep = peptides[i];
+                scanNumberObjects.get(scanNum).setPeptideObject(pep, rank, tdArray[i],
                         allPredMZs, allPredIntensities);
+
+                if (peptideToScanNums.containsKey(pep)) {
+                    peptideToScanNums.get(pep).add(scanNum);
+                } else {
+                    peptideToScanNums.put(pep, new ArrayList<Integer>(Arrays.asList(scanNum)));
+                }
+
             } catch(Exception e) {
                 System.out.println("failed for " + peptides[i]);
             }
         }
     }
 
-    public static void main(String[] args) throws FileParsingException, IOException, NoSuchMethodException,
+    public static void getRankChanges(String[] args) throws FileParsingException, IOException, NoSuchMethodException,
             IllegalAccessException, InvocationTargetException {
         //get predictions
         System.out.println("getting predictions");
@@ -211,5 +230,18 @@ public class mzMLReader{
         }
 
         System.out.println(rankCounts.entrySet());
+    }
+
+    public static void main(String[] args) throws FileParsingException, IOException {
+        mzMLReader mzml = new mzMLReader("C:/Users/kevin/OneDriveUmich/proteomics/mzml/" +
+                "23aug2017_hela_serum_timecourse_4mz_narrow_1.mzml");
+        mzml.createScanNumObjects();
+
+        mgfFileReader mgf = new mgfFileReader("C:/Users/kevin/Downloads/proteomics/pDeep3preds.mgf");
+        pepXMLReader xmlReader = new pepXMLReader("C:/Users/kevin/OneDriveUmich/proteomics/pepxml/rank1/" +
+                "23aug2017_hela_serum_timecourse_4mz_narrow_1_rank1.pepXML");
+
+        mzml.setPepxmlEntries(xmlReader, 1, mgf.allPredMZs, mgf.allPredIntensities);
+        System.out.println(mzml.peptideToScanNums);
     }
 }

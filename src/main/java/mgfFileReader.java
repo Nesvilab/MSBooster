@@ -4,7 +4,9 @@ import org.expasy.mzjava.core.ms.spectrum.MsnSpectrum;
 
 import java.io.File;
 import java.io.IOException;
+import java.util.Arrays;
 import java.util.HashMap;
+import java.util.Map;
 
 public class mgfFileReader {
     //mgfFileReader can handle both single files and entire directories
@@ -33,6 +35,7 @@ public class mgfFileReader {
     private void createDicts() throws IOException {
         for (String fname : filenames) {
             MgfReader reader = new MgfReader(new File(fname), PeakList.Precision.DOUBLE);
+            reader.acceptUnsortedSpectra();
 
             // hasNext() returns true if there is more spectrum to read
             while (reader.hasNext()) {
@@ -62,5 +65,13 @@ public class mgfFileReader {
 
     public HashMap<String, double[]> getIntensityDict() throws IOException {
         return allPredIntensities;
+    }
+
+    public static void main(String[] args) throws IOException {
+        mgfFileReader x = new mgfFileReader("C:/Users/kevin/Downloads/proteomics/test2.mgf");
+        //mgfFileReader x = new mgfFileReader("preds/");
+        for (Map.Entry<String, double[]> e : x.allPredMZs.entrySet()) {
+            System.out.println(Arrays.toString(e.getValue()));
+        }
     }
 }

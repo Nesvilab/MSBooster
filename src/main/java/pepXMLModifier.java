@@ -10,7 +10,6 @@ import javax.xml.bind.Marshaller;
 import java.io.File;
 import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;
-import java.lang.reflect.Method;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -43,10 +42,9 @@ public class pepXMLModifier {
 
         //only use if need weighted similarity
         boolean useWeights = false;
-        double binwidth = 1;
         double[] mzFreqs = new double[0];
-        if (similarityMeasure.substring(0, 8).equals("weighted")) {
-            mzFreqs = mzMLscans.getMzFreq(binwidth, 1);
+        if (similarityMeasure.substring(0, 6).equals("weight")) {
+            mzFreqs = mzMLscans.getMzFreq();
             useWeights = true;
         }
 
@@ -95,11 +93,9 @@ public class pepXMLModifier {
             //spectral similarity calculation
             //multiply by negative one, since for log(escore), smaller is better
             spectrumComparison specAngle = new spectrumComparison(expMZs, expIntensities,
-                    predMZs, predIntensities, 20);
+                    predMZs, predIntensities);
 
             //check that similarityMeasure is valid
-
-            double sim = 0;
 
             //for not getting similarities of zero
             double correctionFactor = 0.1;
@@ -108,15 +104,13 @@ public class pepXMLModifier {
                 correctionFactor += Math.sqrt(2) - 1;
             }
 
-            //only if need weights
-            if (useWeights) {
-                Method method = specAngle.getClass().getMethod(similarityMeasure, double[].class);
-                double[] weights = specAngle.getWeights(mzFreqs, binwidth);
-                sim = (double) method.invoke(specAngle, weights);
-            } else {
-                Method method = specAngle.getClass().getMethod(similarityMeasure);
-                sim = (double) method.invoke(specAngle);
-            }
+            double sim = specAngle.getSimilarity(similarityMeasure, mzFreqs);
+
+            //if getting expectation score, calculate here
+            //create scannumobjects for mzmlreader
+            //then using scannum, retrieve mzmlscannumber instance from scannumberobjects, and get its windowstart field
+            //get other scannums, and
+            //get window start from
 
             sim = 1 / (sim + correctionFactor);
 
@@ -176,7 +170,8 @@ public class pepXMLModifier {
         marshaller.marshal(newMsmsPipelineAnalysis, file);
     }
 
-    public static void main(String[] args) throws IOException, FileParsingException, NoSuchMethodException, IllegalAccessException, InvocationTargetException, JAXBException {
+    public static void main(String[] args) throws IOException, FileParsingException, NoSuchMethodException,
+            IllegalAccessException, InvocationTargetException, JAXBException {
         for (int i = 1; i < 7; i++) {
             String narrowNum = String.valueOf(i);
 
@@ -201,8 +196,9 @@ public class pepXMLModifier {
             //modify files
             mzMLReader mzmlScans = new mzMLReader("C:/Users/kevin/OneDriveUmich/proteomics/mzml/" +
                     "23aug2017_hela_serum_timecourse_4mz_narrow_" + narrowNum + ".mzML");
-            mgfFileReader preds = new mgfFileReader("preds/"); //stays constant for all mzml files
-            String similarityMeasure = "weightedEuclideanDistance";
+            mgfFileReader preds = new mgfFileReader("C:/Users/kevin/Downloads/proteomics/" +
+                    "pDeep3preds.mgf"); //stays constant for all mzml files
+            String similarityMeasure = "brayCurtis";
 
             for (String file : windowFiles) {
                 pepXMLModifier xmlReader = new pepXMLModifier(file);

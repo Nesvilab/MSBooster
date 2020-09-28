@@ -13,12 +13,14 @@ public class mzmlScanNumber {
     double[] expMZs;
     double[] expIntensities;
     TreeMap<Integer, peptideObj> peptideObjects = new TreeMap<>();
+    double windowStart;
 
-    public mzmlScanNumber(mzMLReader mzmlScans, int scanNum) throws FileParsingException {
+    public mzmlScanNumber(mzMLReader mzmlScans, int scanNum, double windowStart) throws FileParsingException {
         this.scanNum = scanNum;
         this.mzmlScans = mzmlScans;
         this.expMZs = mzmlScans.getMZ(scanNum);
         this.expIntensities = mzmlScans.getIntensity(scanNum);
+        this.windowStart = windowStart;
     }
 
     public void setPeptideObject(String name, int rank, int targetORdecoy,

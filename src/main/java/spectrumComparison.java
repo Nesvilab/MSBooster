@@ -1,8 +1,16 @@
 import org.apache.commons.lang.ArrayUtils;
 import org.apache.commons.math.stat.correlation.PearsonsCorrelation;
+import umich.ms.fileio.exceptions.FileParsingException;
 
+import java.io.FileWriter;
+import java.io.IOException;
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
+import java.math.RoundingMode;
+import java.text.DecimalFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashMap;
 
 public class spectrumComparison {
@@ -10,32 +18,91 @@ public class spectrumComparison {
     double[] expIntensities;
     double[] predMZs;
     double[] predIntensities;
-    double ppm;
     double[] matchedIntensities;
     double[] unitNormMatchedIntensities;
     double[] unitNormPredIntensities;
 
     public spectrumComparison(double[] eMZs, double[] eIntensities,
-                              double[] pMZs, double[] pIntensities,
-                              double ppmTolerance) {
+                              double[] pMZs, double[] pIntensities) {
         expMZs = eMZs;
         expIntensities = eIntensities;
         predMZs = pMZs;
         predIntensities = pIntensities;
-        ppm =  ppmTolerance / 1000000;
-        //could also consider just getting rid of low pred intensities before matching
-        //this.filterIntensities(0.01);
-
-        matchedIntensities = this.getMatchedIntensities();
-
-        //predIntensities = this.rankIntensities(predIntensities);
-        //matchedIntensities = this.rankIntensities(matchedIntensities);
+        matchedIntensities = this.getMatchedIntensities(eMZs, eIntensities);
     }
 
-    public double[] getMatchedIntensities() {
+    public spectrumComparison(double[] eMZs, double[] eIntensities,
+                              double[] pMZs, double[] pIntensities,
+                              boolean filter) {
+        expMZs = eMZs;
+        expIntensities = eIntensities;
+        predMZs = pMZs;
+        predIntensities = pIntensities;
+        if (filter) {
+            this.filterTopFragments();
+        }
+        matchedIntensities = this.getMatchedIntensities(eMZs, eIntensities);
+    }
+
+    //this version is used when shuffling intensities
+    private spectrumComparison(spectrumComparison specAngle) {
+        this.predMZs = specAngle.predMZs;
+        this.predIntensities = specAngle.predMZs;
+        this.matchedIntensities = specAngle.matchedIntensities;
+        this.unitNormMatchedIntensities = specAngle.unitNormMatchedIntensities;
+    }
+
+    private spectrumComparison(spectrumComparison specAngle, boolean filter) {
+        this.predMZs = specAngle.predMZs;
+        this.predIntensities = specAngle.predMZs;
+        if (filter) {
+            this.expMZs = specAngle.expMZs;
+            this.expIntensities = specAngle.expIntensities;
+            this.filterTopFragments();
+            this.matchedIntensities = specAngle.matchedIntensities;
+            //don't include unitNorm, because they'll have to be recalculated
+        } else {
+            this.matchedIntensities = specAngle.matchedIntensities;
+            this.unitNormMatchedIntensities = specAngle.unitNormMatchedIntensities;
+        }
+
+    }
+
+    private void filterTopFragments() {
+
+        ArrayList<Double> tmpInts = new ArrayList<>();
+        for (double i : predIntensities) {
+            tmpInts.add(i);
+        }
+
+        ArrayList<Double> tmpMZs = new ArrayList<>();
+        for (double i : predMZs) {
+            tmpMZs.add(i);
+        }
+
+        //go through and remove minimum one at a time
+        while (tmpInts.size() > constants.topFragments) {
+            int index = tmpInts.indexOf(Collections.min(tmpInts));
+            tmpInts.remove(index);
+            tmpMZs.remove(index);
+        }
+
+        predIntensities = new double[tmpInts.size()];
+        for (int i = 0; i < tmpInts.size(); i++) {
+            predIntensities[i] = tmpInts.get(i);
+        }
+
+        predMZs = new double[tmpInts.size()];
+        for (int i = 0; i < tmpInts.size(); i++) {
+            predMZs[i] = tmpMZs.get(i);
+        }
+    }
+
+    private double[] getMatchedIntensities(double[] expMZs, double[] expIntensities) {
         int startPos = 0;
         int matchedNum = 0;
         double[] matchedInts = new double[predMZs.length];
+        double ppm = constants.ppmTolerance / 1000000;
 
         /* Get best peaks from experimental spectrum that match to predicted peaks.
            Same experimental peak may match to the multiple predicted peaks,
@@ -74,13 +141,13 @@ public class spectrumComparison {
         return matchedInts;
     }
 
-    public double[] getWeights(double[] freqs, double bin) {
+    public double[] getWeights(double[] freqs) {
         //will need to use predMZs
         int maxIndex = freqs.length;
 
         double[] weights = new double[predMZs.length];
         for (int i = 0; i < predMZs.length; i++) {
-            int binIndex = (int) Math.floor(predMZs[i] / bin);
+            int binIndex = (int) Math.floor(predMZs[i] / constants.binwidth);
             if (binIndex < maxIndex) {
                 weights[i] = freqs[binIndex];
             } else { //detected too big a fragment
@@ -369,7 +436,7 @@ public class spectrumComparison {
         }
     }
 
-    public HashMap<String, Double> getAllSimilarities(double[] mzFreqs, int binwidth) {
+    public HashMap<String, Double> getAllSimilarities(double[] mzFreqs) {
 
         HashMap<String, Double> sims = new HashMap<>();
 
@@ -382,7 +449,7 @@ public class spectrumComparison {
 
 
         //weighted
-        double[] weights = this.getWeights(mzFreqs, binwidth);
+        double[] weights = this.getWeights(mzFreqs);
         sims.put("weightCosine", this.weightedCosineSimilarity(weights));
         sims.put("weightContrast", this.weightedSpectralContrastAngle(weights));
         sims.put("weightEuclidean", this.weightedEuclideanDistance(weights));
@@ -393,7 +460,142 @@ public class spectrumComparison {
         return sims;
     }
 
-    public static void main(String[] args) {
+    //https://stackoverflow.com/questions/4240080/generating-all-permutations-of-a-given-string
+    private ArrayList<Double> calculateShuffledExpectScore(String similarityMeasure) throws NoSuchMethodException,
+            IllegalAccessException, InvocationTargetException {
 
+        //specifically use filtered version, otherwise permutation will take forever
+        spectrumComparison filteredSpec = new spectrumComparison(this, true);
+        double trueSim = filteredSpec.getSimilarity(similarityMeasure);
+
+        double[] newPredInts = filteredSpec.predIntensities;
+        ArrayList<Double> shuffledExpectations = new ArrayList<>();
+        shuffledExpectations.add(trueSim); //first element in arraylist is the original
+
+        //sole purpose of this class is to create permuted expectation scores
+        class permutation {
+            permutation(double[] added, double[] remaining) throws NoSuchMethodException, IllegalAccessException,
+                    InvocationTargetException {
+                int n = remaining.length;
+                if (n == 0) {
+                    //calculate similarity and add to list
+                    //no longer need to filter, since we want to use matched intensities and unitNorm vectors as they are
+                    spectrumComparison specAngle = new spectrumComparison(filteredSpec);
+
+                    //change predicted intensities to shuffled version
+                    specAngle.predIntensities = added;
+                    shuffledExpectations.add(specAngle.getSimilarity(similarityMeasure));
+                } else {
+                    for (int i = 0; i < n; i++)
+                        new permutation(ArrayUtils.addAll(added, new double[]{remaining[i]}),
+                                ArrayUtils.addAll(Arrays.copyOfRange(remaining, 0, i),
+                                        Arrays.copyOfRange(remaining, i + 1, n)));
+                }
+            }
+        }
+        //add shuffled expect scores
+        new permutation(new double[]{}, newPredInts);
+        return shuffledExpectations;
+    }
+
+
+
+//    public double[] calculateShuffledExpectScore(String similarityMeasure)
+//            throws NoSuchMethodException, IllegalAccessException, InvocationTargetException {
+//        shufflePredIntensities(); //doesn't run if already created
+//
+//        double[] sims = new double[permutations.size()];
+//        for (int i = 0; i < permutations.size(); i++) {
+//            //new instance of object with shuffled intensities
+//            spectrumComparison tmpInstance = new spectrumComparison(predMZs, permutations.get(i), matchedIntensities);
+//            // calculate similarity
+//            sims[i] = tmpInstance.getSimilarity(similarityMeasure);
+//        }
+//
+//        return sims;
+//        //calculate expect score
+//    }
+
+//    public double calculateShuffledExpectScore(String similarityMeasure, double[] mzFreq)
+//            throws NoSuchMethodException, IllegalAccessException, InvocationTargetException {
+//    }
+
+    public double getSimilarity(String similarityMeasure, double[] mzFreqs)
+            throws NoSuchMethodException, InvocationTargetException, IllegalAccessException {
+        boolean useWeights = (similarityMeasure.startsWith("weight"));
+        if (useWeights) {
+            Method method = this.getClass().getMethod(similarityMeasure, double[].class);
+            double[] weights = this.getWeights(mzFreqs);
+            return (double) method.invoke(this, weights);
+        } else {
+            Method method = this.getClass().getMethod(similarityMeasure);
+            return (double) method.invoke(this);
+        }
+    }
+
+    public double getSimilarity(String similarityMeasure)
+            throws NoSuchMethodException, InvocationTargetException, IllegalAccessException {
+        assert (!similarityMeasure.startsWith("weight"));
+
+        Method method = this.getClass().getMethod(similarityMeasure);
+        return (double) method.invoke(this);
+    }
+
+    public static void main(String[] args) throws IOException, FileParsingException, NoSuchMethodException,
+            IllegalAccessException, InvocationTargetException {
+        DecimalFormat df = new DecimalFormat("#.###");
+        df.setRoundingMode(RoundingMode.CEILING);
+        mgfFileReader preds = new mgfFileReader("C:/Users/kevin/Downloads/proteomics/" +
+                "pDeep3preds.mgf"); //stays constant for all mzml files
+        HashMap<String, double[]> predMZDict = preds.getMzDict();
+        HashMap<String, double[]> predIntDict = preds.getIntensityDict();
+        String similarityMeasure = "brayCurtis";
+        FileWriter myWriter = new FileWriter("C:/Users/kevin/Downloads/proteomics/shuffled.tsv");
+        myWriter.write("window\trank\tpeptide\tsimlist\n");
+
+        for (int i = 1; i < 7; i++) { //window
+            mzMLReader mzmlScans = new mzMLReader("C:/Users/kevin/OneDriveUmich/proteomics/mzml/" +
+                    "23aug2017_hela_serum_timecourse_4mz_narrow_" + i + ".mzML");
+
+            for (int j = 1; j < 5; j++) { //rank
+                long startTime = System.nanoTime();
+                pepXMLReader xmlReader = new pepXMLReader("C:/Users/kevin/OneDriveUmich/proteomics/pepxml/rank" +
+                        j + "/23aug2017_hela_serum_timecourse_4mz_narrow_" + i + "_rank" + j + ".pepXML");
+                System.out.println("C:/Users/kevin/OneDriveUmich/proteomics/pepxml/rank" +
+                        j + "/23aug2017_hela_serum_timecourse_4mz_narrow_" + i + "_rank" + j + ".pepXML");
+
+                //for each PSM, calculate shuffled score array
+                //get xmlPeptides and scanNumbers, then query mzml for spectra
+                int[] scanNums = xmlReader.getScanNumbers();
+                String[] peptides = xmlReader.getXMLpeptides();
+
+                for (int k = 0; k < scanNums.length; k++) {
+                    int num = scanNums[k];
+                    String pep = peptides[k];
+                    if (pep.contains("U")) {
+                        continue;
+                    }
+
+                    double[] expMZs = mzmlScans.getMZ(num);
+                    double[] expInts = mzmlScans.getIntensity(num);
+
+                    double[] predMZs = predMZDict.get(pep);
+                    double[] predInts = predIntDict.get(pep);
+
+                    spectrumComparison specAngle = new spectrumComparison(expMZs, expInts, predMZs, predInts);
+                    ArrayList<Double> simList = specAngle.calculateShuffledExpectScore(similarityMeasure);
+
+                    //print window, rank, peptide, sim, simlist
+                    myWriter.write(i + "\t" + j + "\t" + pep + "\t");
+                    for (double s : simList) {
+                        myWriter.write(df.format(s) + ",");
+                    }
+                    myWriter.write("\n");
+                }
+                long stopTime = System.nanoTime();
+                System.out.println((stopTime - startTime) / 1000000000.0);
+            }
+        }
+        myWriter.close();
     }
 }

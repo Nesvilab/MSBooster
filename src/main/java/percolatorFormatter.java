@@ -80,8 +80,7 @@ public class percolatorFormatter {
             System.out.println("loading in mzml file " + i);
             mzMLReader mzMLscans = new mzMLReader(mzmlDirectoryName + mzmlfiles[i]);
             //get mzFreq
-            int binwidth = 1;
-            double[] mzFreqs = mzMLscans.getMzFreq(binwidth, 1);
+            double[] mzFreqs = mzMLscans.getMzFreq();
 
             try { //https://www.javatpoint.com/how-to-read-file-line-by-line-in-java
                 File file = new File(pinDirectoryName + pinfiles[i]);    //creates a new file instance
@@ -125,9 +124,8 @@ public class percolatorFormatter {
 
                     if (predMZs != null) {
                         //calculate similarity
-                        spectrumComparison specAngle = new spectrumComparison(expMZs, expIntensities, predMZs, predIntensities,
-                                20);
-                        TreeMap<String, Double> sims = new TreeMap<>(specAngle.getAllSimilarities(mzFreqs, binwidth));
+                        spectrumComparison specAngle = new spectrumComparison(expMZs, expIntensities, predMZs, predIntensities);
+                        TreeMap<String, Double> sims = new TreeMap<>(specAngle.getAllSimilarities(mzFreqs));
 
                         //write header to new file
                         if (!usedHeader) {

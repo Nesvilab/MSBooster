@@ -20,7 +20,7 @@ public class peptideObj {
         this.scanNumObj = scanNumObj;
         this.targetORdecoy = targetORdecoy;
         this.spectralSimObj = new spectrumComparison(scanNumObj.expMZs, scanNumObj.expIntensities,
-                predMZs, predIntensities, 20);
+                predMZs, predIntensities);
     }
 
     public void setScore(String similarityMeasure) throws FileParsingException, NoSuchMethodException,
@@ -33,8 +33,7 @@ public class peptideObj {
         //only if need weights
         if (similarityMeasure.substring(0, 8).equals("weighted")) {
             Method method = spectralSimObj.getClass().getMethod(similarityMeasure, double[].class);
-            int binwidth = 1;
-            double[] weights = spectralSimObj.getWeights(scanNumObj.mzmlScans.getMzFreq(binwidth, 1), binwidth);
+            double[] weights = spectralSimObj.getWeights(scanNumObj.mzmlScans.getMzFreq());
             sim = (double) method.invoke(spectralSimObj, weights);
         } else {
             Method method = spectralSimObj.getClass().getMethod(similarityMeasure);

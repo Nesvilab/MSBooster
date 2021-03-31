@@ -4,6 +4,7 @@ import com.univocity.parsers.common.processor.RowListProcessor;
 import com.univocity.parsers.csv.CsvParser;
 import com.univocity.parsers.csv.CsvParserSettings;
 import org.apache.commons.lang.ArrayUtils;
+import org.apache.spark.mllib.regression.IsotonicRegressionModel;
 import smile.stat.distribution.KernelDensity;
 import umich.ms.datatypes.LCMSDataSubset;
 import umich.ms.datatypes.scan.IScan;
@@ -34,6 +35,8 @@ public class mzMLReader implements Serializable {
     private float[] betas;
     public ArrayList<Float>[] RTbins;
     private KernelDensity[] kernelDensities;
+    private IsotonicRegressionModel LOESS;
+    public double[][] expAndPredRTs;
     private static final long serialVersionUID = Constants.uid;
 
     //if I decide to do to do other expect scores
@@ -230,6 +233,9 @@ public class mzMLReader implements Serializable {
     public void setBetas(SpectralPredictionMapper preds, int RTregressionSize) throws IOException {
         betas = RTFunctions.getBetas(this, preds, RTregressionSize);
     }
+    public void setBetas() {
+        betas = RTFunctions.getBetas(expAndPredRTs);
+    }
 
     public float[] getBetas() {
         return betas;
@@ -293,6 +299,13 @@ public class mzMLReader implements Serializable {
             }
         }
     }
+
+    public void setLOESS(SpectralPredictionMapper preds, int RTregressionSize, double bandwidth, int robustIters) {
+        expAndPredRTs = RTFunctions.getRTarrays(this, preds, RTregressionSize);
+        LOESS = RTFunctions.LOESS(expAndPredRTs, bandwidth, robustIters);
+    }
+
+    public double predictLOESS(float expRT) { return LOESS.predict(expRT); }
 
     public static void peptideRTForPython() throws FileParsingException, IOException {
         String prefix = "23aug2017_hela_serum_timecourse_4mz_narrow_1";

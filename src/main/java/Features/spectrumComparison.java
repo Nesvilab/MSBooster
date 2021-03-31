@@ -1,7 +1,7 @@
 package Features;
 
 import org.apache.commons.lang.ArrayUtils;
-import org.apache.commons.math.stat.correlation.PearsonsCorrelation;
+import org.apache.commons.math3.stat.correlation.PearsonsCorrelation;
 import umich.ms.fileio.exceptions.FileParsingException;
 
 import java.io.FileWriter;

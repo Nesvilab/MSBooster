@@ -31,6 +31,10 @@ public class Constants {
 
     public static boolean removeRankPeaks = true; //whether to remove peaks from higher ranks
 
+    //LOESS
+    public static double bandwidth = 0.1;
+    public static int robustIters = 2;
+
     public static String predFileFormat = "mgf"; //or mgf
     public static String predFile = null; //use this if predFile already made
 
@@ -42,7 +46,7 @@ public class Constants {
     public static final List<String> allowedFeatures = Arrays.asList("cosineSimilarity", "weightedCosineSimilarity",
             "spectralContrastAngle", "weightedSpectralContrastAngle", "euclideanDistance", "weightedEuclideanDistance",
             "brayCurtis", "weightedBrayCurtis", "pearsonCorr", "weightedPearsonCorr", "dotProduct", "weightedDotProduct",
-            "detectability", "deltaRTlinear", "deltaRTbins", "RTzscore", "RTprobability", "RTprobabilityUnifPrior");
+            "detectability", "deltaRTlinear", "deltaRTbins", "deltaRTLOESS", "RTzscore", "RTprobability", "RTprobabilityUnifPrior");
     private static HashMap<Double, Integer> makeModAAToUnimod() {
         HashMap<Double, Integer> map = new HashMap<>();
         map.put(160.03065, 4);

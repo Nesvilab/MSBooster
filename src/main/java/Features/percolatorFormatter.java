@@ -1,5 +1,6 @@
 package Features;
 
+import Exceptions.UnsupportedInputException;
 import com.univocity.parsers.tsv.TsvWriter;
 import com.univocity.parsers.tsv.TsvWriterSettings;
 import umich.ms.fileio.exceptions.FileParsingException;
@@ -55,16 +56,18 @@ public class percolatorFormatter {
     //baseNames is the part before mzml or pin extensions
     public static void editPin(String[] baseNames, String pinDirectory, String mzmlDirectory, String mgf, String detectFile,
                                String[] features, String outfile)
-            throws IOException {
+            throws IOException, UnsupportedInputException {
         //check that all requested features are valid names
         for (String f : features) {
-            assert Constants.allowedFeatures.contains(f);
+            if (! Constants.allowedFeatures.contains(f)) {
+                throw new UnsupportedInputException("UnsupportedInputException", f + " is not an allowed feature. " +
+                        "Please choose from the following: " + Constants.allowedFeatures);
+            }
         }
         List<String> featuresList = Arrays.asList(features);
 
         //booleans for future determination of what to do
         boolean needsMGF = false;
-        boolean needsRT = false;
 
         //get full path names for pin and mzml files
         String[] pinFiles = new String[baseNames.length];
@@ -78,12 +81,14 @@ public class percolatorFormatter {
         SpectralPredictionMapper predictedSpectra = null;
 
         //Special preparations dependent on features we require
+        //only time this isn't needed is detect
+        //could consider an mgf constant
         if (featuresList.contains("deltaRTlinear") || featuresList.contains("deltaRTbins") ||
                 featuresList.contains("RTzscore") || featuresList.contains("RTprobability") ||
                 featuresList.contains("RTprobabilityUnifPrior") || featuresList.contains("brayCurtis") ||
                 featuresList.contains("cosineSimilarity") || featuresList.contains("spectralContrastAngle") ||
                 featuresList.contains("euclideanDistance") || featuresList.contains("pearsonCorr") ||
-                featuresList.contains("dotProduct")) {
+                featuresList.contains("dotProduct") || featuresList.contains("deltaRTLOESS")) {
             System.out.println("loading predicted spectra");
             predictedSpectra = SpectralPredictionMapper.createSpectralPredictionMapper(mgf);
             needsMGF = true;
@@ -120,11 +125,16 @@ public class percolatorFormatter {
                     System.out.println("loading PSMs onto mzml object");
                     mzml.setPinEntries(pin, predictedSpectra);
                 }
-
+                if (featuresList.contains("deltaRTLOESS")) {
+                    System.out.println("generating LOESS regression");
+                    mzml.setLOESS(predictedSpectra, Constants.RTregressionSize, Constants.bandwidth, Constants.robustIters);
+                }
                 if (featuresList.contains("deltaRTlinear")) {
                     System.out.println("calculating delta RT linear");
-                    mzml.setBetas(predictedSpectra, Constants.RTregressionSize);
-                    System.out.println(Arrays.toString(mzml.getBetas()));
+                    if (mzml.expAndPredRTs != null) { mzml.setBetas();
+                    } else { mzml.setBetas(predictedSpectra, Constants.RTregressionSize);
+                    }
+                    System.out.println(Arrays.toString(mzml.getBetas())); //print beta 0 and 1
                     mzml.normalizeRTs();
                 }
                 if (featuresList.contains("deltaRTbins") || featuresList.contains("RTzscore") ||
@@ -172,9 +182,15 @@ public class percolatorFormatter {
                     //add extra protein columns
                     if (pin.getRow().length > pin.header.length) {
                         for (int j = pin.header.length; j < pin.getRow().length; j++) {
-                            writer.addValue(j, row[j]);
+                            writer.addValue(j + features.length, row[j]);
                         }
                     }
+//                    //add extra protein columns
+//                    if (pin.getRow().length > pin.header.length) {
+//                        for (int j = pin.header.length; j < pin.getRow().length; j++) {
+//                            writer.addValue(j, row[j]);
+//                        }
+//                    }
 
                     //switch case
                     for (String feature : features) {
@@ -187,6 +203,10 @@ public class percolatorFormatter {
                                 break;
                             case "deltaRTbins":
                                 writer.addValue("deltaRTbins", pepObj.deltaRTbin);
+                                break;
+                            case "deltaRTLOESS":
+                                writer.addValue("deltaRTLOESS",
+                                        Math.abs(mzml.predictLOESS(pepObj.scanNumObj.RT) - pepObj.RT));
                                 break;
                             case "RTzscore":
                                 writer.addValue("RTzscore", pepObj.RTzscore);
@@ -231,30 +251,29 @@ public class percolatorFormatter {
         }
     }
 
-    public static void main(String[] args) throws IOException {
-//        editPin(new String[] {"23aug2017_hela_serum_timecourse_pool_wide_001",
-//                "23aug2017_hela_serum_timecourse_pool_wide_002",
-//                "23aug2017_hela_serum_timecourse_pool_wide_003"},
-//                "C:/Users/kevin/Downloads/proteomics/wide/",
-//                "C:/Users/kevin/OneDriveUmich/proteomics/mzml/wideWindow/",
-//                "C:/Users/kevin/OneDriveUmich/proteomics/preds/widePDeep3.mgf",
-//                null,
-//                new String[] {"brayCurtis", "euclideanDistance", "cosineSimilarity", "spectralContrastAngle",
-//                        "pearsonCorr", "dotProduct", "deltaRTlinear", "deltaRTbins", "RTzscore", "RTprobability", "RTprobabilityUnifPrior"},
-//                "C:/Users/kevin/Downloads/proteomics/wide/perc/everythingNoFilter.pin");
-
-        editPin(new String[] {"23aug2017_hela_serum_timecourse_4mz_narrow_1",
-                        "23aug2017_hela_serum_timecourse_4mz_narrow_2",
-                        "23aug2017_hela_serum_timecourse_4mz_narrow_3",
-                        "23aug2017_hela_serum_timecourse_4mz_narrow_4",
-                        "23aug2017_hela_serum_timecourse_4mz_narrow_5",
-                        "23aug2017_hela_serum_timecourse_4mz_narrow_6"},
-                "C:/Users/kevin/Downloads/proteomics/narrow/",
-                "C:/Users/kevin/OneDriveUmich/proteomics/mzml/narrowWindow/",
-                "C:/Users/kevin/OneDriveUmich/proteomics/preds/narrowPDeep3.mgf",
+    public static void main(String[] args) throws IOException, UnsupportedInputException {
+        editPin(new String[] {"23aug2017_hela_serum_timecourse_pool_wide_001",
+                "23aug2017_hela_serum_timecourse_pool_wide_002",
+                "23aug2017_hela_serum_timecourse_pool_wide_003"},
+                "C:/Users/kevin/Downloads/proteomics/wide/",
+                "C:/Users/kevin/OneDriveUmich/proteomics/mzml/wideWindow/",
+                "C:/Users/kevin/OneDriveUmich/proteomics/preds/widePDeep3.mgf",
                 null,
-                new String[] {"deltaRTlinear", "RTprobabilityUnifPrior"},
-                "C:/Users/kevin/Downloads/proteomics/narrow/perc/2RT.pin");
+                new String[] {"deltaRTlinear"},
+                "C:/Users/kevin/Downloads/proteomics/wide/perc/deltaRTlinear.pin");
+
+//        editPin(new String[] {"23aug2017_hela_serum_timecourse_4mz_narrow_1",
+//                        "23aug2017_hela_serum_timecourse_4mz_narrow_2",
+//                        "23aug2017_hela_serum_timecourse_4mz_narrow_3",
+//                        "23aug2017_hela_serum_timecourse_4mz_narrow_4",
+//                        "23aug2017_hela_serum_timecourse_4mz_narrow_5",
+//                        "23aug2017_hela_serum_timecourse_4mz_narrow_6"},
+//                "C:/Users/kevin/Downloads/proteomics/narrow/",
+//                "C:/Users/kevin/OneDriveUmich/proteomics/mzml/narrowWindow/",
+//                "C:/Users/kevin/OneDriveUmich/proteomics/preds/narrowPDeep3.mgf",
+//                null,
+//                new String[] {"deltaRTlinear"},
+//                "C:/Users/kevin/Downloads/proteomics/narrow/perc/test.pin");
 
 //        editPin(new String[] {"CPTAC_CCRCC_W_JHU_LUMOS_C3L-01665_T"},
 //                "C:/Users/kevin/Downloads/proteomics/cptac/2021-2-21/",
@@ -263,8 +282,8 @@ public class percolatorFormatter {
 //                //"C:/Users/kevin/OneDriveUmich/proteomics/preds/cptacDetect_predictions.txt",
 //                null,
 //                new String[] {"brayCurtis", "euclideanDistance", "cosineSimilarity", "spectralContrastAngle",
-//                        "pearsonCorr", "dotProduct", "deltaRTlinear", "deltaRTbins", "RTzscore", "RTprobability", "RTprobabilityUnifPrior"},
-////                new String[] {"deltaRTlinear", "deltaRTbins", "RTzscore", "RTprobability", "RTprobabilityUnifPrior"},
-//                "C:/Users/kevin/Downloads/proteomics/cptac/2021-2-21/perc/everything12.pin");
+//                        "pearsonCorr", "dotProduct", "deltaRTlinear", "deltaRTbins", "RTzscore", "RTprobability",
+//                        "RTprobabilityUnifPrior", "deltaRTLOESS"},
+//                "C:/Users/kevin/Downloads/proteomics/cptac/2021-2-21/perc/everythingPlusLOESS.pin");
     }
 }

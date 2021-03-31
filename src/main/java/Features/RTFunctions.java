@@ -1,5 +1,12 @@
 package Features;
 
+import org.apache.commons.math3.analysis.interpolation.LoessInterpolator;
+import org.apache.spark.SparkConf;
+import org.apache.spark.api.java.JavaRDD;
+import org.apache.spark.api.java.JavaSparkContext;
+import org.apache.spark.mllib.regression.IsotonicRegression;
+import org.apache.spark.mllib.regression.IsotonicRegressionModel;
+import scala.Tuple3;
 import smile.stat.distribution.KernelDensity;
 import umich.ms.fileio.exceptions.FileParsingException;
 
@@ -33,14 +40,26 @@ public class RTFunctions {
     //given mzmlreader, get all peptide objects and their RTs
     //get predicted RTs
     //assumes peptide objects already set
-    public static float[] getBetas(mzMLReader mzml, SpectralPredictionMapper preds, int RTregressionSize) throws IOException {
+    public static float[] getBetas(mzMLReader mzml, SpectralPredictionMapper preds, int RTregressionSize) {
+        double[][] RTs = getRTarrays(mzml, preds, RTregressionSize);
+        return StatMethods.linearRegression(RTs[0], RTs[1]);
+    }
 
+    public static float[] getBetas(double[][] RTs) {
+        return StatMethods.linearRegression(RTs[0], RTs[1]);
+    }
+
+    //utility for getBetas and LOESS
+    //returns exp and pred RT arrays
+    //if speed is issue, don't need extra steps for regular regression
+    public static double[][] getRTarrays(mzMLReader mzml, SpectralPredictionMapper preds, int RTregressionSize) {
         ArrayList<Float> expRTs = new ArrayList<>();
         ArrayList<Float> predRTs = new ArrayList<>();
         ArrayList<Float> eScores = new ArrayList<>(); //for sorting
-
+        ArrayList<Integer> td = new ArrayList<>();
         //collect RTs and escores
-        for (int scanNum : mzml.scanNumberObjects.keySet()) {
+
+        for (int scanNum : new TreeSet<Integer>(mzml.scanNumberObjects.keySet())) {
             mzmlScanNumber scanNumObj = mzml.getScanNumObject(scanNum);
             float rt = scanNumObj.RT; //experimental RT for this scan
 
@@ -49,12 +68,13 @@ public class RTFunctions {
 
             for (int i = 1; i < scanNumObj.peptideObjects.size() + 1; i++) {
                 peptideObj pep = scanNumObj.getPeptideObject(i);
-                if (pep.targetORdecoy == 0) {
-                    break;
-                }
+//                if (pep.targetORdecoy == 0) {
+//                    break;
+//                }
                 expRTs.add(rt);
                 predRTs.add(pep.RT);
                 eScores.add(Float.valueOf(pep.escore));
+                td.add(pep.targetORdecoy);
             }
         }
 
@@ -64,6 +84,7 @@ public class RTFunctions {
         //then divide into bins with constant size (higher precursor density in middle of RT)
 
         //if negative, use all
+        //can consider e score cutoff in constants
         int sizeLimit = expRTs.size();
 
         if (RTregressionSize > 0 && RTregressionSize <= sizeLimit) {
@@ -71,24 +92,65 @@ public class RTFunctions {
                     .boxed().sorted(Comparator.comparing(eScores::get))
                     .mapToInt(ele -> ele).toArray();
 
-            double[] realExpRTs = new double[RTregressionSize];
-            double[] realPredRTs = new double[RTregressionSize];
+            int[] sortedIndices2 = Arrays.copyOfRange(sortedIndices, 0, RTregressionSize);
+            Arrays.sort(sortedIndices2);
+
+            double[][] RTs = new double[2][RTregressionSize];
 
             for (int i = 0; i < RTregressionSize; i++) {
-                int idx = sortedIndices[i];
-                realExpRTs[i] = expRTs.get(idx);
-                realPredRTs[i] = predRTs.get(idx);
+                int idx = sortedIndices2[i];
+                RTs[0][i] = expRTs.get(idx);
+                RTs[1][i] = predRTs.get(idx);
+                if (td.get(idx) == 0) {
+                    System.out.println("hi");
+                }
             }
+            return RTs;
 
-            //linear regression
-            return StatMethods.linearRegression(realExpRTs, realPredRTs);
         } else {
-            double[] realExpRTs = expRTs.stream().mapToDouble(i -> i).toArray();
-            double[] realPredRTs = predRTs.stream().mapToDouble(i -> i).toArray();
-
-            //linear regression
-            return StatMethods.linearRegression(realExpRTs, realPredRTs);
+            double[][] RTs = new double[2][];
+            RTs[0] = expRTs.stream().mapToDouble(i -> i).toArray();
+            RTs[1] = predRTs.stream().mapToDouble(i -> i).toArray();
+            return RTs;
         }
+    }
+
+    public static IsotonicRegressionModel LOESS(mzMLReader mzml, SpectralPredictionMapper preds, int RTregressionSize,
+                             double bandwidth, int robustIters) {
+        double[][] RTs = getRTarrays(mzml, preds, RTregressionSize);
+
+        return LOESS(RTs, bandwidth, robustIters);
+    }
+
+    public static IsotonicRegressionModel LOESS(double[][] RTs, double bandwidth, int robustIters) {
+        //solve monotonicity issue
+        double compare = -1;
+        for (int i = 0; i < RTs[0].length; i++) {
+            double d = RTs[0][i];
+            if (d == compare) {
+                RTs[0][i] = RTs[0][i - 1] + 0.00000001; //arbitrary increment to handle smooth method
+            } else {
+                compare = d;
+            }
+        }
+
+        //fit loess
+        LoessInterpolator loessInterpolator = new LoessInterpolator(bandwidth, robustIters);
+        double[] y = loessInterpolator.smooth(RTs[0], RTs[1]);
+
+        //isotonic (refer to https://github.com/guoci/lowess_isotonic_regression/blob/master/src/main/java/com/company/Main.java)
+        final SparkConf conf = new SparkConf().setAppName("appName").setMaster("local");
+        final JavaSparkContext sc = new JavaSparkContext(conf);
+        final ArrayList<Tuple3<Double, Double, Double>> data = new ArrayList<>();
+        for (int i = 0; i < RTs[0].length; i++)
+            data.add(new Tuple3<>(y[i], RTs[0][i], 1.0));
+        final JavaRDD<Tuple3<Double, Double, Double>> distData = sc.parallelize(data, 1);
+
+        final IsotonicRegression isoreg = new IsotonicRegression().setIsotonic(true);
+        final IsotonicRegressionModel run = isoreg.run(distData);
+        sc.stop();
+
+        return run;
     }
 
     //function that returns double[] of bin boundaries, with mean and var od each
@@ -232,31 +294,28 @@ public class RTFunctions {
     }
 
     public static void main(String[] args) throws FileParsingException, IOException, ClassNotFoundException {
-        int window = 1;
-        int maxRank = 10;
+        int window = 6;
+        int maxRank = 3;
 
         //mgfFileReader preds = new mgfFileReader("C:/Users/kevin/Downloads/proteomics/pDeep3preds_wide1.mgf");
-        mgfFileReader preds = new mgfFileReader("C:/Users/kevin/OneDriveUmich/proteomics/preds/wideWindowPeptidesAllRanks.mgf");
+        mgfFileReader preds = new mgfFileReader("C:/Users/kevin/OneDriveUmich/proteomics/preds/narrowPDeep3.mgf");
 
         System.out.println("loading mzml");
-        mzMLReader m = new mzMLReader("C:/Users/kevin/OneDriveUmich/proteomics/mzml/wideWindow/" +
-                "23aug2017_hela_serum_timecourse_pool_wide_00" + window + ".mzML");
+        mzMLReader m = new mzMLReader("C:/Users/kevin/OneDriveUmich/proteomics/mzml/narrowWindow/" +
+                "23aug2017_hela_serum_timecourse_4mz_narrow_" + window + ".mzML");
 
         //fill with pepxml files
         System.out.println("loading pepxml");
         for (int rank = 1; rank < maxRank + 1; rank++) {
-            pepXMLReader p = new pepXMLReader("C:/Users/kevin/Downloads/proteomics/wideWindow/1-18/rank"
-                    + rank + "/23aug2017_hela_serum_timecourse_pool_wide_00" + window + ".pepXML");
+            pepXMLReader p = new pepXMLReader("C:/Users/kevin/Downloads/proteomics/narrow/"
+                    + "23aug2017_hela_serum_timecourse_4mz_narrow_" + window + "_rank" + rank + ".pepXML");
             m.setPepxmlEntries(p, rank, preds);
         }
-        System.out.println("linear regression");
-        long startTime = System.nanoTime();
-        System.out.println(Arrays.toString(getBetas(m, preds, Constants.RTregressionSize)));
-        long endTime = System.nanoTime();
-        long duration = (endTime - startTime);
-        System.out.println(duration);
 
-
+        IsotonicRegressionModel irm = LOESS(m, preds, Constants.RTregressionSize, 0.3, 2); //default according to documentation
+        System.out.println(irm.predict(10.0));
+        System.out.println(irm.predict(80.0));
+        System.out.println(irm.predict(120.0));
 //        double[] betas = RTFunctions.getBetas(mzml, preds, constants.RTregressionSize);
 //        System.out.println(Arrays.toString(betas));
     }

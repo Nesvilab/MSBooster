@@ -11,7 +11,7 @@ public class Constants {
 
 //    public static final double highScoringProp = 0.1;
 
-    public static float ppmTolerance = 10f; //ppm tolerance of MS2 scans
+    public static float ppmTolerance = 20f; //ppm tolerance of MS2 scans
 
     public static final boolean basePeakNormalization = true;
 

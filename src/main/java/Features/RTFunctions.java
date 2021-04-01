@@ -100,7 +100,6 @@ public class RTFunctions {
             Arrays.sort(sortedIndices2);
 
             double[][] RTs = new double[2][RTregressionSize];
-
             for (int i = 0; i < RTregressionSize; i++) {
                 int idx = sortedIndices2[i];
                 RTs[0][i] = expRTs.get(idx);

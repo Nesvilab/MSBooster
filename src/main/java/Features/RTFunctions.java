@@ -71,9 +71,13 @@ public class RTFunctions {
 //                if (pep.targetORdecoy == 0) {
 //                    break;
 //                }
+                float e = Float.parseFloat(pep.escore);
+                if (e > Constants.RTescoreCutoff) {
+                    break;
+                }
                 expRTs.add(rt);
                 predRTs.add(pep.RT);
-                eScores.add(Float.valueOf(pep.escore));
+                eScores.add(e);
                 td.add(pep.targetORdecoy);
             }
         }

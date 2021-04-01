@@ -259,8 +259,10 @@ public class percolatorFormatter {
                 "C:/Users/kevin/OneDriveUmich/proteomics/mzml/wideWindow/",
                 "C:/Users/kevin/OneDriveUmich/proteomics/preds/widePDeep3.mgf",
                 null,
-                new String[] {"deltaRTlinear"},
-                "C:/Users/kevin/Downloads/proteomics/wide/perc/deltaRTlinear.pin");
+                new String[] {"brayCurtis", "euclideanDistance", "cosineSimilarity", "spectralContrastAngle",
+                        "pearsonCorr", "dotProduct", "deltaRTlinear", "deltaRTbins", "RTzscore", "RTprobability",
+                        "RTprobabilityUnifPrior"},
+                "C:/Users/kevin/Downloads/proteomics/wide/perc/all.pin");
 
 //        editPin(new String[] {"23aug2017_hela_serum_timecourse_4mz_narrow_1",
 //                        "23aug2017_hela_serum_timecourse_4mz_narrow_2",
@@ -272,8 +274,10 @@ public class percolatorFormatter {
 //                "C:/Users/kevin/OneDriveUmich/proteomics/mzml/narrowWindow/",
 //                "C:/Users/kevin/OneDriveUmich/proteomics/preds/narrowPDeep3.mgf",
 //                null,
-//                new String[] {"deltaRTlinear"},
-//                "C:/Users/kevin/Downloads/proteomics/narrow/perc/test.pin");
+//                new String[] {"brayCurtis", "euclideanDistance", "cosineSimilarity", "spectralContrastAngle",
+//                        "pearsonCorr", "dotProduct", "deltaRTlinear", "deltaRTbins", "RTzscore", "RTprobability",
+//                        "RTprobabilityUnifPrior"},
+//                "C:/Users/kevin/Downloads/proteomics/narrow/perc/all.pin");
 
 //        editPin(new String[] {"CPTAC_CCRCC_W_JHU_LUMOS_C3L-01665_T"},
 //                "C:/Users/kevin/Downloads/proteomics/cptac/2021-2-21/",

@@ -11,7 +11,7 @@ public class Constants {
 
 //    public static final double highScoringProp = 0.1;
 
-    public static float ppmTolerance = 20f; //ppm tolerance of MS2 scans
+    public static float ppmTolerance = 10f; //ppm tolerance of MS2 scans
 
     public static final boolean basePeakNormalization = true;
 
@@ -21,9 +21,10 @@ public class Constants {
 
     public static final int fineTuneSize = 100; //for generating a finetune file for pDeep3
 
-    //these two constants for RT features
+    //these constants for RT features
     public static int RTregressionSize = 5000;
     public static double uniformPriorPercentile = 10;
+    public static float RTescoreCutoff = 1f; //at this point, these won't make it into regression modeling
 
     public static String outputFolder = "C:/Users/kevin/Downloads/proteomics/"; //where to write all intermediate and final files
 

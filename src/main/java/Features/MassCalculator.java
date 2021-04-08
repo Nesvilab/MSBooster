@@ -9,6 +9,7 @@ public class MassCalculator {
     public String fullPeptide;
     private String peptide;
     public int charge;
+    public float mass;
     private ArrayList<Float> modMasses = new ArrayList<Float>();
     private final HashMap<Character, Float> AAmap = new HashMap<Character, Float>()
     {{
@@ -84,6 +85,47 @@ public class MassCalculator {
 
         //set charge
         this.charge = Integer.parseInt(charge);
+
+        this.mass = calcMass(pep.length(), 0, 1);
+    }
+
+    public MassCalculator(String pep, int charge) {
+        StringBuilder myMods = new StringBuilder();
+
+        while (true) {
+            int ind = pep.indexOf("[");
+            if (ind == -1) {
+                break;
+            }
+            int ind2 = pep.indexOf("]");
+
+            //get mod
+            String modNum = pep.substring(ind, ind2).split(":")[1];
+            String mod = unimodToMods.get(modNum);
+            myMods.append(ind).append(",").append(mod).append(";");
+
+            //replace mod
+            pep = pep.substring(0, ind) + pep.substring(ind2 + 1, pep.length());
+
+            //add modNum to modMasses
+            while (modMasses.size() < ind - 1) {
+                modMasses.add(0f);
+            }
+            modMasses.add(unimodToMass.get(modNum));
+        }
+
+        peptide = pep;
+        fullPeptide = pep + "|" + myMods + "|" + charge;
+
+        //fill in remaining zeros
+        while (modMasses.size() < peptide.length()) {
+            modMasses.add(0f);
+        }
+
+        //set charge
+        this.charge = charge;
+
+        this.mass = calcMass(pep.length(), 0, 1);
     }
 
     public float calcMass(int num, int flag, int charge) {

@@ -5,6 +5,7 @@ import org.apache.commons.lang.ArrayUtils;
 import java.io.BufferedReader;
 import java.io.FileReader;
 import java.io.IOException;
+import java.util.HashSet;
 
 public class pinReader {
     String name; //used for resetting
@@ -80,6 +81,15 @@ public class pinReader {
 
     //public String getEScore() {return String.valueOf(Math.pow(10, Double.parseDouble(row[eScoreIdx])));}
     public String getEScore() {return String.valueOf(Math.exp(15.0 - Double.parseDouble(row[eScoreIdx])));}
+
+    public HashSet<String> getAllPep() throws IOException {
+        HashSet<String> peps = new HashSet<String>();
+        while (next()) {
+            peps.add(getPep().split("\\|")[0]);
+        }
+        reset();
+        return peps;
+    }
 
     public static void main(String[] args) throws IOException {
         pinReader p = new pinReader("C:/Users/kevin/Downloads/proteomics/wideWindow/1-18/perc/combined.pin");

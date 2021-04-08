@@ -26,6 +26,15 @@ public class Constants {
     public static double uniformPriorPercentile = 10;
     public static float RTescoreCutoff = 1f; //at this point, these won't make it into regression modeling
 
+    public static String fasta = "C:/Users/kevin/OneDriveUmich/proteomics/fasta/2019-09-30-td-rev-UP000005640.fas";
+    public static String decoyPrefix = ">rev_";
+    public static String cutAfter = "KR";
+    public static String butNotAfter = "P";
+    public static int digestMinLength = 7;
+    public static int digestMaxLength = 50;
+    public static int digestMinMass = 500; //Da
+    public static int digestMaxMass = 5000;
+
     public static String outputFolder = "C:/Users/kevin/Downloads/proteomics/"; //where to write all intermediate and final files
 
     public static final long uid = 0L; //for when I tried to serialize classes, not used now
@@ -47,7 +56,8 @@ public class Constants {
     public static final List<String> allowedFeatures = Arrays.asList("cosineSimilarity", "weightedCosineSimilarity",
             "spectralContrastAngle", "weightedSpectralContrastAngle", "euclideanDistance", "weightedEuclideanDistance",
             "brayCurtis", "weightedBrayCurtis", "pearsonCorr", "weightedPearsonCorr", "dotProduct", "weightedDotProduct",
-            "detectability", "deltaRTlinear", "deltaRTbins", "deltaRTLOESS", "RTzscore", "RTprobability", "RTprobabilityUnifPrior");
+            "detectability", "deltaRTlinear", "deltaRTbins", "deltaRTLOESS", "RTzscore", "RTprobability", "RTprobabilityUnifPrior",
+            "detectFractionGreater", "detectNumberGreater");
     private static HashMap<Double, Integer> makeModAAToUnimod() {
         HashMap<Double, Integer> map = new HashMap<>();
         map.put(160.03065, 4);

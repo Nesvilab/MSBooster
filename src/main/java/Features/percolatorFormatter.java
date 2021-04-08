@@ -8,6 +8,7 @@ import umich.ms.fileio.exceptions.FileParsingException;
 import java.io.File;
 import java.io.IOException;
 import java.util.*;
+import java.util.stream.IntStream;
 
 public class percolatorFormatter {
 
@@ -163,6 +164,47 @@ public class percolatorFormatter {
                     mzml.setKernelDensities();
                 }
 
+                //for storing detects and whether peptides are present
+                HashMap<String, float[]> detects = new HashMap<String, float[]>();
+                HashMap<String, int[]> presence = new HashMap<String, int[]>();
+                if (featuresList.contains("detectFractionGreater") || featuresList.contains("detectNumberGreater")) {
+                    //get all peptides present in pin
+                    HashSet<String> allPeps = pin.getAllPep();
+
+                    //load fasta
+                    FastaReader fasta = new FastaReader(Constants.fasta);
+
+                    for (Map.Entry<String, ArrayList<String>> e : fasta.protToPep.entrySet()) {
+                        float[] protDetects = new float[e.getValue().size()]; //for storing initial detect order
+
+                        //store detect
+                        for (int pep = 0; pep < e.getValue().size(); pep++) {
+                            protDetects[pep] = dm.getDetectability(e.getValue().get(pep));
+                        }
+
+                        //save sorted detect in detects hashmap
+                        int[] sortedIndices = IntStream.range(0, protDetects.length)
+                                .boxed().sorted((k, j) -> Float.compare(protDetects[k], protDetects[j]))
+                                .mapToInt(ele -> ele).toArray();
+                        float[] sortedDetect = new float[protDetects.length];
+                        for (int j = 0; j < sortedDetect.length; j++) {
+                            sortedDetect[j] = protDetects[sortedIndices[j]];
+                        }
+                        detects.put(e.getKey(), sortedDetect);
+
+                        //check which peptides present
+                        int[] protPresence = new int[sortedDetect.length];
+                        for (int j = 0; j < sortedIndices.length; j++) {
+                            if (allPeps.contains(e.getValue().get(j))) {
+                                protPresence[j] = 1;
+                            } else {
+                                protPresence[j] = 0;
+                            }
+                        }
+                        presence.put(e.getKey(), protPresence);
+                    }
+                }
+
                 System.out.println("getting predictions for each row");
                 while (pin.next()) {
                     //peptide name
@@ -192,6 +234,67 @@ public class percolatorFormatter {
                             case "detectability":
                                 writer.addValue("detectability", dm.getDetectability(pep));
                                 break;
+                            case "detectFractionGreater":
+                                float d = dm.getDetectability(pep);
+                                //for each protein, get the position of pep's detect and see how many peptides with greater detect are present
+                                //take max (proxy for protein that actually generated peptide)
+                                String[] r = pin.getRow();
+                                String[] prots = Arrays.copyOfRange(r, pin.pepIdx + 1, r.length);
+                                float maxFraction = 0f;
+                                for (String prot : prots) {
+                                    String protAbr = prot.split("\\|")[1];
+                                    float[] arr = detects.get(protAbr);
+                                    if (arr == null) { //no peptides qualify from this protein
+                                        continue;
+                                    }
+                                    int idx = Arrays.binarySearch(arr, d);
+                                    if (idx < 0) { //not found
+                                        idx = (-1 * idx) - 1;
+                                    } else {
+                                        idx += 1; //don't want to include itself in calculation
+                                    }
+                                    int[] presenceArr = Arrays.copyOfRange(presence.get(protAbr), idx, arr.length);
+                                    int total = 0;
+                                    for (int j : presenceArr) {
+                                        total += j;
+                                    }
+                                    float fraction = ((float) total) / ((float) presenceArr.length);
+                                    if (fraction > maxFraction) {
+                                        maxFraction = fraction;
+                                    }
+                                }
+                                writer.addValue("detectFractionGreater", maxFraction);
+                                break;
+//                            case "detectNumberGreater":
+//                                d = dm.getDetectability(pep);
+//                                //for each protein, get the position of pep's detect and see how many peptides with greater detect are present
+//                                //take max (proxy for protein that actually generated peptide)
+//                                r = pin.getRow();
+//                                prots = Arrays.copyOfRange(r, pin.pepIdx + 1, r.length);
+//                                int maxTotal = 0;
+//                                for (String prot : prots) {
+//                                    String protAbr = prot.split("\\|")[1];
+//                                    float[] arr = detects.get(protAbr);
+//                                    if (arr == null) { //no peptides qualify from this protein
+//                                        continue;
+//                                    }
+//                                    int idx = Arrays.binarySearch(arr, d);
+//                                    if (idx < 0) { //not found
+//                                        idx = (-1 * idx) - 1;
+//                                    } else {
+//                                        idx += 1; //don't want to include itself in calculation
+//                                    }
+//                                    int[] presenceArr = Arrays.copyOfRange(presence.get(protAbr), idx, arr.length);
+//                                    int total = 0;
+//                                    for (int j : presenceArr) {
+//                                        total += j;
+//                                    }
+//                                    if (total > maxTotal) {
+//                                        maxTotal = total;
+//                                    }
+//                                }
+//                                writer.addValue("detectNumberGreater", maxTotal);
+//                                break;
                             case "deltaRTlinear":
                                 writer.addValue("deltaRTlinear", pepObj.deltaRT);
                                 break;
@@ -277,11 +380,8 @@ public class percolatorFormatter {
                 "C:/Users/kevin/Downloads/proteomics/cptac/2021-2-21/",
                 "C:/Users/kevin/OneDriveUmich/proteomics/mzml/cptac/",
                 "C:/Users/kevin/OneDriveUmich/proteomics/preds/cptacPreds.mgf",
-                //"C:/Users/kevin/OneDriveUmich/proteomics/preds/cptacDetect_predictions.txt",
-                null,
-                new String[] {"brayCurtis", "euclideanDistance", "cosineSimilarity", "spectralContrastAngle",
-                        "pearsonCorr", "dotProduct", "deltaRTlinear", "deltaRTbins", "RTzscore", "RTprobability",
-                        "RTprobabilityUnifPrior"},
-                "C:/Users/kevin/Downloads/proteomics/cptac/2021-2-21/perc/test.pin");
+                "C:/Users/kevin/OneDriveUmich/proteomics/preds/cptacDetectAll_predictions.txt",
+                new String[] {"detectFractionGreater"},
+                "C:/Users/kevin/Downloads/proteomics/cptac/2021-2-21/perc/detectFractionGreater.pin");
     }
 }

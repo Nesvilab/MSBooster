@@ -26,6 +26,9 @@ public class Constants {
     public static double uniformPriorPercentile = 10;
     public static float RTescoreCutoff = 1f; //at this point, these won't make it into regression modeling
 
+    //for detectability filtering
+    public static float detectThreshold = 0.0000002f;
+
     public static String fasta = "C:/Users/kevin/OneDriveUmich/proteomics/fasta/2019-09-30-td-rev-UP000005640.fas";
     public static String decoyPrefix = ">rev_";
     public static String cutAfter = "KR";

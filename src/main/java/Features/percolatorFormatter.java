@@ -118,6 +118,7 @@ public class percolatorFormatter {
                     ArrayList<String> newHeader = new ArrayList<>();
                     newHeader.addAll(Arrays.asList(pin.header));
                     newHeader.addAll(pin.pepIdx, featuresList); //add features before Peptide
+                    newHeader.remove("detectability");
                     writer.writeHeaders(newHeader);
                 }
 
@@ -210,6 +211,13 @@ public class percolatorFormatter {
                     //peptide name
                     String pep = pin.getPep();
 
+                    //trying filtering out low detectability
+                    if (featuresList.contains("detectability")) {
+                        if (dm.getDetectability(pep) < Constants.detectThreshold) {
+                            continue;
+                        }
+                    }
+
                     //get entry
                     peptideObj pepObj = null;
                     if (needsMGF) {
@@ -232,7 +240,7 @@ public class percolatorFormatter {
                     for (String feature : features) {
                         switch (feature) {
                             case "detectability":
-                                writer.addValue("detectability", dm.getDetectability(pep));
+                                //writer.addValue("detectability", dm.getDetectability(pep));
                                 break;
                             case "detectFractionGreater":
                                 float d = dm.getDetectability(pep);
@@ -381,7 +389,7 @@ public class percolatorFormatter {
                 "C:/Users/kevin/OneDriveUmich/proteomics/mzml/cptac/",
                 "C:/Users/kevin/OneDriveUmich/proteomics/preds/cptacPreds.mgf",
                 "C:/Users/kevin/OneDriveUmich/proteomics/preds/cptacDetectAll_predictions.txt",
-                new String[] {"detectFractionGreater"},
-                "C:/Users/kevin/Downloads/proteomics/cptac/2021-2-21/perc/detectFractionGreater.pin");
+                new String[] {"detectability"},
+                "C:/Users/kevin/Downloads/proteomics/cptac/2021-2-21/perc/detectFilter.pin");
     }
 }

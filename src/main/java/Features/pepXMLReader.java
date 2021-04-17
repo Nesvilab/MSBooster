@@ -239,67 +239,65 @@ public class pepXMLReader {
         return allHitsPDeep;
     }
 
-//    public void createPrositList(int NCE) {
-//
-//        // iterate over the parsed search results
-//        List<MsmsRunSummary> runSummaries = analysis.getMsmsRunSummary();
-//        for (MsmsRunSummary runSummary : runSummaries) {
-//
-//            List<SpectrumQuery> spectrumQueries = runSummary.getSpectrumQuery();
-//
-//            //initialize array of peptide hit info
-//            allHitsPDeep = new String[spectrumQueries.size()];
-//            int allHitsIndex = -1;
-//            for (SpectrumQuery sq : spectrumQueries) {
-//                allHitsIndex++;
-//
-//                //get charge and initialize other variables
-//                String pep = "";
-//                String charge = String.valueOf(sq.getAssumedCharge());
-//                boolean skip = false;
-//
-//                List<SearchResult> results = sq.getSearchResult();
-//
-//                for (SearchResult result : results) {
-//                    List<SearchHit> hits = result.getSearchHit();
-//
-//                    for (SearchHit hit : hits) {
-//                        pep = hit.getPeptide();
-//                        if (pep.length() > 27) {
-//                            skip = true;
-//                            continue;
-//                        }
-//
-//                        ModificationInfo modinfo = hit.getModificationInfo();
-//                        if (modinfo != null) {
-//                            //n term acetylation
-//                            if (modinfo.getModNtermMass() != null) {
-//                                //Prosit does not support n-term acetylation
-//                                skip = true;
-//                            } else { //safe to continue
-//                                //modifications besides n term acetylation
-//                                List<ModAminoacidMass> mods = modinfo.getModAminoacidMass();
-//                                int modSize = mods.size();
-//                                if (modSize != 0) {
-//                                    for (ModAminoacidMass mod : mods) {
-//                                        if (mod.getMass() == 147.0354) { //just check for oxidized Met
-//                                            pep = pep.substring(0, mod.getPosition()) + 'm' +
-//                                                    pep.substring(mod.getPosition());
-//                                        }
-//                                    }
-//                                    pep = pep.replace("m", "M(ox)");
-//                                }
-//                            }
-//                        }
-//                    }
-//                }
-//                if (! skip) {
-//                    String hitToAdd = pep + "," + NCE + "," + charge; //HeLa run with 27 NCE
-//                    allHitsPDeep[allHitsIndex] = hitToAdd;
-//                }
-//            }
-//        }
-//    }
+    public String[] createPrositList(int NCE) {
+        List<SpectrumQuery> spectrumQueries = getSpectrumQueries();
+        String[] array = new String[spectrumQueries.size()];
+
+        int allHitsIndex = -1;
+        for (SpectrumQuery sq : spectrumQueries) {
+            allHitsIndex++;
+
+            //get charge and initialize other variables
+            String pep = "";
+            String charge = String.valueOf(sq.getAssumedCharge());
+            boolean skip = false;
+
+            List<SearchResult> results = sq.getSearchResult();
+
+            for (SearchResult result : results) {
+                List<SearchHit> hits = result.getSearchHit();
+
+                for (SearchHit hit : hits) {
+                    pep = hit.getPeptide();
+                    if (pep.length() > 30) {
+                        skip = true;
+                        break;
+                    }
+                    if (pep.contains("O") || pep.contains("U") || pep.contains("J")) {
+                        skip = true;
+                        break;
+                    }
+
+                    ModificationInfo modinfo = hit.getModificationInfo();
+                    if (modinfo != null) {
+                        //n term acetylation
+                        if (modinfo.getModNtermMass() != null) {
+                            //Prosit does not support n-term acetylation
+                            skip = true;
+                        } else { //safe to continue
+                            //modifications besides n term acetylation
+                            List<ModAminoacidMass> mods = modinfo.getModAminoacidMass();
+                            int modSize = mods.size();
+                            if (modSize != 0) {
+                                for (ModAminoacidMass mod : mods) {
+                                    if (mod.getMass() == 147.0354) { //just check for oxidized Met
+                                        pep = pep.substring(0, mod.getPosition() - 1) + 'm' +
+                                                pep.substring(mod.getPosition());
+                                    }
+                                }
+                                pep = pep.replace("m", "M(ox)");
+                            }
+                        }
+                    }
+                }
+            }
+            if (!skip) {
+                String hitToAdd = pep + "," + NCE + "," + charge; //HeLa run with 27 NCE
+                array[allHitsIndex] = hitToAdd;
+            }
+        }
+        return array;
+    }
 
     public String[] createDeepMSPeptideList(){
         List<SpectrumQuery> spectrumQueries = getSpectrumQueries();

@@ -20,7 +20,10 @@ public interface SpectralPredictionMapper {
             return new DiannSpeclibReader(file);
         } else if (Constants.predFileFormat.equals("mgf") || Constants.predFileFormat.equals("pDeep3")) {
             return new mgfFileReader(file);
-        } else {
+        } else if (Constants.predFileFormat.equals("msp")) {
+            return new MspReader(file);
+        }
+        else {
             System.out.println("not valid prediction file format");
             return null;
         }

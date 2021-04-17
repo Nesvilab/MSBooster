@@ -45,6 +45,8 @@ public class peptideFileCreator {
                 case "Diann":
                     hitsToAdd = xmlReader.createDiannList();
                     break;
+                case "prosit":
+                    hitsToAdd = xmlReader.createPrositList(34);
             }
 
             allHits = (String[]) ArrayUtils.addAll(allHits, hitsToAdd);
@@ -109,8 +111,8 @@ public class peptideFileCreator {
     }
 
     public static void main(String[] args) throws IOException {
-        createPeptideFile("C:/Users/kevin/Downloads/proteomics/cptac/2021-2-21/",
-                "C:/Users/kevin/OneDriveUmich/proteomics/preds/cptacDetectAll.tsv",
-                "DeepMSPeptideAll");
+        createPeptideFile("C:/Users/kevin/Downloads/proteomics/cptac/2021-2-21",
+                "C:/Users/kevin/OneDriveUmich/proteomics/preds/cptacProsit.csv",
+                "prosit");
     }
 }

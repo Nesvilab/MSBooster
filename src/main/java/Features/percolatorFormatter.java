@@ -357,18 +357,20 @@ public class percolatorFormatter {
     }
 
     public static void main(String[] args) throws IOException, UnsupportedInputException {
+//        //CHANGE PPM TO 10
 //        editPin(new String[] {"23aug2017_hela_serum_timecourse_pool_wide_001",
 //                "23aug2017_hela_serum_timecourse_pool_wide_002",
 //                "23aug2017_hela_serum_timecourse_pool_wide_003"},
 //                "C:/Users/kevin/Downloads/proteomics/wide/",
 //                "C:/Users/kevin/OneDriveUmich/proteomics/mzml/wideWindow/",
 //                "C:/Users/kevin/OneDriveUmich/proteomics/preds/widePDeep3.mgf",
-//                null,
+//                "C:/Users/kevin/OneDriveUmich/proteomics/preds/wideDetectAll_predictions.txt",
 //                new String[] {"brayCurtis", "euclideanDistance", "cosineSimilarity", "spectralContrastAngle",
 //                        "pearsonCorr", "dotProduct", "deltaRTlinear", "deltaRTbins", "RTzscore", "RTprobability",
 //                        "RTprobabilityUnifPrior"},
-//                "C:/Users/kevin/Downloads/proteomics/wide/perc/all.pin");
+//                "C:/Users/kevin/Downloads/proteomics/wide/perc/everything.pin");
 
+        //CHANGE PPM TO 10
 //        editPin(new String[] {"23aug2017_hela_serum_timecourse_4mz_narrow_1",
 //                        "23aug2017_hela_serum_timecourse_4mz_narrow_2",
 //                        "23aug2017_hela_serum_timecourse_4mz_narrow_3",
@@ -384,12 +386,13 @@ public class percolatorFormatter {
 //                        "RTprobabilityUnifPrior"},
 //                "C:/Users/kevin/Downloads/proteomics/narrow/perc/all.pin");
 
+//        CHANGE PPM TO 20
         editPin(new String[] {"CPTAC_CCRCC_W_JHU_LUMOS_C3L-01665_T"},
                 "C:/Users/kevin/Downloads/proteomics/cptac/2021-2-21/",
                 "C:/Users/kevin/OneDriveUmich/proteomics/mzml/cptac/",
                 "C:/Users/kevin/OneDriveUmich/proteomics/preds/cptacPreds.mgf",
                 "C:/Users/kevin/OneDriveUmich/proteomics/preds/cptacDetectAll_predictions.txt",
-                new String[] {"detectability"},
-                "C:/Users/kevin/Downloads/proteomics/cptac/2021-2-21/perc/detectFilter.pin");
+                new String[] {"dotProduct"},
+                "C:/Users/kevin/Downloads/proteomics/spectralPredCompare/dot2.pin");
     }
 }

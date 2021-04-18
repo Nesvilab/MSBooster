@@ -48,7 +48,7 @@ public class Constants {
     public static double bandwidth = 0.1;
     public static int robustIters = 2;
 
-    public static String predFileFormat = "mgf"; //mgf, bin, msp
+    //public static String predFileFormat = "mgf"; //mgf, bin, msp
     public static String predFile = null; //use this if predFile already made
 
     public static String[] usedFeatures = new String[] {"brayCurtis", "euclideanDistance", "cosineSimilarity",

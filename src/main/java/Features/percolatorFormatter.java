@@ -392,7 +392,7 @@ public class percolatorFormatter {
                 "C:/Users/kevin/OneDriveUmich/proteomics/mzml/cptac/",
                 "C:/Users/kevin/OneDriveUmich/proteomics/preds/cptacPreds.mgf",
                 "C:/Users/kevin/OneDriveUmich/proteomics/preds/cptacDetectAll_predictions.txt",
-                new String[] {"dotProduct"},
-                "C:/Users/kevin/Downloads/proteomics/spectralPredCompare/dot2.pin");
+                new String[] {"brayCurtis", "RTprobabilityUnifPrior", "detectability", "detectFractionGreater"},
+                "C:/Users/kevin/Downloads/proteomics/cptac/2021-2-21/perc/less.pin");
     }
 }

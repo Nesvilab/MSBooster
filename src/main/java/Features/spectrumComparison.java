@@ -417,23 +417,26 @@ public class spectrumComparison implements Serializable {
     }
 
     public double dotProduct() {
-        float floatSum = 0.0f;
-        for (float f : matchedIntensities){
-            floatSum += f;
+        if (unitNormPredIntensities == null) {
+            this.unitNormalize();
         }
-        if (floatSum == 0.0f) {
-            return 0;
-        } else {
-            double predMax = 1 / Arrays.stream(floatToDouble(predIntensities)).max().getAsDouble();
-            double matchedMax = 1 / Arrays.stream(floatToDouble(matchedIntensities)).max().getAsDouble();
-            double multiplier = predMax * matchedMax;
 
+        boolean nonzero = false;
+        for (float f : matchedIntensities){
+            if (f > 0) {
+                nonzero = true;
+                break;
+            }
+        }
+        if (nonzero) {
             double num = 0;
             for (int i = 0; i < predMZs.length; i++) {
-                num += predIntensities[i] * matchedIntensities[i] * multiplier;
+                num += unitNormPredIntensities[i] * unitNormMatchedIntensities[i];
             }
 
             return num;
+        } else {
+            return 0;
         }
     }
 

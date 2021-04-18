@@ -16,11 +16,15 @@ public interface SpectralPredictionMapper {
     public float getMaxPredRT();
 
     public static SpectralPredictionMapper createSpectralPredictionMapper(String file) throws IOException {
-        if (Constants.predFileFormat.equals("bin") || Constants.predFileFormat.equals("DIA-NN")) {
+        //detecting file extension
+        String[] extensionSplit = file.split("\\.");
+        String extension = extensionSplit[extensionSplit.length - 1];
+
+        if (extension.equals("bin")) {
             return new DiannSpeclibReader(file);
-        } else if (Constants.predFileFormat.equals("mgf") || Constants.predFileFormat.equals("pDeep3")) {
+        } else if (extension.equals("mgf")) {
             return new mgfFileReader(file);
-        } else if (Constants.predFileFormat.equals("msp")) {
+        } else if (extension.equals("msp")) {
             return new MspReader(file);
         }
         else {

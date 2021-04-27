@@ -59,12 +59,13 @@ public class percolatorFormatter {
                                String[] features, String outfile)
             throws IOException, UnsupportedInputException {
         //check that all requested features are valid names
-        for (String f : features) {
-            if (! Constants.allowedFeatures.contains(f)) {
-                throw new UnsupportedInputException("UnsupportedInputException", f + " is not an allowed feature. " +
-                        "Please choose from the following: " + Constants.allowedFeatures);
-            }
-        }
+        //redundant once we check at command line
+//        for (String f : features) {
+//            if (! Constants.allowedFeatures.contains(f)) {
+//                throw new UnsupportedInputException("UnsupportedInputException", f + " is not an allowed feature. " +
+//                        "Please choose from the following: " + Constants.allowedFeatures);
+//            }
+//        }
         List<String> featuresList = Arrays.asList(features);
 
         //booleans for future determination of what to do
@@ -392,7 +393,7 @@ public class percolatorFormatter {
                 "C:/Users/kevin/OneDriveUmich/proteomics/mzml/cptac/",
                 "C:/Users/kevin/OneDriveUmich/proteomics/preds/cptacPreds.mgf",
                 "C:/Users/kevin/OneDriveUmich/proteomics/preds/cptacDetectAll_predictions.txt",
-                new String[] {"brayCurtis", "RTprobabilityUnifPrior", "detectability", "detectFractionGreater"},
-                "C:/Users/kevin/Downloads/proteomics/cptac/2021-2-21/perc/less.pin");
+                new String[] {"detectability"},
+                "C:/Users/kevin/Downloads/proteomics/cptac/2021-2-21/perc/detectFilter.pin");
     }
 }

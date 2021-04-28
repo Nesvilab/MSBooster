@@ -1,6 +1,5 @@
 package Features;
 
-import Exceptions.UnsupportedInputException;
 import com.univocity.parsers.tsv.TsvWriter;
 import com.univocity.parsers.tsv.TsvWriterSettings;
 import umich.ms.fileio.exceptions.FileParsingException;
@@ -9,6 +8,8 @@ import java.io.File;
 import java.io.IOException;
 import java.util.*;
 import java.util.stream.IntStream;
+
+import static org.apache.commons.io.FileUtils.listFiles;
 
 public class percolatorFormatter {
 
@@ -55,28 +56,38 @@ public class percolatorFormatter {
 
     //set mgf or detectFile as null if not applicable
     //baseNames is the part before mzml or pin extensions
-    public static void editPin(String[] baseNames, String pinDirectory, String mzmlDirectory, String mgf, String detectFile,
+    public static void editPin(String pinDirectory, String mzmlDirectory, String mgf, String detectFile,
                                String[] features, String outfile)
-            throws IOException, UnsupportedInputException {
-        //check that all requested features are valid names
-        //redundant once we check at command line
-//        for (String f : features) {
-//            if (! Constants.allowedFeatures.contains(f)) {
-//                throw new UnsupportedInputException("UnsupportedInputException", f + " is not an allowed feature. " +
-//                        "Please choose from the following: " + Constants.allowedFeatures);
-//            }
-//        }
+            throws IOException {
         List<String> featuresList = Arrays.asList(features);
 
         //booleans for future determination of what to do
         boolean needsMGF = false;
 
-        //get full path names for pin and mzml files
-        String[] pinFiles = new String[baseNames.length];
-        String[] mzmlFiles = new String[baseNames.length];
-        for (int i = 0; i < baseNames.length; i++) {
-            pinFiles[i] = pinDirectory + File.separator + baseNames[i] + ".pin";
-            mzmlFiles[i] = mzmlDirectory + File.separator + baseNames[i] + ".mzML";
+        //get names of mzml files
+        Collection<File> mzmlFilesCollection = listFiles(new File(mzmlDirectory), new String[]{"mzML"}, false);
+        String[] mzmlFiles = new String[mzmlFilesCollection.size()];
+        int FileIdx = 0;
+        for (File f : mzmlFilesCollection) {
+            mzmlFiles[FileIdx] = f.getName();
+            FileIdx++;
+        }
+        Arrays.sort(mzmlFiles);
+
+        //check that corresponding pin files exist
+        Collection<File> pinFilesCollection = listFiles(new File(pinDirectory), new String[]{"pin"}, false);
+        HashSet<String> pinFilesSet = new HashSet<>();
+        for (File f : pinFilesCollection) {
+            pinFilesSet.add(f.getName());
+        }
+
+        String[] pinFiles = new String[mzmlFiles.length];
+        for (int i = 0; i < mzmlFiles.length; i++) {
+            pinFiles[i] = mzmlFiles[i].substring(0, mzmlFiles[i].length() - 4) + "pin";
+            if (! pinFilesSet.contains(pinFiles[i])) {
+                throw new AssertionError("mzML file must jave corresponding pin file. " +
+                        pinFiles[i] + " does not exist");
+            }
         }
 
         //load predicted spectra
@@ -91,7 +102,7 @@ public class percolatorFormatter {
                 featuresList.contains("cosineSimilarity") || featuresList.contains("spectralContrastAngle") ||
                 featuresList.contains("euclideanDistance") || featuresList.contains("pearsonCorr") ||
                 featuresList.contains("dotProduct") || featuresList.contains("deltaRTLOESS")) {
-            System.out.println("loading predicted spectra");
+            System.out.println("Loading predicted spectra");
             predictedSpectra = SpectralPredictionMapper.createSpectralPredictionMapper(mgf);
             needsMGF = true;
         }
@@ -105,14 +116,14 @@ public class percolatorFormatter {
         TsvWriter writer = new TsvWriter(new File(outfile), new TsvWriterSettings());
         try {
             //////////////////////////////iterate through pin and mzml files//////////////////////////////////////////
-            for (int i = 0; i < baseNames.length; i++) {
+            for (int i = 0; i < pinFiles.length; i++) {
                 //load mzml file
-                System.out.println("loading " + mzmlFiles[i]);
-                mzMLReader mzml = new mzMLReader(mzmlFiles[i]);
+                System.out.println("Loading " + mzmlFiles[i]);
+                mzMLReader mzml = new mzMLReader(mzmlDirectory + File.separator + mzmlFiles[i]);
 
                 //load pin file, which already includes all ranks
-                System.out.println("loading " + pinFiles[i]);
-                pinReader pin = new pinReader(pinFiles[i]);
+                System.out.println("Loading " + pinFiles[i]);
+                pinReader pin = new pinReader(pinDirectory + File.separator + pinFiles[i]);
 
                 //if first pin file, use it to add header to written tsv
                 if (i == 0) {
@@ -125,24 +136,24 @@ public class percolatorFormatter {
 
                 //Special preparations dependent on features we require
                 if (needsMGF) {
-                    System.out.println("loading PSMs onto mzml object");
+                    System.out.println("Loading PSMs onto mzml object");
                     mzml.setPinEntries(pin, predictedSpectra);
                 }
                 if (featuresList.contains("deltaRTLOESS")) {
-                    System.out.println("generating LOESS regression");
+                    System.out.println("Generating LOESS regression");
                     mzml.setLOESS(predictedSpectra, Constants.RTregressionSize, Constants.bandwidth, Constants.robustIters);
                 }
                 if (featuresList.contains("deltaRTlinear")) {
-                    System.out.println("calculating delta RT linear");
+                    System.out.println("Calculating delta RT linear");
                     if (mzml.expAndPredRTs != null) { mzml.setBetas();
                     } else { mzml.setBetas(predictedSpectra, Constants.RTregressionSize);
                     }
-                    System.out.println(Arrays.toString(mzml.getBetas())); //print beta 0 and 1
+                    //System.out.println(Arrays.toString(mzml.getBetas())); //print beta 0 and 1
                     mzml.normalizeRTs();
                 }
                 if (featuresList.contains("deltaRTbins") || featuresList.contains("RTzscore") ||
                         featuresList.contains("RTprobability") || featuresList.contains("RTprobabilityUnifPrior")) {
-                    System.out.println("generating RT bins");
+                    System.out.println("Generating RT bins");
                     mzml.setRTbins(predictedSpectra);
                     mzml.propagateRTBinStats(); //may need to make more specific
                 }
@@ -162,14 +173,14 @@ public class percolatorFormatter {
                     unifProb = 1.0f / predictedSpectra.getMaxPredRT();
                 }
                 if (featuresList.contains("RTprobability") || featuresList.contains("RTprobabilityUnifPrior")) {
-                    System.out.println("generating empirical densities");
+                    System.out.println("Generating empirical densities");
                     mzml.setKernelDensities();
                 }
 
                 //for storing detects and whether peptides are present
                 HashMap<String, float[]> detects = new HashMap<String, float[]>();
                 HashMap<String, int[]> presence = new HashMap<String, int[]>();
-                if (featuresList.contains("detectFractionGreater") || featuresList.contains("detectNumberGreater")) {
+                if (featuresList.contains("detectFractionGreater")) {
                     //get all peptides present in pin
                     HashSet<String> allPeps = pin.getAllPep();
 
@@ -207,7 +218,7 @@ public class percolatorFormatter {
                     }
                 }
 
-                System.out.println("getting predictions for each row");
+                System.out.println("Getting predictions for each row");
                 while (pin.next()) {
                     //peptide name
                     String pep = pin.getPep();
@@ -351,13 +362,14 @@ public class percolatorFormatter {
                 pin.close();
             }
             writer.close();
+            System.out.println("Edited pin file at " + outfile);
         } catch (IOException | FileParsingException e) {
             writer.close();
             e.printStackTrace();
         }
     }
 
-    public static void main(String[] args) throws IOException, UnsupportedInputException {
+    public static void main(String[] args) throws IOException {
 //        //CHANGE PPM TO 10
 //        editPin(new String[] {"23aug2017_hela_serum_timecourse_pool_wide_001",
 //                "23aug2017_hela_serum_timecourse_pool_wide_002",
@@ -388,12 +400,11 @@ public class percolatorFormatter {
 //                "C:/Users/kevin/Downloads/proteomics/narrow/perc/all.pin");
 
 //        CHANGE PPM TO 20
-        editPin(new String[] {"CPTAC_CCRCC_W_JHU_LUMOS_C3L-01665_T"},
-                "C:/Users/kevin/Downloads/proteomics/cptac/2021-2-21/",
+        editPin("C:/Users/kevin/Downloads/proteomics/cptac/2021-2-21/",
                 "C:/Users/kevin/OneDriveUmich/proteomics/mzml/cptac/",
                 "C:/Users/kevin/OneDriveUmich/proteomics/preds/cptacPreds.mgf",
                 "C:/Users/kevin/OneDriveUmich/proteomics/preds/cptacDetectAll_predictions.txt",
-                new String[] {"detectability"},
-                "C:/Users/kevin/Downloads/proteomics/cptac/2021-2-21/perc/detectFilter.pin");
+                new String[] {"deltaRTLOESS"},
+                "C:/Users/kevin/Downloads/proteomics/cptac/2021-2-21/perc/deltaRTLOESS.pin");
     }
 }

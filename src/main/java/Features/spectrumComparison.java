@@ -6,7 +6,6 @@ import umich.ms.fileio.exceptions.FileParsingException;
 
 import java.io.FileWriter;
 import java.io.IOException;
-import java.io.Serializable;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.ArrayList;
@@ -16,14 +15,13 @@ import java.util.HashMap;
 
 import static Features.floatUtils.floatToDouble;
 
-public class spectrumComparison implements Serializable {
+public class spectrumComparison {
     float[] predMZs;
     float[] predIntensities;
     float[] matchedIntensities;
     float[] unitNormMatchedIntensities;
     float[] unitNormPredIntensities;
     ArrayList<Integer> matchedIdx = new ArrayList<Integer>();
-    private static final long serialVersionUID = Constants.uid;
 
     public spectrumComparison(float[] eMZs, float[] eIntensities,
                               float[] pMZs, float[] pIntensities) {

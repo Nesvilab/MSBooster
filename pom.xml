@@ -41,11 +41,11 @@
         </dependency>
 
         <!-- To include the hadoop proteomic module -->
-        <dependency>
-            <groupId>org.expasy.mzjava</groupId>
-            <artifactId>mzjava-hadoop-proteomics</artifactId>
-            <version>1.1.0</version>
-        </dependency>
+<!--        <dependency>-->
+<!--            <groupId>org.expasy.mzjava</groupId>-->
+<!--            <artifactId>mzjava-hadoop-proteomics</artifactId>-->
+<!--            <version>1.1.0</version>-->
+<!--        </dependency>-->
 
 <!--        <dependency>-->
 <!--            <groupId>net.sf.supercsv</groupId>-->
@@ -53,11 +53,11 @@
 <!--            <version>2.4.0</version>-->
 <!--        </dependency>-->
 
-        <dependency>
-            <groupId>ca.umontreal.iro.simul</groupId>
-            <artifactId>ssj</artifactId>
-            <version>3.3.1</version>
-        </dependency>
+<!--        <dependency>-->
+<!--            <groupId>ca.umontreal.iro.simul</groupId>-->
+<!--            <artifactId>ssj</artifactId>-->
+<!--            <version>3.3.1</version>-->
+<!--        </dependency>-->
 
         <dependency>
             <groupId>com.github.haifengl</groupId>
@@ -71,21 +71,21 @@
             <version>2.8.4</version>
         </dependency>
 
-        <dependency>
-            <groupId>tech.tablesaw</groupId>
-            <artifactId>tablesaw-core</artifactId>
-            <version>0.38.2</version>
-        </dependency>
-        <dependency>
-            <groupId>tech.tablesaw</groupId>
-            <artifactId>tablesaw-plot</artifactId>
-            <version>0.24.4</version>
-        </dependency>
-        <dependency>
-            <groupId>tech.tablesaw</groupId>
-            <artifactId>tablesaw-jsplot</artifactId>
-            <version>0.38.2</version>
-        </dependency>
+<!--        <dependency>-->
+<!--            <groupId>tech.tablesaw</groupId>-->
+<!--            <artifactId>tablesaw-core</artifactId>-->
+<!--            <version>0.38.2</version>-->
+<!--        </dependency>-->
+<!--        <dependency>-->
+<!--            <groupId>tech.tablesaw</groupId>-->
+<!--            <artifactId>tablesaw-plot</artifactId>-->
+<!--            <version>0.24.4</version>-->
+<!--        </dependency>-->
+<!--        <dependency>-->
+<!--            <groupId>tech.tablesaw</groupId>-->
+<!--            <artifactId>tablesaw-jsplot</artifactId>-->
+<!--            <version>0.38.2</version>-->
+<!--        </dependency>-->
         <dependency>
             <groupId>org.apache.spark</groupId>
             <artifactId>spark-core_2.10</artifactId>
@@ -150,6 +150,10 @@
                         <phase>clean</phase>
                     </execution>
                 </executions>
+            </plugin>
+            <plugin>
+                <artifactId>maven-dependency-plugin</artifactId>
+                <version>3.1.2</version>
             </plugin>
         </plugins>
     </build>

@@ -4,7 +4,6 @@ import umich.ms.fileio.exceptions.FileParsingException;
 
 import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;
-import java.util.HashSet;
 
 public class RandomThings {
 
@@ -13,19 +12,8 @@ public class RandomThings {
     }
 
     public static void main(String[] args) throws IOException, FileParsingException, NoSuchMethodException, IllegalAccessException, InvocationTargetException {
-        HashSet<String> set1 = new HashSet <String>();
-        HashSet <String> set2 = new HashSet <String>();
-        set1.add("Mat");
-        set1.add("Sat");
-        set1.add("Cat");
-        System.out.println("Set1 = "+ set1);
-        set2.add("mat");
-        set2.add("cat");
-        set2.add("Fat");
-        set2.add("Hat");
-        System.out.println("Set2 = "+ set2);
-        set1.retainAll(set2);
-        System.out.println("Intersection = "+ set1.size());
+        String a = null;
+        System.out.println(a == null);
     }
 
     //this is for creating tsv for creating histograms for scores between target and decoy in python

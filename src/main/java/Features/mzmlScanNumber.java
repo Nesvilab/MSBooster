@@ -4,14 +4,13 @@ import org.apache.commons.lang.ArrayUtils;
 import umich.ms.fileio.exceptions.FileParsingException;
 
 import java.io.IOException;
-import java.io.Serializable;
 import java.lang.reflect.InvocationTargetException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 
-public class mzmlScanNumber implements Serializable {
+public class mzmlScanNumber {
     final int scanNum;
     mzMLReader mzmlScans;
     final String mzmlPath;
@@ -22,7 +21,6 @@ public class mzmlScanNumber implements Serializable {
     float normalizedRT;
     //HashMap<Integer, peptideObj> peptideObjects = new HashMap<>();
     ArrayList<peptideObj> peptideObjects = new ArrayList<>();;
-    private static final long serialVersionUID = Constants.uid;
     //double windowStart;
     //double[] mzFreqs;
 

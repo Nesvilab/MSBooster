@@ -56,7 +56,6 @@ public class RTFunctions {
         ArrayList<Float> expRTs = new ArrayList<>();
         ArrayList<Float> predRTs = new ArrayList<>();
         ArrayList<Float> eScores = new ArrayList<>(); //for sorting
-        ArrayList<Integer> td = new ArrayList<>();
         //collect RTs and escores
 
         for (int scanNum : new TreeSet<Integer>(mzml.scanNumberObjects.keySet())) {
@@ -78,7 +77,6 @@ public class RTFunctions {
                 expRTs.add(rt);
                 predRTs.add(pep.RT);
                 eScores.add(e);
-                td.add(pep.targetORdecoy);
             }
         }
 
@@ -104,9 +102,6 @@ public class RTFunctions {
                 int idx = sortedIndices2[i];
                 RTs[0][i] = expRTs.get(idx);
                 RTs[1][i] = predRTs.get(idx);
-                if (td.get(idx) == 0) {
-                    System.out.println("hi");
-                }
             }
             return RTs;
 

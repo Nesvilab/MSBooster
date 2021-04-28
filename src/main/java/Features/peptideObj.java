@@ -3,12 +3,11 @@ package Features;
 import umich.ms.fileio.exceptions.FileParsingException;
 
 import java.io.IOException;
-import java.io.Serializable;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.HashMap;
 
-public class peptideObj implements Serializable {
+public class peptideObj {
     final String name;
     final int rank;
     final mzmlScanNumber scanNumObj;
@@ -27,7 +26,6 @@ public class peptideObj implements Serializable {
     double isoError;
     spectrumComparison spectralSimObj;
     HashMap<String, Double> scores = new HashMap<>();
-    private static final long serialVersionUID = Constants.uid;
 
     public peptideObj(mzmlScanNumber scanNumObj, String name, int rank, int targetORdecoy, String escore,
                       float[] predMZs, float[] predIntensities, float predRT) {

@@ -17,19 +17,19 @@ public class peptideFileCreator {
         //can reduce number of hits to a third
         HashSet<String> hSetHits = new HashSet<>();
         Collections.addAll(hSetHits, allHits);
-        System.out.println("before filtering: " + allHits.length +
-                ", after filtering: " + hSetHits.size());
+        System.out.println("Before filtering: " + allHits.length +
+                " peptides, after filtering: " + hSetHits.size() + " peptides");
         return hSetHits;
     }
 
+    //infile is pepXML file locations
     public static void createPeptideFile(String infile, String outfile, String modelFormat) throws IOException {
-        Collection<File> x = listFiles(new File(infile), new String[]{"pepXML"}, true);
+        Collection<File> x = listFiles(new File(infile), new String[]{"pepXML"}, false);
 
         //read in pepXML files
         String[] allHits = new String[0];
         for (File f : x) {
             String fileName = f.getCanonicalPath();
-            System.out.println(fileName);
             pepXMLReader xmlReader = new pepXMLReader(fileName);
             String[] hitsToAdd = new String[0];
             switch (modelFormat) {
@@ -68,17 +68,17 @@ public class peptideFileCreator {
             FileWriter myWriter = new FileWriter(outfile);
             switch (modelFormat) {
                 case "prosit":
-                    System.out.println("writing prosit");
+                    System.out.println("Writing prosit input file");
                     myWriter.write("modified_sequence" + "," + "collision_energy" + "," + "precursor_charge\n");
                     //instances of null being added because no n-acetyl
                     hSetHits.remove(null);
                     break;
                 case "pDeep2":
-                    System.out.println("writing pDeep2");
+                    System.out.println("Writing pDeep2 input file");
                     myWriter.write("peptide" + "\t" + "modification" + "\t" + "charge\n");
                     break;
                 case "pDeep3":
-                    System.out.println("writing pDeep3");
+                    System.out.println("Writing pDeep3 input file");
                     myWriter.write("raw_name" + "\t" + "scan" + "\t" + "peptide" + "\t" +
                             "modinfo" + "\t" + "charge\n");
                     break;
@@ -87,13 +87,13 @@ public class peptideFileCreator {
                             "modinfo" + "\t" + "charge" + "\t" + "RTInSeconds\n");
                     break;
                 case "DeepMSPeptide":
-                    System.out.println("writing DeepMSPeptide");
+                    System.out.println("Writing DeepMSPeptide input file");
                     break; //no header
                 case "DeepMSPeptideAll":
-                    System.out.println("writing DeepMSPeptideAll");
+                    System.out.println("Writing DeepMSPeptideAll input file");
                     break; //no header
                 case "Diann":
-                    System.out.println("writing Diann");
+                    System.out.println("Writing DIA-NN input file");
                     myWriter.write("peptide" + "\t" + "charge\n");
                     break;
             }
@@ -103,9 +103,9 @@ public class peptideFileCreator {
             }
 
             myWriter.close();
-            System.out.println("Successfully wrote to the file.");
+            System.out.println("Successfully wrote to the file");
         } catch (IOException e) {
-            System.out.println("An error occurred.");
+            System.out.println("An error occurred");
             e.printStackTrace();
         }
     }

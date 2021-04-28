@@ -25,7 +25,6 @@ public class pepXMLReader {
     private int[] NMCs;
     private int[] isotopeErrs;
 
-
     public pepXMLReader(String path) {
         pathname = path;
         analysis = this.getAnalysis(pathname);

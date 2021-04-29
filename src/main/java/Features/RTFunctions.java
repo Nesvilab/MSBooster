@@ -1,14 +1,10 @@
 package Features;
 
 import org.apache.commons.math3.analysis.interpolation.LoessInterpolator;
-import org.apache.spark.SparkConf;
-import org.apache.spark.api.java.JavaRDD;
-import org.apache.spark.api.java.JavaSparkContext;
-import org.apache.spark.mllib.regression.IsotonicRegression;
-import org.apache.spark.mllib.regression.IsotonicRegressionModel;
-import scala.Tuple3;
 import smile.stat.distribution.KernelDensity;
 import umich.ms.fileio.exceptions.FileParsingException;
+import com.github.sanity.pav.*;
+import kotlin.jvm.functions.*;
 
 import java.io.IOException;
 import java.util.*;
@@ -113,14 +109,14 @@ public class RTFunctions {
         }
     }
 
-    public static IsotonicRegressionModel LOESS(mzMLReader mzml, SpectralPredictionMapper preds, int RTregressionSize,
+    public static Function1<Double, Double> LOESS(mzMLReader mzml, SpectralPredictionMapper preds, int RTregressionSize,
                              double bandwidth, int robustIters) {
         double[][] RTs = getRTarrays(mzml, preds, RTregressionSize);
 
         return LOESS(RTs, bandwidth, robustIters);
     }
 
-    public static IsotonicRegressionModel LOESS(double[][] RTs, double bandwidth, int robustIters) {
+    public static Function1<Double, Double> LOESS(double[][] RTs, double bandwidth, int robustIters) {
         //solve monotonicity issue
         double compare = -1;
         for (int i = 0; i < RTs[0].length; i++) {
@@ -133,22 +129,18 @@ public class RTFunctions {
         }
 
         //fit loess
+        //may not need if sanity version uses spline
         LoessInterpolator loessInterpolator = new LoessInterpolator(bandwidth, robustIters);
         double[] y = loessInterpolator.smooth(RTs[0], RTs[1]);
 
-        //isotonic (refer to https://github.com/guoci/lowess_isotonic_regression/blob/master/src/main/java/com/company/Main.java)
-        final SparkConf conf = new SparkConf().setAppName("appName").setMaster("local");
-        final JavaSparkContext sc = new JavaSparkContext(conf);
-        final ArrayList<Tuple3<Double, Double, Double>> data = new ArrayList<>();
-        for (int i = 0; i < RTs[0].length; i++)
-            data.add(new Tuple3<>(y[i], RTs[0][i], 1.0));
-        final JavaRDD<Tuple3<Double, Double, Double>> distData = sc.parallelize(data, 1);
+        //isotonic regression
+        List<Point> points = new LinkedList<>();
+        for (int i = 0; i < y.length; i++) {
+            points.add(new Point(RTs[0][i], y[i]));
+        }
+        PairAdjacentViolators pav = new PairAdjacentViolators(points);
 
-        final IsotonicRegression isoreg = new IsotonicRegression().setIsotonic(true);
-        final IsotonicRegressionModel run = isoreg.run(distData);
-        sc.stop();
-
-        return run;
+        return pav.interpolator(); //extrapolationStrategy can use flat or tangent (default tangent)
     }
 
     //function that returns double[] of bin boundaries, with mean and var od each
@@ -213,39 +205,6 @@ public class RTFunctions {
         return binStats;
     }
 
-//    public static ArrayList<Float>[] addUniformPrior(ArrayList<Float>[] bins, float maxPredRT, double percentile) {
-//        //decide how many uniform points to add
-//        int[] binSizes = new int[bins.length];
-//        for (int i = 0; i < bins.length; i++) {
-//            binSizes[i] = bins[i].size();
-//        }
-//        Arrays.sort(binSizes);
-//        int cutoff = (int) Math.floor(((double) bins.length / 100.0) * percentile);
-//        int numpoints = binSizes[cutoff];
-//
-//        //see where to put uniform points by dividing into equal size bins
-//        //this ends up including maxpredRT but not 0, consider shifting to middle
-//        //this won't be consistent uniform, FIX!!!!
-//        float width = maxPredRT / ((float) numpoints + 1);
-//        List<Float> unifPoints = new ArrayList<>();
-//        for (int i = 0; i < numpoints; i++) {
-//            unifPoints.add((i + 1) * width);
-//        }
-//
-//        //add points
-//        ArrayList<Float>[] updatedBins = new ArrayList[bins.length];
-//        for (int i = 0; i < bins.length; i++) {
-//            updatedBins[i] = bins[i];
-//            updatedBins[i].addAll(unifPoints);
-//        }
-//        return updatedBins;
-//    }
-//
-//    public static ArrayList<Float>[] addUniformPrior(ArrayList<Float>[] bins, mgfFileReader mgf, double percentile) {
-//        float maxPredRT = mgf.getMaxPredRT();
-//        return addUniformPrior(bins, maxPredRT, percentile);
-//    }
-
     private static KernelDensity generateEmpiricalDist(ArrayList<Float> bin) { //could also use umontreal version
         int binSize = bin.size();
         if (binSize > 1) {
@@ -291,7 +250,7 @@ public class RTFunctions {
         return w1 * unifProb + w2 * empiricalProb;
     }
 
-    public static void main(String[] args) throws FileParsingException, IOException, ClassNotFoundException {
+    public static void main(String[] args) throws FileParsingException, IOException {
         int window = 6;
         int maxRank = 3;
 
@@ -310,11 +269,11 @@ public class RTFunctions {
             m.setPepxmlEntries(p, rank, preds);
         }
 
-        IsotonicRegressionModel irm = LOESS(m, preds, Constants.RTregressionSize, 0.3, 2); //default according to documentation
-        System.out.println(irm.predict(10.0));
-        System.out.println(irm.predict(80.0));
-        System.out.println(irm.predict(120.0));
-//        double[] betas = RTFunctions.getBetas(mzml, preds, constants.RTregressionSize);
-//        System.out.println(Arrays.toString(betas));
+        Function1<Double, Double> irm = LOESS(m, preds, Constants.RTregressionSize, 0.3, 2); //default according to documentation
+        System.out.println(irm.invoke(10.0));
+        System.out.println(irm.invoke(80.0));
+        System.out.println(irm.invoke(120.0));
+        float[] betas = RTFunctions.getBetas(m, preds, Constants.RTregressionSize);
+        System.out.println(Arrays.toString(betas));
     }
 }

@@ -261,7 +261,7 @@ public class percolatorFormatter {
                                 String[] r = pin.getRow();
                                 String[] prots = Arrays.copyOfRange(r, pin.pepIdx + 1, r.length);
                                 float maxFraction = 0f;
-                                for (String prot : prots) {
+                                for (String prot : prots) { //if more than one, this peptide is shared among proteins
                                     String protAbr = prot.split("\\|")[1];
                                     float[] arr = detects.get(protAbr);
                                     if (arr == null) { //no peptides qualify from this protein

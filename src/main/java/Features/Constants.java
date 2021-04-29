@@ -33,7 +33,7 @@ public class Constants {
     public static Integer digestMaxMass = 5000;
 
     //locations of executables and other models
-    public static Integer numThreads = 11;
+    public static Integer numThreads = 0;
     public static String DiaNN = null; //C:/DIA-NN/1.7.15beta1/DiaNN.exe
     public static String spectraRTPredModel = "DIA-NN"; //mgf, bin, msp
                                                         //pDeep3, DIA-NN, Prosit

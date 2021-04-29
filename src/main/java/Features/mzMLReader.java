@@ -3,8 +3,8 @@ package Features;
 import com.univocity.parsers.common.processor.RowListProcessor;
 import com.univocity.parsers.csv.CsvParser;
 import com.univocity.parsers.csv.CsvParserSettings;
-import org.apache.commons.lang.ArrayUtils;
-import org.apache.spark.mllib.regression.IsotonicRegressionModel;
+import kotlin.jvm.functions.Function1;
+import org.apache.commons.lang3.ArrayUtils;
 import smile.stat.distribution.KernelDensity;
 import umich.ms.datatypes.LCMSDataSubset;
 import umich.ms.datatypes.scan.IScan;
@@ -33,8 +33,7 @@ public class mzMLReader {
     HashMap<Integer, mzmlScanNumber> scanNumberObjects = new HashMap<>();
     private float[] betas;
     public ArrayList<Float>[] RTbins;
-    private KernelDensity[] kernelDensities;
-    private IsotonicRegressionModel LOESS;
+    private Function1<Double, Double> LOESS;
     public double[][] expAndPredRTs;
 
     //if I decide to do to do other expect scores
@@ -287,7 +286,7 @@ public class mzMLReader {
     }
 
     public void setKernelDensities() {
-        kernelDensities = RTFunctions.generateEmpiricalDist(RTbins);
+        KernelDensity[] kernelDensities = RTFunctions.generateEmpiricalDist(RTbins);
         for (Map.Entry<Integer, mzmlScanNumber> entry : scanNumberObjects.entrySet()) {
             mzmlScanNumber scanNum = entry.getValue();
 
@@ -303,7 +302,7 @@ public class mzMLReader {
         LOESS = RTFunctions.LOESS(expAndPredRTs, bandwidth, robustIters);
     }
 
-    public double predictLOESS(float expRT) { return LOESS.predict(expRT); }
+    public double predictLOESS(double expRT) { return LOESS.invoke(expRT); }
 
     public static void peptideRTForPython() throws FileParsingException, IOException {
         String prefix = "23aug2017_hela_serum_timecourse_4mz_narrow_1";

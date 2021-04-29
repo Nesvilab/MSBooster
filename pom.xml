@@ -86,20 +86,30 @@
 <!--            <artifactId>tablesaw-jsplot</artifactId>-->
 <!--            <version>0.38.2</version>-->
 <!--        </dependency>-->
-        <dependency>
-            <groupId>org.apache.spark</groupId>
-            <artifactId>spark-core_2.10</artifactId>
-            <version>1.3.1</version>
-        </dependency>
-        <dependency>
-            <groupId>org.apache.spark</groupId>
-            <artifactId>spark-mllib_2.10</artifactId>
-            <version>1.3.1</version>
-        </dependency>
+<!--        <dependency>-->
+<!--            <groupId>org.apache.spark</groupId>-->
+<!--            <artifactId>spark-core_2.10</artifactId>-->
+<!--            <version>1.3.1</version>-->
+<!--        </dependency>-->
+<!--        <dependency>-->
+<!--            <groupId>org.apache.spark</groupId>-->
+<!--            <artifactId>spark-mllib_2.10</artifactId>-->
+<!--            <version>1.3.1</version>-->
+<!--        </dependency>-->
+<!--        <dependency>-->
+<!--            <groupId>org.apache.commons</groupId>-->
+<!--            <artifactId>commons-math3</artifactId>-->
+<!--            <version>3.6.1</version>-->
+<!--        </dependency>-->
         <dependency>
             <groupId>org.apache.commons</groupId>
-            <artifactId>commons-math3</artifactId>
-            <version>3.6.1</version>
+            <artifactId>commons-lang3</artifactId>
+            <version>3.12.0</version>
+        </dependency>
+        <dependency>
+            <groupId>com.github.sanity</groupId>
+            <artifactId>pairAdjacentViolators</artifactId>
+            <version>1.4.16</version>
         </dependency>
     </dependencies>
 
@@ -162,6 +172,10 @@
         <repository>
             <id>Expasy MzJava</id>
             <url>http://mzjava.expasy.org/maven</url>
+        </repository>
+        <repository>
+            <id>jitpack.io</id>
+            <url>https://jitpack.io</url>
         </repository>
     </repositories>
 </project>

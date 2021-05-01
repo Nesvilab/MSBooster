@@ -4,6 +4,7 @@ import umich.ms.fileio.exceptions.FileParsingException;
 
 import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;
+import java.util.Arrays;
 
 public class RandomThings {
 
@@ -12,10 +13,7 @@ public class RandomThings {
     }
 
     public static void main(String[] args) throws IOException, FileParsingException, NoSuchMethodException, IllegalAccessException, InvocationTargetException {
-        int a = 0;
-        int b = a;
-        b += 1;
-        System.out.println(a);
+        System.out.println(Arrays.toString(new float[]{0}));
     }
 
     //this is for creating tsv for creating histograms for scores between target and decoy in python
@@ -239,5 +237,121 @@ public class RandomThings {
 //        }
 //    }
 //        myWriter.close();
+//    public static void peptideRTForPython() throws FileParsingException, IOException {
+//        String prefix = "23aug2017_hela_serum_timecourse_4mz_narrow_1";
+//        String outfile = "C:/Users/kevin/Downloads/proteomics/narrowWindow/RT2-21.csv";
+//
+//        mzMLReader mzml = new mzMLReader("C:/Users/kevin/OneDriveUmich/proteomics/mzml/" +
+//                "narrowWindow/" + prefix + ".mzML");
+//
+//        //mgfFileReader mgf = new mgfFileReader("C:/Users/kevin/OneDriveUmich/proteomics/preds/narrowPDeepPreds.mgf");
+//        SpectralPredictionMapper spm = SpectralPredictionMapper.createSpectralPredictionMapper("C:/Users/kevin/OneDriveUmich/proteomics/preds/narrowPDeepPreds.mgf");
+//        //end modify
+//
+//        for (int rank = 1; rank < 5; rank++) {
+//            System.out.println(rank);
+//            pepXMLReader xmlReader = new pepXMLReader("C:/Users/kevin/Downloads/proteomics/narrowWindow/" +
+//                    "rank" + rank + "/" + prefix + ".pepXML");
+//
+//            mzml.setPepxmlEntries(xmlReader, rank, spm);
+//        }
+//
+//        //write csv file, x and y columns for real RT and predicted
+//        FileWriter myWriter = new FileWriter(outfile);
+//        for (mzmlScanNumber s : mzml.scanNumberObjects.values()) {
+//            if (s.peptideObjects.size() > 0) {
+//                double RT = s.RT;
+//                for (peptideObj p : s.peptideObjects) {
+//    //                    if (Double.parseDouble(p.escore) > 0.000001) {
+//    //                        break;
+//    //                    }
+//                    myWriter.write(RT + "," + p.RT + "," + p.escore + "\n");
+//                }
+//            }
+//        }
+//        myWriter.close();
+//    }
+//get list of peptides we did and did not identify
+//for each row in DAINN.tsv, check which list it is in
+//    CsvParserSettings settings = new CsvParserSettings();
+//        RowListProcessor rowProcessor = new RowListProcessor();
+//            settings.getFormat().setLineSeparator("\n");
+//            settings.setHeaderExtractionEnabled(true);
+//            settings.setProcessor(rowProcessor);
+//        CsvParser parser = new CsvParser(settings);
+//            parser.parse(new File("C:/Users/kevin/Downloads/proteomics/cptac/2021-2-21/DIANNGroupsTop128.csv"));
+//        String[] headers = rowProcessor.getHeaders();
+//        List<String[]> allRows = rowProcessor.getRows();
+//        int idIdx = ArrayUtils.indexOf(headers, "Precursor.Id");
+//        int idScanNum = ArrayUtils.indexOf(headers, "MS2.Scan");
+//        int group = ArrayUtils.indexOf(headers, "list");
+//
+//        //load mzmlreader
+//        mzMLReader mzml = new mzMLReader("C:/Users/kevin/OneDriveUmich/proteomics/mzml/cptac/" +
+//                "CPTAC_CCRCC_W_JHU_LUMOS_C3L-01665_T.mzML");
+//
+//        //writer
+//        FileWriter myWriter = new FileWriter("C:/Users/kevin/Downloads/proteomics/cptac/2021-2-21/averageIntensities128.csv");
+//
+//            try {
+//            for (String[] row : allRows) {
+//                //format peptide: for precursor.id, replace () with [], and get charge from last character
+//                String peptide = row[idIdx].replaceAll("\\(", "[").replaceAll("\\)", "]");
+//
+//                //get fragments MZs for the peptide of the row
+//                MassCalculator mc = new MassCalculator(peptide.substring(0, peptide.length() - 1),
+//                        peptide.substring(peptide.length() - 1));
+//                float[] predMZs = mc.calcAllMasses();
+//                float[] predInts = new float[predMZs.length];
+//                for (int i = 0; i < predMZs.length; i++) {
+//                    predInts[i] = 100f;
+//                }
+//
+//                //get experimental mz list from mzmlreader
+//                int scanNum = Integer.parseInt(row[idScanNum]);
+//    //                float[] expMZs = mzml.getScanNumObject(scanNum).getExpMZs();
+//    //                float[] expInts = mzml.getScanNumObject(scanNum).getExpIntensities();
+//                float[] expMZs = mzml.getMZ(scanNum);
+//                float[] expInts = mzml.getIntensity(scanNum);
+//
+//                //generate spectrumComparison object, with predicted fragments with intensities of 100 each
+//                spectrumComparison sc = new spectrumComparison(expMZs, expInts, predMZs, predInts);
+//
+//                //see what fraction of fragments were matched and average intensity of matched fragments
+//                int matched = 0;
+//                float matchedInts = 0f;
+//                ArrayList<Float> intArray = new ArrayList<Float>();
+//                for (float f : sc.matchedIntensities) {
+//                    if (f != 0f) {
+//                        matched += 1;
+//                        intArray.add(f);
+//                    }
+//                    matchedInts += f;
+//                }
+//                float avgInt = matchedInts / (float) matched;
+//                float fraction = (float) matched / (float) predMZs.length;
+//                float maxInt = 0f;
+//                float median = 0f;
+//                if (Float.isNaN(avgInt)) {
+//                    avgInt = 0f;
+//                } else {
+//                    Collections.sort(intArray);
+//                    int arraySize = intArray.size();
+//                    maxInt = intArray.get(arraySize - 1);
+//                    if (intArray.size() % 2 == 0)
+//                        median = (intArray.get((arraySize / 2) - 1) + intArray.get((arraySize / 2))) / 2;
+//                    else
+//                        median = intArray.get((arraySize - 1) / 2);
+//                }
+//                //write to file
+//                myWriter.write(fraction + "," + avgInt + "," + row[group] + "," + mc.charge + "," +
+//                        median + "," + maxInt + "\n");
+//            }
+//            myWriter.close();
+//            System.out.println("done");
+//        } catch (Exception e) {
+//            System.out.println(e);
+//            myWriter.close();
+//        }
 }
 

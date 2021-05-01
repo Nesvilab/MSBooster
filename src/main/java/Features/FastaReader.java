@@ -22,7 +22,7 @@ public class FastaReader {
             String header = reader.readLine();
             String protein = reader.readLine();
 
-            HashMap<String, ArrayList<String>> pepToProt = new HashMap<String, ArrayList<String>>();
+            HashMap<String, HashSet<String>> pepToProt = new HashMap<String, HashSet<String>>();
             while (header != null) {
                 if (!header.substring(0, prefixLen).equals(Constants.decoyPrefix)) { //only work with target proteins
                     //split by whatever is digestion rules
@@ -40,11 +40,11 @@ public class FastaReader {
                         if (doIt) {
                             String protID = header.split("\\|")[1];
                             String pep = protein.substring(start, i + 1);
-                            ArrayList<String> value;
+                            HashSet<String> value;
                             if (pepToProt.containsKey(pep)) {
                                 value = pepToProt.get(pep);
                             } else {
-                                value = new ArrayList<String>();    //TODO: is it better to make an empty arrylist object outside loop?
+                                value = new HashSet<String>();
                                                                     //TODO: make it a hashset in the first place?
                             }
                             value.add(protID);
@@ -59,9 +59,9 @@ public class FastaReader {
             reader.close();
 
             //if peptide passes digestion criteria and is unique, add to protToPep
-            for (Map.Entry<String, ArrayList<String>> entry : pepToProt.entrySet()) {
+            for (Map.Entry<String, HashSet<String>> entry : pepToProt.entrySet()) {
                 String pep = entry.getKey();
-                ArrayList<String> prots = entry.getValue();
+                HashSet<String> prots = entry.getValue();
 
                 //length
                 if (pep.length() < 7 || pep.length() > 50) {
@@ -75,16 +75,13 @@ public class FastaReader {
                 }
 
                 //unique
-                if (prots.size() != 1) {
-                    HashSet<String> protsSet = new HashSet<String>(prots); //in case rev and regular have shared peptide
-                    if (protsSet.size() != 1) {
-                        continue;
-                    }
+                if (prots.size() != 1) { //in case rev and regular have shared peptide
+                    continue;
                 }
 
                 //add to protToPep
                 ArrayList<String> value;
-                String prot = prots.get(0);
+                String prot = prots.iterator().next();
                 if (protToPep.containsKey(prot)) {
                     value = protToPep.get(prot);
                 } else {
@@ -93,7 +90,6 @@ public class FastaReader {
                 value.add(pep);
                 protToPep.put(prot, value);
             }
-
         } catch (IOException e) {
             e.printStackTrace();
         }

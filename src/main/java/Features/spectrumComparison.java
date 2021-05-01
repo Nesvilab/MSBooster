@@ -4,17 +4,16 @@ import org.apache.commons.lang3.ArrayUtils;
 import org.apache.commons.math3.stat.correlation.PearsonsCorrelation;
 import umich.ms.fileio.exceptions.FileParsingException;
 
-import java.io.FileWriter;
 import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
-import java.util.HashMap;
 
 import static Features.floatUtils.floatToDouble;
 
+//TODO: better way of handling length 1 predMZs/Intensities
 public class spectrumComparison {
     float[] predMZs;
     float[] predIntensities;
@@ -22,6 +21,9 @@ public class spectrumComparison {
     float[] unitNormMatchedIntensities;
     float[] unitNormPredIntensities;
     ArrayList<Integer> matchedIdx = new ArrayList<Integer>();
+    private static ArrayList<Float> tmpMZs = new ArrayList<Float>();
+    private static ArrayList<Float> tmpInts = new ArrayList<Float>();
+    private static PearsonsCorrelation pc = new PearsonsCorrelation();
 
     public spectrumComparison(float[] eMZs, float[] eIntensities,
                               float[] pMZs, float[] pIntensities) {
@@ -65,13 +67,15 @@ public class spectrumComparison {
 
     private void filterTopFragments() {
         //skip if shorter
+        //TODO: have tmpInts and MZs outside of this function
         if (this.predMZs.length > Constants.topFragments) {
-            ArrayList<Float> tmpInts = new ArrayList<>();
+            tmpInts.clear();
+            tmpMZs.clear();
+
             for (float i : predIntensities) {
                 tmpInts.add(i);
             }
 
-            ArrayList<Float> tmpMZs = new ArrayList<>();
             for (float i : predMZs) {
                 tmpMZs.add(i);
             }
@@ -96,6 +100,9 @@ public class spectrumComparison {
     }
 
     private float[] getMatchedIntensities(float[] expMZs, float[] expIntensities) {
+        if (predIntensities.length == 1) {
+            return predIntensities;
+        }
         int startPos = 0;
         int matchedNum = 0;
         float[] matchedInts = new float[predMZs.length];
@@ -160,7 +167,12 @@ public class spectrumComparison {
         return weights;
     }
 
-    public static float[] subNormalize(float[] vector) { //change back to private
+    private static float[] subNormalize(float[] vector) { //change back to private
+        //if size 1
+        if (vector.length == 1) {
+            return vector;
+        }
+
         //if we wish to normalize to unit vector
         double magnitude = 0;
         for (double i : vector) {
@@ -186,7 +198,7 @@ public class spectrumComparison {
     }
 
     public void filterIntensities(double min) {
-
+        //TODO: if this is ever used, need to consider not adding new arraylists
         ArrayList<Float> removableIntensities = new ArrayList<>();
         ArrayList<Float> removableMZs = new ArrayList<>();
 
@@ -392,7 +404,6 @@ public class spectrumComparison {
             return -1; //minimum pearson correlation
         } else {
             //uses Apache
-            PearsonsCorrelation pc = new PearsonsCorrelation();
             return pc.correlation(floatToDouble(matchedIntensities), floatToDouble(predIntensities));
         }
     }
@@ -408,8 +419,6 @@ public class spectrumComparison {
                 newPred[i] = weights[i] * predIntensities[i];
                 newMatched[i] = weights[i] * matchedIntensities[i];
             }
-
-            PearsonsCorrelation pc = new PearsonsCorrelation();
             return pc.correlation(newMatched, newPred);
         }
     }
@@ -466,67 +475,43 @@ public class spectrumComparison {
         }
     }
 
-    public HashMap<String, Double> getAllSimilarities(double[] mzFreqs) {
-
-        HashMap<String, Double> sims = new HashMap<>();
-
-        sims.put("cosine", this.cosineSimilarity());
-        sims.put("contrast", this.spectralContrastAngle());
-        sims.put("euclidean", this.euclideanDistance());
-        sims.put("bray-curtis", this.brayCurtis());
-        sims.put("pearson", this.pearsonCorr());
-        sims.put("dot", this.dotProduct());
-
-
-        //weighted
-        double[] weights = this.getWeights(mzFreqs);
-        sims.put("weightCosine", this.weightedCosineSimilarity(weights));
-        sims.put("weightContrast", this.weightedSpectralContrastAngle(weights));
-        sims.put("weightEuclidean", this.weightedEuclideanDistance(weights));
-        sims.put("weightBray-curtis", this.weightedBrayCurtis(weights));
-        sims.put("weightPearson", this.weightedPearsonCorr(weights));
-        sims.put("weightDot", this.weightedDotProduct(weights));
-
-        return sims;
-    }
-
     //https://stackoverflow.com/questions/4240080/generating-all-permutations-of-a-given-string
-    private ArrayList<Double> calculateShuffledExpectScore(String similarityMeasure) throws NoSuchMethodException,
-            IllegalAccessException, InvocationTargetException {
-
-        //specifically use filtered version, otherwise permutation will take forever
-        spectrumComparison filteredSpec = new spectrumComparison(this, true);
-        double trueSim = filteredSpec.getSimilarity(similarityMeasure);
-
-        float[] newPredInts = filteredSpec.predIntensities;
-        ArrayList<Double> shuffledExpectations = new ArrayList<>();
-        shuffledExpectations.add(trueSim); //first element in arraylist is the original
-
-        //sole purpose of this class is to create permuted expectation scores
-        class permutation {
-            permutation(float[] added, float[] remaining) throws NoSuchMethodException, IllegalAccessException,
-                    InvocationTargetException {
-                int n = remaining.length;
-                if (n == 0) {
-                    //calculate similarity and add to list
-                    //no longer need to filter, since we want to use matched intensities and unitNorm vectors as they are
-                    spectrumComparison specAngle = new spectrumComparison(filteredSpec);
-
-                    //change predicted intensities to shuffled version
-                    specAngle.predIntensities = added;
-                    shuffledExpectations.add(specAngle.getSimilarity(similarityMeasure));
-                } else {
-                    for (int i = 0; i < n; i++)
-                        new permutation(ArrayUtils.addAll(added, new float[]{remaining[i]}),
-                                ArrayUtils.addAll(Arrays.copyOfRange(remaining, 0, i),
-                                        Arrays.copyOfRange(remaining, i + 1, n)));
-                }
-            }
-        }
-        //add shuffled expect scores
-        new permutation(new float[]{}, newPredInts);
-        return shuffledExpectations;
-    }
+//    private ArrayList<Double> calculateShuffledExpectScore(String similarityMeasure) throws NoSuchMethodException,
+//            IllegalAccessException, InvocationTargetException {
+//
+//        //specifically use filtered version, otherwise permutation will take forever
+//        spectrumComparison filteredSpec = new spectrumComparison(this, true);
+//        double trueSim = filteredSpec.getSimilarity(similarityMeasure);
+//
+//        float[] newPredInts = filteredSpec.predIntensities;
+//        ArrayList<Double> shuffledExpectations = new ArrayList<>();
+//        shuffledExpectations.add(trueSim); //first element in arraylist is the original
+//
+//        //sole purpose of this class is to create permuted expectation scores
+//        class permutation {
+//            permutation(float[] added, float[] remaining) throws NoSuchMethodException, IllegalAccessException,
+//                    InvocationTargetException {
+//                int n = remaining.length;
+//                if (n == 0) {
+//                    //calculate similarity and add to list
+//                    //no longer need to filter, since we want to use matched intensities and unitNorm vectors as they are
+//                    spectrumComparison specAngle = new spectrumComparison(filteredSpec);
+//
+//                    //change predicted intensities to shuffled version
+//                    specAngle.predIntensities = added;
+//                    shuffledExpectations.add(specAngle.getSimilarity(similarityMeasure));
+//                } else {
+//                    for (int i = 0; i < n; i++)
+//                        new permutation(ArrayUtils.addAll(added, new float[]{remaining[i]}),
+//                                ArrayUtils.addAll(Arrays.copyOfRange(remaining, 0, i),
+//                                        Arrays.copyOfRange(remaining, i + 1, n)));
+//                }
+//            }
+//        }
+//        //add shuffled expect scores
+//        new permutation(new float[]{}, newPredInts);
+//        return shuffledExpectations;
+//    }
 
 
 
@@ -572,20 +557,5 @@ public class spectrumComparison {
     }
 
     public static void main(String[] args) throws FileParsingException, IOException {
-        SpectralPredictionMapper spm1 = SpectralPredictionMapper.createSpectralPredictionMapper
-                ("C:/Users/kevin/OneDriveUmich/proteomics/preds/cptacDiann.predicted.bin");
-
-        SpectralPredictionMapper spm2 = new mgfFileReader("C:/Users/kevin/OneDriveUmich/proteomics/preds/cptacPreds.mgf");
-
-        //iterate through peptides
-        FileWriter myWriter = new FileWriter("C:/Users/kevin/Downloads/proteomics/cptac/PearsonCompare.txt");
-        for (String peptide : spm1.getMzDict().keySet()) {
-            try {
-                spectrumComparison sc = new spectrumComparison(spm2.getMzDict().get(peptide), spm2.getIntensityDict().get(peptide),
-                        spm1.getMzDict().get(peptide), spm1.getIntensityDict().get(peptide), false);
-                myWriter.write(String.valueOf(sc.pearsonCorr()) + "\n");
-            } catch (Exception ignored) {}
-        }
-        myWriter.close();
     }
 }

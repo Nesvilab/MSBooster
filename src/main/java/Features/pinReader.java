@@ -11,9 +11,7 @@ public class pinReader {
     String name; //used for resetting
     BufferedReader in;
     String[] header;
-    //List<String[]> rows = new ArrayList<>();
     private String[] row;
-    int rowNum = -1;
 
     int scanNumIdx;
     int labelIdx;
@@ -27,10 +25,6 @@ public class pinReader {
         in = new BufferedReader(new FileReader(name));
         String line = in.readLine();
         header = line.split("\t");
-//        while ((line = in.readLine()) != null) {
-//            rows.add(line.split("\t"));
-//        }
-//        in.close();
 
         //set column indices
         scanNumIdx = ArrayUtils.indexOf(header, "ScanNr");
@@ -49,13 +43,6 @@ public class pinReader {
 
     //get next row ready
     public boolean next() throws IOException {
-//        rowNum += 1;
-//        try {
-//            row = rows.get(rowNum);
-//            return true;
-//        } catch (Exception e) {
-//            return false;
-//        }
         String line = in.readLine();
         if (line != null) {
             row = line.split("\t");
@@ -92,11 +79,11 @@ public class pinReader {
     }
 
     public static void main(String[] args) throws IOException {
-        pinReader p = new pinReader("C:/Users/kevin/Downloads/proteomics/wideWindow/1-18/perc/combined.pin");
-        while (p.next()) {
-            if (p.getRow().length > 33) {
-                System.out.println(p.getRow().length);
-            }
-        }
+//        pinReader p = new pinReader("C:/Users/kevin/Downloads/proteomics/wideWindow/1-18/perc/combined.pin");
+//        while (p.next()) {
+//            if (p.getRow().length > 33) {
+//                System.out.println(p.getRow().length);
+//            }
+//        }
     }
 }

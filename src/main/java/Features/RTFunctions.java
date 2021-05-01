@@ -1,10 +1,10 @@
 package Features;
 
+import com.github.sanity.pav.PairAdjacentViolators;
+import com.github.sanity.pav.Point;
+import kotlin.jvm.functions.Function1;
 import org.apache.commons.math3.analysis.interpolation.LoessInterpolator;
 import smile.stat.distribution.KernelDensity;
-import umich.ms.fileio.exceptions.FileParsingException;
-import com.github.sanity.pav.*;
-import kotlin.jvm.functions.*;
 
 import java.io.IOException;
 import java.util.*;
@@ -250,7 +250,7 @@ public class RTFunctions {
         return w1 * unifProb + w2 * empiricalProb;
     }
 
-    public static void main(String[] args) throws FileParsingException, IOException {
+    public static void main(String[] args) throws Exception {
         int window = 6;
         int maxRank = 3;
 

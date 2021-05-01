@@ -20,10 +20,10 @@ public class peptideObj {
     float deltaRTbin;
     float RTzscore;
     double RTprob;
-    double massDiff;
-    int ntt;
-    int nmc;
-    double isoError;
+//    double massDiff;
+//    int ntt;
+//    int nmc;
+//    double isoError;
     spectrumComparison spectralSimObj;
     HashMap<String, Double> scores = new HashMap<>();
 

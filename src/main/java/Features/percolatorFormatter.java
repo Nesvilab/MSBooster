@@ -85,7 +85,7 @@ public class percolatorFormatter {
         for (int i = 0; i < mzmlFiles.length; i++) {
             pinFiles[i] = mzmlFiles[i].substring(0, mzmlFiles[i].length() - 4) + "pin";
             if (! pinFilesSet.contains(pinFiles[i])) {
-                throw new AssertionError("mzML file must jave corresponding pin file. " +
+                throw new AssertionError("mzML file must have corresponding pin file. " +
                         pinFiles[i] + " does not exist");
             }
         }
@@ -337,6 +337,8 @@ public class percolatorFormatter {
         } catch (IOException | FileParsingException e) {
             writer.close();
             e.printStackTrace();
+        } catch (Exception e) {
+            e.printStackTrace();
         }
     }
 
@@ -347,9 +349,9 @@ public class percolatorFormatter {
         //TODO: also need to be able to handle single file rather than directory
         editPin("C:/Users/kevin/Downloads/proteomics/wide",
                 "C:/Users/kevin/OneDriveUmich/proteomics/mzml/wideWindow/",
-                "C:/Users/kevin/Downloads/proteomics/wide/spectraRT.predicted.bin",
+                "C:/Users/kevin/OneDriveUmich/proteomics/preds/widePDeep3.mgf",
                 "C:/Users/kevin/OneDriveUmich/proteomics/preds/detectwideAll_Predictions.txt",
-                new String[] {"brayCurtis", "deltaRTLOESS", "detectFractionGreater"},
+                new String[] {"brayCurtis"},
                 "C:/Users/kevin/Downloads/proteomics/wide/edited.pin");
     }
 }

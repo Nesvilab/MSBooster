@@ -1,10 +1,6 @@
 package Features;
 
-import com.univocity.parsers.common.processor.RowListProcessor;
-import com.univocity.parsers.csv.CsvParser;
-import com.univocity.parsers.csv.CsvParserSettings;
 import kotlin.jvm.functions.Function1;
-import org.apache.commons.lang3.ArrayUtils;
 import smile.stat.distribution.KernelDensity;
 import umich.ms.datatypes.LCMSDataSubset;
 import umich.ms.datatypes.scan.IScan;
@@ -13,12 +9,13 @@ import umich.ms.datatypes.scancollection.impl.ScanCollectionDefault;
 import umich.ms.fileio.exceptions.FileParsingException;
 import umich.ms.fileio.filetypes.mzml.MZMLFile;
 
-import java.io.File;
-import java.io.FileWriter;
 import java.io.IOException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.Map;
 
 import static Features.floatUtils.doubleToFloat;
 
@@ -35,10 +32,6 @@ public class mzMLReader {
     public ArrayList<Float>[] RTbins;
     private Function1<Double, Double> LOESS;
     public double[][] expAndPredRTs;
-
-    //if I decide to do to do other expect scores
-    //HashMap<Double, ArrayList<Integer>> windowStartDict = new HashMap<>();
-    //HashMap<String, ArrayList<Integer>> peptideToScanNums = new HashMap<>();
 
     public mzMLReader(String filename) throws FileParsingException {
 
@@ -179,23 +172,14 @@ public class mzMLReader {
     }
 
     public void createScanNumObjects() throws FileParsingException {
-        HashMap<Integer, mzmlScanNumber> scanMap = new HashMap<>();
         int scanNum = -1;
         IScan scan = scans.getNextScanAtMsLevel(scanNum, 2);
         while (scan != null) {
             scanNum = scan.getNum();
             //double windowStart = scan.getPrecursor().getMzRangeStart();
-            scanMap.put(scanNum, new mzmlScanNumber(this, scanNum, scan.getRt().floatValue()));
+            scanNumberObjects.put(scanNum, new mzmlScanNumber(this, scanNum, scan.getRt().floatValue()));
             scan = scans.getNextScanAtMsLevel(scanNum, 2);
-
-            //for later use in getting spectra from same window
-//            if (windowStartDict.containsKey(windowStart)) {
-//                windowStartDict.get(windowStart).add(scanNum);
-//            } else {
-//                windowStartDict.put(windowStart, new ArrayList<Integer>(Arrays.asList(scanNum)));
-//            }
         }
-        scanNumberObjects = scanMap;
     }
 
     public mzmlScanNumber getScanNumObject(int scanNum) {
@@ -203,7 +187,7 @@ public class mzMLReader {
     }
 
     //can consider method for setting single pepxml entry
-    public void setPepxmlEntries(pepXMLReader xmlReader, int rank, SpectralPredictionMapper spm) throws IOException {
+    public void setPepxmlEntries(pepXMLReader xmlReader, int rank, SpectralPredictionMapper spm) throws AssertionError, Exception {
         String[] peptides = xmlReader.getXMLpeptides();
         int[] tdArray = xmlReader.getTargetOrDecoy();
         int[] scanNums = xmlReader.getScanNumbers();
@@ -218,7 +202,7 @@ public class mzMLReader {
         }
     }
 
-    public void setPinEntries(pinReader pin, SpectralPredictionMapper spm) throws IOException {
+    public void setPinEntries(pinReader pin, SpectralPredictionMapper spm) throws AssertionError, Exception {
         while(pin.next()) {
             scanNumberObjects.get(pin.getScanNum()).setPeptideObject(pin.getPep(), pin.getRank(), pin.getTD(), pin.getEScore(),
                     spm.getMzDict(), spm.getIntensityDict(), spm.getRtDict());
@@ -304,127 +288,10 @@ public class mzMLReader {
 
     public double predictLOESS(double expRT) { return LOESS.invoke(expRT); }
 
-    public static void peptideRTForPython() throws FileParsingException, IOException {
-        String prefix = "23aug2017_hela_serum_timecourse_4mz_narrow_1";
-        String outfile = "C:/Users/kevin/Downloads/proteomics/narrowWindow/RT2-21.csv";
-
-        mzMLReader mzml = new mzMLReader("C:/Users/kevin/OneDriveUmich/proteomics/mzml/" +
-                "narrowWindow/" + prefix + ".mzML");
-
-        //mgfFileReader mgf = new mgfFileReader("C:/Users/kevin/OneDriveUmich/proteomics/preds/narrowPDeepPreds.mgf");
-        SpectralPredictionMapper spm = SpectralPredictionMapper.createSpectralPredictionMapper("C:/Users/kevin/OneDriveUmich/proteomics/preds/narrowPDeepPreds.mgf");
-        //end modify
-
-        for (int rank = 1; rank < 5; rank++) {
-            System.out.println(rank);
-            pepXMLReader xmlReader = new pepXMLReader("C:/Users/kevin/Downloads/proteomics/narrowWindow/" +
-                    "rank" + rank + "/" + prefix + ".pepXML");
-
-            mzml.setPepxmlEntries(xmlReader, rank, spm);
-        }
-
-        //write csv file, x and y columns for real RT and predicted
-        FileWriter myWriter = new FileWriter(outfile);
-        for (mzmlScanNumber s : mzml.scanNumberObjects.values()) {
-            if (s.peptideObjects.size() > 0) {
-                double RT = s.RT;
-                for (peptideObj p : s.peptideObjects) {
-//                    if (Double.parseDouble(p.escore) > 0.000001) {
-//                        break;
-//                    }
-                    myWriter.write(RT + "," + p.RT + "," + p.escore + "\n");
-                }
-            }
-        }
-        myWriter.close();
-    }
-
     public HashMap<Integer, mzmlScanNumber> getScanNumberObjects(){
         return this.scanNumberObjects;
     }
 
     public static void main(String[] args) throws FileParsingException, IOException {
-        //get list of peptides we did and did not identify
-        //for each row in DAINN.tsv, check which list it is in
-        CsvParserSettings settings = new CsvParserSettings();
-        RowListProcessor rowProcessor = new RowListProcessor();
-        settings.getFormat().setLineSeparator("\n");
-        settings.setHeaderExtractionEnabled(true);
-        settings.setProcessor(rowProcessor);
-        CsvParser parser = new CsvParser(settings);
-        parser.parse(new File("C:/Users/kevin/Downloads/proteomics/cptac/2021-2-21/DIANNGroupsTop128.csv"));
-        String[] headers = rowProcessor.getHeaders();
-        List<String[]> allRows = rowProcessor.getRows();
-        int idIdx = ArrayUtils.indexOf(headers, "Precursor.Id");
-        int idScanNum = ArrayUtils.indexOf(headers, "MS2.Scan");
-        int group = ArrayUtils.indexOf(headers, "list");
-
-        //load mzmlreader
-        mzMLReader mzml = new mzMLReader("C:/Users/kevin/OneDriveUmich/proteomics/mzml/cptac/" +
-                "CPTAC_CCRCC_W_JHU_LUMOS_C3L-01665_T.mzML");
-
-        //writer
-        FileWriter myWriter = new FileWriter("C:/Users/kevin/Downloads/proteomics/cptac/2021-2-21/averageIntensities128.csv");
-
-        try {
-            for (String[] row : allRows) {
-                //format peptide: for precursor.id, replace () with [], and get charge from last character
-                String peptide = row[idIdx].replaceAll("\\(", "[").replaceAll("\\)", "]");
-
-                //get fragments MZs for the peptide of the row
-                MassCalculator mc = new MassCalculator(peptide.substring(0, peptide.length() - 1),
-                        peptide.substring(peptide.length() - 1));
-                float[] predMZs = mc.calcAllMasses();
-                float[] predInts = new float[predMZs.length];
-                for (int i = 0; i < predMZs.length; i++) {
-                    predInts[i] = 100f;
-                }
-
-                //get experimental mz list from mzmlreader
-                int scanNum = Integer.parseInt(row[idScanNum]);
-//                float[] expMZs = mzml.getScanNumObject(scanNum).getExpMZs();
-//                float[] expInts = mzml.getScanNumObject(scanNum).getExpIntensities();
-                float[] expMZs = mzml.getMZ(scanNum);
-                float[] expInts = mzml.getIntensity(scanNum);
-
-                //generate spectrumComparison object, with predicted fragments with intensities of 100 each
-                spectrumComparison sc = new spectrumComparison(expMZs, expInts, predMZs, predInts);
-
-                //see what fraction of fragments were matched and average intensity of matched fragments
-                int matched = 0;
-                float matchedInts = 0f;
-                ArrayList<Float> intArray = new ArrayList<Float>();
-                for (float f : sc.matchedIntensities) {
-                    if (f != 0f) {
-                        matched += 1;
-                        intArray.add(f);
-                    }
-                    matchedInts += f;
-                }
-                float avgInt = matchedInts / (float) matched;
-                float fraction = (float) matched / (float) predMZs.length;
-                float maxInt = 0f;
-                float median = 0f;
-                if (Float.isNaN(avgInt)) {
-                    avgInt = 0f;
-                } else {
-                    Collections.sort(intArray);
-                    int arraySize = intArray.size();
-                    maxInt = intArray.get(arraySize - 1);
-                    if (intArray.size() % 2 == 0)
-                        median = (intArray.get((arraySize / 2) - 1) + intArray.get((arraySize / 2))) / 2;
-                    else
-                        median = intArray.get((arraySize - 1) / 2);
-                }
-                //write to file
-                myWriter.write(fraction + "," + avgInt + "," + row[group] + "," + mc.charge + "," +
-                        median + "," + maxInt + "\n");
-            }
-            myWriter.close();
-            System.out.println("done");
-        } catch (Exception e) {
-            System.out.println(e);
-            myWriter.close();
-        }
     }
 }

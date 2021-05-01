@@ -111,8 +111,8 @@ public class peptideFileCreator {
     }
 
     public static void main(String[] args) throws IOException {
-        createPeptideFile("C:/Users/kevin/Downloads/proteomics/cptac/2021-2-21",
-                "C:/Users/kevin/OneDriveUmich/proteomics/preds/cptacProsit.csv",
-                "prosit");
+        createPeptideFile("C:/Users/kevin/Downloads/proteomics/cptac/2021-2-21/pepXMLtmp",
+                "C:/Users/kevin/OneDriveUmich/proteomics/preds/detectcptacAll.csv",
+                "DeepMSPeptideAll");
     }
 }

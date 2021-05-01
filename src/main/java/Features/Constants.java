@@ -12,6 +12,8 @@ public class Constants {
     ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
     //file locations
+    //check that pinPepXMLDirectory, mzmlDirectory, spectraRTPredInput, detectPredInput,
+    //      spectraRTPredFile, detectPredFile, fasta exist
     public static String pinPepXMLDirectory = null; //C:/Users/kevin/Downloads/proteomics/cptac/2021-2-21/
     public static String mzmlDirectory = null; //C:/Users/kevin/OneDriveUmich/proteomics/mzml/cptac/
     public static String outputDirectory = null; //where to write all intermediate and final files
@@ -23,7 +25,8 @@ public class Constants {
 
     //optional file locations and parameters
     //if calculating detectFractionGreater, these are used for FastaReader class
-    public static String fasta = null; //C:/Users/kevin/OneDriveUmich/proteomics/fasta/2019-09-30-td-rev-UP000005640.fas
+    //C:/Users/kevin/OneDriveUmich/proteomics/fasta/2020-12-07-decoys-reviewed-contam-UP000005640.fas
+    public static String fasta = "C:/Users/kevin/OneDriveUmich/proteomics/fasta/2020-12-07-decoys-reviewed-contam-UP000005640.fas";
     public static String decoyPrefix = ">rev_";
     public static String cutAfter = "KR";
     public static String butNotAfter = "P";
@@ -46,7 +49,7 @@ public class Constants {
     public static Integer binwidth = 1;
     public static Integer mzFreqWindow = 1;
 
-    public static Float ppmTolerance = 20f; //ppm tolerance of MS2 scans
+    public static Float ppmTolerance = 10f; //ppm tolerance of MS2 scans
 
     //for limiting number of fragments used
     //TODO need to adapt for DIANN
@@ -65,7 +68,10 @@ public class Constants {
     public static Double bandwidth = 0.1;
     public static Integer robustIters = 2;
 
+    //detect
     public static Float detectThreshold = 0.0000002f; //for detectability filtering
+    public static Float detectFractionGreaterNumerator = 1f;
+    public static Float detectFractionGreaterDenominator = 6f; //prior
 
     ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 

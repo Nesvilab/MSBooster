@@ -171,4 +171,9 @@ public class MassCalculator {
         for(int i = 0; i < masses.size(); i++) results[i] = masses.get(i);
         return results;
     }
+
+    public static void main(String[] args) {
+        MassCalculator mc = new MassCalculator("SLPPALSCPPPQPAMLEHLSSLPTQMDYK", 1);
+        System.out.println(mc.mass);
+    }
 }

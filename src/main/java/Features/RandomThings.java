@@ -12,8 +12,10 @@ public class RandomThings {
     }
 
     public static void main(String[] args) throws IOException, FileParsingException, NoSuchMethodException, IllegalAccessException, InvocationTargetException {
-        String a = null;
-        System.out.println(a == null);
+        int a = 0;
+        int b = a;
+        b += 1;
+        System.out.println(a);
     }
 
     //this is for creating tsv for creating histograms for scores between target and decoy in python

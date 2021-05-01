@@ -179,7 +179,7 @@ public class percolatorFormatter {
 
                 //for storing detects and whether peptides are present
                 HashMap<String, float[]> detects = new HashMap<String, float[]>();
-                HashMap<String, int[]> presence = new HashMap<String, int[]>();
+                HashMap<String, float[]> presence = new HashMap<String, float[]>();
                 if (featuresList.contains("detectFractionGreater")) {
                     //get all peptides present in pin
                     HashSet<String> allPeps = pin.getAllPep();
@@ -206,12 +206,12 @@ public class percolatorFormatter {
                         detects.put(e.getKey(), sortedDetect);
 
                         //check which peptides present
-                        int[] protPresence = new int[sortedDetect.length];
+                        float[] protPresence = new float[sortedDetect.length];
                         for (int j = 0; j < sortedIndices.length; j++) {
                             if (allPeps.contains(e.getValue().get(j))) {
-                                protPresence[j] = 1;
+                                protPresence[j] = 1f;
                             } else {
-                                protPresence[j] = 0;
+                                protPresence[j] = 0f;
                             }
                         }
                         presence.put(e.getKey(), protPresence);
@@ -273,48 +273,19 @@ public class percolatorFormatter {
                                     } else {
                                         idx += 1; //don't want to include itself in calculation
                                     }
-                                    int[] presenceArr = Arrays.copyOfRange(presence.get(protAbr), idx, arr.length);
-                                    int total = 0;
-                                    for (int j : presenceArr) {
+                                    float[] presenceArr = Arrays.copyOfRange(presence.get(protAbr), idx, arr.length);
+                                    float total = 0f;
+                                    for (float j : presenceArr) {
                                         total += j;
                                     }
-                                    float fraction = ((float) total) / ((float) presenceArr.length);
+                                    float fraction = (total + Constants.detectFractionGreaterNumerator) /
+                                            (presenceArr.length + Constants.detectFractionGreaterDenominator); //customizable prior
                                     if (fraction > maxFraction) {
                                         maxFraction = fraction;
                                     }
                                 }
                                 writer.addValue("detectFractionGreater", maxFraction);
                                 break;
-//                            case "detectNumberGreater":
-//                                d = dm.getDetectability(pep);
-//                                //for each protein, get the position of pep's detect and see how many peptides with greater detect are present
-//                                //take max (proxy for protein that actually generated peptide)
-//                                r = pin.getRow();
-//                                prots = Arrays.copyOfRange(r, pin.pepIdx + 1, r.length);
-//                                int maxTotal = 0;
-//                                for (String prot : prots) {
-//                                    String protAbr = prot.split("\\|")[1];
-//                                    float[] arr = detects.get(protAbr);
-//                                    if (arr == null) { //no peptides qualify from this protein
-//                                        continue;
-//                                    }
-//                                    int idx = Arrays.binarySearch(arr, d);
-//                                    if (idx < 0) { //not found
-//                                        idx = (-1 * idx) - 1;
-//                                    } else {
-//                                        idx += 1; //don't want to include itself in calculation
-//                                    }
-//                                    int[] presenceArr = Arrays.copyOfRange(presence.get(protAbr), idx, arr.length);
-//                                    int total = 0;
-//                                    for (int j : presenceArr) {
-//                                        total += j;
-//                                    }
-//                                    if (total > maxTotal) {
-//                                        maxTotal = total;
-//                                    }
-//                                }
-//                                writer.addValue("detectNumberGreater", maxTotal);
-//                                break;
                             case "deltaRTlinear":
                                 writer.addValue("deltaRTlinear", pepObj.deltaRT);
                                 break;
@@ -370,41 +341,15 @@ public class percolatorFormatter {
     }
 
     public static void main(String[] args) throws IOException {
-//        //CHANGE PPM TO 10
-//        editPin(new String[] {"23aug2017_hela_serum_timecourse_pool_wide_001",
-//                "23aug2017_hela_serum_timecourse_pool_wide_002",
-//                "23aug2017_hela_serum_timecourse_pool_wide_003"},
-//                "C:/Users/kevin/Downloads/proteomics/wide/",
-//                "C:/Users/kevin/OneDriveUmich/proteomics/mzml/wideWindow/",
-//                "C:/Users/kevin/OneDriveUmich/proteomics/preds/widePDeep3.mgf",
-//                "C:/Users/kevin/OneDriveUmich/proteomics/preds/wideDetectAll_predictions.txt",
-//                new String[] {"brayCurtis", "euclideanDistance", "cosineSimilarity", "spectralContrastAngle",
-//                        "pearsonCorr", "dotProduct", "deltaRTlinear", "deltaRTbins", "RTzscore", "RTprobability",
-//                        "RTprobabilityUnifPrior"},
-//                "C:/Users/kevin/Downloads/proteomics/wide/perc/everything.pin");
+        //CHANGE PPM TO 10 if wide, narrow
 
-        //CHANGE PPM TO 10
-//        editPin(new String[] {"23aug2017_hela_serum_timecourse_4mz_narrow_1",
-//                        "23aug2017_hela_serum_timecourse_4mz_narrow_2",
-//                        "23aug2017_hela_serum_timecourse_4mz_narrow_3",
-//                        "23aug2017_hela_serum_timecourse_4mz_narrow_4",
-//                        "23aug2017_hela_serum_timecourse_4mz_narrow_5",
-//                        "23aug2017_hela_serum_timecourse_4mz_narrow_6"},
-//                "C:/Users/kevin/Downloads/proteomics/narrow/",
-//                "C:/Users/kevin/OneDriveUmich/proteomics/mzml/narrowWindow/",
-//                "C:/Users/kevin/OneDriveUmich/proteomics/preds/narrowPDeep3.mgf",
-//                null,
-//                new String[] {"brayCurtis", "euclideanDistance", "cosineSimilarity", "spectralContrastAngle",
-//                        "pearsonCorr", "dotProduct", "deltaRTlinear", "deltaRTbins", "RTzscore", "RTprobability",
-//                        "RTprobabilityUnifPrior"},
-//                "C:/Users/kevin/Downloads/proteomics/narrow/perc/all.pin");
-
-//        CHANGE PPM TO 20
-        editPin("C:/Users/kevin/Downloads/proteomics/cptac/2021-2-21/",
-                "C:/Users/kevin/OneDriveUmich/proteomics/mzml/cptac/",
-                "C:/Users/kevin/OneDriveUmich/proteomics/preds/cptacPreds.mgf",
-                "C:/Users/kevin/OneDriveUmich/proteomics/preds/cptacDetectAll_predictions.txt",
-                new String[] {"deltaRTLOESS"},
-                "C:/Users/kevin/Downloads/proteomics/cptac/2021-2-21/perc/deltaRTLOESS.pin");
+        //CHANGE PPM TO 20 if cptac
+        //TODO: also need to be able to handle single file rather than directory
+        editPin("C:/Users/kevin/Downloads/proteomics/wide",
+                "C:/Users/kevin/OneDriveUmich/proteomics/mzml/wideWindow/",
+                "C:/Users/kevin/Downloads/proteomics/wide/spectraRT.predicted.bin",
+                "C:/Users/kevin/OneDriveUmich/proteomics/preds/detectwideAll_Predictions.txt",
+                new String[] {"brayCurtis", "deltaRTLOESS", "detectFractionGreater"},
+                "C:/Users/kevin/Downloads/proteomics/wide/edited.pin");
     }
 }

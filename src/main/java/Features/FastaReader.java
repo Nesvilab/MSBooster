@@ -44,7 +44,8 @@ public class FastaReader {
                             if (pepToProt.containsKey(pep)) {
                                 value = pepToProt.get(pep);
                             } else {
-                                value = new ArrayList<String>();
+                                value = new ArrayList<String>();    //TODO: is it better to make an empty arrylist object outside loop?
+                                                                    //TODO: make it a hashset in the first place?
                             }
                             value.add(protID);
                             pepToProt.put(pep, value);
@@ -67,18 +68,18 @@ public class FastaReader {
                     continue;
                 }
 
-                //unique
-                if (prots.size() != 1) {
-                    HashSet<String> protsSet = new HashSet<String>(prots);
-                    if (protsSet.size() != 1) {
-                        continue;
-                    }
-                }
-
                 //mass
                 MassCalculator mc = new MassCalculator(pep, 1);
                 if (mc.mass < Constants.digestMinMass || mc.mass > Constants.digestMaxMass) {
                     continue;
+                }
+
+                //unique
+                if (prots.size() != 1) {
+                    HashSet<String> protsSet = new HashSet<String>(prots); //in case rev and regular have shared peptide
+                    if (protsSet.size() != 1) {
+                        continue;
+                    }
                 }
 
                 //add to protToPep

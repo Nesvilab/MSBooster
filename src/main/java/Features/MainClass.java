@@ -13,13 +13,6 @@ public class MainClass {
     public static void main(String[] args) throws Exception {
         //to do: take constants as input file
 
-        //defining num threads
-        Runtime run  = Runtime.getRuntime();
-        if (Constants.numThreads <= 0) {
-            Constants.numThreads = run.availableProcessors();
-        } //otherwise use user-defined
-        System.out.println("Using " + Constants.numThreads + " threads");
-
         //accept command line inputs
         HashSet<String> fields = new HashSet<>();
         for (Field f : Constants.class.getDeclaredFields()) {
@@ -51,6 +44,13 @@ public class MainClass {
             }
         }
 
+        //defining num threads
+        Runtime run  = Runtime.getRuntime();
+        if (Constants.numThreads <= 0) {
+            Constants.numThreads = run.availableProcessors();
+        } //otherwise use user-defined
+        System.out.println("Using " + Constants.numThreads + " threads");
+
         //check that at least pinPepXMLDirectory and mzmlDirectory are provided
         if (Constants.pinPepXMLDirectory == null) {
             throw new IllegalArgumentException("pinPepXMLDirectory must be provided");
@@ -58,7 +58,6 @@ public class MainClass {
         if (Constants.mzmlDirectory == null) {
             throw new IllegalArgumentException("mzmlDirectory must be provided");
         }
-        c.updatePaths();
 
         //check that features are allowed
         boolean allFeatures = false;
@@ -79,6 +78,19 @@ public class MainClass {
                 break;
             }
         }
+        HashSet<String> featureSet = new HashSet<>(Arrays.asList(featuresArray));
+
+        //if detectFractionGreater, need fasta
+        boolean createDetectAllPredFile = false;
+        if (featureSet.contains("detectFractionGreater") || autoFeatures) {
+            if (Constants.fasta == null) {
+                throw new IllegalArgumentException("Using current combination of features, " +
+                        "detectFractionGreater is calculated and needs a fasta provided using " +
+                        "--fasta <fasta file location>");
+            }
+            //need to have another boolean that supersedes regular createDetectPredFile
+            createDetectAllPredFile = true;
+        }
 
         //create file for spectral and RT prediction
         //ignore if files already created
@@ -90,7 +102,6 @@ public class MainClass {
             createSpectraRTPredFile = true;
             createDetectPredFile = true;
         } else {
-            HashSet<String> featureSet = new HashSet<>(Arrays.asList(featuresArray));
             featureSet.retainAll(Constants.spectraRTFeatures);
             if (featureSet.size() > 0) {
                 createSpectraRTPredFile = true;
@@ -102,6 +113,16 @@ public class MainClass {
                 createDetectPredFile = true;
             }
         }
+        //overriding if intermediate files already made
+        if (Constants.spectraRTPredInput != null || Constants.spectraRTPredFile != null) {
+            createSpectraRTPredFile = false;
+        }
+        if (Constants.detectPredInput != null || Constants.detectPredFile != null) {
+            createDetectPredFile = false;
+            createDetectAllPredFile = false;
+        }
+
+        c.updatePaths(); //setting null paths
 
         //generate files for prediction models
         if (createSpectraRTPredFile) {
@@ -111,20 +132,29 @@ public class MainClass {
                 }
                 System.out.println("Generating input file for DIA-NN");
                 peptideFileCreator.createPeptideFile(Constants.pinPepXMLDirectory, Constants.spectraRTPredInput, "Diann");
-                ExternalModelCaller.callModel(run, "DIA-NN");
             } else if (Constants.spectraRTPredModel.equals("pDeep3")) {
                 System.out.println("Generating input file for pDeep3");
                 peptideFileCreator.createPeptideFile(Constants.pinPepXMLDirectory, Constants.spectraRTPredInput, "pDeep3");
-                //TODO: run pDeep3 and add to ExternalModelCaller
             }
         }
-        if (createDetectPredFile) {
+        if (createDetectAllPredFile) {
+            System.out.println("Generating input file for DeepMSPeptide");
+            peptideFileCreator.createPeptideFile(Constants.pinPepXMLDirectory, Constants.detectPredInput, "DeepMSPeptideAll");
+        } else if (createDetectPredFile) {
             System.out.println("Generating input file for DeepMSPeptide");
             peptideFileCreator.createPeptideFile(Constants.pinPepXMLDirectory, Constants.detectPredInput, "DeepMSPeptide");
+        }
+
+        //generate predictions
+        if (Constants.spectraRTPredFile == null) {
+            ExternalModelCaller.callModel(run, "DIA-NN");
+        }
+        if (Constants.detectPredFile == null) {
             //TODO: run DeepMSPeptide and add to ExternalModelCaller
         }
 
         //create new pin file with features
+        //TODO: edited pins are overriding each other
         System.out.println("Generating edited pin with following features: " + Arrays.toString(featuresArray));
         percolatorFormatter.editPin(Constants.pinPepXMLDirectory, Constants.mzmlDirectory, Constants.spectraRTPredFile,
                 Constants.detectPredFile, featuresArray, Constants.editedPin);

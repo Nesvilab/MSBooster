@@ -49,7 +49,7 @@ public class Constants {
     public static Integer binwidth = 1;
     public static Integer mzFreqWindow = 1;
 
-    public static Float ppmTolerance = 10f; //ppm tolerance of MS2 scans
+    public static Float ppmTolerance = 20f; //ppm tolerance of MS2 scans
 
     //for limiting number of fragments used
     //TODO need to adapt for DIANN
@@ -80,7 +80,7 @@ public class Constants {
     //default auto, everything, or all? Or a combination I figure out empirically
     public static String features = "brayCurtis,euclideanDistance,cosineSimilarity," +
             "spectralContrastAngle,pearsonCorr,dotProduct," +
-            "deltaRTlinear,deltaRTbins,RTzscore,RTprobability,RTprobabilityUnifPrior,deltaRTLOESS";
+            "deltaRTlinear,deltaRTbins,RTzscore,deltaRTLOESS";
     //public static String features = "auto";
 
     //don't currently support weighted similarity features

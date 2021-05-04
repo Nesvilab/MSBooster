@@ -59,6 +59,7 @@ public class percolatorFormatter {
     public static void editPin(String pinDirectory, String mzmlDirectory, String mgf, String detectFile,
                                String[] features, String outfile)
             throws IOException {
+        long startTime = System.nanoTime();
         List<String> featuresList = Arrays.asList(features);
 
         //booleans for future determination of what to do
@@ -138,6 +139,7 @@ public class percolatorFormatter {
                 if (needsMGF) {
                     System.out.println("Loading PSMs onto mzml object");
                     mzml.setPinEntries(pin, predictedSpectra);
+                    System.out.println("Done loading PSMs onto mzml object");
                 }
                 if (featuresList.contains("deltaRTLOESS")) {
                     System.out.println("Generating LOESS regression");
@@ -185,8 +187,10 @@ public class percolatorFormatter {
                     HashSet<String> allPeps = pin.getAllPep();
 
                     //load fasta
+                    System.out.println("Loading fasta");
                     FastaReader fasta = new FastaReader(Constants.fasta);
 
+                    System.out.println("Loading detectabilities for unique peptides from each protein");
                     for (Map.Entry<String, ArrayList<String>> e : fasta.protToPep.entrySet()) {
                         float[] protDetects = new float[e.getValue().size()]; //for storing initial detect order
 
@@ -331,6 +335,10 @@ public class percolatorFormatter {
                     writer.writeValuesToRow();
                 }
                 pin.close();
+                long endTime = System.nanoTime();
+
+                long duration = (endTime - startTime);
+                System.out.println("Pin editing took " + duration / 1000000000 +" seconds");
             }
             writer.close();
             System.out.println("Edited pin file at " + outfile);
@@ -347,11 +355,11 @@ public class percolatorFormatter {
 
         //CHANGE PPM TO 20 if cptac
         //TODO: also need to be able to handle single file rather than directory
-        editPin("C:/Users/kevin/Downloads/proteomics/wide",
+        editPin("C:/Users/kevin/Downloads/proteomics/wide/",
                 "C:/Users/kevin/OneDriveUmich/proteomics/mzml/wideWindow/",
-                "C:/Users/kevin/OneDriveUmich/proteomics/preds/widePDeep3.mgf",
+                "C:/Users/kevin/Downloads/proteomics/wide/spectraRT.predicted.bin",
                 "C:/Users/kevin/OneDriveUmich/proteomics/preds/detectwideAll_Predictions.txt",
-                new String[] {"brayCurtis"},
+                Constants.features.split(","),
                 "C:/Users/kevin/Downloads/proteomics/wide/edited.pin");
     }
 }

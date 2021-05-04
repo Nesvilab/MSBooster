@@ -67,7 +67,6 @@ public class spectrumComparison {
 
     private void filterTopFragments() {
         //skip if shorter
-        //TODO: have tmpInts and MZs outside of this function
         if (this.predMZs.length > Constants.topFragments) {
             tmpInts.clear();
             tmpMZs.clear();

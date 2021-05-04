@@ -2,6 +2,8 @@ package Features;
 
 import External.ExternalModelCaller;
 
+import java.io.BufferedReader;
+import java.io.FileReader;
 import java.lang.reflect.Field;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -29,6 +31,17 @@ public class MainClass {
         }
 
         //adding to constants class
+        if (params.containsKey("paramsList")) { //override previous params input
+                                                //params with nulls are left out
+            String line;
+            BufferedReader reader = new BufferedReader(new FileReader(params.get("paramsList")));
+            while ((line = reader.readLine()) != null) {
+                String[] lineSplit = line.split("=", 2);
+                params.put(lineSplit[0].trim(), lineSplit[1].trim());
+            }
+            reader.close();
+        }
+
         Constants c = new Constants();
         for (Map.Entry<String, String> entry : params.entrySet()) {
             String key = entry.getKey();

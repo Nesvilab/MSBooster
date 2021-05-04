@@ -4,8 +4,6 @@ import umich.ms.fileio.exceptions.FileParsingException;
 
 import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;
-import java.lang.reflect.Method;
-import java.util.HashMap;
 
 public class peptideObj {
     final String name;
@@ -25,7 +23,7 @@ public class peptideObj {
 //    int nmc;
 //    double isoError;
     spectrumComparison spectralSimObj;
-    HashMap<String, Double> scores = new HashMap<>();
+//    HashMap<String, Double> scores = new HashMap<>();
 
     public peptideObj(mzmlScanNumber scanNumObj, String name, int rank, int targetORdecoy, String escore,
                       float[] predMZs, float[] predIntensities, float predRT) {
@@ -41,32 +39,32 @@ public class peptideObj {
         this.RT = predRT;
     }
 
-    public void setScore(String similarityMeasure) throws FileParsingException, NoSuchMethodException,
-            InvocationTargetException, IllegalAccessException {
+//    public void setScore(String similarityMeasure) throws FileParsingException, NoSuchMethodException,
+//            InvocationTargetException, IllegalAccessException {
+//
+//        //get similarity
+//        //check that similarityMeasure is valid
+//
+//        double sim = 0;
+//        //only if need weights
+//        if (similarityMeasure.substring(0, 8).equals("weighted")) {
+//            Method method = spectralSimObj.getClass().getMethod(similarityMeasure, double[].class);
+//            double[] weights = spectralSimObj.getWeights(scanNumObj.mzmlScans.getMzFreq()); //revisit if necessary
+//            sim = (double) method.invoke(spectralSimObj, weights);
+//        } else {
+//            Method method = spectralSimObj.getClass().getMethod(similarityMeasure);
+//            sim = (double) method.invoke(spectralSimObj);
+//        }
+//        scores.put(similarityMeasure, sim);
+//    }
 
-        //get similarity
-        //check that similarityMeasure is valid
-
-        double sim = 0;
-        //only if need weights
-        if (similarityMeasure.substring(0, 8).equals("weighted")) {
-            Method method = spectralSimObj.getClass().getMethod(similarityMeasure, double[].class);
-            double[] weights = spectralSimObj.getWeights(scanNumObj.mzmlScans.getMzFreq()); //revisit if necessary
-            sim = (double) method.invoke(spectralSimObj, weights);
-        } else {
-            Method method = spectralSimObj.getClass().getMethod(similarityMeasure);
-            sim = (double) method.invoke(spectralSimObj);
-        }
-        scores.put(similarityMeasure, sim);
-    }
-
-    public double getScore(String similarityMeasure) throws NoSuchMethodException, FileParsingException,
-            IllegalAccessException, InvocationTargetException {
-        if (! scores.containsKey(similarityMeasure)) {
-            setScore(similarityMeasure);
-        }
-        return scores.get(similarityMeasure);
-    }
+//    public double getScore(String similarityMeasure) throws NoSuchMethodException, FileParsingException,
+//            IllegalAccessException, InvocationTargetException {
+//        if (! scores.containsKey(similarityMeasure)) {
+//            setScore(similarityMeasure);
+//        }
+//        return scores.get(similarityMeasure);
+//    }
 
     public static void main(String[] args) throws FileParsingException, IOException, NoSuchMethodException,
             IllegalAccessException, InvocationTargetException {

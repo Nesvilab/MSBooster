@@ -45,7 +45,6 @@ public class FastaReader {
                                 value = pepToProt.get(pep);
                             } else {
                                 value = new HashSet<String>();
-                                                                    //TODO: make it a hashset in the first place?
                             }
                             value.add(protID);
                             pepToProt.put(pep, value);

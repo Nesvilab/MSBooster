@@ -2,6 +2,7 @@ package Features;
 
 import com.univocity.parsers.tsv.TsvWriter;
 import com.univocity.parsers.tsv.TsvWriterSettings;
+import org.apache.commons.lang3.ArrayUtils;
 import umich.ms.fileio.exceptions.FileParsingException;
 
 import java.io.File;
@@ -60,6 +61,11 @@ public class percolatorFormatter {
                                String[] features, String outfile)
             throws IOException {
         List<String> featuresList = Arrays.asList(features);
+        //remove features from array for multiple protein formatting
+        if (featuresList.contains("detectability")) {
+            int idx = ArrayUtils.indexOf(features, "detectability");
+            features = ArrayUtils.remove(features, idx);
+        }
 
         //booleans for future determination of what to do
         boolean needsMGF = false;
@@ -152,6 +158,7 @@ public class percolatorFormatter {
                 //Special preparations dependent on features we require
                 if (needsMGF) {
                     System.out.println("Loading PSMs onto mzml object");
+                    //TODO: can we detect before this how many ranks there are?
                     mzml.setPinEntries(pin, predictedSpectra);
                     System.out.println("Done loading PSMs onto mzml object");
                 }
@@ -269,9 +276,6 @@ public class percolatorFormatter {
                     //switch case
                     for (String feature : features) {
                         switch (feature) {
-                            case "detectability":
-                                //writer.addValue("detectability", dm.getDetectability(pep));
-                                break;
                             case "detectFractionGreater":
                                 float d = dm.getDetectability(pep);
                                 //for each protein, get the position of pep's detect and see how many peptides with greater detect are present
@@ -367,11 +371,11 @@ public class percolatorFormatter {
         //CHANGE PPM TO 10 if wide, narrow
 
         //CHANGE PPM TO 20 if cptac
-        editPin("C:/Users/kevin/Downloads/proteomics/wide/23aug2017_hela_serum_timecourse_pool_wide_002.pin",
-                "C:/Users/kevin/OneDriveUmich/proteomics/mzml/wideWindow/23aug2017_hela_serum_timecourse_pool_wide_002.mzML",
+        editPin("C:/Users/kevin/Downloads/proteomics/wide/",
+                "C:/Users/kevin/OneDriveUmich/proteomics/mzml/wideWindow/",
                 "C:/Users/kevin/Downloads/proteomics/wide/spectraRT.predicted.bin",
                 "C:/Users/kevin/OneDriveUmich/proteomics/preds/detectwideAll_Predictions.txt",
-                Constants.features.split(","),
+                ("detectability,brayCurtis").split(","),
                 "C:/Users/kevin/Downloads/proteomics/wide/edited_");
     }
 }

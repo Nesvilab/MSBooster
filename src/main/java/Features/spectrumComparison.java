@@ -18,7 +18,7 @@ public class spectrumComparison {
     float[] matchedIntensities;
     float[] unitNormMatchedIntensities;
     float[] unitNormPredIntensities;
-    LinkedHashSet<Integer> matchedIdx;
+    LinkedHashSet<Integer> matchedIdx = new LinkedHashSet<Integer>();
     private static ArrayList<Float> tmpMZs = new ArrayList<Float>();
     private static ArrayList<Float> tmpInts = new ArrayList<Float>();
     private static PearsonsCorrelation pc = new PearsonsCorrelation();
@@ -36,7 +36,6 @@ public class spectrumComparison {
         }
 
         matchedIntensities = this.getMatchedIntensities(eMZs, eIntensities);
-        matchedIdx = new LinkedHashSet<>(matchedIntensities.length);
     }
 
     public spectrumComparison(float[] eMZs, float[] eIntensities,
@@ -56,7 +55,6 @@ public class spectrumComparison {
             this.filterTopFragments();
         }
         matchedIntensities = this.getMatchedIntensities(eMZs, eIntensities);
-        matchedIdx = new LinkedHashSet<>(matchedIntensities.length);
     }
 
     //this version is used when shuffling intensities

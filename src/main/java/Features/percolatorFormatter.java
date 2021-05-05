@@ -371,11 +371,11 @@ public class percolatorFormatter {
         //CHANGE PPM TO 10 if wide, narrow
 
         //CHANGE PPM TO 20 if cptac
-        editPin("C:/Users/kevin/Downloads/proteomics/wide/",
-                "C:/Users/kevin/OneDriveUmich/proteomics/mzml/wideWindow/",
-                "C:/Users/kevin/Downloads/proteomics/wide/spectraRT.predicted.bin",
-                "C:/Users/kevin/OneDriveUmich/proteomics/preds/detectwideAll_Predictions.txt",
-                ("detectability,brayCurtis").split(","),
-                "C:/Users/kevin/Downloads/proteomics/wide/edited_");
+        editPin("C:/Users/kevin/Downloads/proteomics/cptac/2021-2-21",
+                "C:/Users/kevin/OneDriveUmich/proteomics/mzml/cptac/",
+                "C:/Users/kevin/Downloads/proteomics/cptac/2021-2-21/spectraRT.predicted.bin",
+                null,
+                ("brayCurtis,deltaRTlinear").split(","),
+                "C:/Users/kevin/Downloads/proteomics/cptac/2021-2-21/edited_");
     }
 }

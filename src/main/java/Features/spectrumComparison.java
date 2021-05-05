@@ -7,40 +7,56 @@ import umich.ms.fileio.exceptions.FileParsingException;
 import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
+import java.util.*;
+import java.util.stream.IntStream;
 
 import static Features.floatUtils.floatToDouble;
 
-//TODO: better way of handling length 1 predMZs/Intensities
 public class spectrumComparison {
     float[] predMZs;
     float[] predIntensities;
     float[] matchedIntensities;
     float[] unitNormMatchedIntensities;
     float[] unitNormPredIntensities;
-    ArrayList<Integer> matchedIdx = new ArrayList<Integer>();
+    LinkedHashSet<Integer> matchedIdx;
     private static ArrayList<Float> tmpMZs = new ArrayList<Float>();
     private static ArrayList<Float> tmpInts = new ArrayList<Float>();
     private static PearsonsCorrelation pc = new PearsonsCorrelation();
 
     public spectrumComparison(float[] eMZs, float[] eIntensities,
                               float[] pMZs, float[] pIntensities) {
-        predMZs = pMZs;
-        predIntensities = pIntensities;
+        int[] sortedIndices = IntStream.range(0, pMZs.length)
+                .boxed().sorted((k, j) -> Float.compare(pMZs[k], pMZs[j]))
+                .mapToInt(ele -> ele).toArray();
+        predMZs = new float[pMZs.length];
+        predIntensities = new float[pIntensities.length];
+        for (int i = 0; i < sortedIndices.length; i++) {
+            predMZs[i] = pMZs[sortedIndices[i]];
+            predIntensities[i] = pIntensities[sortedIndices[i]];
+        }
+
         matchedIntensities = this.getMatchedIntensities(eMZs, eIntensities);
+        matchedIdx = new LinkedHashSet<>(matchedIntensities.length);
     }
 
     public spectrumComparison(float[] eMZs, float[] eIntensities,
                               float[] pMZs, float[] pIntensities,
                               boolean filter) {
-        predMZs = pMZs;
-        predIntensities = pIntensities;
+        int[] sortedIndices = IntStream.range(0, pMZs.length)
+                .boxed().sorted((k, j) -> Float.compare(pMZs[k], pMZs[j]))
+                .mapToInt(ele -> ele).toArray();
+        predMZs = new float[pMZs.length];
+        predIntensities = new float[pIntensities.length];
+        for (int i = 0; i < sortedIndices.length; i++) {
+            predMZs[i] = pMZs[sortedIndices[i]];
+            predIntensities[i] = pIntensities[sortedIndices[i]];
+        }
+
         if (filter) {
             this.filterTopFragments();
         }
         matchedIntensities = this.getMatchedIntensities(eMZs, eIntensities);
+        matchedIdx = new LinkedHashSet<>(matchedIntensities.length);
     }
 
     //this version is used when shuffling intensities

@@ -167,7 +167,6 @@ public class MainClass {
         }
 
         //create new pin file with features
-        //TODO: edited pins are overriding each other
         System.out.println("Generating edited pin with following features: " + Arrays.toString(featuresArray));
         percolatorFormatter.editPin(Constants.pinPepXMLDirectory, Constants.mzmlDirectory, Constants.spectraRTPredFile,
                 Constants.detectPredFile, featuresArray, Constants.editedPin);

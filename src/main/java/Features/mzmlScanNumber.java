@@ -4,10 +4,7 @@ import org.apache.commons.lang3.ArrayUtils;
 import umich.ms.fileio.exceptions.FileParsingException;
 
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.HashMap;
+import java.util.*;
 
 public class mzmlScanNumber {
     final int scanNum;
@@ -64,18 +61,14 @@ public class mzmlScanNumber {
 
             //remove higher ranked peaks
             if (Constants.removeRankPeaks) {
-                ArrayList<Integer> matchedIdx = newPepObj.spectralSimObj.matchedIdx;
-                //sort from biggest to smallest
-                Collections.sort(matchedIdx, Collections.reverseOrder());
-
-                for (int i : matchedIdx) {
+                for (int i = newPepObj.spectralSimObj.matchedIdx.size() - 1; i > -1; i--) {
                     expMZs = ArrayUtils.remove(expMZs, i);
                     expIntensities = ArrayUtils.remove(expIntensities, i);
                 }
             }
         } catch (Exception e) {
             //when peptide isn't in predictions, like U peptides.
-            // Set to arbitrary 0 vectors so nothing matches, similarity 0
+            //Set to arbitrary 0 vectors so nothing matches, similarity 0
             peptideObjects.add(rank - 1, new peptideObj(this, name, rank, targetORdecoy, escore,
                     zeroFloatArray, zeroFloatArray, 0.0f));
         }

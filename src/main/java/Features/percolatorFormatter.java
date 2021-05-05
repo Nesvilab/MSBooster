@@ -59,35 +59,49 @@ public class percolatorFormatter {
     public static void editPin(String pinDirectory, String mzmlDirectory, String mgf, String detectFile,
                                String[] features, String outfile)
             throws IOException {
-        long startTime = System.nanoTime();
         List<String> featuresList = Arrays.asList(features);
 
         //booleans for future determination of what to do
         boolean needsMGF = false;
 
         //get names of mzml files
-        Collection<File> mzmlFilesCollection = listFiles(new File(mzmlDirectory), new String[]{"mzML"}, false);
-        String[] mzmlFiles = new String[mzmlFilesCollection.size()];
-        int FileIdx = 0;
-        for (File f : mzmlFilesCollection) {
-            mzmlFiles[FileIdx] = f.getName();
-            FileIdx++;
+        //check if file or directory
+        String[] mzmlFiles;
+        if (mzmlDirectory.substring(mzmlDirectory.length() - 4).toLowerCase().equals("mzml")) {
+            File f = new File(mzmlDirectory);
+            mzmlFiles = new String[]{f.getName()};
+            mzmlDirectory = f.getAbsoluteFile().getParent();
+        } else {
+            Collection<File> mzmlFilesCollection = listFiles(new File(mzmlDirectory), new String[]{"mzML"}, false);
+            mzmlFiles = new String[mzmlFilesCollection.size()];
+            int FileIdx = 0;
+            for (File f : mzmlFilesCollection) {
+                mzmlFiles[FileIdx] = f.getName();
+                FileIdx++;
+            }
+            Arrays.sort(mzmlFiles);
         }
-        Arrays.sort(mzmlFiles);
 
         //check that corresponding pin files exist
-        Collection<File> pinFilesCollection = listFiles(new File(pinDirectory), new String[]{"pin"}, false);
-        HashSet<String> pinFilesSet = new HashSet<>();
-        for (File f : pinFilesCollection) {
-            pinFilesSet.add(f.getName());
-        }
+        String[] pinFiles;
+        if (pinDirectory.substring(pinDirectory.length() - 3).toLowerCase().equals("pin")) {
+            File f = new File(pinDirectory);
+            pinFiles = new String[]{f.getName()};
+            pinDirectory = f.getAbsoluteFile().getParent();
+        } else {
+            Collection<File> pinFilesCollection = listFiles(new File(pinDirectory), new String[]{"pin"}, false);
+            HashSet<String> pinFilesSet = new HashSet<>();
+            for (File f : pinFilesCollection) {
+                pinFilesSet.add(f.getName());
+            }
 
-        String[] pinFiles = new String[mzmlFiles.length];
-        for (int i = 0; i < mzmlFiles.length; i++) {
-            pinFiles[i] = mzmlFiles[i].substring(0, mzmlFiles[i].length() - 4) + "pin";
-            if (! pinFilesSet.contains(pinFiles[i])) {
-                throw new AssertionError("mzML file must have corresponding pin file. " +
-                        pinFiles[i] + " does not exist");
+            pinFiles = new String[mzmlFiles.length];
+            for (int i = 0; i < mzmlFiles.length; i++) {
+                pinFiles[i] = mzmlFiles[i].substring(0, mzmlFiles[i].length() - 4) + "pin";
+                if (!pinFilesSet.contains(pinFiles[i])) {
+                    throw new AssertionError("mzML file must have corresponding pin file. " +
+                            pinFiles[i] + " does not exist");
+                }
             }
         }
 
@@ -114,10 +128,12 @@ public class percolatorFormatter {
             dm = new detectMap(detectFile);
         }
 
-        TsvWriter writer = new TsvWriter(new File(outfile), new TsvWriterSettings());
         try {
             //////////////////////////////iterate through pin and mzml files//////////////////////////////////////////
             for (int i = 0; i < pinFiles.length; i++) {
+                long startTime = System.nanoTime();
+                String newOutfile = outfile + pinFiles[i];
+                TsvWriter writer = new TsvWriter(new File(newOutfile), new TsvWriterSettings());
                 //load mzml file
                 System.out.println("Loading " + mzmlFiles[i]);
                 mzMLReader mzml = new mzMLReader(mzmlDirectory + File.separator + mzmlFiles[i]);
@@ -126,14 +142,12 @@ public class percolatorFormatter {
                 System.out.println("Loading " + pinFiles[i]);
                 pinReader pin = new pinReader(pinDirectory + File.separator + pinFiles[i]);
 
-                //if first pin file, use it to add header to written tsv
-                if (i == 0) {
-                    ArrayList<String> newHeader = new ArrayList<>();
-                    newHeader.addAll(Arrays.asList(pin.header));
-                    newHeader.addAll(pin.pepIdx, featuresList); //add features before Peptide
-                    newHeader.remove("detectability");
-                    writer.writeHeaders(newHeader);
-                }
+                //add header to written tsv
+                ArrayList<String> newHeader = new ArrayList<>();
+                newHeader.addAll(Arrays.asList(pin.header));
+                newHeader.addAll(pin.pepIdx, featuresList); //add features before Peptide
+                newHeader.remove("detectability");
+                writer.writeHeaders(newHeader);
 
                 //Special preparations dependent on features we require
                 if (needsMGF) {
@@ -339,11 +353,10 @@ public class percolatorFormatter {
 
                 long duration = (endTime - startTime);
                 System.out.println("Pin editing took " + duration / 1000000000 +" seconds");
+                writer.close();
+                System.out.println("Edited pin file at " + newOutfile);
             }
-            writer.close();
-            System.out.println("Edited pin file at " + outfile);
         } catch (IOException | FileParsingException e) {
-            writer.close();
             e.printStackTrace();
         } catch (Exception e) {
             e.printStackTrace();
@@ -354,12 +367,11 @@ public class percolatorFormatter {
         //CHANGE PPM TO 10 if wide, narrow
 
         //CHANGE PPM TO 20 if cptac
-        //TODO: also need to be able to handle single file rather than directory
-        editPin("C:/Users/kevin/Downloads/proteomics/wide/",
-                "C:/Users/kevin/OneDriveUmich/proteomics/mzml/wideWindow/",
+        editPin("C:/Users/kevin/Downloads/proteomics/wide/23aug2017_hela_serum_timecourse_pool_wide_002.pin",
+                "C:/Users/kevin/OneDriveUmich/proteomics/mzml/wideWindow/23aug2017_hela_serum_timecourse_pool_wide_002.mzML",
                 "C:/Users/kevin/Downloads/proteomics/wide/spectraRT.predicted.bin",
                 "C:/Users/kevin/OneDriveUmich/proteomics/preds/detectwideAll_Predictions.txt",
                 Constants.features.split(","),
-                "C:/Users/kevin/Downloads/proteomics/wide/edited.pin");
+                "C:/Users/kevin/Downloads/proteomics/wide/edited_");
     }
 }

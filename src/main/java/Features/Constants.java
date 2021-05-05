@@ -17,7 +17,7 @@ public class Constants {
     public static String pinPepXMLDirectory = null; //C:/Users/kevin/Downloads/proteomics/cptac/2021-2-21/
     public static String mzmlDirectory = null; //C:/Users/kevin/OneDriveUmich/proteomics/mzml/cptac/
     public static String outputDirectory = null; //where to write all intermediate and final files
-    public static String editedPin = null;
+    public static String editedPin = null; //a prefix. Default is edited_
     public static String spectraRTPredInput = null;
     public static String detectPredInput = null;
     public static String spectraRTPredFile = null; //use this if predFile already made
@@ -80,7 +80,7 @@ public class Constants {
     //default auto, everything, or all? Or a combination I figure out empirically
     public static String features = "brayCurtis,euclideanDistance,cosineSimilarity," +
             "spectralContrastAngle,pearsonCorr,dotProduct," +
-            "deltaRTlinear,deltaRTbins,RTzscore,deltaRTLOESS";
+            "deltaRTlinear,deltaRTbins,RTzscore,deltaRTLOESS,RTprobability,RTprobabilityUnifPrior";
     //public static String features = "auto";
 
     //don't currently support weighted similarity features
@@ -121,7 +121,7 @@ public class Constants {
             outputDirectory = pinPepXMLDirectory;
         }
         if (editedPin == null) {
-            editedPin = outputDirectory + File.separator + "edited.pin";
+            editedPin = outputDirectory + File.separator + "edited_";
         }
         if (spectraRTPredInput == null) {
             spectraRTPredInput = outputDirectory + File.separator + "spectraRT.tsv";

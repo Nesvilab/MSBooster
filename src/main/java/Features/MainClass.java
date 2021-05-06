@@ -109,21 +109,27 @@ public class MainClass {
         //ignore if files already created
         boolean createSpectraRTPredFile = false;
         boolean createDetectPredFile = false;
+        boolean createSpectraRTPredFile2 = false;
+        boolean createDetectPredFile2 = false;
 
         //check which ones we need
         if (allFeatures || autoFeatures) {
             createSpectraRTPredFile = true;
             createDetectPredFile = true;
+            createSpectraRTPredFile2 = true;
+            createDetectPredFile2 = true;
         } else {
             featureSet.retainAll(Constants.spectraRTFeatures);
             if (featureSet.size() > 0) {
                 createSpectraRTPredFile = true;
+                createSpectraRTPredFile2 = true;
             }
 
             featureSet = new HashSet<>(Arrays.asList(featuresArray));
             featureSet.retainAll(Constants.detectFeatures);
             if (featureSet.size() > 0) {
                 createDetectPredFile = true;
+                createDetectPredFile2 = true;
             }
         }
         //overriding if intermediate files already made
@@ -159,11 +165,11 @@ public class MainClass {
         }
 
         //generate predictions
-        if (Constants.spectraRTPredFile == null) {
+        if ((Constants.spectraRTPredFile == null) && (createSpectraRTPredFile2)) {
             ExternalModelCaller.callModel(run, "DIA-NN");
         }
-        if (Constants.detectPredFile == null) {
-            //TODO: run DeepMSPeptide and add to ExternalModelCaller
+        if ((Constants.detectPredFile == null) && (createDetectPredFile2)) {
+            ExternalModelCaller.callModel(run, "DeepMSPeptide");
         }
 
         //create new pin file with features

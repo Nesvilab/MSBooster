@@ -4,7 +4,6 @@ import umich.ms.fileio.exceptions.FileParsingException;
 
 import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;
-import java.util.ArrayList;
 
 public class RandomThings {
 
@@ -12,11 +11,14 @@ public class RandomThings {
 
     }
 
-    public static void main(String[] args) throws IOException, FileParsingException, NoSuchMethodException, IllegalAccessException, InvocationTargetException {
-        ArrayList<Object> list = new ArrayList<Object>(3);
-        list.add(1, 1);
-        list.add(3, 3);
-        list.add(2, 2);
+    public static void main(String[] args) throws IOException, FileParsingException, NoSuchMethodException, IllegalAccessException, InvocationTargetException, InterruptedException {
+        Runtime run  = Runtime.getRuntime();
+        String command = "C:/Users/kevin/OneDrive/IdeaProjects/MSFraggerDIA_postprocess/target/DeepMSPeptideRevised.exe " +
+                "C:/Users/kevin/Downloads/proteomics/cptac/2021-2-21/detect.tsv";
+
+        // Running the above command
+        Process proc = run.exec(command);
+        proc.waitFor();
     }
 
     //this is for creating tsv for creating histograms for scores between target and decoy in python

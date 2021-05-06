@@ -124,7 +124,11 @@ public class percolatorFormatter {
                 featuresList.contains("euclideanDistance") || featuresList.contains("pearsonCorr") ||
                 featuresList.contains("dotProduct") || featuresList.contains("deltaRTLOESS")) {
             System.out.println("Loading predicted spectra");
+            long startTime = System.nanoTime();
             predictedSpectra = SpectralPredictionMapper.createSpectralPredictionMapper(mgf);
+            long endTime = System.nanoTime();
+            long duration = (endTime - startTime);
+            System.out.println("Spectral and RT loading took " + duration / 1000000 +" milliseconds");
             needsMGF = true;
         }
 
@@ -354,7 +358,6 @@ public class percolatorFormatter {
                 }
                 pin.close();
                 long endTime = System.nanoTime();
-
                 long duration = (endTime - startTime);
                 System.out.println("Pin editing took " + duration / 1000000000 +" seconds");
                 writer.close();
@@ -371,11 +374,11 @@ public class percolatorFormatter {
         //CHANGE PPM TO 10 if wide, narrow
 
         //CHANGE PPM TO 20 if cptac
-        editPin("C:/Users/kevin/Downloads/proteomics/cptac/2021-2-21",
+        editPin("C:/Users/kevin/Downloads/proteomics/cptac/2021-2-21/pepXMLtmp",
                 "C:/Users/kevin/OneDriveUmich/proteomics/mzml/cptac/",
-                "C:/Users/kevin/Downloads/proteomics/cptac/2021-2-21/spectraRT.predicted.bin",
+                "C:/Users/kevin/OneDriveUmich/proteomics/preds/cptacProsit.msp",
                 null,
-                ("brayCurtis,deltaRTlinear").split(","),
-                "C:/Users/kevin/Downloads/proteomics/cptac/2021-2-21/edited_");
+                ("brayCurtis,euclideanDistance,cosineSimilarity,spectralContrastAngle,pearsonCorr,dotProduct").split(","),
+                "C:/Users/kevin/Downloads/proteomics/spectralPredCompare/prosit_");
     }
 }

@@ -52,7 +52,6 @@ public class Constants {
     public static Float ppmTolerance = 20f; //ppm tolerance of MS2 scans
 
     //for limiting number of fragments used
-    //TODO need to adapt for DIANN
     public static Boolean useTopFragments = true;
     public static Integer topFragments = 12;
     public static Boolean removeRankPeaks = true; //whether to remove peaks from higher ranks
@@ -80,7 +79,8 @@ public class Constants {
     //default auto, everything, or all? Or a combination I figure out empirically
     public static String features = "brayCurtis,euclideanDistance,cosineSimilarity," +
             "spectralContrastAngle,pearsonCorr,dotProduct," +
-            "deltaRTlinear,deltaRTbins,RTzscore,deltaRTLOESS,RTprobability,RTprobabilityUnifPrior";
+            "deltaRTlinear,deltaRTbins,RTzscore,deltaRTLOESS,RTprobability,RTprobabilityUnifPrior," +
+            "detectability,detectFractionGreater";
     //public static String features = "auto";
 
     //don't currently support weighted similarity features

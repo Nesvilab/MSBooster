@@ -24,6 +24,7 @@ public class peptideFileCreator {
 
     //infile is pepXML file locations
     public static void createPeptideFile(String infile, String outfile, String modelFormat) throws IOException {
+        long startTime = System.nanoTime();
         Collection<File> x = listFiles(new File(infile), new String[]{"pepXML"}, false);
 
         //read in pepXML files
@@ -102,8 +103,11 @@ public class peptideFileCreator {
                 myWriter.write(hSetHit + "\n");
             }
 
+            long endTime = System.nanoTime();
+            long duration = (endTime - startTime);
+            System.out.println(modelFormat + " input file generation took " + duration / 1000000000 +" seconds");
             myWriter.close();
-            System.out.println("Successfully wrote to the file");
+            System.out.println("Input file at  " + outfile);
         } catch (IOException e) {
             System.out.println("An error occurred");
             e.printStackTrace();

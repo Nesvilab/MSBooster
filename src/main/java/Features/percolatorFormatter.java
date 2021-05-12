@@ -201,7 +201,11 @@ public class percolatorFormatter {
                 }
                 if (featuresList.contains("RTprobability") || featuresList.contains("RTprobabilityUnifPrior")) {
                     System.out.println("Generating empirical densities");
+                    long startTime1 = System.nanoTime();
                     mzml.setKernelDensities();
+                    long endTime1 = System.nanoTime();
+                    long duration1 = (endTime1 - startTime1);
+                    System.out.println("Generating empirical densities took " + duration1 / 1000000000 +" seconds");
                 }
 
                 //for storing detects and whether peptides are present

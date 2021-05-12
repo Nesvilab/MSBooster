@@ -372,16 +372,16 @@ public class pepXMLReader {
         }
     }
 
-    public static int[] getScanNumbers(List<SpectrumQuery> spectrumQueries) {
-        int querySize = spectrumQueries.size();
-
-        int[] scanNumbers = new int[querySize];
-        for (int i = 0; i < querySize; i++) {
-            scanNumbers[i] = (int) spectrumQueries.get(i).getStartScan();
-        }
-
-        return scanNumbers;
-    }
+//    public static int[] getScanNumbers(List<SpectrumQuery> spectrumQueries) {
+//        int querySize = spectrumQueries.size();
+//
+//        int[] scanNumbers = new int[querySize];
+//        for (int i = 0; i < querySize; i++) {
+//            scanNumbers[i] = (int) spectrumQueries.get(i).getStartScan();
+//        }
+//
+//        return scanNumbers;
+//    }
 
     public String[] getXMLpeptides() {
         if (XMLpeptides == null) {

@@ -38,16 +38,17 @@ public class Constants {
     //locations of executables and other models
     public static Integer numThreads = 0;
     public static String DiaNN = null; //C:/DIA-NN/1.7.15beta1/DiaNN.exe
-    public static String spectraRTPredModel = "DIA-NN"; //mgf, bin, msp
+    public static final String spectraRTPredModel = "DIA-NN"; //mgf, bin, msp
                                                         //pDeep3, DIA-NN, Prosit
                                                         //DIANN by default
+                                                        //currently don't support changing this
 
     ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
     //miscellaneous inner workings
 
     //these two constants are for weighted spectral similarity features, not currently supported
-    public static Integer binwidth = 1;
-    public static Integer mzFreqWindow = 1;
+    public static final Integer binwidth = 1;
+    public static final Integer mzFreqWindow = 1;
 
     public static Float ppmTolerance = 20f; //ppm tolerance of MS2 scans
 
@@ -56,7 +57,7 @@ public class Constants {
     public static Integer topFragments = 12;
     public static Boolean removeRankPeaks = true; //whether to remove peaks from higher ranks
 
-    public static Integer fineTuneSize = 100; //for generating a finetune file for pDeep3
+    public static final Integer fineTuneSize = 100; //for generating a finetune file for pDeep3
 
     //these constants for RT features
     public static Integer RTregressionSize = 5000;
@@ -101,19 +102,24 @@ public class Constants {
     //Handling PTMs
 
     //TODO: better handling of PTMs, all in one location
-    private static HashMap<Double, Integer> makeModAAToUnimod() {
-        HashMap<Double, Integer> map = new HashMap<>();
-        map.put(160.03065, 4);
-        map.put(147.0354, 35);
+    private static HashMap<Object, Integer> makeModAAToUnimod() {
+        HashMap<Object, Integer> map = new HashMap<>();
+        map.put(160.03065d, 4);
+        map.put("Carbamidomethyl[C]", 4);
+        map.put(147.0354d, 35);
+        map.put("Oxidation[M]", 35);
+        map.put(43.018425d, 1);
+        map.put("Acetyl[AnyN-term]", 1);
         return map;
     }
-    public static final HashMap<Double, Integer> modAAmassToUnimod = makeModAAToUnimod();
-    private static HashMap<Double, Integer> makeModNtermToUnimod() {
-        HashMap<Double, Integer> map = new HashMap<>();
-        map.put(43.018425, 1);
+    public static final HashMap<Object, Integer> modAAmassToUnimod = makeModAAToUnimod();
+    private static HashMap<Object, Integer> makeModNtermToUnimod() {
+        HashMap<Object, Integer> map = new HashMap<>();
+        map.put(43.018425d, 1);
+        map.put("Acetyl[AnyN-term]", 1);
         return map;
     }
-    public static final HashMap<Double, Integer> modNtermToUnimod = makeModNtermToUnimod();
+    public static final HashMap<Object, Integer> modNtermToUnimod = makeModNtermToUnimod();
 
     //methods
     public void updatePaths() {

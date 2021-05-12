@@ -23,40 +23,69 @@ public class peptideFileCreator {
     }
 
     //infile is pepXML file locations
-    public static void createPeptideFile(String infile, String outfile, String modelFormat) throws IOException {
+    public static void createPeptideFile(String infile, String outfile, String modelFormat, String psmFormat)
+            throws IOException { //pepXML or pin
         long startTime = System.nanoTime();
-        Collection<File> x = listFiles(new File(infile), new String[]{"pepXML"}, false);
+        Collection<File> x = listFiles(new File(infile), new String[]{psmFormat}, false);
 
         //read in pepXML files
         String[] allHits = new String[0];
-        for (File f : x) {
-            String fileName = f.getCanonicalPath();
-            pepXMLReader xmlReader = new pepXMLReader(fileName);
-            String[] hitsToAdd = new String[0];
-            switch (modelFormat) {
-                case "pDeep3":
-                    hitsToAdd = xmlReader.createPDeep3List();
-                    break;
-                case "DeepMSPeptide": //ignores charge and mods
-                    hitsToAdd = xmlReader.createDeepMSPeptideList();
-                    break;
-                case "DeepMSPeptideAll": //ignores charge and mods
-                    hitsToAdd = xmlReader.createDeepMSPeptideList();
-                    break;
-                case "Diann":
-                    hitsToAdd = xmlReader.createDiannList();
-                    break;
-                case "prosit":
-                    hitsToAdd = xmlReader.createPrositList(34);
-            }
+        if (psmFormat.equals("pepXML")) {
+            for (File f : x) {
+                String fileName = f.getCanonicalPath();
+                pepXMLReader xmlReader = new pepXMLReader(fileName);
+                String[] hitsToAdd = new String[0];
+                switch (modelFormat) {
+                    case "pDeep3":
+                        hitsToAdd = xmlReader.createPDeep3List();
+                        break;
+                    case "DeepMSPeptide": //ignores charge and mods
+                        hitsToAdd = xmlReader.createDeepMSPeptideList();
+                        break;
+                    case "DeepMSPeptideAll": //ignores charge and mods
+                        hitsToAdd = xmlReader.createDeepMSPeptideList();
+                        break;
+                    case "Diann":
+                        hitsToAdd = xmlReader.createDiannList();
+                        break;
+                    case "prosit":
+                        hitsToAdd = xmlReader.createPrositList(34);
+                }
 
-            allHits = (String[]) ArrayUtils.addAll(allHits, hitsToAdd);
+                allHits = ArrayUtils.addAll(allHits, hitsToAdd);
+            }
+        } else { //pin
+            for (File f : x) {
+                String fileName = f.getCanonicalPath();
+                pinReader pin = new pinReader(fileName);
+                String[] hitsToAdd = new String[0];
+                switch (modelFormat) {
+                    case "pDeep3":
+                        hitsToAdd = pin.createPDeep3List();
+                        break;
+                    case "DeepMSPeptide": //ignores charge and mods
+                        hitsToAdd = pin.createDeepMSPeptideList();
+                        break;
+                    case "DeepMSPeptideAll": //ignores charge and mods
+                        hitsToAdd = pin.createDeepMSPeptideList();
+                        break;
+                    case "Diann":
+                        hitsToAdd = pin.createDiannList();
+                        break;
+                    //TODO: prosit case
+//                    case "prosit":
+//                        hitsToAdd = pin.createPrositList(34);
+                }
+                pin.close();
+
+                allHits = ArrayUtils.addAll(allHits, hitsToAdd);
+            }
         }
 
         //filter out redundant peptides
         //this step can reduce number of predictions needed to 1/3, decreasing prediction time
         HashSet<String> hSetHits = getUniqueHits(allHits);
-        if (modelFormat == "DeepMSPeptideAll") {
+        if (modelFormat.equals("DeepMSPeptideAll")) {
             //add all targets from fasta
             FastaReader fasta = new FastaReader(Constants.fasta);
             for (ArrayList<String> array : fasta.protToPep.values()) {
@@ -117,6 +146,6 @@ public class peptideFileCreator {
     public static void main(String[] args) throws IOException {
         createPeptideFile("C:/Users/kevin/Downloads/proteomics/cptac/2021-2-21/pepXMLtmp",
                 "C:/Users/kevin/OneDriveUmich/proteomics/preds/detectcptacAll.csv",
-                "DeepMSPeptideAll");
+                "DeepMSPeptideAll", "pin");
     }
 }

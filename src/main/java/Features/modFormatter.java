@@ -5,15 +5,15 @@ import java.util.HashMap;
 public class modFormatter {
     int[] pos;
     double[] mass;
-    HashMap <Double, String> modifications= new HashMap<Double, String>();
+    final HashMap <Double, String> modifications= new HashMap<Double, String>() {{
+        put(160.03065, "Carbamidomethyl[C]"); //msfragger 3.1
+        //modifications.put(160.0307, "Carbamidomethyl[C]"); //msfragger 3.0
+        put(147.0354, "Oxidation[M]");
+    }};
 
     public modFormatter(int[] positions, double[] masses) {
         pos = positions;
         mass = masses;
-
-        modifications.put(160.03065, "Carbamidomethyl[C]"); //msfragger 3.1
-        //modifications.put(160.0307, "Carbamidomethyl[C]"); //msfragger 3.0
-        modifications.put(147.0354, "Oxidation[M]");
     }
 
     public String format() {

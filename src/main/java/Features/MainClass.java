@@ -2,9 +2,9 @@ package Features;
 
 import External.ExternalModelCaller;
 
-import java.io.BufferedReader;
-import java.io.FileReader;
+import java.io.*;
 import java.lang.reflect.Field;
+import java.lang.reflect.Modifier;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -24,8 +24,13 @@ public class MainClass {
         HashMap<String, String> params = new HashMap<String, String>();
 
         //setting new values
+        //TODO: description of all flags. Make pinDirectory and mzmlDirectory positional arguments?
         for (int i = 0; i < args.length; i++) {
             String key = args[i].substring(2); //remove --
+            if (key.equals("help")) { //help message
+                System.out.println("Usage: java -jar MSFraggerDIA_postprocess-1.0-SNAPSHOT-jar-with-dependencies.jar [flags]");
+                System.exit(0);
+            }
             i++;
             params.put(key, args[i]);
         }
@@ -150,18 +155,18 @@ public class MainClass {
                     throw new IllegalArgumentException("path to DIA-NN executable must be provided");
                 }
                 System.out.println("Generating input file for DIA-NN");
-                peptideFileCreator.createPeptideFile(Constants.pinPepXMLDirectory, Constants.spectraRTPredInput, "Diann");
+                peptideFileCreator.createPeptideFile(Constants.pinPepXMLDirectory, Constants.spectraRTPredInput, "Diann", "pin");
             } else if (Constants.spectraRTPredModel.equals("pDeep3")) {
                 System.out.println("Generating input file for pDeep3");
-                peptideFileCreator.createPeptideFile(Constants.pinPepXMLDirectory, Constants.spectraRTPredInput, "pDeep3");
+                peptideFileCreator.createPeptideFile(Constants.pinPepXMLDirectory, Constants.spectraRTPredInput, "pDeep3", "pin");
             }
         }
         if (createDetectAllPredFile) {
             System.out.println("Generating input file for DeepMSPeptide");
-            peptideFileCreator.createPeptideFile(Constants.pinPepXMLDirectory, Constants.detectPredInput, "DeepMSPeptideAll");
+            peptideFileCreator.createPeptideFile(Constants.pinPepXMLDirectory, Constants.detectPredInput, "DeepMSPeptideAll", "pin");
         } else if (createDetectPredFile) {
             System.out.println("Generating input file for DeepMSPeptide");
-            peptideFileCreator.createPeptideFile(Constants.pinPepXMLDirectory, Constants.detectPredInput, "DeepMSPeptide");
+            peptideFileCreator.createPeptideFile(Constants.pinPepXMLDirectory, Constants.detectPredInput, "DeepMSPeptide", "pin");
         }
 
         //generate predictions
@@ -170,6 +175,24 @@ public class MainClass {
         }
         if ((Constants.detectPredFile == null) && (createDetectPredFile2)) {
             ExternalModelCaller.callModel(run, "DeepMSPeptide");
+        }
+
+        //print new params file
+        try {
+            BufferedWriter buffer = new BufferedWriter(new FileWriter(Constants.outputDirectory +
+                    File.separator + "finalParams.txt"));
+
+            Field[] f = Constants.class.getDeclaredFields();
+            for (Field field : f) {
+                if ((field.getModifiers() & Modifier.FINAL) != Modifier.FINAL) {
+                    if (!field.getName().equals("paramsList")) {
+                        buffer.write(field.getName() + " = " + field.get(c) + "\n");
+                    }
+                }
+            }
+            buffer.close();
+        } catch (Exception e) {
+            e.getStackTrace();
         }
 
         //create new pin file with features

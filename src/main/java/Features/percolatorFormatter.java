@@ -162,8 +162,12 @@ public class percolatorFormatter {
                 //Special preparations dependent on features we require
                 if (needsMGF) {
                     System.out.println("Loading PSMs onto mzml object");
+                    long startTime1 = System.nanoTime();
                     //TODO: can we detect before this how many ranks there are?
                     mzml.setPinEntries(pin, predictedSpectra);
+                    long endTime = System.nanoTime();
+                    long duration = (endTime - startTime);
+                    System.out.println("PSM loading took " + duration / 1000000000 +" seconds");
                     System.out.println("Done loading PSMs onto mzml object");
                 }
                 if (featuresList.contains("deltaRTLOESS")) {
@@ -201,11 +205,7 @@ public class percolatorFormatter {
                 }
                 if (featuresList.contains("RTprobability") || featuresList.contains("RTprobabilityUnifPrior")) {
                     System.out.println("Generating empirical densities");
-                    long startTime1 = System.nanoTime();
                     mzml.setKernelDensities();
-                    long endTime1 = System.nanoTime();
-                    long duration1 = (endTime1 - startTime1);
-                    System.out.println("Generating empirical densities took " + duration1 / 1000000000 +" seconds");
                 }
 
                 //for storing detects and whether peptides are present
@@ -378,11 +378,11 @@ public class percolatorFormatter {
         //CHANGE PPM TO 10 if wide, narrow
 
         //CHANGE PPM TO 20 if cptac
-        editPin("C:/Users/kevin/Downloads/proteomics/cptac/2021-2-21/pepXMLtmp",
-                "C:/Users/kevin/OneDriveUmich/proteomics/mzml/cptac/",
-                "C:/Users/kevin/OneDriveUmich/proteomics/preds/cptacProsit.msp",
+        editPin("C:/Users/kevin/Downloads/proteomics/narrow/",
+                "C:/Users/kevin/OneDriveUmich/proteomics/mzml/narrowWindow/",
+                "C:/Users/kevin/OneDriveUmich/proteomics/preds/narrowPDeep3.mgf",
                 null,
                 ("brayCurtis,euclideanDistance,cosineSimilarity,spectralContrastAngle,pearsonCorr,dotProduct").split(","),
-                "C:/Users/kevin/Downloads/proteomics/spectralPredCompare/prosit_");
+                "C:/Users/kevin/Downloads/proteomics/narrow/perc/test.pin");
     }
 }

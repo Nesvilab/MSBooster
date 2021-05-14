@@ -13,8 +13,6 @@ import java.util.Map;
 //this is what I use in the java jar file
 public class MainClass {
     public static void main(String[] args) throws Exception {
-        //to do: take constants as input file
-
         //accept command line inputs
         HashSet<String> fields = new HashSet<>();
         for (Field f : Constants.class.getDeclaredFields()) {
@@ -29,6 +27,70 @@ public class MainClass {
             String key = args[i].substring(2); //remove --
             if (key.equals("help")) { //help message
                 System.out.println("Usage: java -jar MSFraggerDIA_postprocess-1.0-SNAPSHOT-jar-with-dependencies.jar [flags]");
+                System.out.println("A tool for processing multi-rank DIA PSM pin files, specifically those from MSFragger-DIA. " +
+                        "A variety of features can be added to the provided pin file, " +
+                        "including spectral prediction, retention time (RT) prediction, and detectability prediction-based features. " +
+                        "At a minimum, an edited pin file is produced. " +
+                        "This tool can also run Dia-NN for spectral and RT prediction (path to a copy of DiaNN.exe must be provided), " +
+                        "and DeepMSPeptide for detectability prediction (provided by DeepMSPeptideRevised.exe). " +
+                        "Predictions for all peptides from the PSMs, both target and decoy, are also saved.");
+
+                System.out.println("");
+                System.out.println("General flags:");
+                System.out.println("\t--paramsList: Text file containing all flags to use. Specifying this will override any other parameters provided via command line");
+                System.out.println("\t--pinPepXMLDirectory (required): Directory where pin/pepXML files are located. " +
+                        "Alternatively, single pin files may be provided. " +
+                        "The directory only needs to contain the pin file, as the pepXML files are not necessary");
+                System.out.println("\t--mzmlDirectory (required): Directory where mzml files are stored. " +
+                        "Each pin file must have a matching mzml file. " +
+                        "If only a single pin file is provided, only a single mzml file needs to be provided here");
+                System.out.println("\t--outputDirectory: Directory to store all intermediate and final files (default: pinPepXMLDirectory)");
+                System.out.println("\t--editedPin: prefix for edited pin file (default: {outputDirectory}/edited_)");
+                System.out.println("\t--spectraRTPredInput: path to the spectral/RT prediction input file. " +
+                        "If not yet produced, it will be stored there (default: {outputDirectory}/spectraRT.tsv)");
+                System.out.println("\t--detectPredInput: path to the detectability prediction input file (default: {outputDirectory}/detect.tsv)");
+                System.out.println("\t--spectraRTPredFile: path to the spectral/RT prediction file, if produced from a previous run. " +
+                        "This parameter can be provided to skip regenerating the predictions");
+                System.out.println("\t--detectPredFile: path to the detectability prediction file, if produced from a previous run.");
+                System.out.println("\t--features: features to add to the edited pin file. If all is selected, all features will be used. " +
+                        "Pick from the following: brayCurtis,euclideanDistance,cosineSimilarity,spectralContrastAngle,pearsonCorr,dotProduct," +
+                        "deltaRTlinear,deltaRTbins,RTzscore,deltaRTLOESS,RTprobability,RTprobabilityUnifPrior,detectability,detectFractionGreater " +
+                        "(default: all)");
+                System.out.println("\t--numThreads: number of threads available. numThreads <= 0 indicate for all threads to be used (Default: 0)");
+
+                System.out.println("");
+                System.out.println("Flags that are only used if calculating detectFractionGreater:");
+                System.out.println("\t--fasta: path to fasta file");
+                System.out.println("\t--decoyPrefix: prefix for decoys in fasta file (default: >rev_)");
+                System.out.println("\t--cutAfter: amino acids after which the enzyme digested the peptide (default: KR)");
+                System.out.println("\t--butNotAfter: amino acids that are an exception to the enzyme digestion rules (default: P)");
+                System.out.println("\t--digestMinLength: minimum length peptide searched in datbase search tool (default: 7)");
+                System.out.println("\t--digestMaxLength: maximum length peptide searched in database search tool (default: 50)");
+                System.out.println("\t--digestMinMass: minimum mass peptide searched in database search tool in Daltons (default: 500)");
+                System.out.println("\t--digestMaxMass: maxmimum mass peptide searched in database search tool in Daltons (default: 5000)");
+
+                System.out.println("");
+                System.out.println("Flags that are only used if adding spectral and/or RT features to the edited pin file:");
+                System.out.println("\t--DiaNN: path to DiaNN.exe. Only needed if spectral/RT predictions need to be produced");
+                System.out.println("\t--ppmTolerance: fragment error tolerance (in ppm) of the database search. " +
+                        "Used for matching fragment peaks from experimental spectra to predicted spectra (default: 20)");
+                System.out.println("\t--useTopFragments: rather than using all predicted fragments, " +
+                        "use only top N predicted intensity peaks (default: true)");
+                System.out.println("\t--topFragments: how many top intensity fragments to use, if useTopFragments is true (default: 12)");
+                System.out.println("\t--removeRankPeaks: if true, fragments within the ppmTolerance of matched predicted fragments" +
+                        "are filtered from the experimental spectra of lower ranking peaks from the same scan number (default: true)");
+                System.out.println("\t--RTregressionSize: how many PSMs, sorted by lowest e score, " +
+                        "are used for the linear regression of predicted and experimental RTs (default: 5000)");
+                System.out.println("\t--uniformPriorPercentile: for RTprobabilityUnifPrior, how much weight to give to the uniform prior. " +
+                        "Range 0 to 100. If 0, this is equal to RT probability. If 100, all PSMs' scores for this feature will be the same " +
+                        "(default: 10)");
+                System.out.println("\t--RTescoreCutoff: PSMs with e score above this cutoff are not included in RT linear regression modeling " +
+                        "(default: 1");
+
+                System.out.println("");
+                System.out.println("Flags that are only used in detectability filtering:");
+                System.out.println("\t--detectThreshold: PSMs with detectability below this value are removed from the edited PSM " +
+                        "(default 0.0000002)");
                 System.exit(0);
             }
             i++;

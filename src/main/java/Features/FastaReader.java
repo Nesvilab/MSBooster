@@ -63,7 +63,7 @@ public class FastaReader {
                 HashSet<String> prots = entry.getValue();
 
                 //length
-                if (pep.length() < 7 || pep.length() > 50) {
+                if (pep.length() < Constants.digestMinLength || pep.length() > Constants.digestMaxLength) {
                     continue;
                 }
 

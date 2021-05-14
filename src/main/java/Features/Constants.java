@@ -65,23 +65,21 @@ public class Constants {
     public static Float RTescoreCutoff = 1f; //PSMs with e score higher than this won't make it into RT linear regression modeling
 
     //LOESS
-    public static Double bandwidth = 0.1;
-    public static Integer robustIters = 2;
+    public static final Double bandwidth = 0.1;
+    public static final Integer robustIters = 2;
 
     //detect
     public static Float detectThreshold = 0.0000002f; //for detectability filtering
-    public static Float detectFractionGreaterNumerator = 1f;
-    public static Float detectFractionGreaterDenominator = 6f; //prior
+    public static final Float detectFractionGreaterNumerator = 1f;
+    public static final Float detectFractionGreaterDenominator = 6f; //prior
 
     ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
     //use single string sep by comma delimiter
     //should include parameter to calculate correlation and then choose
     //default auto, everything, or all? Or a combination I figure out empirically
-    public static String features = "brayCurtis,euclideanDistance,cosineSimilarity," +
-            "spectralContrastAngle,pearsonCorr,dotProduct," +
-            "deltaRTlinear,deltaRTbins,RTzscore,deltaRTLOESS,RTprobability,RTprobabilityUnifPrior," +
-            "detectability,detectFractionGreater";
+    public static String features = "cosineSimilarity,spectralContrastAngle,euclideanDistance,brayCurtis,pearsonCorr,dotProduct," +
+            "deltaRTlinear,deltaRTbins,deltaRTLOESS,RTzscore,RTprobability,RTprobabilityUnifPrior,detectFractionGreater";
     //public static String features = "auto";
 
     //don't currently support weighted similarity features

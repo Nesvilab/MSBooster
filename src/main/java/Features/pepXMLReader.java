@@ -625,8 +625,8 @@ public class pepXMLReader {
     }
 
     public static void main(String[] args) {
-        pepXMLReader x = new pepXMLReader("C:/Users/kevin/Downloads/proteomics/wideWindow/wide1/" +
-                "23aug2017_hela_serum_timecourse_pool_wide_001_170829031834_rank1.pepXML");
+        pepXMLReader x = new pepXMLReader("C:/Users/kevin/Downloads/proteomics/wide/" +
+                "23aug2017_hela_serum_timecourse_pool_wide_003_rank6.pepXML");
         //x.getNativeIDs();
 
     }

@@ -122,7 +122,12 @@ public class Constants {
     //methods
     public void updatePaths() {
         if (outputDirectory == null) {
-            outputDirectory = pinPepXMLDirectory;
+            File newFile = new File(pinPepXMLDirectory);
+            if (newFile.isDirectory()) {
+                outputDirectory = pinPepXMLDirectory;
+            } else { //file
+                outputDirectory = newFile.getAbsoluteFile().getParent();
+            }
         }
         if (editedPin == null) {
             editedPin = outputDirectory + File.separator + "edited_";

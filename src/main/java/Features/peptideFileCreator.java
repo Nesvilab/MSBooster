@@ -26,10 +26,33 @@ public class peptideFileCreator {
     public static void createPeptideFile(String infile, String outfile, String modelFormat, String psmFormat)
             throws IOException { //pepXML or pin
         long startTime = System.nanoTime();
-        Collection<File> x = listFiles(new File(infile), new String[]{psmFormat}, false);
+
+        //file or directory
+        Collection<File> x = new ArrayList<File>();
+        File newFile = new File(infile);
+        if (newFile.isFile()) {
+            x.add(newFile);
+        } else { //directory
+            x = listFiles(new File(infile), new String[]{psmFormat}, false);
+        }
+
+        File[] infileArray = new File[x.size()];
+        int i = 0;
+        for (File f : x) {
+            infileArray[i] = f;
+            i++;
+        }
+
+        createPeptideFile(infileArray, outfile, modelFormat, psmFormat);
+    }
+
+    public static void createPeptideFile(File[] x, String outfile, String modelFormat, String psmFormat)
+            throws IOException { //pepXML or pin
+        long startTime = System.nanoTime();
 
         //read in pepXML files
         String[] allHits = new String[0];
+
         if (psmFormat.equals("pepXML")) {
             for (File f : x) {
                 String fileName = f.getCanonicalPath();
@@ -144,8 +167,8 @@ public class peptideFileCreator {
     }
 
     public static void main(String[] args) throws IOException {
-        createPeptideFile("C:/Users/kevin/Downloads/proteomics/cptac/2021-2-21/pepXMLtmp",
-                "C:/Users/kevin/OneDriveUmich/proteomics/preds/detectcptacAll.csv",
+        createPeptideFile("C:/Users/kevin/Downloads/proteomics/cptac/2021-2-21/pepXMLtmp/",
+                "C:/Users/kevin/Downloads/proteomics/cptac/2021-2-21/detectTest.csv",
                 "DeepMSPeptideAll", "pin");
     }
 }

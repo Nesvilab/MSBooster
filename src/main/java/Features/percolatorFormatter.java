@@ -10,8 +10,6 @@ import java.io.IOException;
 import java.util.*;
 import java.util.stream.IntStream;
 
-import static org.apache.commons.io.FileUtils.listFiles;
-
 public class percolatorFormatter {
 
     public static String percolatorPepFormat(String[] columns, int pepIdx, int specIDidx) {
@@ -60,6 +58,15 @@ public class percolatorFormatter {
     public static void editPin(String pinDirectory, String mzmlDirectory, String mgf, String detectFile,
                                String[] features, String outfile)
             throws IOException {
+
+        PinMzmlMatcher pmMatcher = new PinMzmlMatcher(mzmlDirectory, pinDirectory);
+
+        editPin(pmMatcher, mgf, detectFile, features, outfile);
+    }
+
+    public static void editPin(PinMzmlMatcher pmMatcher, String mgf, String detectFile,
+                               String[] features, String outfile)
+            throws IOException {
         List<String> featuresList = Arrays.asList(features);
         //remove features from array for multiple protein formatting
         if (featuresList.contains("detectability")) {
@@ -70,46 +77,8 @@ public class percolatorFormatter {
         //booleans for future determination of what to do
         boolean needsMGF = false;
 
-        //get names of mzml files
-        //check if file or directory
-        String[] mzmlFiles;
-        if (mzmlDirectory.substring(mzmlDirectory.length() - 4).toLowerCase().equals("mzml")) {
-            File f = new File(mzmlDirectory);
-            mzmlFiles = new String[]{f.getName()};
-            mzmlDirectory = f.getAbsoluteFile().getParent();
-        } else {
-            Collection<File> mzmlFilesCollection = listFiles(new File(mzmlDirectory), new String[]{"mzML"}, false);
-            mzmlFiles = new String[mzmlFilesCollection.size()];
-            int FileIdx = 0;
-            for (File f : mzmlFilesCollection) {
-                mzmlFiles[FileIdx] = f.getName();
-                FileIdx++;
-            }
-            Arrays.sort(mzmlFiles);
-        }
-
-        //check that corresponding pin files exist
-        String[] pinFiles;
-        if (pinDirectory.substring(pinDirectory.length() - 3).toLowerCase().equals("pin")) {
-            File f = new File(pinDirectory);
-            pinFiles = new String[]{f.getName()};
-            pinDirectory = f.getAbsoluteFile().getParent();
-        } else {
-            Collection<File> pinFilesCollection = listFiles(new File(pinDirectory), new String[]{"pin"}, false);
-            HashSet<String> pinFilesSet = new HashSet<>();
-            for (File f : pinFilesCollection) {
-                pinFilesSet.add(f.getName());
-            }
-
-            pinFiles = new String[mzmlFiles.length];
-            for (int i = 0; i < mzmlFiles.length; i++) {
-                pinFiles[i] = mzmlFiles[i].substring(0, mzmlFiles[i].length() - 4) + "pin";
-                if (!pinFilesSet.contains(pinFiles[i])) {
-                    throw new AssertionError("mzML file must have corresponding pin file. " +
-                            pinFiles[i] + " does not exist");
-                }
-            }
-        }
+        File[] pinFiles = pmMatcher.pinFiles;
+        File[] mzmlFiles = pmMatcher.mzmlFiles;
 
         //load predicted spectra
         SpectralPredictionMapper predictedSpectra = null;
@@ -142,15 +111,15 @@ public class percolatorFormatter {
             //////////////////////////////iterate through pin and mzml files//////////////////////////////////////////
             for (int i = 0; i < pinFiles.length; i++) {
                 long startTime = System.nanoTime();
-                String newOutfile = outfile + pinFiles[i];
+                String newOutfile = outfile + pinFiles[i].getName();
                 TsvWriter writer = new TsvWriter(new File(newOutfile), new TsvWriterSettings());
                 //load mzml file
-                System.out.println("Loading " + mzmlFiles[i]);
-                mzMLReader mzml = new mzMLReader(mzmlDirectory + File.separator + mzmlFiles[i]);
+                System.out.println("Loading " + mzmlFiles[i].getName());
+                mzMLReader mzml = new mzMLReader(mzmlFiles[i].getCanonicalPath());
 
                 //load pin file, which already includes all ranks
-                System.out.println("Loading " + pinFiles[i]);
-                pinReader pin = new pinReader(pinDirectory + File.separator + pinFiles[i]);
+                System.out.println("Loading " + pinFiles[i].getName());
+                pinReader pin = new pinReader(pinFiles[i].getCanonicalPath());
 
                 //add header to written tsv
                 ArrayList<String> newHeader = new ArrayList<>();
@@ -378,8 +347,8 @@ public class percolatorFormatter {
         //CHANGE PPM TO 10 if wide, narrow
 
         //CHANGE PPM TO 20 if cptac
-        editPin("C:/Users/kevin/Downloads/proteomics/narrow/",
-                "C:/Users/kevin/OneDriveUmich/proteomics/mzml/narrowWindow/",
+        editPin("C:/Users/kevin/Downloads/proteomics/narrow/23aug2017_hela_serum_timecourse_4mz_narrow_6.pin",
+                "C:/Users/kevin/OneDriveUmich/proteomics/mzml/narrowWindow/23aug2017_hela_serum_timecourse_4mz_narrow_6.mzML",
                 "C:/Users/kevin/OneDriveUmich/proteomics/preds/narrowPDeep3.mgf",
                 null,
                 ("brayCurtis,euclideanDistance,cosineSimilarity,spectralContrastAngle,pearsonCorr,dotProduct").split(","),

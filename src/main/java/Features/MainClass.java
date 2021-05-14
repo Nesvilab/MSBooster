@@ -5,10 +5,7 @@ import External.ExternalModelCaller;
 import java.io.*;
 import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Map;
+import java.util.*;
 
 //this is what I use in the java jar file
 public class MainClass {
@@ -43,7 +40,8 @@ public class MainClass {
                         "The directory only needs to contain the pin file, as the pepXML files are not necessary");
                 System.out.println("\t--mzmlDirectory (required): Directory where mzml files are stored. " +
                         "Each pin file must have a matching mzml file. " +
-                        "If only a single pin file is provided, only a single mzml file needs to be provided here");
+                        "If only a single pin file is provided, ONLY A SINGLE MZML FILE can be provided here. " +
+                        "It is assumed that pin and mzML files have the same prefix (ex. sample1.pin and sample1.mzML)");
                 System.out.println("\t--outputDirectory: Directory to store all intermediate and final files (default: pinPepXMLDirectory)");
                 System.out.println("\t--editedPin: prefix for edited pin file (default: {outputDirectory}/edited_)");
                 System.out.println("\t--spectraRTPredInput: path to the spectral/RT prediction input file. " +
@@ -211,24 +209,27 @@ public class MainClass {
         c.updatePaths(); //setting null paths
 
         //generate files for prediction models
+
+            //get matched pin files for mzML files
+        PinMzmlMatcher pmMatcher = new PinMzmlMatcher(Constants.mzmlDirectory, Constants.pinPepXMLDirectory);
         if (createSpectraRTPredFile) {
             if (Constants.spectraRTPredModel.equals("DIA-NN")) {
                 if (Constants.DiaNN == null) {
                     throw new IllegalArgumentException("path to DIA-NN executable must be provided");
                 }
                 System.out.println("Generating input file for DIA-NN");
-                peptideFileCreator.createPeptideFile(Constants.pinPepXMLDirectory, Constants.spectraRTPredInput, "Diann", "pin");
+                peptideFileCreator.createPeptideFile(pmMatcher.pinFiles, Constants.spectraRTPredInput, "Diann", "pin");
             } else if (Constants.spectraRTPredModel.equals("pDeep3")) {
                 System.out.println("Generating input file for pDeep3");
-                peptideFileCreator.createPeptideFile(Constants.pinPepXMLDirectory, Constants.spectraRTPredInput, "pDeep3", "pin");
+                peptideFileCreator.createPeptideFile(pmMatcher.pinFiles, Constants.spectraRTPredInput, "pDeep3", "pin");
             }
         }
         if (createDetectAllPredFile) {
             System.out.println("Generating input file for DeepMSPeptide");
-            peptideFileCreator.createPeptideFile(Constants.pinPepXMLDirectory, Constants.detectPredInput, "DeepMSPeptideAll", "pin");
+            peptideFileCreator.createPeptideFile(pmMatcher.pinFiles, Constants.detectPredInput, "DeepMSPeptideAll", "pin");
         } else if (createDetectPredFile) {
             System.out.println("Generating input file for DeepMSPeptide");
-            peptideFileCreator.createPeptideFile(Constants.pinPepXMLDirectory, Constants.detectPredInput, "DeepMSPeptide", "pin");
+            peptideFileCreator.createPeptideFile(pmMatcher.pinFiles, Constants.detectPredInput, "DeepMSPeptide", "pin");
         }
 
         //generate predictions

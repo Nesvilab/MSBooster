@@ -160,7 +160,7 @@ public class MainClass {
 
         //if detectFractionGreater, need fasta
         boolean createDetectAllPredFile = false;
-        if (featureSet.contains("detectFractionGreater") || autoFeatures) {
+        if (featureSet.contains("detectFractionGreater") || featureSet.contains("detectSubtractMissing") || autoFeatures) {
             if (Constants.fasta == null) {
                 throw new IllegalArgumentException("Using current combination of features, " +
                         "detectFractionGreater is calculated and needs a fasta provided using " +
@@ -226,7 +226,7 @@ public class MainClass {
         }
         if (createDetectAllPredFile) {
             System.out.println("Generating input file for DeepMSPeptide");
-            peptideFileCreator.createPeptideFile(pmMatcher.pinFiles, Constants.detectPredInput, "DeepMSPeptideAll", "pin");
+            Constants.setFastaReader(peptideFileCreator.createPeptideFile(pmMatcher.pinFiles, Constants.detectPredInput, "DeepMSPeptideAll", "pin"));
         } else if (createDetectPredFile) {
             System.out.println("Generating input file for DeepMSPeptide");
             peptideFileCreator.createPeptideFile(pmMatcher.pinFiles, Constants.detectPredInput, "DeepMSPeptide", "pin");
@@ -245,7 +245,7 @@ public class MainClass {
             BufferedWriter buffer = new BufferedWriter(new FileWriter(Constants.outputDirectory +
                     File.separator + "finalParams.txt"));
 
-            Field[] f = Constants.class.getDeclaredFields();
+            Field[] f = Constants.class.getFields();
             for (Field field : f) {
                 if ((field.getModifiers() & Modifier.FINAL) != Modifier.FINAL) {
                     if (!field.getName().equals("paramsList")) {
@@ -255,13 +255,13 @@ public class MainClass {
             }
             buffer.close();
         } catch (Exception e) {
+            System.out.println("could not write final params");
             e.getStackTrace();
         }
 
         //create new pin file with features
         System.out.println("Generating edited pin with following features: " + Arrays.toString(featuresArray));
-        percolatorFormatter.editPin(Constants.pinPepXMLDirectory, Constants.mzmlDirectory, Constants.spectraRTPredFile,
-                Constants.detectPredFile, featuresArray, Constants.editedPin);
+        percolatorFormatter.editPin(pmMatcher, Constants.spectraRTPredFile, Constants.detectPredFile, featuresArray, Constants.editedPin);
 
         //TODO: how to deal with auto
     }

@@ -13,7 +13,6 @@ public class PinMzmlMatcher {
     public File[] pinFiles;
     public File mzmlDirectory;
     public File pinDirectory;
-    public pinReader[] pinReaders;
 
     //TODO: maybe just load pin files into pinReader array. Can do the same with mzml, if multithreading. Or just combine pin files at end
     //TODO: if just 1 pin/mzml, automatically load and store
@@ -45,7 +44,6 @@ public class PinMzmlMatcher {
 
             pinFiles = new File[]{new File(pinDirectory)};
             this.pinDirectory = new File(pinFiles[0].getAbsoluteFile().getParent());
-            pinReaders = new pinReader[]{new pinReader(pinFiles[0].getCanonicalPath())};
         } else {
             this.pinDirectory = new File(pinDirectory);
             Collection<File> pinFilesCollection = listFiles(this.pinDirectory, new String[]{"pin"}, false);
@@ -55,7 +53,6 @@ public class PinMzmlMatcher {
             }
 
             pinFiles = new File[mzmlFiles.length];
-            pinReaders = new pinReader[mzmlFiles.length];
             for (int i = 0; i < mzmlFiles.length; i++) {
                 String name = mzmlFiles[i].getName();
                 name = name.substring(0, name.length() - 4) + "pin";
@@ -65,7 +62,6 @@ public class PinMzmlMatcher {
                             pinFiles[i] + " does not exist");
                 }
                 pinFiles[i] = new File(pinDirectory + File.separator + name);
-                pinReaders[i] = new pinReader(pinDirectory + File.separator + name);
             }
         }
     }

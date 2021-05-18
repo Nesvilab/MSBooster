@@ -116,13 +116,21 @@ public class percolatorFormatter {
                 featuresList.contains("detectRatioMissing")) {
             //get all peptides present in pin
             HashSet<String> allPeps = new HashSet<String>();
-            for (pinReader pin : pmMatcher.pinReaders) {
+            for (File pinFile : pmMatcher.pinFiles) {
+                pinReader pin = new pinReader(pinFile.getCanonicalPath());
                 allPeps.addAll(pin.getAllPep());
+                pin.close();
             }
 
             //load fasta
-            System.out.println("Loading fasta");
-            FastaReader fasta = new FastaReader(Constants.fasta, Constants.includeDecoy);
+            FastaReader fasta;
+            if (Constants.getFastaReader() == null) {
+                System.out.println("Creating fasta object");
+                fasta = new FastaReader(Constants.fasta, Constants.includeDecoy);
+            } else {
+                System.out.println("Loading fasta");
+                fasta = Constants.getFastaReader();
+            }
 
             System.out.println("Loading detectabilities for unique peptides from each protein");
             for (Map.Entry<String, ArrayList<String>> e : fasta.protToPep.entrySet()) {
@@ -167,7 +175,7 @@ public class percolatorFormatter {
                 mzMLReader mzml = new mzMLReader(mzmlFiles[i].getCanonicalPath());
 
                 //load pin file, which already includes all ranks
-                pinReader pin = pmMatcher.pinReaders[i];
+                pinReader pin = new pinReader(pinFiles[i].getCanonicalPath());
 
                 //add header to written tsv
                 ArrayList<String> newHeader = new ArrayList<>();

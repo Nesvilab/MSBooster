@@ -270,13 +270,9 @@ public class mzMLReader {
     }
 
     public void setKernelDensities() {
-        long startTime = System.nanoTime();
         KernelDensity[] kernelDensities = RTFunctions.generateEmpiricalDist(RTbins);
-        long endTime = System.nanoTime();
-        long duration = (endTime - startTime);
-        System.out.println("Generating empirical densities took " + duration / 1000000000 +" seconds");
 
-        startTime = System.nanoTime();
+        long startTime = System.nanoTime();
         for (Map.Entry<Integer, mzmlScanNumber> entry : scanNumberObjects.entrySet()) {
             mzmlScanNumber scanNum = entry.getValue();
 
@@ -285,8 +281,8 @@ public class mzMLReader {
                 pep.RTprob = RTFunctions.RTprobability(scanNum.RT, pep.RT, kernelDensities);
             }
         }
-        endTime = System.nanoTime();
-        duration = (endTime - startTime);
+        long endTime = System.nanoTime();
+        long duration = (endTime - startTime);
         System.out.println("Calculating RT probabilities took " + duration / 1000000000 +" seconds");
     }
 

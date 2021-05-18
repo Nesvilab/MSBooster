@@ -35,6 +35,13 @@ public class Constants {
     public static Integer digestMinMass = 500; //Da
     public static Integer digestMaxMass = 5000;
     public static Boolean includeDecoy = false;
+    private static FastaReader fastaReader = null;
+    public static void setFastaReader(FastaReader f) {
+        fastaReader = f;
+    }
+    public static FastaReader getFastaReader() {
+        return fastaReader;
+    }
 
     //locations of executables and other models
     public static Integer numThreads = 0;
@@ -71,8 +78,8 @@ public class Constants {
 
     //detect
     public static Float detectThreshold = 0.0000002f; //for detectability filtering
-    public static Float detectFractionGreaterNumerator = 0f;
-    public static Float detectFractionGreaterDenominator = 0f; //prior
+    public static final Float detectFractionGreaterNumerator = 1f;
+    public static final Float detectFractionGreaterDenominator = 1f; //prior
 
     ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -80,7 +87,7 @@ public class Constants {
     //should include parameter to calculate correlation and then choose
     //default auto, everything, or all? Or a combination I figure out empirically
     public static String features = "cosineSimilarity,spectralContrastAngle,euclideanDistance,brayCurtis,pearsonCorr,dotProduct," +
-            "deltaRTlinear,deltaRTbins,deltaRTLOESS,RTzscore,RTprobability,RTprobabilityUnifPrior";
+            "deltaRTlinear,deltaRTbins,deltaRTLOESS,RTzscore,RTprobability,RTprobabilityUnifPrior,detectFractionGreater,detectSubtractMissing";
     //public static String features = "auto";
 
     //don't currently support weighted similarity features

@@ -46,7 +46,7 @@ public class peptideFileCreator {
         createPeptideFile(infileArray, outfile, modelFormat, psmFormat);
     }
 
-    public static void createPeptideFile(File[] x, String outfile, String modelFormat, String psmFormat)
+    public static FastaReader createPeptideFile(File[] x, String outfile, String modelFormat, String psmFormat)
             throws IOException { //pepXML or pin
         //diff versions based on submitting File[] or pinReader
         long startTime = System.nanoTime();
@@ -109,9 +109,10 @@ public class peptideFileCreator {
         //filter out redundant peptides
         //this step can reduce number of predictions needed to 1/3, decreasing prediction time
         HashSet<String> hSetHits = getUniqueHits(allHits);
+        FastaReader fasta = null;
         if (modelFormat.equals("DeepMSPeptideAll")) {
             //add all targets from fasta
-            FastaReader fasta = new FastaReader(Constants.fasta, Constants.includeDecoy);
+            fasta = new FastaReader(Constants.fasta, Constants.includeDecoy);
             for (ArrayList<String> array : fasta.protToPep.values()) {
                 hSetHits.addAll(array);
             }
@@ -161,9 +162,12 @@ public class peptideFileCreator {
             System.out.println(modelFormat + " input file generation took " + duration / 1000000000 +" seconds");
             myWriter.close();
             System.out.println("Input file at  " + outfile);
+
+            return fasta; //save fasta for later
         } catch (IOException e) {
             System.out.println("An error occurred");
             e.printStackTrace();
+            return null;
         }
     }
 

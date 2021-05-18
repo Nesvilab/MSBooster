@@ -13,18 +13,19 @@ import java.util.Map;
 public class FastaReader {
     HashMap<String, ArrayList<String>> protToPep = new HashMap<String, ArrayList<String>>();
 
-    public FastaReader(String fasta) throws FileNotFoundException {
+    public FastaReader(String fasta, boolean includeDecoy) throws FileNotFoundException {
         //load fasta
         BufferedReader reader;
-        int prefixLen = Constants.decoyPrefix.length();
         try {
             reader = new BufferedReader(new FileReader(fasta));
             String header = reader.readLine();
             String protein = reader.readLine();
 
             HashMap<String, HashSet<String>> pepToProt = new HashMap<String, HashSet<String>>();
-            while (header != null) {
-                if (!header.substring(0, prefixLen).equals(Constants.decoyPrefix)) { //only work with target proteins
+            if (includeDecoy) {
+                while (header != null) {
+                    String protID = header.split(" ")[0];
+                    protID = protID.substring(1); //remove >
                     //split by whatever is digestion rules
                     int start = 0;
                     for (int i = 0; i < protein.length(); i++) {
@@ -38,7 +39,6 @@ public class FastaReader {
                         }
 
                         if (doIt) {
-                            String protID = header.split("\\|")[1];
                             String pep = protein.substring(start, i + 1);
                             HashSet<String> value;
                             if (pepToProt.containsKey(pep)) {
@@ -51,10 +51,44 @@ public class FastaReader {
                             start = i + 1;
                         }
                     }
+                    header = reader.readLine();
+                    protein = reader.readLine();
                 }
-                header = reader.readLine();
-                protein = reader.readLine();
+            } else {
+                while (header != null) {
+                    if (!header.substring(0, Constants.decoyPrefix.length()).equals(Constants.decoyPrefix)) { //only work with target proteins
+                        //split by whatever is digestion rules
+                        String protID = header.split("\\|")[1];
+                        int start = 0;
+                        for (int i = 0; i < protein.length(); i++) {
+                            boolean doIt = false;
+                            if (i == protein.length() - 1) { //end of protein sequence
+                                doIt = true;
+                            } else if (Constants.cutAfter.contains(protein.substring(i, i + 1))) {
+                                if (! Constants.butNotAfter.contains(protein.substring(i + 1, i + 2))) {
+                                    doIt = true;
+                                }
+                            }
+
+                            if (doIt) {
+                                String pep = protein.substring(start, i + 1);
+                                HashSet<String> value;
+                                if (pepToProt.containsKey(pep)) {
+                                    value = pepToProt.get(pep);
+                                } else {
+                                    value = new HashSet<String>();
+                                }
+                                value.add(protID);
+                                pepToProt.put(pep, value);
+                                start = i + 1;
+                            }
+                        }
+                    }
+                    header = reader.readLine();
+                    protein = reader.readLine();
+                }
             }
+
             reader.close();
 
             //if peptide passes digestion criteria and is unique, add to protToPep
@@ -95,6 +129,6 @@ public class FastaReader {
     }
 
     public static void main(String[] args) throws FileNotFoundException {
-        FastaReader fasta = new FastaReader(Constants.fasta);
+        FastaReader fasta = new FastaReader(Constants.fasta, true);
     }
 }

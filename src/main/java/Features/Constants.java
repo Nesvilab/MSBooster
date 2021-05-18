@@ -34,6 +34,7 @@ public class Constants {
     public static Integer digestMaxLength = 50;
     public static Integer digestMinMass = 500; //Da
     public static Integer digestMaxMass = 5000;
+    public static Boolean includeDecoy = false;
 
     //locations of executables and other models
     public static Integer numThreads = 0;
@@ -70,8 +71,8 @@ public class Constants {
 
     //detect
     public static Float detectThreshold = 0.0000002f; //for detectability filtering
-    public static final Float detectFractionGreaterNumerator = 1f;
-    public static final Float detectFractionGreaterDenominator = 6f; //prior
+    public static Float detectFractionGreaterNumerator = 0f;
+    public static Float detectFractionGreaterDenominator = 0f; //prior
 
     ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -79,7 +80,7 @@ public class Constants {
     //should include parameter to calculate correlation and then choose
     //default auto, everything, or all? Or a combination I figure out empirically
     public static String features = "cosineSimilarity,spectralContrastAngle,euclideanDistance,brayCurtis,pearsonCorr,dotProduct," +
-            "deltaRTlinear,deltaRTbins,deltaRTLOESS,RTzscore,RTprobability,RTprobabilityUnifPrior,detectFractionGreater";
+            "deltaRTlinear,deltaRTbins,deltaRTLOESS,RTzscore,RTprobability,RTprobabilityUnifPrior";
     //public static String features = "auto";
 
     //don't currently support weighted similarity features
@@ -88,8 +89,10 @@ public class Constants {
             "euclideanDistance", "weightedEuclideanDistance", "brayCurtis", "weightedBrayCurtis",
             "pearsonCorr", "weightedPearsonCorr", "dotProduct", "weightedDotProduct",
             "deltaRTlinear", "deltaRTbins", "deltaRTLOESS", "RTzscore", "RTprobability", "RTprobabilityUnifPrior",
-            "detectFractionGreater", "detectability"));
-    public static final HashSet<String> detectFeatures = new HashSet<>(Arrays.asList("detectFractionGreater", "detectability"));
+            "detectFractionGreater", "detectability", "detectSubtractMissing", "detectRatioMissing"));
+    public static final HashSet<String> detectFeatures =
+            new HashSet<>(Arrays.asList("detectFractionGreater", "detectability",
+                    "detectSubtractMissing", "detectRatioMissing"));
     public static final HashSet<String> spectraRTFeatures = new HashSet<>(Arrays.asList(
             "cosineSimilarity", "weightedCosineSimilarity", "spectralContrastAngle", "weightedSpectralContrastAngle",
             "euclideanDistance", "weightedEuclideanDistance", "brayCurtis", "weightedBrayCurtis",

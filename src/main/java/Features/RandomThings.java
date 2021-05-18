@@ -12,13 +12,7 @@ public class RandomThings {
     }
 
     public static void main(String[] args) throws IOException, FileParsingException, NoSuchMethodException, IllegalAccessException, InvocationTargetException, InterruptedException {
-        Runtime run  = Runtime.getRuntime();
-        String command = "C:/Users/kevin/OneDrive/IdeaProjects/MSFraggerDIA_postprocess/target/DeepMSPeptideRevised.exe " +
-                "C:/Users/kevin/Downloads/proteomics/cptac/2021-2-21/detect.tsv";
-
-        // Running the above command
-        Process proc = run.exec(command);
-        proc.waitFor();
+        System.out.println(0f/0f > 0);
     }
 
     //this is for creating tsv for creating histograms for scores between target and decoy in python

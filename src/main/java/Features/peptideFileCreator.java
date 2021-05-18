@@ -48,12 +48,13 @@ public class peptideFileCreator {
 
     public static void createPeptideFile(File[] x, String outfile, String modelFormat, String psmFormat)
             throws IOException { //pepXML or pin
+        //diff versions based on submitting File[] or pinReader
         long startTime = System.nanoTime();
 
         //read in pepXML files
         String[] allHits = new String[0];
 
-        if (psmFormat.equals("pepXML")) {
+        if (psmFormat.equals("pepXML")) { //TODO: create pepXMLFileCreator method
             for (File f : x) {
                 String fileName = f.getCanonicalPath();
                 pepXMLReader xmlReader = new pepXMLReader(fileName);
@@ -77,7 +78,7 @@ public class peptideFileCreator {
 
                 allHits = ArrayUtils.addAll(allHits, hitsToAdd);
             }
-        } else { //pin
+        } else { //TODO: create pinFileCreator method
             for (File f : x) {
                 String fileName = f.getCanonicalPath();
                 pinReader pin = new pinReader(fileName);
@@ -110,14 +111,14 @@ public class peptideFileCreator {
         HashSet<String> hSetHits = getUniqueHits(allHits);
         if (modelFormat.equals("DeepMSPeptideAll")) {
             //add all targets from fasta
-            FastaReader fasta = new FastaReader(Constants.fasta);
+            FastaReader fasta = new FastaReader(Constants.fasta, Constants.includeDecoy);
             for (ArrayList<String> array : fasta.protToPep.values()) {
                 hSetHits.addAll(array);
             }
         }
 
         //write to file
-        try {
+        try { //TODO: make fileWriter method
             FileWriter myWriter = new FileWriter(outfile);
             switch (modelFormat) {
                 case "prosit":

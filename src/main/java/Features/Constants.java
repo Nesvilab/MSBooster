@@ -26,7 +26,7 @@ public class Constants {
     //optional file locations and parameters
     //if calculating detectFractionGreater, these are used for FastaReader class
     //C:/Users/kevin/OneDriveUmich/proteomics/fasta/2020-12-07-decoys-reviewed-contam-UP000005640.fas
-    public static String fasta = "C:/Users/kevin/OneDriveUmich/proteomics/fasta/2020-12-07-decoys-reviewed-contam-UP000005640.fas";
+    public static String fasta = null;
     public static String decoyPrefix = ">rev_";
     public static String cutAfter = "KR";
     public static String butNotAfter = "P";
@@ -96,10 +96,10 @@ public class Constants {
             "euclideanDistance", "weightedEuclideanDistance", "brayCurtis", "weightedBrayCurtis",
             "pearsonCorr", "weightedPearsonCorr", "dotProduct", "weightedDotProduct",
             "deltaRTlinear", "deltaRTbins", "deltaRTLOESS", "RTzscore", "RTprobability", "RTprobabilityUnifPrior",
-            "detectFractionGreater", "detectability", "detectSubtractMissing", "detectRatioMissing"));
+            "detectFractionGreater", "detectability", "detectSubtractMissing"));
     public static final HashSet<String> detectFeatures =
             new HashSet<>(Arrays.asList("detectFractionGreater", "detectability",
-                    "detectSubtractMissing", "detectRatioMissing"));
+                    "detectSubtractMissing"));
     public static final HashSet<String> spectraRTFeatures = new HashSet<>(Arrays.asList(
             "cosineSimilarity", "weightedCosineSimilarity", "spectralContrastAngle", "weightedSpectralContrastAngle",
             "euclideanDistance", "weightedEuclideanDistance", "brayCurtis", "weightedBrayCurtis",

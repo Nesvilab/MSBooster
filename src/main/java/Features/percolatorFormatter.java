@@ -3,11 +3,12 @@ package Features;
 import com.univocity.parsers.tsv.TsvWriter;
 import com.univocity.parsers.tsv.TsvWriterSettings;
 import org.apache.commons.lang3.ArrayUtils;
-import umich.ms.fileio.exceptions.FileParsingException;
 
 import java.io.File;
 import java.io.IOException;
 import java.util.*;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 import java.util.stream.IntStream;
 
 public class percolatorFormatter {
@@ -66,7 +67,12 @@ public class percolatorFormatter {
 
     public static void editPin(PinMzmlMatcher pmMatcher, String mgf, String detectFile,
                                String[] features, String outfile) throws IOException {
-        //TODO: change code to take pinReader etc from pmMatcher
+        //defining num threads, in case using this outside of jar file
+        Runtime run  = Runtime.getRuntime();
+        if (Constants.numThreads <= 0) {
+            Constants.numThreads = run.availableProcessors();
+        }
+
         List<String> featuresList = Arrays.asList(features);
         //remove features from array for multiple protein formatting
         if (featuresList.contains("detectability")) {
@@ -112,8 +118,7 @@ public class percolatorFormatter {
         //for storing detects and whether peptides are present
         HashMap<String, float[]> detects = new HashMap<String, float[]>();
         HashMap<String, float[]> presence = new HashMap<String, float[]>();
-        if (featuresList.contains("detectFractionGreater") || featuresList.contains("detectSubtractMissing") ||
-                featuresList.contains("detectRatioMissing")) {
+        if (featuresList.contains("detectFractionGreater") || featuresList.contains("detectSubtractMissing")) {
             //get all peptides present in pin
             HashSet<String> allPeps = new HashSet<String>();
             for (File pinFile : pmMatcher.pinFiles) {
@@ -164,6 +169,7 @@ public class percolatorFormatter {
             }
         }
 
+        ExecutorService executorService = Executors.newFixedThreadPool(Constants.numThreads);
         try {
             //////////////////////////////iterate through pin and mzml files//////////////////////////////////////////
             for (int i = 0; i < pinFiles.length; i++) {
@@ -173,6 +179,9 @@ public class percolatorFormatter {
                 //load mzml file
                 System.out.println("Loading " + mzmlFiles[i].getName());
                 mzMLReader mzml = new mzMLReader(mzmlFiles[i].getCanonicalPath());
+                long endTime = System.nanoTime();
+                long duration = (endTime - startTime);
+                System.out.println("mzML loading took " + duration / 1000000000 +" seconds");
 
                 //load pin file, which already includes all ranks
                 pinReader pin = new pinReader(pinFiles[i].getCanonicalPath());
@@ -190,28 +199,29 @@ public class percolatorFormatter {
                     long startTime1 = System.nanoTime();
                     //TODO: can we detect before this how many ranks there are?
                     mzml.setPinEntries(pin, predictedSpectra);
-                    long endTime = System.nanoTime();
-                    long duration = (endTime - startTime);
+                    endTime = System.nanoTime();
+                    duration = (endTime - startTime1);
                     System.out.println("PSM loading took " + duration / 1000000000 +" seconds");
                     System.out.println("Done loading PSMs onto mzml object");
                 }
                 if (featuresList.contains("deltaRTLOESS")) {
                     System.out.println("Generating LOESS regression");
                     mzml.setLOESS(predictedSpectra, Constants.RTregressionSize, Constants.bandwidth, Constants.robustIters);
+                    mzml.predictLOESS(executorService);
                 }
                 if (featuresList.contains("deltaRTlinear")) {
                     System.out.println("Calculating delta RT linear");
-                    if (mzml.expAndPredRTs != null) { mzml.setBetas();
+                    if (mzml.expAndPredRTs != null) {
+                        mzml.setBetas();
                     } else { mzml.setBetas(predictedSpectra, Constants.RTregressionSize);
                     }
-                    //System.out.println(Arrays.toString(mzml.getBetas())); //print beta 0 and 1
-                    mzml.normalizeRTs();
+                    mzml.normalizeRTs(executorService);
                 }
                 if (featuresList.contains("deltaRTbins") || featuresList.contains("RTzscore") ||
                         featuresList.contains("RTprobability") || featuresList.contains("RTprobabilityUnifPrior")) {
                     System.out.println("Generating RT bins");
                     mzml.setRTbins(predictedSpectra);
-                    mzml.propagateRTBinStats(); //may need to make more specific
+                    mzml.propagateRTBinStats(executorService); //may need to make more specific
                 }
                 int unifPriorSize = 0; //only used if using uniform prior
                 float unifProb = 0;
@@ -230,7 +240,7 @@ public class percolatorFormatter {
                 }
                 if (featuresList.contains("RTprobability") || featuresList.contains("RTprobabilityUnifPrior")) {
                     System.out.println("Generating empirical densities");
-                    mzml.setKernelDensities();
+                    mzml.setKernelDensities(executorService);
                 }
 
                 System.out.println("Getting predictions for each row");
@@ -343,46 +353,6 @@ public class percolatorFormatter {
                                 }
                                 writer.addValue("detectSubtractMissing", minDiff);
                                 break;
-                            case "detectRatioMissing":
-                                d = dm.getDetectability(pep);
-                                //for each protein, get the position of pep's detect and see how many peptides with greater detect are present
-                                //take max (proxy for protein that actually generated peptide)
-                                r = pin.getRow();
-                                prots = Arrays.copyOfRange(r, pin.pepIdx + 1, r.length);
-                                float minRatio = Float.MAX_VALUE;
-                                for (String prot : prots) { //if more than one, this peptide is shared among proteins
-                                    String protAbr;
-                                    if (Constants.includeDecoy) {
-                                        protAbr = prot;
-                                    } else {
-                                        protAbr = prot.split("\\|")[1];
-                                    }
-                                    float[] arr = detects.get(protAbr);
-                                    if (arr == null) { //no peptides qualify from this protein
-                                        continue;
-                                    }
-                                    int idx = Arrays.binarySearch(arr, d);
-                                    if (idx < 0) { //not found
-                                        idx = (-1 * idx) - 1;
-                                    }
-                                    float[] presenceArr = Arrays.copyOfRange(presence.get(protAbr), idx, arr.length);
-                                    float[] detectArr = Arrays.copyOfRange(arr, idx, arr.length);
-                                    float total = 0f;
-                                    for (int k = 0; k < presenceArr.length; k++) {
-                                        if (presenceArr[k] == 0) {
-                                            total += detectArr[k] / d;
-                                        }
-                                    }
-                                    float ratio = total / presenceArr.length;
-                                    if (ratio < minRatio) {
-                                        minRatio = ratio;
-                                    }
-                                    if (minRatio == 0) {
-                                        break;
-                                    }
-                                }
-                                writer.addValue("detectRatioMissing", minRatio);
-                                break;
                             case "deltaRTlinear":
                                 writer.addValue("deltaRTlinear", pepObj.deltaRT);
                                 break;
@@ -390,8 +360,7 @@ public class percolatorFormatter {
                                 writer.addValue("deltaRTbins", pepObj.deltaRTbin);
                                 break;
                             case "deltaRTLOESS":
-                                writer.addValue("deltaRTLOESS",
-                                        Math.abs(mzml.predictLOESS(pepObj.scanNumObj.RT) - pepObj.RT));
+                                writer.addValue("deltaRTLOESS", pepObj.deltaRTLOESS);
                                 break;
                             case "RTzscore":
                                 writer.addValue("RTzscore", pepObj.RTzscore);
@@ -428,28 +397,35 @@ public class percolatorFormatter {
                     writer.writeValuesToRow();
                 }
                 pin.close();
-                long endTime = System.nanoTime();
-                long duration = (endTime - startTime);
+                endTime = System.nanoTime();
+                duration = (endTime - startTime);
                 System.out.println("Pin editing took " + duration / 1000000000 +" seconds");
                 writer.close();
                 System.out.println("Edited pin file at " + newOutfile);
             }
-        } catch (IOException | FileParsingException e) {
-            e.printStackTrace();
         } catch (Exception e) {
+            executorService.shutdown();
             e.printStackTrace();
         }
+        executorService.shutdown();
     }
 
     public static void main(String[] args) throws IOException {
         //CHANGE PPM TO 10 if wide, narrow
 
         //CHANGE PPM TO 20 if cptac
-        editPin("C:/Users/kevin/Downloads/proteomics/cptac/2021-2-21/pepXMLtmp/CPTAC_CCRCC_W_JHU_LUMOS_C3L-01665_T.pin",
-                "C:/Users/kevin/OneDriveUmich/proteomics/mzml/cptac/CPTAC_CCRCC_W_JHU_LUMOS_C3L-01665_T.mzML",
-                null,
-                "C:/Users/kevin/Downloads/proteomics/cptac/2021-2-21/pepXMLtmp/detect_Predictions.txt",
-                ("detectSubtractMissing,detectFractionGreater,detectRatioMissing").split(","),
-                "C:/Users/kevin/Downloads/proteomics/cptac/2021-2-21/pepXMLtmp/edited_");
+//        editPin("C:/Users/kevin/Downloads/proteomics/cptac/2021-2-21/pepXMLtmp/CPTAC_CCRCC_W_JHU_LUMOS_C3L-01665_T.pin",
+//                "C:/Users/kevin/OneDriveUmich/proteomics/mzml/cptac/CPTAC_CCRCC_W_JHU_LUMOS_C3L-01665_T.mzML",
+//                "C:/Users/kevin/Downloads/proteomics/cptac/2021-2-21/pepXMLtmp/spectraRT.predicted.bin",
+//                "C:/Users/kevin/Downloads/proteomics/cptac/2021-2-21/pepXMLtmp/detect_Predictions.txt",
+//                ("detectFractionGreater").split(","),
+//                "C:/Users/kevin/Downloads/proteomics/cptac/2021-2-21/pepXMLtmp/edited_");
+
+                editPin("C:/Users/kevin/Downloads/proteomics/wide",
+                "C:/Users/kevin/OneDriveUmich/proteomics/mzml/wideWindow",
+                "C:/Users/kevin/Downloads/proteomics/wide/spectraRT.predicted.bin",
+                "C:/Users/kevin/OneDriveUmich/proteomics/preds/detectWideAll_Predictions.txt",
+                ("brayCurtis,deltaRTLOESS").split(","),
+                "C:/Users/kevin/Downloads/proteomics/wide/edited_");
     }
 }

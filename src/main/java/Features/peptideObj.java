@@ -18,6 +18,7 @@ public class peptideObj {
     float deltaRTbin;
     float RTzscore;
     double RTprob;
+    double deltaRTLOESS;
 //    double massDiff;
 //    int ntt;
 //    int nmc;

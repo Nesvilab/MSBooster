@@ -20,6 +20,7 @@ public class mgfFileReader implements SpectralPredictionMapper{
     private HashMap<String, float[]> allPredMZs = new HashMap<>();
     private HashMap<String, float[]> allPredIntensities = new HashMap<>();
     private HashMap<String, Float> allPredRTs = new HashMap<>();
+    private HashMap<String, Float> allPredIMs = new HashMap<>();
 
     public mgfFileReader(String files) throws IOException {
         File predsDirectory = new File(files);
@@ -103,10 +104,7 @@ public class mgfFileReader implements SpectralPredictionMapper{
 
     public HashMap<String, Float> getRtDict() { return allPredRTs; }
 
-    public HashMap<String, Float> getIMDict() {
-        System.out.println("no IM predictions");
-        return null;
-    }
+    public HashMap<String, Float> getIMDict() { return allPredIMs; }
 
     public float getMaxPredRT() { return Collections.max(allPredRTs.values()); }
 

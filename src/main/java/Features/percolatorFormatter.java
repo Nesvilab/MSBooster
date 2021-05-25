@@ -414,18 +414,18 @@ public class percolatorFormatter {
         //CHANGE PPM TO 10 if wide, narrow
 
         //CHANGE PPM TO 20 if cptac
-//        editPin("C:/Users/kevin/Downloads/proteomics/cptac/2021-2-21/pepXMLtmp/CPTAC_CCRCC_W_JHU_LUMOS_C3L-01665_T.pin",
-//                "C:/Users/kevin/OneDriveUmich/proteomics/mzml/cptac/CPTAC_CCRCC_W_JHU_LUMOS_C3L-01665_T.mzML",
-//                "C:/Users/kevin/Downloads/proteomics/cptac/2021-2-21/pepXMLtmp/spectraRT.predicted.bin",
-//                "C:/Users/kevin/Downloads/proteomics/cptac/2021-2-21/pepXMLtmp/detect_Predictions.txt",
-//                ("detectFractionGreater").split(","),
-//                "C:/Users/kevin/Downloads/proteomics/cptac/2021-2-21/pepXMLtmp/edited_");
+        editPin("C:/Users/kevin/Downloads/proteomics/cptac/2021-2-21/pepXMLtmp/CPTAC_CCRCC_W_JHU_LUMOS_C3L-01665_T.pin",
+                "C:/Users/kevin/OneDriveUmich/proteomics/mzml/cptac/CPTAC_CCRCC_W_JHU_LUMOS_C3L-01665_T.mzML",
+                "C:/Users/kevin/Downloads/proteomics/cptac/2021-2-21/pepXMLtmp/spectraRT.predicted.bin",
+                "C:/Users/kevin/Downloads/proteomics/cptac/2021-2-21/pepXMLtmp/detect_Predictions.txt",
+                ("detectFractionGreater").split(","),
+                "C:/Users/kevin/Downloads/proteomics/cptac/2021-2-21/pepXMLtmp/edited_");
 
-                editPin("C:/Users/kevin/Downloads/proteomics/wide",
-                "C:/Users/kevin/OneDriveUmich/proteomics/mzml/wideWindow",
-                "C:/Users/kevin/Downloads/proteomics/wide/spectraRT.predicted.bin",
-                "C:/Users/kevin/OneDriveUmich/proteomics/preds/detectWideAll_Predictions.txt",
-                ("brayCurtis,deltaRTLOESS").split(","),
-                "C:/Users/kevin/Downloads/proteomics/wide/edited_");
+//                editPin("C:/Users/kevin/Downloads/proteomics/wide",
+//                "C:/Users/kevin/OneDriveUmich/proteomics/mzml/wideWindow",
+//                "C:/Users/kevin/Downloads/proteomics/wide/spectraRT.predicted.bin",
+//                "C:/Users/kevin/OneDriveUmich/proteomics/preds/detectWideAll_Predictions.txt",
+//                ("brayCurtis,deltaRTLOESS").split(","),
+//                "C:/Users/kevin/Downloads/proteomics/wide/edited_");
     }
 }

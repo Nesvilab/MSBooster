@@ -34,7 +34,7 @@ public class Constants {
     public static Integer digestMaxLength = 50;
     public static Integer digestMinMass = 500; //Da
     public static Integer digestMaxMass = 5000;
-    public static Boolean includeDecoy = false;
+    public static final Boolean includeDecoy = false;
     private static FastaReader fastaReader = null;
     public static void setFastaReader(FastaReader f) {
         fastaReader = f;
@@ -87,19 +87,20 @@ public class Constants {
     //should include parameter to calculate correlation and then choose
     //default auto, everything, or all? Or a combination I figure out empirically
     public static String features = "cosineSimilarity,spectralContrastAngle,euclideanDistance,brayCurtis,pearsonCorr,dotProduct," +
-            "deltaRTlinear,deltaRTbins,deltaRTLOESS,RTzscore,RTprobability,RTprobabilityUnifPrior,detectFractionGreater,detectSubtractMissing";
+            "deltaRTlinear,deltaRTbins,deltaRTLOESS,RTzscore,RTprobability,RTprobabilityUnifPrior," +
+            "detectFractionGreater,detectSubtractMissing";
     //public static String features = "auto";
 
     //don't currently support weighted similarity features
     public static final HashSet<String> allowedFeatures = new HashSet<>(Arrays.asList("all", "auto",
-            "cosineSimilarity", "weightedCosineSimilarity", "spectralContrastAngle", "weightedSpectralContrastAngle",
-            "euclideanDistance", "weightedEuclideanDistance", "brayCurtis", "weightedBrayCurtis",
-            "pearsonCorr", "weightedPearsonCorr", "dotProduct", "weightedDotProduct",
+            "cosineSimilarity", "spectralContrastAngle",
+            "euclideanDistance", "brayCurtis",
+            "pearsonCorr", "dotProduct",
             "deltaRTlinear", "deltaRTbins", "deltaRTLOESS", "RTzscore", "RTprobability", "RTprobabilityUnifPrior",
-            "detectFractionGreater", "detectability", "detectSubtractMissing"));
+            "detectFractionGreater", "detectability", "detectSubtractMissing",
+            "deltaIM"));
     public static final HashSet<String> detectFeatures =
-            new HashSet<>(Arrays.asList("detectFractionGreater", "detectability",
-                    "detectSubtractMissing"));
+            new HashSet<>(Arrays.asList("detectFractionGreater", "detectability", "detectSubtractMissing"));
     public static final HashSet<String> spectraRTFeatures = new HashSet<>(Arrays.asList(
             "cosineSimilarity", "weightedCosineSimilarity", "spectralContrastAngle", "weightedSpectralContrastAngle",
             "euclideanDistance", "weightedEuclideanDistance", "brayCurtis", "weightedBrayCurtis",

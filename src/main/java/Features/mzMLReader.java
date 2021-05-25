@@ -43,13 +43,13 @@ public class mzMLReader {
         pathStr = path.toString();
         MZMLFile source = new MZMLFile(pathStr);
 
-        scans = new ScanCollectionDefault();
+        scans = new ScanCollectionDefault(true); //combined this with line 52
         // Softly reference spectral data, make it reclaimable by GC
         scans.setDefaultStorageStrategy(StorageStrategy.SOFT);
         // Set it to automatically re-parse spectra from the file if spectra were not
         // yet parsed or were reclaimed to make auto-loading work you'll need to use
         // IScan#fetchSpectrum() method instead of IScan#getSpectrum()
-        scans.isAutoloadSpectra(true); // this is actually the default
+        //scans.isAutoloadSpectra(true); // this is actually the default
 
         // Set our mzXML file as the data source for this scan collection
         scans.setDataSource(source);
@@ -71,15 +71,15 @@ public class mzMLReader {
     }
 
     //for deserialized mzmlReaders, need to reload scans
-    public void setScans() throws FileParsingException {
-        MZMLFile source = new MZMLFile(pathStr);
-        scans = new ScanCollectionDefault();
-        scans.setDefaultStorageStrategy(StorageStrategy.SOFT);
-        scans.isAutoloadSpectra(true);
-        scans.setDataSource(source);
-        source.setNumThreadsForParsing(null);
-        scans.loadData(LCMSDataSubset.MS1_WITH_SPECTRA);
-    }
+//    public void setScans() throws FileParsingException {
+//        MZMLFile source = new MZMLFile(pathStr);
+//        scans = new ScanCollectionDefault();
+//        scans.setDefaultStorageStrategy(StorageStrategy.SOFT);
+//        scans.isAutoloadSpectra(true);
+//        scans.setDataSource(source);
+//        source.setNumThreadsForParsing(null);
+//        scans.loadData(LCMSDataSubset.MS1_WITH_SPECTRA);
+//    }
 
     //get experimental spectra
     public float[] getIntensity(int scanNum) throws FileParsingException {

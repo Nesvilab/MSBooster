@@ -50,10 +50,10 @@ public class MainClass {
                 System.out.println("\t--spectraRTPredFile: path to the spectral/RT prediction file, if produced from a previous run. " +
                         "This parameter can be provided to skip regenerating the predictions");
                 System.out.println("\t--detectPredFile: path to the detectability prediction file, if produced from a previous run.");
-                System.out.println("\t--features: features to add to the edited pin file. If all is selected, all features will be used. " +
-                        "Pick from the following: brayCurtis,euclideanDistance,cosineSimilarity,spectralContrastAngle,pearsonCorr,dotProduct," +
-                        "deltaRTlinear,deltaRTbins,RTzscore,deltaRTLOESS,RTprobability,RTprobabilityUnifPrior,detectability,detectFractionGreater " +
-                        "(default: all)");
+                System.out.println("\t--features: features to add to the edited pin file, " +
+                        "separated by commas with no white space (ex. brayCurtis,deltaRTlinear). " +
+                        "If 'all' is selected, all features will be used. " +
+                        "Pick from the following: " + Constants.allowedFeatures + " (default: all)");
                 System.out.println("\t--numThreads: number of threads available. numThreads <= 0 indicate for all threads to be used (Default: 0)");
 
                 System.out.println("");
@@ -87,8 +87,8 @@ public class MainClass {
 
                 System.out.println("");
                 System.out.println("Flags that are only used in detectability filtering:");
-                System.out.println("\t--detectThreshold: PSMs with detectability below this value are removed from the edited PSM " +
-                        "(default 0.0000002)");
+//                System.out.println("\t--detectThreshold: PSMs with detectability below this value are removed from the edited PSM " +
+//                        "(default 0.0000002)");
                 System.exit(0);
             }
             i++;
@@ -148,12 +148,19 @@ public class MainClass {
             }
             if (f.equals("all")) {
                 allFeatures = true;
-                featuresArray = (String[]) Constants.allowedFeatures.toArray();
+                featuresArray = new String[Constants.allowedFeatures.size()];
+                int i = 0;
+                for (String s : Constants.allowedFeatures) {
+                    featuresArray[i] = s;
+                    i++;
+                }
                 break;
             }
             if (f.equals("auto")) {
-                autoFeatures = true;
-                break;
+//                autoFeatures = true;
+//                break;
+                System.out.println("auto not supported currently");
+                System.exit(0);
             }
         }
         HashSet<String> featureSet = new HashSet<>(Arrays.asList(featuresArray));

@@ -4,6 +4,7 @@ import umich.ms.fileio.exceptions.FileParsingException;
 
 import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;
+import java.util.Arrays;
 
 public class RandomThings {
 
@@ -12,11 +13,7 @@ public class RandomThings {
     }
 
     public static void main(String[] args) throws IOException, FileParsingException, NoSuchMethodException, IllegalAccessException, InvocationTargetException, InterruptedException {
-        long startTime = System.nanoTime();
-        int start = (int) (1000000 * (long) 2) / 12;
-        long endTime = System.nanoTime();
-        long duration = (endTime - startTime);
-        System.out.println("Calculating RT probabilities took " + duration / 1000000 +" milliseconds");
+        System.out.println(Arrays.toString(Constants.allowedFeatures.toArray()));
     }
 
     //this is for creating tsv for creating histograms for scores between target and decoy in python

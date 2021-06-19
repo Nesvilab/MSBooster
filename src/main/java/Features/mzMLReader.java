@@ -5,24 +5,33 @@ import smile.stat.distribution.KernelDensity;
 import umich.ms.datatypes.LCMSDataSubset;
 import umich.ms.datatypes.scan.IScan;
 import umich.ms.datatypes.scan.StorageStrategy;
+import umich.ms.datatypes.scan.impl.ScanDefault;
+import umich.ms.datatypes.scan.props.PrecursorInfo;
 import umich.ms.datatypes.scancollection.impl.ScanCollectionDefault;
+import umich.ms.datatypes.spectrum.ISpectrum;
+import umich.ms.datatypes.spectrum.impl.SpectrumDefault;
 import umich.ms.fileio.exceptions.FileParsingException;
 import umich.ms.fileio.filetypes.mzml.MZMLFile;
 
+import java.io.BufferedWriter;
+import java.io.FileWriter;
 import java.io.IOException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.*;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 
+import static Features.StatMethods.LOESS;
+import static Features.StatMethods.movingAverage;
 import static Features.floatUtils.doubleToFloat;
 
 public class mzMLReader {
     //final Path path;
     final String pathStr;
-    transient ScanCollectionDefault scans; //need to implement serializable
+    public ScanCollectionDefault scans; //need to implement serializable
     double[] mzFreqs; //this can never be changed once set. It would be difficult if mzFreqs could change, as weighted
                       //similarity measures might be calculated using different weights. If you want to use different
                       //weights, just make new mzmlReader object
@@ -30,8 +39,12 @@ public class mzMLReader {
     HashMap<Integer, mzmlScanNumber> scanNumberObjects = new HashMap<>();
     List<Integer> scanNums;
     private float[] betas;
-    public ArrayList<Float>[] RTbins;
-    private Function1<Double, Double> LOESS;
+    public ArrayList<Float>[] RTbins = null;
+    public float[][] RTbinStats;
+    private Function1<Double, Double> RTLOESS;
+    public ArrayList<Float>[] IMbins = null;
+    public float[][] IMbinStats;
+    private ArrayList<Function1<Double, Double>> IMLOESS = new ArrayList<>();
     public double[][] expAndPredRTs;
     private List<Future> futureList = new ArrayList<>(Constants.numThreads);
 
@@ -63,6 +76,37 @@ public class mzMLReader {
         // will be able to reclaim it.
         scans.loadData(LCMSDataSubset.MS1_WITH_SPECTRA);
 
+        Constants.useIM = false;
+        createScanNumObjects(); //seems like we always need this anyway
+
+        scanNums = new ArrayList<>(scanNumberObjects.size());
+        scanNums.addAll(scanNumberObjects.keySet());
+        //this.getMzFreq(); only if we end up using weights
+    }
+
+    public mzMLReader(mgfFileReader mgf) throws FileParsingException { //uncalibrated mgf from MSFragger .d search
+        pathStr = null;
+
+        scans = new ScanCollectionDefault(true);
+        scans.setDefaultStorageStrategy(StorageStrategy.SOFT);
+        for (String key : mgf.getRtDict().keySet()) {
+            //get scan number
+            String[] dotSplit = key.split("\\.");
+            int scanNum = Integer.parseInt(dotSplit[dotSplit.length - 2]);
+
+            IScan scan = new ScanDefault(scanNum, mgf.getRtDict().get(key), 2, true);
+            scan.setIm(Double.valueOf(mgf.getIMDict().get(key)));
+            PrecursorInfo pi = new PrecursorInfo();
+            pi.setMzTargetMono(mgf.getMassesDict().get(key));
+            scan.setPrecursor(pi);
+            ISpectrum spectrum = new SpectrumDefault(floatUtils.floatToDouble(mgf.getMzDict().get(key)),
+                    floatUtils.floatToDouble(mgf.getIntensityDict().get(key)), null);
+            scan.setSpectrum(spectrum, false);
+            scans.addScan(scan);
+        }
+        mgf.clear();
+
+        Constants.useIM = true;
         createScanNumObjects(); //seems like we always need this anyway
 
         scanNums = new ArrayList<>(scanNumberObjects.size());
@@ -179,12 +223,23 @@ public class mzMLReader {
     public void createScanNumObjects() throws FileParsingException {
         int scanNum = -1;
         IScan scan = scans.getNextScanAtMsLevel(scanNum, 2);
-        while (scan != null) {
-            scanNum = scan.getNum();
-            //double windowStart = scan.getPrecursor().getMzRangeStart();
-            scanNumberObjects.put(scanNum, new mzmlScanNumber(this, scanNum, scan.getRt().floatValue()));
-            scan = scans.getNextScanAtMsLevel(scanNum, 2);
+        if (Constants.useIM) {
+            while (scan != null) {
+                scanNum = scan.getNum();
+                //double windowStart = scan.getPrecursor().getMzRangeStart();
+                scanNumberObjects.put(scanNum, new mzmlScanNumber(this, scanNum, scan.getRt().floatValue(),
+                        scan.getIm().floatValue()));
+                scan = scans.getNextScanAtMsLevel(scanNum, 2);
+            }
+        } else {
+            while (scan != null) {
+                scanNum = scan.getNum();
+                //double windowStart = scan.getPrecursor().getMzRangeStart();
+                scanNumberObjects.put(scanNum, new mzmlScanNumber(this, scanNum, scan.getRt().floatValue(), null));
+                scan = scans.getNextScanAtMsLevel(scanNum, 2);
+            }
         }
+        scans.reset(); //free up memory. Could consider setting to null as well, but idk how to check if it's garbage collected
     }
 
     public mzmlScanNumber getScanNumObject(int scanNum) {
@@ -203,21 +258,21 @@ public class mzMLReader {
         for (int i = 0; i < iterations; i++) {
             String pep = peptides[i];
             scanNumberObjects.get(scanNums[i]).setPeptideObject(pep, rank, tdArray[i], escore[i],
-                    spm.getMzDict(), spm.getIntensityDict(), spm.getRtDict());
+                    spm.getMzDict(), spm.getIntensityDict(), spm.getRtDict(), spm.getIMDict());
         }
     }
 
     public void setPinEntries(pinReader pin, SpectralPredictionMapper spm) throws AssertionError, Exception {
         while(pin.next()) {
             scanNumberObjects.get(pin.getScanNum()).setPeptideObject(pin.getPep(), pin.getRank(), pin.getTD(), pin.getEScore(),
-                    spm.getMzDict(), spm.getIntensityDict(), spm.getRtDict());
+                    spm.getMzDict(), spm.getIntensityDict(), spm.getRtDict(), spm.getIMDict());
         }
         pin.close();
         pin.reset();
     }
 
     public void setBetas(SpectralPredictionMapper preds, int RTregressionSize) throws IOException {
-        betas = RTFunctions.getBetas(this, preds, RTregressionSize);
+        betas = RTFunctions.getBetas(this, RTregressionSize);
     }
     public void setBetas() {
         betas = RTFunctions.getBetas(expAndPredRTs);
@@ -255,21 +310,80 @@ public class mzMLReader {
         }
     }
 
-    public void setRTbins(SpectralPredictionMapper preds) throws IOException {
-        RTbins = RTFunctions.RTbins(this, preds);
+    public void setRTbins() throws IOException {
+        RTbins = RTFunctions.RTbins(this);
+    }
+
+    public void setIMbins() throws IOException {
+        IMbins = IMFunctions.IMbins(this);
     }
 
     public ArrayList<Float>[] getRTbins() {
         return RTbins;
     }
 
-    //apply stats to every scan number baseed on RT bin
-    public void propagateRTBinStats(ExecutorService executorService) throws ExecutionException, InterruptedException {
-        if (RTbins == null) {
-            System.out.println("why are RTbins null?");
-        };
-        float[][] binStats = RTFunctions.characterizeRTbins(RTbins);
+    public void calculateBinStats(String mode) {
+        if (mode.equals("RT")) {
+            if (RTbins == null) {
+                System.out.println("why are RTbins null?");
+            }
+            ;
+            RTbinStats = StatMethods.characterizebins(RTbins, Constants.RTIQR);
 
+            //smoothing with window of 1
+            //could make it at statmethods method
+            for (int window = 0; window < RTbinStats.length; window++) {
+                float[] b = RTbinStats[window];
+                if (b.length < 2) {
+                    continue;
+                }
+
+                RTbinStats[window] = movingAverage(b, 1);
+            }
+        } else if (mode.equals("IM")) {
+            if (IMbins == null) {
+                System.out.println("why are IMbins null?");
+            }
+            ;
+            IMbinStats = StatMethods.characterizebins(IMbins, Constants.IMIQR);
+
+            //smoothing with window of 1
+            //could make it at statmethods method
+            for (int window = 0; window < IMbinStats.length; window++) {
+                float[] b = IMbinStats[window];
+                if (b.length < 2) {
+                    continue;
+                }
+
+                IMbinStats[window] = movingAverage(b, 1);
+            }
+        }
+    }
+
+    public void setRTBinSizes(ExecutorService executorService) throws ExecutionException, InterruptedException {
+        futureList.clear();
+
+        //iterate over this list of scan numbers
+        for (int i = 0; i < Constants.numThreads; i++) {
+            int start = (int) (scanNumberObjects.size() * (long) i) / Constants.numThreads;
+            int end = (int) (scanNumberObjects.size() * (long) (i + 1)) / Constants.numThreads;
+            futureList.add(executorService.submit(() -> {
+                for (int j = start; j < end; j++) {
+                    mzmlScanNumber msn = getScanNumObject(scanNums.get(j));
+
+                    //also set bin size, for use with uniform prior prob
+                    int idx = (int) (msn.RT * Constants.RTbinMultiplier);
+                    msn.RTbinSize = RTbins[idx].size();
+                }
+            }));
+        }
+        for (Future future : futureList) {
+            future.get();
+        }
+    }
+
+    //apply stats to every scan number baseed on RT bin
+    public void calculateDeltaRTbinAndRTzscore(ExecutorService executorService) throws ExecutionException, InterruptedException {
         futureList.clear();
 
         //iterate over this list of scan numbers
@@ -281,17 +395,77 @@ public class mzMLReader {
                     mzmlScanNumber msn = getScanNumObject(scanNums.get(j));
 
                     //get stats based on experimental RT bin
-                    int idx = Math.round(msn.RT);
-                    float binMean = binStats[idx][0];
-                    float binStd = binStats[idx][1];
+                    int idx = (int) (msn.RT * Constants.RTbinMultiplier);
+                    float binMean = RTbinStats[idx][0];
+                    float binStd = RTbinStats[idx][1];
 
                     //also set bin size, for use with uniform prior prob
-                    msn.RTbinSize = RTbins[idx].size();
+                    //msn.RTbinSize = RTbins[idx].size(); //TODO: make new method
 
                     //now calculate deltaRTs
                     for (peptideObj pep : msn.peptideObjects) {
                         pep.deltaRTbin = Math.abs(binMean - pep.RT);
                         pep.RTzscore = Math.abs(StatMethods.zscore(pep.RT, binMean, binStd));
+                    }
+                }
+            }));
+        }
+        for (Future future : futureList) {
+            future.get();
+        }
+    }
+
+    public void calculateDeltaRTLOESSnormalized(ExecutorService executorService) throws ExecutionException, InterruptedException {
+        futureList.clear();
+
+        //iterate over this list of scan numbers
+        for (int i = 0; i < Constants.numThreads; i++) {
+            int start = (int) (scanNumberObjects.size() * (long) i) / Constants.numThreads;
+            int end = (int) (scanNumberObjects.size() * (long) (i + 1)) / Constants.numThreads;
+            futureList.add(executorService.submit(() -> {
+                for (int j = start; j < end; j++) {
+                    mzmlScanNumber msn = getScanNumObject(scanNums.get(j));
+
+                    //get stats based on experimental RT bin
+                    int idx = (int) (msn.RT * Constants.RTbinMultiplier);
+                    float binStd = RTbinStats[idx][1];
+                    float binIqr = RTbinStats[idx][2];
+
+                    //now calculate deltaRTs
+                    double LOESSRT = RTLOESS.invoke((double) msn.RT);
+                    for (peptideObj pep : msn.peptideObjects) {
+                        //pep.deltaRTLOESSnormalized = Math.abs(LOESSRT - pep.RT) / binStd;
+                        pep.deltaRTLOESSnormalized = Math.abs(LOESSRT - pep.RT) / binIqr;
+                    }
+                }
+            }));
+        }
+        for (Future future : futureList) {
+            future.get();
+        }
+    }
+
+    public void calculateDeltaIMLOESSnormalized(ExecutorService executorService) throws ExecutionException, InterruptedException {
+        futureList.clear();
+
+        //iterate over this list of scan numbers
+        for (int i = 0; i < Constants.numThreads; i++) {
+            int start = (int) (scanNumberObjects.size() * (long) i) / Constants.numThreads;
+            int end = (int) (scanNumberObjects.size() * (long) (i + 1)) / Constants.numThreads;
+            futureList.add(executorService.submit(() -> {
+                for (int j = start; j < end; j++) {
+                    mzmlScanNumber msn = getScanNumObject(scanNums.get(j));
+
+                    //get stats based on experimental RT bin
+                    int idx = (int) (msn.IM * Constants.IMbinMultiplier);
+                    float binStd = IMbinStats[idx][1];
+                    float binIqr = IMbinStats[idx][2];
+
+                    //now calculate deltaRTs
+                    for (peptideObj pep : msn.peptideObjects) {
+                        double LOESSIM = IMLOESS.get(pep.charge - 1).invoke((double) msn.IM);
+                        //pep.deltaIMLOESSnormalized = Math.abs(LOESSIM - pep.IM) / binStd;
+                        pep.deltaIMLOESSnormalized = Math.abs(LOESSIM - pep.IM) / binIqr;
                     }
                 }
             }));
@@ -329,12 +503,24 @@ public class mzMLReader {
         System.out.println("Calculating RT probabilities took " + duration / 1000000000 +" seconds");
     }
 
-    public void setLOESS(SpectralPredictionMapper preds, int RTregressionSize, double bandwidth, int robustIters) {
-        expAndPredRTs = RTFunctions.getRTarrays(this, preds, RTregressionSize);
-        LOESS = RTFunctions.LOESS(expAndPredRTs, bandwidth, robustIters);
+    public void setLOESS(int regressionSize, double bandwidth, int robustIters, String mode) {
+        if (mode.equals("RT")) {
+            expAndPredRTs = RTFunctions.getRTarrays(this, regressionSize);
+            RTLOESS = LOESS(expAndPredRTs, bandwidth, robustIters);
+        } else if (mode.equals("IM")) {
+            double[][][] expAndPredIMs = IMFunctions.getIMarrays(this, regressionSize);
+            for (double[][] bins : expAndPredIMs) {
+                if (bins[0] == null) {
+                    continue;
+                }
+                IMLOESS.add(LOESS(bins, bandwidth, robustIters));
+            }
+        } else {
+            throw new IllegalArgumentException("only choose RT or IM");
+        }
     }
 
-    public void predictLOESS(ExecutorService executorService) throws ExecutionException, InterruptedException {
+    public void predictRTLOESS(ExecutorService executorService) throws ExecutionException, InterruptedException {
         //return LOESS.invoke(expRT);
         long startTime = System.nanoTime();
         futureList.clear();
@@ -346,7 +532,7 @@ public class mzMLReader {
             futureList.add(executorService.submit(() -> {
                 for (int j = start; j < end; j++) {
                     mzmlScanNumber msn = getScanNumObject(scanNums.get(j));
-                    double LOESSRT = LOESS.invoke((double) msn.RT);
+                    double LOESSRT = RTLOESS.invoke((double) msn.RT);
 
                     for (peptideObj pep : msn.peptideObjects) {
                         pep.deltaRTLOESS = Math.abs(LOESSRT - pep.RT);
@@ -362,10 +548,78 @@ public class mzMLReader {
         System.out.println("Calculating deltaRTLOESS took " + duration / 1000000000 +" seconds");
     }
 
+    public void predictIMLOESS(ExecutorService executorService) throws ExecutionException, InterruptedException {
+        //return LOESS.invoke(expRT);
+        long startTime = System.nanoTime();
+        futureList.clear();
+
+        //iterate over this list of scan numbers
+        for (int i = 0; i < Constants.numThreads; i++) {
+            int start = (int) (scanNumberObjects.size() * (long) i) / Constants.numThreads;
+            int end = (int) (scanNumberObjects.size() * (long) (i + 1)) / Constants.numThreads;
+            futureList.add(executorService.submit(() -> {
+                for (int j = start; j < end; j++) {
+                    mzmlScanNumber msn = getScanNumObject(scanNums.get(j));
+
+                    for (peptideObj pep : msn.peptideObjects) {
+                        double LOESSIM = IMLOESS.get(pep.charge - 1).invoke((double) msn.IM);
+                        pep.deltaIMLOESS = Math.abs(LOESSIM - pep.IM);
+                    }
+                }
+            }));
+        }
+        for (Future future : futureList) {
+            future.get();
+        }
+        long endTime = System.nanoTime();
+        long duration = (endTime - startTime);
+        System.out.println("Calculating deltaIMLOESS took " + duration / 1000000000 +" seconds");
+    }
+
     public HashMap<Integer, mzmlScanNumber> getScanNumberObjects(){
         return this.scanNumberObjects;
     }
 
-    public static void main(String[] args) throws FileParsingException, IOException {
+    public static void main(String[] args) throws Exception {
+        mgfFileReader mgf = new mgfFileReader("C:/Users/kevin/Downloads/proteomics/timsTOF/" +
+                "20180819_TIMS2_12-2_AnBr_SA_200ng_HeLa_50cm_120min_100ms_11CT_3_A1_01_2769_uncalibrated.mgf");
+        System.out.println("done loading mgf");
+        mzMLReader mzml = new mzMLReader(mgf);
+        SpectralPredictionMapper spm = new DiannSpeclibReader("C:/Users/kevin/Downloads/proteomics/timsTOF/DIANN.predicted.bin");
+        //detectMap dm = new detectMap("C:/Users/kevin/Downloads/proteomics/timsTOF/detect_Predictions.txt");
+        System.out.println("Loading pin");
+        pinReader pin = new pinReader("C:/Users/kevin/Downloads/proteomics/timsTOF/" +
+                "20180819_TIMS2_12-2_AnBr_SA_200ng_HeLa_50cm_120min_100ms_11CT_3_A1_01_2769.pin");
+        System.out.println("Setting pin");
+        mzml.setPinEntries(pin, spm);
+        mzml.setBetas(spm, 5000);
+        Constants.numThreads = 11;
+        ExecutorService executorService = Executors.newFixedThreadPool(Constants.numThreads);
+        mzml.normalizeRTs(executorService);
+        mzml.setLOESS(Constants.IMregressionSize, Constants.bandwidth, Constants.robustIters, "IM");
+        mzml.predictIMLOESS(executorService);
+        executorService.shutdown();
+        BufferedWriter writer = new BufferedWriter(new FileWriter("C:/Users/kevin/Downloads/proteomics/timsTOF/IM.tsv"));
+        writer.write("expIM\tpredIM\tlabel\tevalue\tscanNum\tcharge\texpRT\tpredRT\tdeltaIMloess\tpep\tmass\n");
+        for (mzmlScanNumber msn : mzml.scanNumberObjects.values()) {
+            if (msn.peptideObjects.size() == 0) {
+                continue;
+            }
+            peptideObj pObj = msn.getPeptideObject(1);
+            Float expIM = msn.IM;
+            Float predIM = pObj.IM;
+            int td = pObj.targetORdecoy;
+            String escore = pObj.escore;
+            int scanNum = pObj.scanNum;
+            int charge = Integer.parseInt(pObj.name.split("\\|")[2]);
+            float expRT = msn.normalizedRT;
+            float predRT = pObj.RT;
+            double deltaIMloess = pObj.deltaIMLOESS;
+            String pep = pObj.name;
+            double mass = mzml.scans.getScanByNum(msn.scanNum).getPrecursor().getMzTargetMono();
+            writer.write(expIM + "\t" + predIM + "\t" + td + "\t" + escore + "\t" + scanNum + "\t" + charge + "\t"
+                    + expRT + "\t" + predRT + "\t" + deltaIMloess + "\t" + pep +  "\t" + mass + "\n");
+        }
+        writer.close();
     }
 }

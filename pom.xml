@@ -34,11 +34,11 @@
         </dependency>
 
         <!-- To include the proteomic module -->
-        <dependency>
-            <groupId>org.expasy.mzjava</groupId>
-            <artifactId>mzjava-proteomics</artifactId>
-            <version>1.1.0</version>
-        </dependency>
+<!--        <dependency>-->
+<!--            <groupId>org.expasy.mzjava</groupId>-->
+<!--            <artifactId>mzjava-proteomics</artifactId>-->
+<!--            <version>1.1.0</version>-->
+<!--        </dependency>-->
 
         <!-- To include the hadoop proteomic module -->
 <!--        <dependency>-->
@@ -67,6 +67,17 @@
             <artifactId>pairAdjacentViolators</artifactId>
             <version>1.4.16</version>
         </dependency>
+        <dependency>
+            <groupId>org.apache.commons</groupId>
+            <artifactId>commons-math3</artifactId>
+            <version>3.1.1</version>
+        </dependency>
+        <dependency>
+            <groupId>commons-io</groupId>
+            <artifactId>commons-io</artifactId>
+            <version>2.9.0</version>
+        </dependency>
+
     </dependencies>
 
     <build>

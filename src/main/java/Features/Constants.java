@@ -26,7 +26,7 @@ public class Constants {
     //optional file locations and parameters
     //if calculating detectFractionGreater, these are used for FastaReader class
     //C:/Users/kevin/OneDriveUmich/proteomics/fasta/2020-12-07-decoys-reviewed-contam-UP000005640.fas
-    public static String fasta = null;
+    public static String fasta = "C:/Users/kevin/OneDriveUmich/proteomics/fasta/2020-12-07-decoys-reviewed-contam-UP000005640.fas";
     public static String decoyPrefix = ">rev_";
     public static String cutAfter = "KR";
     public static String butNotAfter = "P";
@@ -71,6 +71,8 @@ public class Constants {
     public static Integer RTregressionSize = 5000;
     public static Double uniformPriorPercentile = 10d;
     public static Float RTescoreCutoff = 1f; //PSMs with e score higher than this won't make it into RT linear regression modeling
+    public static final Integer RTbinMultiplier = 1;
+    public static final Float RTIQR = 50f;
 
     //LOESS
     public static final Double bandwidth = 0.1;
@@ -81,14 +83,22 @@ public class Constants {
     public static final Float detectFractionGreaterNumerator = 1f;
     public static final Float detectFractionGreaterDenominator = 1f; //prior
 
+    //ion mobility
+    public static Boolean useIM = false;
+    public static Integer IMregressionSize = 2500;
+    public static Float IMescoreCutoff = 1f;
+    public static final Integer IMbinMultiplier = 10;
+    public static final Float IMIQR = 50f;
+
     ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
     //use single string sep by comma delimiter
     //should include parameter to calculate correlation and then choose
     //default auto, everything, or all? Or a combination I figure out empirically
     public static String features = "cosineSimilarity,spectralContrastAngle,euclideanDistance,brayCurtis,pearsonCorr,dotProduct," +
-            "deltaRTlinear,deltaRTbins,deltaRTLOESS,RTzscore,RTprobability,RTprobabilityUnifPrior," +
-            "detectFractionGreater,detectSubtractMissing";
+            "deltaRTLOESS,deltaRTLOESSnormalized,RTprobabilityUnifPrior," +
+            "detectFractionGreater,detectSubtractMissing," +
+            "deltaIMLOESS,deltaIMLOESSnormalized";
     //public static String features = "auto";
 
     //don't currently support weighted similarity features
@@ -96,9 +106,9 @@ public class Constants {
             "cosineSimilarity", "spectralContrastAngle",
             "euclideanDistance", "brayCurtis",
             "pearsonCorr", "dotProduct",
-            "deltaRTlinear", "deltaRTbins", "deltaRTLOESS", "RTzscore", "RTprobability", "RTprobabilityUnifPrior",
+            "deltaRTlinear", "deltaRTbins", "deltaRTLOESS", "RTzscore", "RTprobability", "RTprobabilityUnifPrior", "deltaRTLOESSnormalized",
             "detectFractionGreater", "detectability", "detectSubtractMissing",
-            "deltaIM"));
+            "deltaIMLOESS", "deltaIMLOESSnormalized"));
     public static final HashSet<String> detectFeatures =
             new HashSet<>(Arrays.asList("detectFractionGreater", "detectability", "detectSubtractMissing"));
     public static final HashSet<String> spectraRTFeatures = new HashSet<>(Arrays.asList(

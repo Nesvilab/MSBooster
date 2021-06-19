@@ -39,7 +39,7 @@ public class PercolatorOutputToPepXML {
                     "C:/Users/kevin/Downloads/proteomics/cptac/2021-2-21/pep1XML1tmp/percToPep/CPTAC_CCRCC_W_JHU_LUMOS_C3L-01665_T",
                     Paths.get("C:/Users/kevin/Downloads/proteomics/cptac/2021-2-21/perc/all.tsv"),
                     Paths.get("C:/Users/kevin/Downloads/proteomics/cptac/2021-2-21/perc/allD.tsv"),
-                    Paths.get("C:/Users/kevin/Downloads/proteomics/cptac/2021-2-21/pep1XML1tmp/percToPep/interact-CPTAC_CCRCC_W_JHU_LUMOS_C3L-01665_T"),
+                    Paths.get("C:/Users/kevin/Downloads/proteomics/cptac/2021-2-21/pep1XML1tmp/percToPep/lessRT/interact-CPTAC_CCRCC_W_JHU_LUMOS_C3L-01665_T"),
                     "DIA");
         }
         else

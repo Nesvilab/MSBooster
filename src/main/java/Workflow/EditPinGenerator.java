@@ -143,6 +143,10 @@ public class EditPinGenerator {
                             oldPin.getName().substring(7, oldPin.getName().length() - 4)),
                     "DIA");
         }
+
+        //remove tmp.pin
+        File tmp = new File(parentDirectory + File.separator + "tmp.pin");
+        tmp.delete();
     }
 
     public static void main(String[] args) throws IOException {

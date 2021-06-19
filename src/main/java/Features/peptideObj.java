@@ -7,6 +7,7 @@ import java.lang.reflect.InvocationTargetException;
 
 public class peptideObj {
     final String name;
+    final int charge;
     final int rank;
     final mzmlScanNumber scanNumObj;
     final int scanNum;
@@ -19,6 +20,10 @@ public class peptideObj {
     float RTzscore;
     double RTprob;
     double deltaRTLOESS;
+    double deltaRTLOESSnormalized;
+    double deltaIMLOESS;
+    double deltaIMLOESSnormalized;
+    Float IM;
 //    double massDiff;
 //    int ntt;
 //    int nmc;
@@ -27,8 +32,9 @@ public class peptideObj {
 //    HashMap<String, Double> scores = new HashMap<>();
 
     public peptideObj(mzmlScanNumber scanNumObj, String name, int rank, int targetORdecoy, String escore,
-                      float[] predMZs, float[] predIntensities, float predRT) {
+                      float[] predMZs, float[] predIntensities, float predRT, Float predIM) {
         this.name = name;
+        this.charge = Integer.parseInt(name.split("\\|")[2]);
         this.rank = rank;
         this.scanNumObj = scanNumObj;
         this.scanNum = scanNumObj.scanNum;
@@ -38,6 +44,7 @@ public class peptideObj {
         this.spectralSimObj = new spectrumComparison(scanNumObj.getExpMZs(), scanNumObj.getExpIntensities(),
                 predMZs, predIntensities, Constants.useTopFragments);
         this.RT = predRT;
+        this.IM = predIM;
     }
 
 //    public void setScore(String similarityMeasure) throws FileParsingException, NoSuchMethodException,

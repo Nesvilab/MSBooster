@@ -172,8 +172,9 @@ public class peptideFileCreator {
     }
 
     public static void main(String[] args) throws IOException {
-        createPeptideFile("C:/Users/kevin/Downloads/proteomics/cptac/2021-2-21/pepXMLtmp/",
-                "C:/Users/kevin/Downloads/proteomics/cptac/2021-2-21/detectTest.csv",
-                "DeepMSPeptideAll", "pin");
+        createPeptideFile("C:/Users/kevin/Downloads/proteomics/timsTOF/" +
+                        "20180819_TIMS2_12-2_AnBr_SA_200ng_HeLa_50cm_120min_100ms_11CT_3_A1_01_2769.pin",
+                "C:/Users/kevin/Downloads/proteomics/timsTOF/DIANN.tsv",
+                "Diann", "pin");
     }
 }

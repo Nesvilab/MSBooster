@@ -92,18 +92,13 @@ public class percolatorFormatter {
         //Special preparations dependent on features we require
         //only time this isn't needed is detect
         //could consider an mgf constant
-        if (featuresList.contains("deltaRTlinear") || featuresList.contains("deltaRTbins") ||
-                featuresList.contains("RTzscore") || featuresList.contains("RTprobability") ||
-                featuresList.contains("RTprobabilityUnifPrior") || featuresList.contains("brayCurtis") ||
-                featuresList.contains("cosineSimilarity") || featuresList.contains("spectralContrastAngle") ||
-                featuresList.contains("euclideanDistance") || featuresList.contains("pearsonCorr") ||
-                featuresList.contains("dotProduct") || featuresList.contains("deltaRTLOESS")) {
+        if (mgf != null) {
             System.out.println("Loading predicted spectra");
             long startTime = System.nanoTime();
             predictedSpectra = SpectralPredictionMapper.createSpectralPredictionMapper(mgf);
             long endTime = System.nanoTime();
             long duration = (endTime - startTime);
-            System.out.println("Spectral and RT loading took " + duration / 1000000 +" milliseconds");
+            System.out.println("Prediction loading took " + duration / 1000000 +" milliseconds");
             needsMGF = true;
         }
 
@@ -178,7 +173,13 @@ public class percolatorFormatter {
                 TsvWriter writer = new TsvWriter(new File(newOutfile), new TsvWriterSettings());
                 //load mzml file
                 System.out.println("Loading " + mzmlFiles[i].getName());
-                mzMLReader mzml = new mzMLReader(mzmlFiles[i].getCanonicalPath());
+
+                mzMLReader mzml;
+                if (mzmlFiles[i].getName().substring( mzmlFiles[i].getName().length() - 3).toLowerCase().equals("mgf")) {
+                    mzml = new mzMLReader(new mgfFileReader(mzmlFiles[i].getCanonicalPath()));
+                } else {
+                    mzml = new mzMLReader(mzmlFiles[i].getCanonicalPath());
+                }
                 long endTime = System.nanoTime();
                 long duration = (endTime - startTime);
                 System.out.println("mzML loading took " + duration / 1000000000 +" seconds");
@@ -204,10 +205,10 @@ public class percolatorFormatter {
                     System.out.println("PSM loading took " + duration / 1000000000 +" seconds");
                     System.out.println("Done loading PSMs onto mzml object");
                 }
-                if (featuresList.contains("deltaRTLOESS")) {
-                    System.out.println("Generating LOESS regression");
-                    mzml.setLOESS(predictedSpectra, Constants.RTregressionSize, Constants.bandwidth, Constants.robustIters);
-                    mzml.predictLOESS(executorService);
+                if (featuresList.contains("deltaRTLOESS") || featuresList.contains("deltaRTLOESSnormalized")) {
+                    System.out.println("Generating RT LOESS regression");
+                    mzml.setLOESS(Constants.RTregressionSize, Constants.bandwidth, Constants.robustIters, "RT");
+                    mzml.predictRTLOESS(executorService); //potentially only invoke once if normalized included
                 }
                 if (featuresList.contains("deltaRTlinear")) {
                     System.out.println("Calculating delta RT linear");
@@ -218,14 +219,23 @@ public class percolatorFormatter {
                     mzml.normalizeRTs(executorService);
                 }
                 if (featuresList.contains("deltaRTbins") || featuresList.contains("RTzscore") ||
-                        featuresList.contains("RTprobability") || featuresList.contains("RTprobabilityUnifPrior")) {
+                        featuresList.contains("RTprobability") || featuresList.contains("RTprobabilityUnifPrior") ||
+                        featuresList.contains("deltaRTLOESSnormalized")) {
                     System.out.println("Generating RT bins");
-                    mzml.setRTbins(predictedSpectra);
-                    mzml.propagateRTBinStats(executorService); //may need to make more specific
+                    mzml.setRTbins();
+                    mzml.calculateBinStats("RT");
+                }
+                if (featuresList.contains("deltaRTbins") || featuresList.contains("RTzscore")) {
+                    mzml.calculateDeltaRTbinAndRTzscore(executorService);
+                }
+                if (featuresList.contains("deltaRTLOESSnormalized")) {
+                    mzml.calculateDeltaRTLOESSnormalized(executorService);
                 }
                 int unifPriorSize = 0; //only used if using uniform prior
                 float unifProb = 0;
                 if (featuresList.contains("RTprobabilityUnifPrior")) {
+                    mzml.setRTBinSizes(executorService);
+
                     //decide how many uniform points to add
                     int[] binSizes = new int[mzml.RTbins.length];
                     for (int bin = 0; bin < mzml.RTbins.length; bin++) {
@@ -241,6 +251,17 @@ public class percolatorFormatter {
                 if (featuresList.contains("RTprobability") || featuresList.contains("RTprobabilityUnifPrior")) {
                     System.out.println("Generating empirical densities");
                     mzml.setKernelDensities(executorService);
+                }
+                if (featuresList.contains("deltaIMLOESS") || featuresList.contains("deltaIMLOESSnormalized")) {
+                    System.out.println("Generating IM LOESS regression");
+                    mzml.setLOESS(Constants.IMregressionSize, Constants.bandwidth, Constants.robustIters, "IM");
+                    mzml.predictIMLOESS(executorService);
+                }
+                if (featuresList.contains("deltaIMLOESSnormalized")) {
+                    System.out.println("Generating IM bins");
+                    mzml.setIMbins();
+                    mzml.calculateBinStats("IM");
+                    mzml.calculateDeltaIMLOESSnormalized(executorService);
                 }
 
                 System.out.println("Getting predictions for each row");
@@ -362,6 +383,9 @@ public class percolatorFormatter {
                             case "deltaRTLOESS":
                                 writer.addValue("deltaRTLOESS", pepObj.deltaRTLOESS);
                                 break;
+                            case "deltaRTLOESSnormalized":
+                                writer.addValue("deltaRTLOESSnormalized", pepObj.deltaRTLOESSnormalized);
+                                break;
                             case "RTzscore":
                                 writer.addValue("RTzscore", pepObj.RTzscore);
                                 break;
@@ -391,6 +415,12 @@ public class percolatorFormatter {
                             case "dotProduct":
                                 writer.addValue("dotProduct", pepObj.spectralSimObj.dotProduct());
                                 break;
+                            case "deltaIMLOESS":
+                                writer.addValue("deltaIMLOESS", pepObj.deltaIMLOESS);
+                                break;
+                            case "deltaIMLOESSnormalized":
+                                writer.addValue("deltaIMLOESSnormalized", pepObj.deltaIMLOESSnormalized);
+                                break;
                         }
                     }
                     //flush values to output
@@ -414,12 +444,12 @@ public class percolatorFormatter {
         //CHANGE PPM TO 10 if wide, narrow
 
         //CHANGE PPM TO 20 if cptac
-        editPin("C:/Users/kevin/Downloads/proteomics/cptac/2021-2-21/pepXMLtmp/CPTAC_CCRCC_W_JHU_LUMOS_C3L-01665_T.pin",
-                "C:/Users/kevin/OneDriveUmich/proteomics/mzml/cptac/CPTAC_CCRCC_W_JHU_LUMOS_C3L-01665_T.mzML",
-                "C:/Users/kevin/Downloads/proteomics/cptac/2021-2-21/pepXMLtmp/spectraRT.predicted.bin",
-                "C:/Users/kevin/Downloads/proteomics/cptac/2021-2-21/pepXMLtmp/detect_Predictions.txt",
-                ("detectFractionGreater").split(","),
-                "C:/Users/kevin/Downloads/proteomics/cptac/2021-2-21/pepXMLtmp/edited_");
+//        editPin("C:/Users/kevin/Downloads/proteomics/cptac/2021-2-21/pep1XML1tmp/percToPep/CPTAC_CCRCC_W_JHU_LUMOS_C3L-01665_T.pin",
+//                "C:/Users/kevin/OneDriveUmich/proteomics/mzml/cptac/CPTAC_CCRCC_W_JHU_LUMOS_C3L-01665_T.mzML",
+//                "C:/Users/kevin/Downloads/proteomics/cptac/2021-2-21/pep1XML1tmp/percToPep/spectraRT.predicted.bin",
+//                "C:/Users/kevin/Downloads/proteomics/cptac/2021-2-21/pep1XML1tmp/percToPep/detect_Predictions.txt",
+//                ("RTprobabilityUnifPrior,deltaRTLOESS,deltaRTLOESSnormalized").split(","),
+//                "C:/Users/kevin/Downloads/proteomics/cptac/2021-2-21/pep1XML1tmp/percToPep/test_");
 
 //                editPin("C:/Users/kevin/Downloads/proteomics/wide",
 //                "C:/Users/kevin/OneDriveUmich/proteomics/mzml/wideWindow",
@@ -427,5 +457,14 @@ public class percolatorFormatter {
 //                "C:/Users/kevin/OneDriveUmich/proteomics/preds/detectWideAll_Predictions.txt",
 //                ("brayCurtis,deltaRTLOESS").split(","),
 //                "C:/Users/kevin/Downloads/proteomics/wide/edited_");
+        editPin("C:/Users/kevin/Downloads/proteomics/timsTOF/20180819_TIMS2_12-2_AnBr_SA_200ng_HeLa_50cm_120min_100ms_11CT_3_A1_01_2769.pin",
+                "C:/Users/kevin/Downloads/proteomics/timsTOF/" +
+                        "20180819_TIMS2_12-2_AnBr_SA_200ng_HeLa_50cm_120min_100ms_11CT_3_A1_01_2769_uncalibrated.mgf",
+                "C:/Users/kevin/Downloads/proteomics/timsTOF/DIANN.predicted.bin",
+                "C:/Users/kevin/Downloads/proteomics/timsTOF/detect_Predictions.txt",
+                Constants.features.split(","),
+                "C:/Users/kevin/Downloads/proteomics/timsTOF/edited_");
+
+
     }
 }

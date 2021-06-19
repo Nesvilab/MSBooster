@@ -15,31 +15,33 @@ public class mzmlScanNumber {
     float RT;
     int RTbinSize;
     float normalizedRT;
+    Float IM;
     ArrayList<peptideObj> peptideObjects = new ArrayList<>();
     //double[] mzFreqs;
     public static float[] zeroFloatArray = new float[]{0};
 
-    public mzmlScanNumber(mzMLReader mzmlScans, int scanNum, float RT) throws FileParsingException {
+    public mzmlScanNumber(mzMLReader mzmlScans, int scanNum, float RT, Float IM) throws FileParsingException {
         this.scanNum = scanNum;
         //this.mzmlScans = mzmlScans;
         this.mzmlPath = mzmlScans.pathStr;
         this.expMZs = mzmlScans.getMZ(scanNum);
         this.expIntensities = mzmlScans.getIntensity(scanNum);
         this.RT = RT;
+        this.IM = IM;
         //this.mzFreqs = mzmlScans.getMzFreq();
         //this.windowStart = windowStart;
     }
 
-    public void setMZMLScans(mzMLReader mr){ //we don't always want the scans to stick around
-        this.mzmlScans = mr;
-    }
+//    public void setMZMLScans(mzMLReader mr){ //we don't always want the scans to stick around
+//        this.mzmlScans = mr;
+//    }
 
     public float[] getExpMZs() { return expMZs; }
     public float[] getExpIntensities() { return expIntensities; }
 
     public void setPeptideObject(String name, int rank, int targetORdecoy, String escore,
                                  HashMap<String, float[]> allPredMZs, HashMap<String, float[]> allPredIntensities,
-                                 HashMap<String, Float> allPredRTs) throws Exception {
+                                 HashMap<String, Float> allPredRTs, HashMap<String, Float> allPredIMs) throws Exception {
 
         if (rank != peptideObjects.size() + 1) { //need to add entries in order
             throw new AssertionError("must add next rank");
@@ -48,14 +50,15 @@ public class mzmlScanNumber {
             float[] predMZs = allPredMZs.get(name);
             float[] predIntensities = allPredIntensities.get(name);
             float predRT = allPredRTs.get(name);
+            float predIM = allPredIMs.get(name);
 
             peptideObj newPepObj;
             if (predMZs.length > 1) {
                 newPepObj = new peptideObj(this, name, rank, targetORdecoy, escore, predMZs,
-                        predIntensities, predRT);
+                        predIntensities, predRT, predIM);
             } else { //only 1 frag to match
                 newPepObj = new peptideObj(this, name, rank, targetORdecoy, escore, zeroFloatArray,
-                        zeroFloatArray, predRT);
+                        zeroFloatArray, predRT, predIM);
             }
             peptideObjects.add(rank - 1, newPepObj);
 
@@ -70,7 +73,7 @@ public class mzmlScanNumber {
             //when peptide isn't in predictions, like U peptides.
             //Set to arbitrary 0 vectors so nothing matches, similarity 0
             peptideObjects.add(rank - 1, new peptideObj(this, name, rank, targetORdecoy, escore,
-                    zeroFloatArray, zeroFloatArray, 0.0f));
+                    zeroFloatArray, zeroFloatArray, 0.0f, null));
         }
     }
 

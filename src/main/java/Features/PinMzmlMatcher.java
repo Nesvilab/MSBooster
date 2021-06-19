@@ -8,6 +8,7 @@ import java.util.HashSet;
 
 import static org.apache.commons.io.FileUtils.listFiles;
 
+//TODO: if only running through percolator in the end, need to support merging of pin files into 1. How to address that with mzml files?
 public class PinMzmlMatcher {
     public File[] mzmlFiles;
     public File[] pinFiles;
@@ -20,7 +21,8 @@ public class PinMzmlMatcher {
 
         //get names of mzml files
         //check if file or directory
-        if (mzmlDirectory.substring(mzmlDirectory.length() - 4).toLowerCase().equals("mzml")) {
+        if (mzmlDirectory.substring(mzmlDirectory.length() - 4).toLowerCase().equals("mzml") ||
+                mzmlDirectory.substring(mzmlDirectory.length() - 3).toLowerCase().equals("mgf")) {
             mzmlFiles = new File[]{new File(mzmlDirectory)};
             this.mzmlDirectory = new File(mzmlFiles[0].getAbsoluteFile().getParent());
         } else {

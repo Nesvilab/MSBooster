@@ -7,8 +7,9 @@ import java.util.TreeSet;
 import java.util.stream.IntStream;
 
 public class IMFunctions {
+    public static int numCharges = 7;
+
     public static double[][][] getIMarrays(mzMLReader mzml, int IMregressionSize) {
-        final int numCharges = 7;
         double[][][] finalIMs = new double[numCharges][2][];
 
         ArrayList<ArrayList<Float>> expIMs = new ArrayList<ArrayList<Float>>(numCharges);
@@ -99,31 +100,33 @@ public class IMFunctions {
         return finalIMs;
     }
 
-    public static ArrayList<Float>[] IMbins(mzMLReader mzml) throws IOException {
+    public static ArrayList<Float>[][] IMbins(mzMLReader mzml) throws IOException {
         //hard coded as 2, but if there are higher IM values, this can change
         int numBins = 2 * Constants.IMbinMultiplier;
 
-        ArrayList<Float>[] predIMround = new ArrayList[numBins + 1];
-        for (int col = 0; col < numBins + 1; col++) {
-            predIMround[col] = new ArrayList<Float>();
+        ArrayList<Float>[][] predIMround = new ArrayList[numCharges][numBins + 1];
+        for (int c = 0; c < numCharges; c++) {
+            for (int col = 0; col < numBins + 1; col++) {
+                predIMround[c][col] = new ArrayList<Float>();
+            }
         }
 
         //iterate through scanNumbers
         for (int scanNum : mzml.scanNumberObjects.keySet()) {
             mzmlScanNumber scanNumObj = mzml.getScanNumObject(scanNum);
-            int round = (int) (scanNumObj.IM *  Constants.IMbinMultiplier); //experimental RT for this scan, assume in minutes
+            int round = (int) (scanNumObj.IM * Constants.IMbinMultiplier); //experimental RT for this scan, assume in minutes
 
             //iterate through PSMs
             for (int i = 1; i < scanNumObj.peptideObjects.size() + 1; i++) {
                 peptideObj pep = scanNumObj.getPeptideObject(i);
+                int charge = pep.charge - 1;
 
                 int instances = Math.max(1, -1 * (int) Math.ceil(Math.log10(Double.parseDouble(pep.escore)))); //this version avoids empty bins
                 for (int j = 0; j < instances; j++) {
-                    predIMround[round].add(pep.IM);
+                    predIMround[charge][round].add(pep.IM);
                 }
             }
         }
-
         return predIMround;
     }
 }

@@ -8,6 +8,7 @@ import java.util.HashSet;
 public class Constants {
     //file input
     public static String paramsList = null;
+    public static String fragger = null;
 
     ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -26,15 +27,15 @@ public class Constants {
     //optional file locations and parameters
     //if calculating detectFractionGreater, these are used for FastaReader class
     //C:/Users/kevin/OneDriveUmich/proteomics/fasta/2020-12-07-decoys-reviewed-contam-UP000005640.fas
-    public static String fasta = "C:/Users/kevin/OneDriveUmich/proteomics/fasta/2020-12-07-decoys-reviewed-contam-UP000005640.fas";
+    public static String fasta = null;
     public static String decoyPrefix = ">rev_";
     public static String cutAfter = "KR";
     public static String butNotAfter = "P";
     public static Integer digestMinLength = 7;
     public static Integer digestMaxLength = 50;
-    public static Integer digestMinMass = 500; //Da
-    public static Integer digestMaxMass = 5000;
-    public static final Boolean includeDecoy = false;
+    public static Float digestMinMass = 500f; //Da
+    public static Float digestMaxMass = 5000f;
+    public static Boolean includeDecoy = false;
     private static FastaReader fastaReader = null;
     public static void setFastaReader(FastaReader f) {
         fastaReader = f;
@@ -61,6 +62,7 @@ public class Constants {
     public static Float ppmTolerance = 20f; //ppm tolerance of MS2 scans
 
     //for limiting number of fragments used
+    public static Boolean useSpectra = null;
     public static Boolean useTopFragments = true;
     public static Integer topFragments = 12;
     public static Boolean removeRankPeaks = true; //whether to remove peaks from higher ranks
@@ -68,26 +70,28 @@ public class Constants {
     public static final Integer fineTuneSize = 100; //for generating a finetune file for pDeep3
 
     //these constants for RT features
+    public static Boolean useRT = null;
     public static Integer RTregressionSize = 5000;
     public static Double uniformPriorPercentile = 10d;
-    public static Float RTescoreCutoff = 1f; //PSMs with e score higher than this won't make it into RT linear regression modeling
+    public static Float RTescoreCutoff = (float) Math.pow(10, -3.5); //PSMs with e score higher than this won't make it into RT linear regression modeling
     public static final Integer RTbinMultiplier = 1;
     public static final Float RTIQR = 50f;
 
     //LOESS
-    public static final Double bandwidth = 0.1;
+    public static final Double bandwidth = 0.25;
     public static final Integer robustIters = 2;
 
     //detect
-    public static Float detectThreshold = 0.0000002f; //for detectability filtering
+    public static Boolean useDetect = null;
+    public static final Float detectThreshold = 0.0000002f; //for detectability filtering
     public static final Float detectFractionGreaterNumerator = 1f;
     public static final Float detectFractionGreaterDenominator = 1f; //prior
 
     //ion mobility
-    public static Boolean useIM = false;
+    public static Boolean useIM = null;
     public static Integer IMregressionSize = 2500;
-    public static Float IMescoreCutoff = 1f;
-    public static final Integer IMbinMultiplier = 10;
+    public static Float IMescoreCutoff = (float) Math.pow(10, -3.5);
+    public static Integer IMbinMultiplier = 100;
     public static final Float IMIQR = 50f;
 
     ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -97,8 +101,7 @@ public class Constants {
     //default auto, everything, or all? Or a combination I figure out empirically
     public static String features = "cosineSimilarity,spectralContrastAngle,euclideanDistance,brayCurtis,pearsonCorr,dotProduct," +
             "deltaRTLOESS,deltaRTLOESSnormalized,RTprobabilityUnifPrior," +
-            "detectFractionGreater,detectSubtractMissing," +
-            "deltaIMLOESS,deltaIMLOESSnormalized";
+            "detectFractionGreater,detectSubtractMissing";
     //public static String features = "auto";
 
     //don't currently support weighted similarity features
@@ -107,8 +110,8 @@ public class Constants {
             "euclideanDistance", "brayCurtis",
             "pearsonCorr", "dotProduct",
             "deltaRTlinear", "deltaRTbins", "deltaRTLOESS", "RTzscore", "RTprobability", "RTprobabilityUnifPrior", "deltaRTLOESSnormalized",
-            "detectFractionGreater", "detectability", "detectSubtractMissing",
-            "deltaIMLOESS", "deltaIMLOESSnormalized"));
+            "detectFractionGreater", "detectability", "detectSubtractMissing", "detectProtSpearman",
+            "deltaIMLOESS", "deltaIMLOESSnormalized", "IMprobabilityUnifPrior"));
     public static final HashSet<String> detectFeatures =
             new HashSet<>(Arrays.asList("detectFractionGreater", "detectability", "detectSubtractMissing"));
     public static final HashSet<String> spectraRTFeatures = new HashSet<>(Arrays.asList(
@@ -116,7 +119,15 @@ public class Constants {
             "euclideanDistance", "weightedEuclideanDistance", "brayCurtis", "weightedBrayCurtis",
             "pearsonCorr", "weightedPearsonCorr", "dotProduct", "weightedDotProduct",
             "deltaRTlinear", "deltaRTbins", "deltaRTLOESS", "RTzscore", "RTprobability", "RTprobabilityUnifPrior"));
-
+    public static final HashSet<String> spectraFeatures = new HashSet<>(Arrays.asList(
+            "cosineSimilarity", "weightedCosineSimilarity", "spectralContrastAngle", "weightedSpectralContrastAngle",
+            "euclideanDistance", "weightedEuclideanDistance", "brayCurtis", "weightedBrayCurtis",
+            "pearsonCorr", "weightedPearsonCorr", "dotProduct", "weightedDotProduct"));
+    public static final HashSet<String> rtFeatures = new HashSet<>(Arrays.asList(
+            "deltaRTlinear", "deltaRTbins", "deltaRTLOESS", "RTzscore", "RTprobability", "RTprobabilityUnifPrior",
+            "deltaRTLOESSnormalized"));
+    public static final HashSet<String> imFeatures =
+            new HashSet<>(Arrays.asList("deltaIMLOESS", "deltaIMLOESSnormalized", "IMprobabilityUnifPrior"));
     ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
     //Handling PTMs
 

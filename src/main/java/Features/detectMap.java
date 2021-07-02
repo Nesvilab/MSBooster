@@ -8,7 +8,7 @@ public class detectMap {
     HashMap<String, Float> detectabilities = new HashMap<>();
 
     public detectMap(String detectFile) throws IOException {
-        long startTime = System.nanoTime();
+//        long startTime = System.nanoTime();
         BufferedReader br = new BufferedReader(new FileReader(new File(detectFile)));
         br.readLine(); //header
         String line;
@@ -16,16 +16,15 @@ public class detectMap {
             String[] info = line.split("\t");
             detectabilities.put(info[0], Float.valueOf(info[1]));
         }
-        long endTime = System.nanoTime();
-        long duration = (endTime - startTime);
-        System.out.println("Detectability map loading took " + duration / 1000000 +" milliseconds");
+//        long endTime = System.nanoTime();
+//        long duration = (endTime - startTime);
+//        System.out.println("Detectability map loading took " + duration / 1000000 +" milliseconds");
     }
 
     public float getDetectability(String pep) {
         //try to intelligently reformat peptide to one the Hashmap recognizes
         try {
-            float d = detectabilities.get(pep);
-            return d;
+            return detectabilities.get(pep);
         } catch (Exception e) {
             return detectabilities.get(pep.split("\\|")[0]);
         }

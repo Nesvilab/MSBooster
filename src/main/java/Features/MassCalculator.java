@@ -35,6 +35,9 @@ public class MassCalculator {
         put('V', 99.06841f);
         put('O', 255.15829f);
         put('U', 150.95363f);
+        put('Z', 0f);
+        put('B', 0f);
+        put('X', 0f);
     }};
     private final HashMap<String, String> unimodToMods = new HashMap<String, String>()
     {{

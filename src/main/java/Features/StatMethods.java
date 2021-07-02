@@ -4,6 +4,7 @@ import com.github.sanity.pav.PairAdjacentViolators;
 import com.github.sanity.pav.Point;
 import kotlin.jvm.functions.Function1;
 import org.apache.commons.math3.analysis.interpolation.LoessInterpolator;
+import smile.stat.distribution.KernelDensity;
 
 import java.util.*;
 
@@ -190,6 +191,26 @@ public class StatMethods {
             binStats[i][2] = iqr;
         }
         return binStats;
+    }
+
+    public static double probability(float exp, float pred, KernelDensity[] bins) {
+        //get right bin to search
+        KernelDensity kd = bins[Math.round(exp)];
+
+        //check probability at point
+        try {
+            return kd.p(pred);
+        } catch (Exception e) { //nothing in bin
+            return 0;
+        }
+    }
+
+    public static float probabilityWithUniformPrior(int unifPriorSize, float unifProb,
+                                                      int binSize, float empiricalProb) {
+        float w1 = (float) unifPriorSize / (float) (unifPriorSize + binSize);
+        float w2 = (float) binSize / (float) (unifPriorSize + binSize);
+
+        return w1 * unifProb + w2 * empiricalProb;
     }
 
     public static void main(String[] args) {

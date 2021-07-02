@@ -57,7 +57,7 @@ public class MainClass {
                 System.out.println("\t--numThreads: number of threads available. numThreads <= 0 indicate for all threads to be used (Default: 0)");
 
                 System.out.println("");
-                System.out.println("Flags that are only used if calculating detectFractionGreater:");
+                System.out.println("Flags that are only used if calculating detectability features:");
                 System.out.println("\t--fasta: path to fasta file");
                 System.out.println("\t--decoyPrefix: prefix for decoys in fasta file (default: >rev_)");
                 System.out.println("\t--cutAfter: amino acids after which the enzyme digested the peptide (default: KR)");
@@ -86,9 +86,12 @@ public class MainClass {
                         "(default: 1");
 
                 System.out.println("");
-                System.out.println("Flags that are only used in detectability filtering:");
+//                System.out.println("Flags that are only used in detectability filtering:");
 //                System.out.println("\t--detectThreshold: PSMs with detectability below this value are removed from the edited PSM " +
 //                        "(default 0.0000002)");
+
+                System.out.println("printing example paramsList to finalParams.txt");
+                printParams(".");
                 System.exit(0);
             }
             i++;
@@ -101,10 +104,51 @@ public class MainClass {
             String line;
             BufferedReader reader = new BufferedReader(new FileReader(params.get("paramsList")));
             while ((line = reader.readLine()) != null) {
+                if (! line.contains("=")) { //maybe empty line or comment line with #
+                    continue;
+                }
                 String[] lineSplit = line.split("=", 2);
                 params.put(lineSplit[0].trim(), lineSplit[1].trim());
             }
             reader.close();
+        }
+
+        if (params.containsKey("fragger")) { //upload fasta digestion params from fragger file. Does not use PTM info. Will override paramsList
+            String line;
+            BufferedReader reader = new BufferedReader(new FileReader(params.get("fragger")));
+            while ((line = reader.readLine()) != null) {
+                String[] lineSplit = line.split("#")[0].split("=");
+                if (lineSplit.length != 2) {
+                    continue;
+                }
+                String key = lineSplit[0].trim();
+                String val = lineSplit[1].trim();
+                switch (key) {
+                    case "fragment_mass_tolerance":
+                        params.put("ppmTolerance", val);
+                        break;
+                    case "decoy_prefix":
+                        params.put("decoyPrefix", ">" + val);
+                        break;
+                    case "search_enzyme_cutafter":
+                        params.put("cutAfter", val);
+                        break;
+                    case "search_enzyme_butnotafter":
+                        params.put("butNotAfter", val);
+                        break;
+                    case "digest_min_length":
+                        params.put("digestMinLength", val);
+                        break;
+                    case "digest_max_length":
+                        params.put("digestMaxLength", val);
+                        break;
+                    case "digest_mass_range":
+                        String[] vals = val.split(" ");
+                        params.put("digestMinMass", vals[0]);
+                        params.put("digestMaxMass", vals[1]);
+                        break;
+                }
+            }
         }
 
         Constants c = new Constants();
@@ -116,6 +160,13 @@ public class MainClass {
                 //get class of field
                 Field field = Constants.class.getField(key);
                 Class<?> myClass = field.getType();
+
+                //do not parse Boolean if null
+                if (myClass.getTypeName().equals("java.lang.Boolean")) {
+                    if (entry.getValue().equals("null")) {
+                        continue;
+                    }
+                }
 
                 //parse to appropriate type
                 field.set(c, myClass.getConstructor(String.class).newInstance(entry.getValue()));
@@ -163,11 +214,83 @@ public class MainClass {
                 System.exit(0);
             }
         }
-        HashSet<String> featureSet = new HashSet<>(Arrays.asList(featuresArray));
+        //HashSet<String> featureSet = new HashSet<>(Arrays.asList(featuresArray));
+        LinkedList<String> featureLL = new LinkedList<>(Arrays.asList(featuresArray));
+
+        //use "use" variables to update
+        if (! allFeatures) {
+            int oldSize = featureLL.size();
+            try {
+                if (Constants.useSpectra) {
+                    Set<String> intersection = new HashSet<String>(featureLL);
+                    intersection.retainAll(Constants.spectraFeatures);
+                    if (intersection.size() == 0) {
+                        featureLL.add("cosineSimilarity");
+                        featureLL.add("spectralContrastAngle");
+                        featureLL.add("euclideanDistance");
+                        featureLL.add("brayCurtis");
+                        featureLL.add("pearsonCorr");
+                        featureLL.add("dotProduct");
+                    }
+                } else {
+                    featureLL.removeIf(Constants.spectraFeatures::contains);
+                }
+            } catch (Exception ignored) {}
+            try {
+                if (Constants.useRT) {
+                    Set<String> intersection = new HashSet<String>(featureLL);
+                    intersection.retainAll(Constants.rtFeatures);
+                    if (intersection.size() == 0) {
+                        featureLL.add("deltaRTLOESS");
+                        featureLL.add("deltaRTLOESSnormalized");
+                        featureLL.add("RTprobabilityUnifPrior");
+                    }
+                } else {
+                    featureLL.removeIf(Constants.rtFeatures::contains);
+                }
+            } catch (Exception ignored) {}
+            try {
+                if (Constants.useDetect) {
+                    Set<String> intersection = new HashSet<String>(featureLL);
+                    intersection.retainAll(Constants.detectFeatures);
+                    if (intersection.size() == 0) {
+                        featureLL.add("detectFractionGreater");
+                        featureLL.add("detectSubtractMissing");
+                    }
+                } else {
+                    featureLL.removeIf(Constants.detectFeatures::contains);
+                }
+            } catch (Exception ignored) {}
+            try {
+                if (Constants.useIM) {
+                    Set<String> intersection = new HashSet<String>(featureLL);
+                    intersection.retainAll(Constants.imFeatures);
+                    if (intersection.size() == 0) {
+                        //featureLL.add("deltaIMLOESS");
+                        featureLL.add("deltaIMLOESSnormalized");
+                        //featureLL.add("IMprobabilityUnifPrior");
+                    }
+                } else {
+                    for (String feature : Constants.imFeatures) {
+                        featureLL.remove(feature);
+                    }
+                }
+            } catch (Exception ignored) {}
+            //update features representation
+            if (oldSize != featureLL.size()) {
+                featuresArray = new String[featureLL.size()];
+                int i = 0;
+                for (String feature : featureLL) {
+                    featuresArray[i] = feature;
+                    i++;
+                }
+                Constants.features = String.join(",", featuresArray);
+            }
+        }
 
         //if detectFractionGreater, need fasta
         boolean createDetectAllPredFile = false;
-        if (featureSet.contains("detectFractionGreater") || featureSet.contains("detectSubtractMissing") || autoFeatures) {
+        if (featureLL.contains("detectFractionGreater") || featureLL.contains("detectSubtractMissing") || autoFeatures) {
             if (Constants.fasta == null) {
                 throw new IllegalArgumentException("Using current combination of features, " +
                         "detectFractionGreater is calculated and needs a fasta provided using " +
@@ -191,15 +314,15 @@ public class MainClass {
             createSpectraRTPredFile2 = true;
             createDetectPredFile2 = true;
         } else {
-            featureSet.retainAll(Constants.spectraRTFeatures);
-            if (featureSet.size() > 0) {
+            featureLL.retainAll(Constants.spectraRTFeatures);
+            if (featureLL.size() > 0) {
                 createSpectraRTPredFile = true;
                 createSpectraRTPredFile2 = true;
             }
 
-            featureSet = new HashSet<>(Arrays.asList(featuresArray));
-            featureSet.retainAll(Constants.detectFeatures);
-            if (featureSet.size() > 0) {
+            featureLL = new LinkedList<>(Arrays.asList(featuresArray));
+            featureLL.retainAll(Constants.detectFeatures);
+            if (featureLL.size() > 0) {
                 createDetectPredFile = true;
                 createDetectPredFile2 = true;
             }
@@ -215,17 +338,27 @@ public class MainClass {
 
         c.updatePaths(); //setting null paths
 
+        //write log file
+        FileOutputStream fos = new FileOutputStream(Constants.outputDirectory + File.separator +
+                Calendar.getInstance().getTime().getTime() + "log.txt");
+        PrintStream ps = new PrintStream(fos);
+
         //generate files for prediction models
 
-            //get matched pin files for mzML files
+        //get matched pin files for mzML files
         PinMzmlMatcher pmMatcher = new PinMzmlMatcher(Constants.mzmlDirectory, Constants.pinPepXMLDirectory);
         if (createSpectraRTPredFile) {
             if (Constants.spectraRTPredModel.equals("DIA-NN")) {
                 if (Constants.DiaNN == null) {
+                    ps.println("path to DIA-NN executable must be provided");
                     throw new IllegalArgumentException("path to DIA-NN executable must be provided");
                 }
                 System.out.println("Generating input file for DIA-NN");
+                long startTime = System.nanoTime();
                 peptideFileCreator.createPeptideFile(pmMatcher.pinFiles, Constants.spectraRTPredInput, "Diann", "pin");
+                long endTime = System.nanoTime();
+                long duration = (endTime - startTime);
+                ps.println("DIANN input file generation took " + duration / 1000000000 +" seconds");
             } else if (Constants.spectraRTPredModel.equals("pDeep3")) {
                 System.out.println("Generating input file for pDeep3");
                 peptideFileCreator.createPeptideFile(pmMatcher.pinFiles, Constants.spectraRTPredInput, "pDeep3", "pin");
@@ -233,7 +366,11 @@ public class MainClass {
         }
         if (createDetectAllPredFile) {
             System.out.println("Generating input file for DeepMSPeptide");
+            long startTime = System.nanoTime();
             Constants.setFastaReader(peptideFileCreator.createPeptideFile(pmMatcher.pinFiles, Constants.detectPredInput, "DeepMSPeptideAll", "pin"));
+            long endTime = System.nanoTime();
+            long duration = (endTime - startTime);
+            ps.println("DeepMSPeptide input file generation took " + duration / 1000000000 +" seconds");
         } else if (createDetectPredFile) {
             System.out.println("Generating input file for DeepMSPeptide");
             peptideFileCreator.createPeptideFile(pmMatcher.pinFiles, Constants.detectPredInput, "DeepMSPeptide", "pin");
@@ -241,16 +378,36 @@ public class MainClass {
 
         //generate predictions
         if ((Constants.spectraRTPredFile == null) && (createSpectraRTPredFile2)) {
+            long startTime = System.nanoTime();
             ExternalModelCaller.callModel(run, "DIA-NN");
+            long endTime = System.nanoTime();
+            long duration = (endTime - startTime);
+            ps.println("DIANN prediction took " + duration / 1000000000 +" seconds");
         }
         if ((Constants.detectPredFile == null) && (createDetectPredFile2)) {
+            long startTime = System.nanoTime();
             ExternalModelCaller.callModel(run, "DeepMSPeptide");
+            long endTime = System.nanoTime();
+            long duration = (endTime - startTime);
+            ps.println("DeepMSPeptide prediction took " + duration / 1000000000 +" seconds");
         }
 
         //print new params file
+        printParams(Constants.outputDirectory);
+
+        //create new pin file with features
+        System.out.println("Generating edited pin with following features: " + Arrays.toString(featuresArray));
+        percolatorFormatter.editPin(pmMatcher, Constants.spectraRTPredFile, Constants.detectPredFile, featuresArray, Constants.editedPin, ps);
+        ps.flush();
+        ps.close();
+
+        //TODO: how to deal with auto
+    }
+
+    static private void printParams(String directory) {
         try {
-            BufferedWriter buffer = new BufferedWriter(new FileWriter(Constants.outputDirectory +
-                    File.separator + "finalParams.txt"));
+            Constants c = new Constants();
+            BufferedWriter buffer = new BufferedWriter(new FileWriter(directory + File.separator + "finalParams.txt"));
 
             Field[] f = Constants.class.getFields();
             for (Field field : f) {
@@ -265,11 +422,5 @@ public class MainClass {
             System.out.println("could not write final params");
             e.getStackTrace();
         }
-
-        //create new pin file with features
-        System.out.println("Generating edited pin with following features: " + Arrays.toString(featuresArray));
-        percolatorFormatter.editPin(pmMatcher, Constants.spectraRTPredFile, Constants.detectPredFile, featuresArray, Constants.editedPin);
-
-        //TODO: how to deal with auto
     }
 }

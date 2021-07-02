@@ -4,7 +4,6 @@ import umich.ms.fileio.exceptions.FileParsingException;
 
 import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;
-import java.util.Arrays;
 
 public class RandomThings {
 
@@ -13,11 +12,10 @@ public class RandomThings {
     }
 
     public static void main(String[] args) throws IOException, FileParsingException, NoSuchMethodException, IllegalAccessException, InvocationTargetException, InterruptedException {
-        int[] array = new int[]{1,2,3};
-        for (int i = 0; i < array.length; i++) {
-            System.out.println(Arrays.toString(Arrays.copyOfRange(array, Math.max(i - 1, 0), i + 1)));
+        Boolean a = null;
+        if (a) {
+            System.out.println("hi");
         }
-
     }
 
     //this is for creating tsv for creating histograms for scores between target and decoy in python

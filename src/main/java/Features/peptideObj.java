@@ -24,6 +24,7 @@ public class peptideObj {
     double deltaIMLOESS;
     double deltaIMLOESSnormalized;
     Float IM;
+    double IMprob;
 //    double massDiff;
 //    int ntt;
 //    int nmc;

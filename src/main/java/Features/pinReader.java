@@ -6,7 +6,6 @@ import java.io.BufferedReader;
 import java.io.FileReader;
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.HashSet;
 import java.util.Map;
 import java.util.TreeMap;
 
@@ -72,14 +71,14 @@ public class pinReader {
     //public String getEScore() {return String.valueOf(Math.pow(10, Double.parseDouble(row[eScoreIdx])));}
     public String getEScore() {return String.valueOf(Math.exp(15.0 - Double.parseDouble(row[eScoreIdx])));}
 
-    public HashSet<String> getAllPep() throws IOException {
-        HashSet<String> peps = new HashSet<String>();
-        while (next()) {
-            peps.add(getPep().split("\\|")[0]);
-        }
-        reset();
-        return peps;
-    }
+//    public HashSet<String> getAllPep() throws IOException {
+//        HashSet<String> peps = new HashSet<String>();
+//        while (next()) {
+//            peps.add(getPep().split("\\|")[0]);
+//        }
+//        reset();
+//        return peps;
+//    }
 
     public String[] createPDeep3List() throws IOException {
         ArrayList<String> peps = new ArrayList<String>();

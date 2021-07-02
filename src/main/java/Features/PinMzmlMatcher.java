@@ -28,6 +28,16 @@ public class PinMzmlMatcher {
         } else {
             this.mzmlDirectory = new File(mzmlDirectory);
             Collection<File> mzmlFilesCollection = listFiles(this.mzmlDirectory, new String[]{"mzML"}, false);
+            if (mzmlFilesCollection.size() == 0) { //using mgf instead of mzml ?
+                mzmlFilesCollection = listFiles(this.mzmlDirectory, new String[]{"mgf"}, false);
+                for (File f : mzmlFilesCollection) {
+                    String name = f.getName();
+                    if (! name.substring(name.length() - 16).equals("uncalibrated.mgf")) {
+                        mzmlFilesCollection.remove(f);
+                    }
+                }
+            }
+
             mzmlFiles = new File[mzmlFilesCollection.size()];
             int FileIdx = 0;
             for (File f : mzmlFilesCollection) {
@@ -58,10 +68,12 @@ public class PinMzmlMatcher {
             for (int i = 0; i < mzmlFiles.length; i++) {
                 String name = mzmlFiles[i].getName();
                 name = name.substring(0, name.length() - 4) + "pin";
-
                 if (!pinFilesSet.contains(name)) {
-                    throw new AssertionError("mzML file must have corresponding pin file. " +
-                            pinFiles[i] + " does not exist");
+                    name = mzmlFiles[i].getName().substring(0, name.length() - 16) + ".pin";
+                    if (!pinFilesSet.contains(name)) {
+                        throw new AssertionError("mzML file must have corresponding pin file. " +
+                                pinFiles[i] + " does not exist");
+                    }
                 }
                 pinFiles[i] = new File(pinDirectory + File.separator + name);
             }

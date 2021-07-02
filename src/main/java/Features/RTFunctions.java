@@ -169,25 +169,25 @@ public class RTFunctions {
         return empDists;
     }
 
-    public static double RTprobability(float expRT, float predRT, KernelDensity[] bins) {
-        //get right bin to search
-        KernelDensity kd = bins[Math.round(expRT)];
-
-        //check probability at point
-        try {
-            return kd.p(predRT);
-        } catch (Exception e) { //nothing in bin
-            return 0;
-        }
-    }
-
-    public static float RTprobabilityWithUniformPrior(int unifPriorSize, float unifProb,
-                                                       int binSize, float empiricalProb) {
-        float w1 = (float) unifPriorSize / (float) (unifPriorSize + binSize);
-        float w2 = (float) binSize / (float) (unifPriorSize + binSize);
-
-        return w1 * unifProb + w2 * empiricalProb;
-    }
+//    public static double RTprobability(float expRT, float predRT, KernelDensity[] bins) {
+//        //get right bin to search
+//        KernelDensity kd = bins[Math.round(expRT)];
+//
+//        //check probability at point
+//        try {
+//            return kd.p(predRT);
+//        } catch (Exception e) { //nothing in bin
+//            return 0;
+//        }
+//    }
+//
+//    public static float RTprobabilityWithUniformPrior(int unifPriorSize, float unifProb,
+//                                                       int binSize, float empiricalProb) {
+//        float w1 = (float) unifPriorSize / (float) (unifPriorSize + binSize);
+//        float w2 = (float) binSize / (float) (unifPriorSize + binSize);
+//
+//        return w1 * unifProb + w2 * empiricalProb;
+//    }
 
     public static void main(String[] args) throws Exception {
 

@@ -6,6 +6,7 @@ import org.apache.commons.lang3.ArrayUtils;
 
 import java.io.File;
 import java.io.IOException;
+import java.io.PrintStream;
 import java.util.*;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -62,18 +63,18 @@ public class percolatorFormatter {
 
         PinMzmlMatcher pmMatcher = new PinMzmlMatcher(mzmlDirectory, pinDirectory);
 
-        editPin(pmMatcher, mgf, detectFile, features, outfile);
+        editPin(pmMatcher, mgf, detectFile, features, outfile, null);
     }
 
     public static void editPin(PinMzmlMatcher pmMatcher, String mgf, String detectFile,
-                               String[] features, String outfile) throws IOException {
+                               String[] features, String outfile, PrintStream ps) throws IOException {
         //defining num threads, in case using this outside of jar file
         Runtime run  = Runtime.getRuntime();
         if (Constants.numThreads <= 0) {
             Constants.numThreads = run.availableProcessors();
         }
 
-        List<String> featuresList = Arrays.asList(features);
+        ArrayList<String> featuresList = new ArrayList<>(Arrays.asList(features));
         //remove features from array for multiple protein formatting
         if (featuresList.contains("detectability")) {
             int idx = ArrayUtils.indexOf(features, "detectability");
@@ -98,7 +99,10 @@ public class percolatorFormatter {
             predictedSpectra = SpectralPredictionMapper.createSpectralPredictionMapper(mgf);
             long endTime = System.nanoTime();
             long duration = (endTime - startTime);
-            System.out.println("Prediction loading took " + duration / 1000000 +" milliseconds");
+            System.out.println("Spectra/RT/IM prediction loading took " + duration / 1000000 +" milliseconds");
+            if (!(ps == null)) {
+                ps.println("Spectra/RT/IM prediction loading took " + duration / 1000000000 +" seconds");
+            }
             needsMGF = true;
         }
 
@@ -106,19 +110,33 @@ public class percolatorFormatter {
         detectMap dm = null;
         ArrayList<String> dFeatures = new ArrayList<String>(Constants.detectFeatures);
         dFeatures.retainAll(featuresList);
+        long startTime = System.nanoTime();
         if (dFeatures.size() > 0) {
             dm = new detectMap(detectFile);
         }
 
         //for storing detects and whether peptides are present
-        HashMap<String, float[]> detects = new HashMap<String, float[]>();
-        HashMap<String, float[]> presence = new HashMap<String, float[]>();
-        if (featuresList.contains("detectFractionGreater") || featuresList.contains("detectSubtractMissing")) {
+        HashMap<String, float[]> detects = new HashMap<>();
+        HashMap<String, float[]> presence = new HashMap<>();
+        HashMap<String, Integer> pepCounter = new HashMap<>();
+        if (featuresList.contains("detectFractionGreater") || featuresList.contains("detectSubtractMissing")
+                || featuresList.contains("detectProtSpearman")) {
             //get all peptides present in pin
             HashSet<String> allPeps = new HashSet<String>();
             for (File pinFile : pmMatcher.pinFiles) {
                 pinReader pin = new pinReader(pinFile.getCanonicalPath());
-                allPeps.addAll(pin.getAllPep());
+
+                //add to allPeps and a counter
+                while (pin.next()) {
+                    String pep = pin.getPep().split("\\|")[0];
+                    allPeps.add(pep);
+
+                    if (pepCounter.containsKey(pep)) {
+                        pepCounter.put(pep, pepCounter.get(pep) + 1);
+                    } else {
+                        pepCounter.put(pep, 1);
+                    }
+                }
                 pin.close();
             }
 
@@ -137,6 +155,7 @@ public class percolatorFormatter {
                 float[] protDetects = new float[e.getValue().size()]; //for storing initial detect order
 
                 //store detect
+                //TODO: consider sorted array?
                 for (int pep = 0; pep < e.getValue().size(); pep++) {
                     protDetects[pep] = dm.getDetectability(e.getValue().get(pep));
                 }
@@ -163,12 +182,18 @@ public class percolatorFormatter {
                 presence.put(e.getKey(), protPresence);
             }
         }
+        long endTime = System.nanoTime();
+        long duration = (endTime - startTime);
+        System.out.println("Detectability map and formatting loading took " + duration / 1000000 +" milliseconds");
+        if (!(ps == null)) {
+            ps.println("Detectability map and formatting loading took " + duration / 1000000000 +" seconds");
+        }
 
         ExecutorService executorService = Executors.newFixedThreadPool(Constants.numThreads);
         try {
             //////////////////////////////iterate through pin and mzml files//////////////////////////////////////////
             for (int i = 0; i < pinFiles.length; i++) {
-                long startTime = System.nanoTime();
+                startTime = System.nanoTime();
                 String newOutfile = outfile + pinFiles[i].getName();
                 TsvWriter writer = new TsvWriter(new File(newOutfile), new TsvWriterSettings());
                 //load mzml file
@@ -180,9 +205,12 @@ public class percolatorFormatter {
                 } else {
                     mzml = new mzMLReader(mzmlFiles[i].getCanonicalPath());
                 }
-                long endTime = System.nanoTime();
-                long duration = (endTime - startTime);
+                endTime = System.nanoTime();
+                duration = (endTime - startTime);
                 System.out.println("mzML loading took " + duration / 1000000000 +" seconds");
+                if (!(ps == null)) {
+                    ps.println("mzML loading took " + duration / 1000000000 +" seconds");
+                }
 
                 //load pin file, which already includes all ranks
                 pinReader pin = new pinReader(pinFiles[i].getCanonicalPath());
@@ -249,23 +277,49 @@ public class percolatorFormatter {
                     unifProb = 1.0f / predictedSpectra.getMaxPredRT();
                 }
                 if (featuresList.contains("RTprobability") || featuresList.contains("RTprobabilityUnifPrior")) {
-                    System.out.println("Generating empirical densities");
-                    mzml.setKernelDensities(executorService);
+                    System.out.println("Generating RT empirical densities");
+                    mzml.setKernelDensities(executorService, "RT");
                 }
                 if (featuresList.contains("deltaIMLOESS") || featuresList.contains("deltaIMLOESSnormalized")) {
                     System.out.println("Generating IM LOESS regression");
                     mzml.setLOESS(Constants.IMregressionSize, Constants.bandwidth, Constants.robustIters, "IM");
                     mzml.predictIMLOESS(executorService);
                 }
-                if (featuresList.contains("deltaIMLOESSnormalized")) {
+                if (featuresList.contains("deltaIMLOESSnormalized") || featuresList.contains("IMprobabilityUnifPrior")) {
                     System.out.println("Generating IM bins");
                     mzml.setIMbins();
                     mzml.calculateBinStats("IM");
+                }
+                if (featuresList.contains("deltaIMLOESSnormalized")) {
                     mzml.calculateDeltaIMLOESSnormalized(executorService);
+                }
+                float[] unifProbIM = new float[IMFunctions.numCharges];
+                int[] unifPriorSizeIM = new int[IMFunctions.numCharges];;
+                if (featuresList.contains("IMprobabilityUnifPrior")) {
+                    mzml.setIMBinSizes(executorService);
+
+                    //decide how many uniform points to add
+                    System.out.println("Generating IM empirical densities");
+                    for (int charge = 0; charge < IMFunctions.numCharges; charge++) {
+                        int[] binSizes = new int[mzml.IMbins[charge].length];
+                        for (int bin = 0; bin < mzml.IMbins[charge].length; bin++) {
+                            binSizes[bin] = mzml.IMbins[charge][bin].size();
+                        }
+                        Arrays.sort(binSizes);
+                        int cutoff = (int) Math.floor(((double) mzml.IMbins[charge].length / 100.0) * Constants.uniformPriorPercentile);
+                        unifPriorSizeIM[charge] = binSizes[cutoff];
+
+                        //also need uniform probability with right bound of max predicted RT
+                        unifProbIM[charge] = 1.0f / (2 * Constants.IMbinMultiplier);
+
+                        mzml.setKernelDensities(executorService, "IM");
+                    }
                 }
 
                 System.out.println("Getting predictions for each row");
+                int totalPSMs = 0;
                 while (pin.next()) {
+                    totalPSMs += 1;
                     //peptide name
                     String pep = pin.getPep();
 
@@ -298,6 +352,7 @@ public class percolatorFormatter {
                     for (String feature : features) {
                         switch (feature) {
                             case "detectFractionGreater":
+                                //TODO: target peptides should not be compared to decoy proteins
                                 float d = dm.getDetectability(pep);
                                 //for each protein, get the position of pep's detect and see how many peptides with greater detect are present
                                 //take max (proxy for protein that actually generated peptide)
@@ -306,10 +361,22 @@ public class percolatorFormatter {
                                 float maxFraction = 0f;
                                 for (String prot : prots) { //if more than one, this peptide is shared among proteins
                                     String protAbr;
+
+                                    //skip protein if it is decoy and looking at target peptide
+                                    if (r[pin.labelIdx].equals("1")) {
+                                        if (prot.substring(0, Constants.decoyPrefix.length()).equals(Constants.decoyPrefix)) {
+                                            continue;
+                                        }
+                                    }
                                     if (Constants.includeDecoy) {
                                         protAbr = prot;
                                     } else {
-                                        protAbr = prot.split("\\|")[1];
+                                        String[] protPreID = prot.split("\\|");
+                                        if (protPreID.length > 1) {
+                                            protAbr = protPreID[1];
+                                        } else {
+                                            protAbr = prot.substring(1); //iRT
+                                        }
                                     }
                                     float[] arr = detects.get(protAbr);
                                     if (arr == null) { //no peptides qualify from this protein
@@ -345,8 +412,20 @@ public class percolatorFormatter {
                                     String protAbr;
                                     if (Constants.includeDecoy) {
                                         protAbr = prot;
-                                    } else {
-                                        protAbr = prot.split("\\|")[1];
+
+                                        //skip protein if it is decoy and looking at target peptide
+                                        if (r[pin.labelIdx].equals("1")) {
+                                            if (prot.substring(0, Constants.decoyPrefix.length()).equals(Constants.decoyPrefix)) {
+                                                continue;
+                                            }
+                                        }
+                                    } else { //TODO: better way to handle this? A method?
+                                        String[] protPreID = prot.split("\\|");
+                                        if (protPreID.length > 1) {
+                                            protAbr = protPreID[1];
+                                        } else {
+                                            protAbr = prot.substring(1); //iRT
+                                        }
                                     }
                                     float[] arr = detects.get(protAbr);
                                     if (arr == null) { //no peptides qualify from this protein
@@ -393,7 +472,7 @@ public class percolatorFormatter {
                                 writer.addValue("RTprobability", pepObj.RTprob);
                                 break;
                             case "RTprobabilityUnifPrior":
-                                float prob = RTFunctions.RTprobabilityWithUniformPrior(unifPriorSize, unifProb,
+                                float prob = StatMethods.probabilityWithUniformPrior(unifPriorSize, unifProb,
                                         pepObj.scanNumObj.RTbinSize, (float) pepObj.RTprob);
                                 writer.addValue("RTprobabilityUnifPrior", prob);
                                 break;
@@ -421,6 +500,11 @@ public class percolatorFormatter {
                             case "deltaIMLOESSnormalized":
                                 writer.addValue("deltaIMLOESSnormalized", pepObj.deltaIMLOESSnormalized);
                                 break;
+                            case "IMprobabilityUnifPrior":
+                                prob = StatMethods.probabilityWithUniformPrior(unifPriorSizeIM[pepObj.charge - 1], unifProbIM[pepObj.charge - 1],
+                                        pepObj.scanNumObj.IMbinSize, (float) pepObj.IMprob);
+                                writer.addValue("IMprobabilityUnifPrior", prob);
+                                break;
                         }
                     }
                     //flush values to output
@@ -430,6 +514,10 @@ public class percolatorFormatter {
                 endTime = System.nanoTime();
                 duration = (endTime - startTime);
                 System.out.println("Pin editing took " + duration / 1000000000 +" seconds");
+                if (!(ps == null)) {
+                    ps.println(totalPSMs + " PSMs");
+                    ps.println("Pin editing took " + duration / 1000000000 +" seconds");
+                }
                 writer.close();
                 System.out.println("Edited pin file at " + newOutfile);
             }
@@ -457,12 +545,12 @@ public class percolatorFormatter {
 //                "C:/Users/kevin/OneDriveUmich/proteomics/preds/detectWideAll_Predictions.txt",
 //                ("brayCurtis,deltaRTLOESS").split(","),
 //                "C:/Users/kevin/Downloads/proteomics/wide/edited_");
-        editPin("C:/Users/kevin/Downloads/proteomics/timsTOF/20180819_TIMS2_12-2_AnBr_SA_200ng_HeLa_50cm_120min_100ms_11CT_3_A1_01_2769.pin",
+        editPin("C:/Users/kevin/OneDriveUmich/proteomics/pin/20180819_TIMS2_12-2_AnBr_SA_200ng_HeLa_50cm_120min_100ms_11CT_3_A1_01_2769.pin",
                 "C:/Users/kevin/Downloads/proteomics/timsTOF/" +
                         "20180819_TIMS2_12-2_AnBr_SA_200ng_HeLa_50cm_120min_100ms_11CT_3_A1_01_2769_uncalibrated.mgf",
                 "C:/Users/kevin/Downloads/proteomics/timsTOF/DIANN.predicted.bin",
-                "C:/Users/kevin/Downloads/proteomics/timsTOF/detect_Predictions.txt",
-                Constants.features.split(","),
+                null,
+                "deltaIMLOESS,deltaIMLOESSnormalized".split(","),
                 "C:/Users/kevin/Downloads/proteomics/timsTOF/edited_");
 
 

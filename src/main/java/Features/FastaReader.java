@@ -4,22 +4,44 @@ import java.io.BufferedReader;
 import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Map;
+import java.util.*;
 
 //only interested in unique target peptides
 public class FastaReader {
     HashMap<String, ArrayList<String>> protToPep = new HashMap<String, ArrayList<String>>();
+
+    private String[] getHeaderProtein(BufferedReader reader) throws IOException {
+        String header = reader.readLine();
+        String protein = reader.readLine();
+        reader.mark(8192); //default buffer size
+        while (true) {
+            String s = reader.readLine();
+            if (s == null) { //end of file
+                break;
+            }
+            if (s.length() == 0) { //empty line
+                reader.mark(8192);
+                continue;
+            }
+            if (s.charAt(0) == '>') {
+                reader.reset();
+                break;
+            } else {
+                protein += s;
+                reader.mark(8192);
+            }
+        }
+        return new String[]{header, protein};
+    }
 
     public FastaReader(String fasta, boolean includeDecoy) throws FileNotFoundException {
         //load fasta
         BufferedReader reader;
         try {
             reader = new BufferedReader(new FileReader(fasta));
-            String header = reader.readLine();
-            String protein = reader.readLine();
+            String[] sArray = getHeaderProtein(reader);
+            String header = sArray[0];
+            String protein = sArray[1];
 
             HashMap<String, HashSet<String>> pepToProt = new HashMap<String, HashSet<String>>();
             if (includeDecoy) {
@@ -51,14 +73,22 @@ public class FastaReader {
                             start = i + 1;
                         }
                     }
-                    header = reader.readLine();
-                    protein = reader.readLine();
+                    sArray = getHeaderProtein(reader);
+                    header = sArray[0];
+                    protein = sArray[1];
                 }
             } else {
                 while (header != null) {
-                    if (!header.substring(0, Constants.decoyPrefix.length()).equals(Constants.decoyPrefix)) { //only work with target proteins
+                    if (!header.substring(0, Math.min(Constants.decoyPrefix.length(),
+                            header.length())).equals(Constants.decoyPrefix)) { //only work with target proteins
                         //split by whatever is digestion rules
-                        String protID = header.split("\\|")[1];
+                        String[] protPreID = header.split("\\|");
+                        String protID;
+                        if (protPreID.length > 1) {
+                            protID = protPreID[1];
+                        } else {
+                            protID = header.substring(1); //iRT
+                        }
                         int start = 0;
                         for (int i = 0; i < protein.length(); i++) {
                             boolean doIt = false;
@@ -84,8 +114,9 @@ public class FastaReader {
                             }
                         }
                     }
-                    header = reader.readLine();
-                    protein = reader.readLine();
+                    sArray = getHeaderProtein(reader);
+                    header = sArray[0];
+                    protein = sArray[1];
                 }
             }
 
@@ -112,6 +143,11 @@ public class FastaReader {
                     continue;
                 }
 
+                //cannot contain ambiguous amino acid
+                if (pep.contains("B") || pep.contains("X") || pep.contains("Z")) {
+                    continue;
+                }
+
                 //add to protToPep
                 ArrayList<String> value;
                 String prot = prots.iterator().next();
@@ -129,6 +165,9 @@ public class FastaReader {
     }
 
     public static void main(String[] args) throws FileNotFoundException {
-        FastaReader fasta = new FastaReader(Constants.fasta, true);
+        FastaReader fasta = new FastaReader("C:/Users/kevin/OneDriveUmich/proteomics/fasta/uniprot_human_20150223_decoys_irt.fasta",
+                false);
+//        FastaReader fasta = new FastaReader("C:/Users/kevin/OneDriveUmich/proteomics/fasta/napedro_3mixed_human_yeast_ecoli_20140403_iRT_reverse.fasta",
+//                false);
     }
 }

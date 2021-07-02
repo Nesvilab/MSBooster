@@ -16,6 +16,7 @@ public class mzmlScanNumber {
     int RTbinSize;
     float normalizedRT;
     Float IM;
+    int IMbinSize;
     ArrayList<peptideObj> peptideObjects = new ArrayList<>();
     //double[] mzFreqs;
     public static float[] zeroFloatArray = new float[]{0};

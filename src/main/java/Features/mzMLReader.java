@@ -693,6 +693,5 @@ public class mzMLReader {
 //            exp += 1;
 //        }
 //        writer.close();
-        mzMLReader m = new mzMLReader("C:/Users/kevin/OneDriveUmich/proteomics/mzml/narrowWindow/23aug2017_hela_serum_timecourse_4mz_narrow_1.mzML");
     }
 }

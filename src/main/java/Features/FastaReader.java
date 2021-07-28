@@ -34,7 +34,7 @@ public class FastaReader {
         return new String[]{header, protein};
     }
 
-    public FastaReader(String fasta, boolean includeDecoy) throws FileNotFoundException {
+    public FastaReader(String fasta) throws FileNotFoundException {
         //load fasta
         BufferedReader reader;
         try {
@@ -44,80 +44,38 @@ public class FastaReader {
             String protein = sArray[1];
 
             HashMap<String, HashSet<String>> pepToProt = new HashMap<String, HashSet<String>>();
-            if (includeDecoy) {
-                while (header != null) {
-                    String protID = header.split(" ")[0];
-                    protID = protID.substring(1); //remove >
-                    //split by whatever is digestion rules
-                    int start = 0;
-                    for (int i = 0; i < protein.length(); i++) {
-                        boolean doIt = false;
-                        if (i == protein.length() - 1) { //end of protein sequence
+            while (header != null) {
+                String protID = header.split(" ")[0];
+
+                protID = protID.substring(1); //remove >
+                //split by whatever is digestion rules
+                int start = 0;
+                for (int i = 0; i < protein.length(); i++) {
+                    boolean doIt = false;
+                    if (i == protein.length() - 1) { //end of protein sequence
+                        doIt = true;
+                    } else if (Constants.cutAfter.contains(protein.substring(i, i + 1))) {
+                        if (! Constants.butNotAfter.contains(protein.substring(i + 1, i + 2))) {
                             doIt = true;
-                        } else if (Constants.cutAfter.contains(protein.substring(i, i + 1))) {
-                            if (! Constants.butNotAfter.contains(protein.substring(i + 1, i + 2))) {
-                                doIt = true;
-                            }
-                        }
-
-                        if (doIt) {
-                            String pep = protein.substring(start, i + 1);
-                            HashSet<String> value;
-                            if (pepToProt.containsKey(pep)) {
-                                value = pepToProt.get(pep);
-                            } else {
-                                value = new HashSet<String>();
-                            }
-                            value.add(protID);
-                            pepToProt.put(pep, value);
-                            start = i + 1;
                         }
                     }
-                    sArray = getHeaderProtein(reader);
-                    header = sArray[0];
-                    protein = sArray[1];
-                }
-            } else {
-                while (header != null) {
-                    if (!header.substring(0, Math.min(Constants.decoyPrefix.length(),
-                            header.length())).equals(Constants.decoyPrefix)) { //only work with target proteins
-                        //split by whatever is digestion rules
-                        String[] protPreID = header.split("\\|");
-                        String protID;
-                        if (protPreID.length > 1) {
-                            protID = protPreID[1];
+
+                    if (doIt) {
+                        String pep = protein.substring(start, i + 1);
+                        HashSet<String> value;
+                        if (pepToProt.containsKey(pep)) {
+                            value = pepToProt.get(pep);
                         } else {
-                            protID = header.substring(1); //iRT
+                            value = new HashSet<String>();
                         }
-                        int start = 0;
-                        for (int i = 0; i < protein.length(); i++) {
-                            boolean doIt = false;
-                            if (i == protein.length() - 1) { //end of protein sequence
-                                doIt = true;
-                            } else if (Constants.cutAfter.contains(protein.substring(i, i + 1))) {
-                                if (! Constants.butNotAfter.contains(protein.substring(i + 1, i + 2))) {
-                                    doIt = true;
-                                }
-                            }
-
-                            if (doIt) {
-                                String pep = protein.substring(start, i + 1);
-                                HashSet<String> value;
-                                if (pepToProt.containsKey(pep)) {
-                                    value = pepToProt.get(pep);
-                                } else {
-                                    value = new HashSet<String>();
-                                }
-                                value.add(protID);
-                                pepToProt.put(pep, value);
-                                start = i + 1;
-                            }
-                        }
+                        value.add(protID);
+                        pepToProt.put(pep, value);
+                        start = i + 1;
                     }
-                    sArray = getHeaderProtein(reader);
-                    header = sArray[0];
-                    protein = sArray[1];
                 }
+                sArray = getHeaderProtein(reader);
+                header = sArray[0];
+                protein = sArray[1];
             }
 
             reader.close();
@@ -139,7 +97,13 @@ public class FastaReader {
                 }
 
                 //unique
-                if (prots.size() != 1) { //in case rev and regular have shared peptide
+                int protSize = 0;
+                for (String prot : prots) {
+                    if (! prot.startsWith(Constants.decoyPrefix)) {
+                        protSize += 1;
+                    }
+                }
+                if (protSize > 1) {
                     continue;
                 }
 
@@ -165,8 +129,7 @@ public class FastaReader {
     }
 
     public static void main(String[] args) throws FileNotFoundException {
-        FastaReader fasta = new FastaReader("C:/Users/kevin/OneDriveUmich/proteomics/fasta/uniprot_human_20150223_decoys_irt.fasta",
-                false);
+        FastaReader fasta = new FastaReader("C:/Users/kevin/OneDriveUmich/proteomics/fasta/2020-12-07-decoys-reviewed-contam-UP000005640.fas");
 //        FastaReader fasta = new FastaReader("C:/Users/kevin/OneDriveUmich/proteomics/fasta/napedro_3mixed_human_yeast_ecoli_20140403_iRT_reverse.fasta",
 //                false);
     }

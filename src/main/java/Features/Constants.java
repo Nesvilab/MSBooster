@@ -27,7 +27,7 @@ public class Constants {
     //optional file locations and parameters
     //if calculating detectFractionGreater, these are used for FastaReader class
     //C:/Users/kevin/OneDriveUmich/proteomics/fasta/2020-12-07-decoys-reviewed-contam-UP000005640.fas
-    public static String fasta = null;
+    public static String fasta = "C:/Users/kevin/OneDriveUmich/proteomics/fasta/2020-12-07-decoys-reviewed-contam-UP000005640.fas";
     public static String decoyPrefix = ">rev_";
     public static String cutAfter = "KR";
     public static String butNotAfter = "P";
@@ -35,7 +35,7 @@ public class Constants {
     public static Integer digestMaxLength = 50;
     public static Float digestMinMass = 500f; //Da
     public static Float digestMaxMass = 5000f;
-    public static Boolean includeDecoy = false;
+    //public static Boolean includeDecoy = false;
     private static FastaReader fastaReader = null;
     public static void setFastaReader(FastaReader f) {
         fastaReader = f;
@@ -101,7 +101,7 @@ public class Constants {
     //default auto, everything, or all? Or a combination I figure out empirically
     public static String features = "cosineSimilarity,spectralContrastAngle,euclideanDistance,brayCurtis,pearsonCorr,dotProduct," +
             "deltaRTLOESS,deltaRTLOESSnormalized,RTprobabilityUnifPrior," +
-            "detectFractionGreater,detectSubtractMissing";
+            "detectFractionGreater,detectSubtractMissing,detectProtSpearman";
     //public static String features = "auto";
 
     //don't currently support weighted similarity features
@@ -113,7 +113,7 @@ public class Constants {
             "detectFractionGreater", "detectability", "detectSubtractMissing", "detectProtSpearman",
             "deltaIMLOESS", "deltaIMLOESSnormalized", "IMprobabilityUnifPrior"));
     public static final HashSet<String> detectFeatures =
-            new HashSet<>(Arrays.asList("detectFractionGreater", "detectability", "detectSubtractMissing"));
+            new HashSet<>(Arrays.asList("detectFractionGreater", "detectability", "detectSubtractMissing", "detectProtSpearman"));
     public static final HashSet<String> spectraRTFeatures = new HashSet<>(Arrays.asList(
             "cosineSimilarity", "weightedCosineSimilarity", "spectralContrastAngle", "weightedSpectralContrastAngle",
             "euclideanDistance", "weightedEuclideanDistance", "brayCurtis", "weightedBrayCurtis",

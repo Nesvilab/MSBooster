@@ -50,7 +50,6 @@ public class peptideFileCreator {
             throws IOException { //pepXML or pin
         //diff versions based on submitting File[] or pinReader
         long startTime = System.nanoTime();
-
         //read in pepXML files
         String[] allHits = new String[0];
 
@@ -112,7 +111,7 @@ public class peptideFileCreator {
         FastaReader fasta = null;
         if (modelFormat.equals("DeepMSPeptideAll")) {
             //add all targets from fasta
-            fasta = new FastaReader(Constants.fasta, Constants.includeDecoy);
+            fasta = new FastaReader(Constants.fasta);
             for (ArrayList<String> array : fasta.protToPep.values()) {
                 hSetHits.addAll(array);
             }

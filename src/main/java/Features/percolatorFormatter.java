@@ -3,6 +3,7 @@ package Features;
 import com.univocity.parsers.tsv.TsvWriter;
 import com.univocity.parsers.tsv.TsvWriterSettings;
 import org.apache.commons.lang3.ArrayUtils;
+import org.apache.commons.math3.stat.correlation.SpearmansCorrelation;
 
 import java.io.File;
 import java.io.IOException;
@@ -119,18 +120,19 @@ public class percolatorFormatter {
         HashMap<String, float[]> detects = new HashMap<>();
         HashMap<String, float[]> presence = new HashMap<>();
         HashMap<String, Integer> pepCounter = new HashMap<>();
+        HashMap<String, float[]> spectralCounts = new HashMap<>();
+        FastaReader fasta = null;
+
         if (featuresList.contains("detectFractionGreater") || featuresList.contains("detectSubtractMissing")
                 || featuresList.contains("detectProtSpearman")) {
+
             //get all peptides present in pin
-            HashSet<String> allPeps = new HashSet<String>();
             for (File pinFile : pmMatcher.pinFiles) {
                 pinReader pin = new pinReader(pinFile.getCanonicalPath());
 
-                //add to allPeps and a counter
+                //add to counter
                 while (pin.next()) {
                     String pep = pin.getPep().split("\\|")[0];
-                    allPeps.add(pep);
-
                     if (pepCounter.containsKey(pep)) {
                         pepCounter.put(pep, pepCounter.get(pep) + 1);
                     } else {
@@ -141,10 +143,9 @@ public class percolatorFormatter {
             }
 
             //load fasta
-            FastaReader fasta;
             if (Constants.getFastaReader() == null) {
                 System.out.println("Creating fasta object");
-                fasta = new FastaReader(Constants.fasta, Constants.includeDecoy);
+                fasta = new FastaReader(Constants.fasta);
             } else {
                 System.out.println("Loading fasta");
                 fasta = Constants.getFastaReader();
@@ -164,22 +165,33 @@ public class percolatorFormatter {
                 int[] sortedIndices = IntStream.range(0, protDetects.length)
                         .boxed().sorted((k, j) -> Float.compare(protDetects[k], protDetects[j]))
                         .mapToInt(ele -> ele).toArray();
+
                 float[] sortedDetect = new float[protDetects.length];
-                for (int j = 0; j < sortedDetect.length; j++) {
+                for (int j = 0; j < protDetects.length; j++) {
                     sortedDetect[j] = protDetects[sortedIndices[j]];
                 }
                 detects.put(e.getKey(), sortedDetect);
 
-                //check which peptides present
-                float[] protPresence = new float[sortedDetect.length];
-                for (int j = 0; j < sortedIndices.length; j++) {
-                    if (allPeps.contains(e.getValue().get(j))) {
+                //check which peptides present, and get spectral counts
+                float[] protPresence = new float[protDetects.length];
+                float[] pepCounts = new float[protDetects.length];
+                for (int j = 0; j < protDetects.length; j++) {
+                    String currentPep = e.getValue().get(sortedIndices[j]);
+
+                    if (pepCounter.containsKey(currentPep)) {
                         protPresence[j] = 1f;
                     } else {
                         protPresence[j] = 0f;
                     }
+
+                    try {
+                        pepCounts[j] = pepCounter.get(currentPep);
+                    } catch (Exception ee) {
+                        pepCounts[j] = 0;
+                    }
                 }
                 presence.put(e.getKey(), protPresence);
+                spectralCounts.put(e.getKey(), pepCounts);
             }
         }
         long endTime = System.nanoTime();
@@ -318,6 +330,8 @@ public class percolatorFormatter {
 
                 System.out.println("Getting predictions for each row");
                 int totalPSMs = 0;
+                SpearmansCorrelation sc = new SpearmansCorrelation();
+                //PearsonsCorrelation sc = new PearsonsCorrelation();
                 while (pin.next()) {
                     totalPSMs += 1;
                     //peptide name
@@ -361,23 +375,17 @@ public class percolatorFormatter {
                                 float maxFraction = 0f;
                                 for (String prot : prots) { //if more than one, this peptide is shared among proteins
                                     String protAbr;
-
                                     //skip protein if it is decoy and looking at target peptide
-                                    if (r[pin.labelIdx].equals("1")) {
-                                        if (prot.substring(0, Constants.decoyPrefix.length()).equals(Constants.decoyPrefix)) {
+                                    if (prot.startsWith(Constants.decoyPrefix.substring(1))) {
+                                        if (r[pin.labelIdx].equals("1")) {
                                             continue;
+                                        } else { //decoy
+                                            protAbr = prot.substring(Constants.decoyPrefix.length() - 1);
                                         }
-                                    }
-                                    if (Constants.includeDecoy) {
-                                        protAbr = prot;
                                     } else {
-                                        String[] protPreID = prot.split("\\|");
-                                        if (protPreID.length > 1) {
-                                            protAbr = protPreID[1];
-                                        } else {
-                                            protAbr = prot.substring(1); //iRT
-                                        }
+                                        protAbr = prot;
                                     }
+
                                     float[] arr = detects.get(protAbr);
                                     if (arr == null) { //no peptides qualify from this protein
                                         continue;
@@ -410,23 +418,17 @@ public class percolatorFormatter {
                                 float minDiff = 1f;
                                 for (String prot : prots) { //if more than one, this peptide is shared among proteins
                                     String protAbr;
-                                    if (Constants.includeDecoy) {
-                                        protAbr = prot;
-
-                                        //skip protein if it is decoy and looking at target peptide
+                                    //skip protein if it is decoy and looking at target peptide
+                                    if (prot.startsWith(Constants.decoyPrefix.substring(1))) {
                                         if (r[pin.labelIdx].equals("1")) {
-                                            if (prot.substring(0, Constants.decoyPrefix.length()).equals(Constants.decoyPrefix)) {
-                                                continue;
-                                            }
+                                            continue;
+                                        } else { //decoy
+                                            protAbr = prot.substring(Constants.decoyPrefix.length() - 1);
                                         }
-                                    } else { //TODO: better way to handle this? A method?
-                                        String[] protPreID = prot.split("\\|");
-                                        if (protPreID.length > 1) {
-                                            protAbr = protPreID[1];
-                                        } else {
-                                            protAbr = prot.substring(1); //iRT
-                                        }
+                                    } else {
+                                        protAbr = prot;
                                     }
+
                                     float[] arr = detects.get(protAbr);
                                     if (arr == null) { //no peptides qualify from this protein
                                         continue;
@@ -434,6 +436,8 @@ public class percolatorFormatter {
                                     int idx = Arrays.binarySearch(arr, d);
                                     if (idx < 0) { //not found
                                         idx = (-1 * idx) - 1;
+                                    } else {
+                                        idx += 1; //don't want to include itself in calculation
                                     }
                                     float[] presenceArr = Arrays.copyOfRange(presence.get(protAbr), idx, arr.length);
                                     float[] detectArr = Arrays.copyOfRange(arr, idx, arr.length);
@@ -452,6 +456,51 @@ public class percolatorFormatter {
                                     }
                                 }
                                 writer.addValue("detectSubtractMissing", minDiff);
+                                break;
+                            case "detectProtSpearman":
+                                r = pin.getRow();
+                                prots = Arrays.copyOfRange(r, pin.pepIdx + 1, r.length);
+                                double maxSpearman = -1;
+                                for (String prot : prots) { //if more than one, this peptide is shared among proteins
+                                    //skip protein if it is decoy and looking at target peptide
+                                    if (prot.startsWith(Constants.decoyPrefix.substring(1))) {
+                                        if (r[pin.labelIdx].equals("1")) {
+                                            continue;
+                                        }
+                                    }
+
+                                    float[] arr = detects.get(prot);
+                                    if (arr == null || arr.length == 1) { //no peptides qualify from this protein
+                                        continue;
+                                    }
+                                    float[] counts = spectralCounts.get(prot);
+
+                                    double spear = -1;
+                                    String minipep = pep.split("\\|")[0];
+
+                                    //only add if not 0 spectral counts (lots of missing ones, need to be more lenient for targets)
+                                    ArrayList<Double> newDetects = new ArrayList<>();
+                                    ArrayList<Double> newCounts = new ArrayList<>();
+                                    for (int k = 0; k < arr.length; k++) {
+                                        if (counts[k] != 0) {
+                                            newDetects.add((double) arr[k]);
+                                            newCounts.add((double) counts[k]);
+                                        }
+                                    }
+                                    if (! fasta.protToPep.get(prot).contains(minipep)) { //add new pep to this calculation
+                                        newDetects.add((double) dm.getDetectability(minipep));
+                                        newCounts.add((double) pepCounter.get(minipep));
+                                    }
+                                    if (newDetects.size() < 2) {
+                                        continue;
+                                    }
+                                    spear = sc.correlation(newDetects.stream().mapToDouble(dd -> dd).toArray(),
+                                            newCounts.stream().mapToDouble(dd -> dd).toArray() );
+                                    if (spear > maxSpearman) {
+                                        maxSpearman = spear;
+                                    }
+                                }
+                                writer.addValue("detectProtSpearman", maxSpearman);
                                 break;
                             case "deltaRTlinear":
                                 writer.addValue("deltaRTlinear", pepObj.deltaRT);
@@ -545,12 +594,14 @@ public class percolatorFormatter {
 //                "C:/Users/kevin/OneDriveUmich/proteomics/preds/detectWideAll_Predictions.txt",
 //                ("brayCurtis,deltaRTLOESS").split(","),
 //                "C:/Users/kevin/Downloads/proteomics/wide/edited_");
-        editPin("C:/Users/kevin/OneDriveUmich/proteomics/pin/20180819_TIMS2_12-2_AnBr_SA_200ng_HeLa_50cm_120min_100ms_11CT_3_A1_01_2769.pin",
+        editPin("C:/Users/kevin/Downloads/proteomics/timsTOF/20180819_TIMS2_12-2_AnBr_SA_200ng_HeLa_50cm_120min_100ms_11CT_3_A1_01_2769.pin",
                 "C:/Users/kevin/Downloads/proteomics/timsTOF/" +
                         "20180819_TIMS2_12-2_AnBr_SA_200ng_HeLa_50cm_120min_100ms_11CT_3_A1_01_2769_uncalibrated.mgf",
                 "C:/Users/kevin/Downloads/proteomics/timsTOF/DIANN.predicted.bin",
-                null,
-                "deltaIMLOESS,deltaIMLOESSnormalized".split(","),
+                "C:/Users/kevin/Downloads/proteomics/timsTOF/detect_Predictions.txt",
+                ("cosineSimilarity,spectralContrastAngle,euclideanDistance,brayCurtis,pearsonCorr,dotProduct," +
+                        "deltaRTLOESS,deltaRTLOESSnormalized,RTprobabilityUnifPrior," +
+                        "detectFractionGreater,detectSubtractMissing,deltaIMLOESS").split(","),
                 "C:/Users/kevin/Downloads/proteomics/timsTOF/edited_");
 
 

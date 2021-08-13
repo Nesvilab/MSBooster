@@ -76,6 +76,16 @@ public class mzmlScanNumber {
             peptideObjects.add(rank - 1, new peptideObj(this, name, rank, targetORdecoy, escore,
                     zeroFloatArray, zeroFloatArray, 0.0f, null));
         }
+
+//        //recording experimental IMs for peptides
+//        if (! mzmlScans.peptideIMs.containsKey(name)) {
+//            mzmlScans.peptideIMs.put(name, new ArrayList<Float>());
+//        }
+//        mzmlScans.peptideIMs.get(name).add(IM);
+//        //for weighted
+//        for (int i = 0; i < Math.max(Math.ceil(-1 * Math.log10(Double.parseDouble(peptideObjects.get(rank - 1).escore))), 1); i++) {
+//            mzmlScans.peptideIMs.get(name).add(IM);
+//        }
     }
 
     public peptideObj getPeptideObject(int rank) {

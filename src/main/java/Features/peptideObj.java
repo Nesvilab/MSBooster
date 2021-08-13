@@ -13,7 +13,7 @@ public class peptideObj {
     final int scanNum;
     final String mzml;
     final int targetORdecoy;
-    final String escore;
+    final String escore; //TODO: if DDA, use actual evalue?
     final float RT;
     float deltaRT;
     float deltaRTbin;

@@ -213,6 +213,16 @@ public class StatMethods {
         return w1 * unifProb + w2 * empiricalProb;
     }
 
+    public static float median(ArrayList<Float> alist) {
+        Collections.sort(alist);
+        float median;
+        if (alist.size() % 2 == 0)
+            median = (alist.get(alist.size() / 2 - 1) + alist.get(alist.size() / 2)) / 2;
+        else
+            median = alist.get(alist.size() / 2);
+        return median;
+    }
+
     public static void main(String[] args) {
         System.out.println(variance(new double[] {1.0, 1.0}));
         System.out.println( 1f / Float.POSITIVE_INFINITY);

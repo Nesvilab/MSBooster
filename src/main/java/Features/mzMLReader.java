@@ -42,6 +42,7 @@ public class mzMLReader {
     public ArrayList<Float>[][] IMbins = null;
     public float[][][] IMbinStats = new float[IMFunctions.numCharges][2 * Constants.IMbinMultiplier + 1][3];
     private ArrayList<Function1<Double, Double>> IMLOESS = new ArrayList<>();
+    public HashMap<String, ArrayList<Float>> peptideIMs = new HashMap<>();
     public double[][] expAndPredRTs;
     private List<Future> futureList = new ArrayList<>(Constants.numThreads);
 
@@ -218,6 +219,9 @@ public class mzMLReader {
     }
 
     public void createScanNumObjects() throws FileParsingException {
+        long startTime = System.nanoTime();
+        futureList.clear();
+
         int scanNum = -1;
         IScan scan = scans.getNextScanAtMsLevel(scanNum, 2);
         if (Constants.useIM) {
@@ -237,6 +241,9 @@ public class mzMLReader {
             }
         }
         scans.reset(); //free up memory. Could consider setting to null as well, but idk how to check if it's garbage collected
+        long endTime = System.nanoTime();
+        long duration = (endTime - startTime);
+        System.out.println("createScanNumObjects took " + duration / 1000000 +" milliseconds");
     }
 
     public mzmlScanNumber getScanNumObject(int scanNum) {
@@ -599,7 +606,6 @@ public class mzMLReader {
     }
 
     public void predictIMLOESS(ExecutorService executorService) throws ExecutionException, InterruptedException {
-        //return LOESS.invoke(expRT);
         long startTime = System.nanoTime();
         futureList.clear();
 
@@ -614,6 +620,26 @@ public class mzMLReader {
                     for (peptideObj pep : msn.peptideObjects) {
                         double LOESSIM = IMLOESS.get(pep.charge - 1).invoke((double) msn.IM);
                         pep.deltaIMLOESS = Math.abs(LOESSIM - pep.IM);
+
+//                        //min
+//                        ArrayList<Float> potentialIMs = peptideIMs.get(pep.name);
+//                        ArrayList<Double> deltas = new ArrayList<>(potentialIMs.size());
+//                        for (int k = 0; k < potentialIMs.size(); k++) {
+//                            deltas.add(Math.abs(IMLOESS.get(pep.charge - 1).invoke((double) potentialIMs.get(k)) - pep.IM));
+//                            pep.deltaIMLOESS = Collections.min(deltas);
+//                        }
+
+//                        //median
+//                        ArrayList<Float> potentialIMs = peptideIMs.get(pep.name);
+//                        double med = StatMethods.median(potentialIMs);
+//                        double LOESSIM = IMLOESS.get(pep.charge - 1).invoke(med);
+//                        pep.deltaIMLOESS = Math.abs(LOESSIM - pep.IM);
+
+//                        //(weighted) mean
+//                        ArrayList<Float> potentialIMs = peptideIMs.get(pep.name);
+//                        double mean = StatMethods.mean(potentialIMs);
+//                        double LOESSIM = IMLOESS.get(pep.charge - 1).invoke(mean);
+//                        pep.deltaIMLOESS = Math.abs(LOESSIM - pep.IM);
                     }
                 }
             }));
@@ -651,28 +677,28 @@ public class mzMLReader {
 //        mzml.setLOESS(Constants.IMregressionSize, Constants.bandwidth, Constants.robustIters, "IM");
 //        mzml.predictIMLOESS(executorService);
 //        executorService.shutdown();
-////        BufferedWriter writer = new BufferedWriter(new FileWriter("C:/Users/kevin/Downloads/proteomics/timsTOF/IM.tsv"));
-////        writer.write("expIM\tpredIM\tlabel\tevalue\tscanNum\tcharge\texpRT\tpredRT\tdeltaIMloess\tpep\tmass\n");
-////        for (mzmlScanNumber msn : mzml.scanNumberObjects.values()) {
-////            if (msn.peptideObjects.size() == 0) {
-////                continue;
-////            }
-////            peptideObj pObj = msn.getPeptideObject(1);
-////            Float expIM = msn.IM;
-////            Float predIM = pObj.IM;
-////            int td = pObj.targetORdecoy;
-////            String escore = pObj.escore;
-////            int scanNum = pObj.scanNum;
-////            int charge = Integer.parseInt(pObj.name.split("\\|")[2]);
-////            float expRT = msn.RT;
-////            float predRT = pObj.RT;
-////            double deltaIMloess = pObj.deltaIMLOESS;
-////            String pep = pObj.name;
-////            double mass = mzml.scans.getScanByNum(msn.scanNum).getPrecursor().getMzTargetMono(); //comment out scans.reset() in createScanNumObjects
-////            writer.write(expIM + "\t" + predIM + "\t" + td + "\t" + escore + "\t" + scanNum + "\t" + charge + "\t"
-////                    + expRT + "\t" + predRT + "\t" + deltaIMloess + "\t" + pep +  "\t" + mass + "\n");
-////        }
-////        writer.close();
+//        BufferedWriter writer = new BufferedWriter(new FileWriter("C:/Users/kevin/Downloads/proteomics/timsTOF/IMdccs.tsv"));
+//        writer.write("expIM\tpredIM\tlabel\tevalue\tscanNum\tcharge\texpRT\tpredRT\tdeltaIMloess\tpep\tmass\n");
+//        for (mzmlScanNumber msn : mzml.scanNumberObjects.values()) {
+//            if (msn.peptideObjects.size() == 0) {
+//                continue;
+//            }
+//            peptideObj pObj = msn.getPeptideObject(1);
+//            Float expIM = msn.IM;
+//            Float predIM = pObj.IM;
+//            int td = pObj.targetORdecoy;
+//            String escore = pObj.escore;
+//            int scanNum = pObj.scanNum;
+//            int charge = Integer.parseInt(pObj.name.split("\\|")[2]);
+//            float expRT = msn.RT;
+//            float predRT = pObj.RT;
+//            double deltaIMloess = pObj.deltaIMLOESS;
+//            String pep = pObj.name;
+//            double mass = mzml.scans.getScanByNum(msn.scanNum).getPrecursor().getMzTargetMono(); //comment out scans.reset() in createScanNumObjects
+//            writer.write(expIM + "\t" + predIM + "\t" + td + "\t" + escore + "\t" + scanNum + "\t" + charge + "\t"
+//                    + expRT + "\t" + predRT + "\t" + deltaIMloess + "\t" + pep +  "\t" + mass + "\n");
+//        }
+//        writer.close();
 //
 //        //plot points of loess
 //        for (int i = 1; i < 6; i++) {
@@ -693,5 +719,14 @@ public class mzMLReader {
 //            exp += 1;
 //        }
 //        writer.close();
+//        mgfFileReader mgf = new mgfFileReader("C:/Users/kevin/Downloads/proteomics/timsTOF/" +
+//                "20180819_TIMS2_12-2_AnBr_SA_200ng_HeLa_50cm_120min_100ms_11CT_3_A1_01_2769_uncalibrated.mgf");
+//        System.out.println("done loading mgf");
+//        mzMLReader mzml = new mzMLReader(mgf);
+        long startTime = System.nanoTime();
+        mzMLReader mzml = new mzMLReader("C:/Users/kevin/OneDriveUmich/proteomics/mzml/wideWindow/23aug2017_hela_serum_timecourse_pool_wide_003.mzML");
+        long endTime = System.nanoTime();
+        long duration = (endTime - startTime);
+        System.out.println("total mzml processing took " + duration / 1000000 +" milliseconds");
     }
 }

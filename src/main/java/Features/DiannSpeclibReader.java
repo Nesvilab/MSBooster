@@ -86,16 +86,16 @@ public class DiannSpeclibReader implements SpectralPredictionMapper{
 
                 TSVReader.close();
 
-//                //changing to deepccs values
-//                BufferedReader newTSVReader = new BufferedReader(new FileReader("C:/Users/kevin/Downloads/proteomics/timsTOF/" +
-//                        "DeepCCS_pred_diannName.csv"));
-//                String line1 = "";
-//                while ((line1 = newTSVReader.readLine()) != null) {
-//                    String[] line1Split = line1.split(",");
-//                    MassCalculator mc = new MassCalculator(line1Split[0], line1Split[1]);
-//                    allPredIMs.put(mc.fullPeptide, Float.valueOf(line1Split[2]));
-//                }
-//                newTSVReader.close();
+                //changing to deepccs values
+                BufferedReader newTSVReader = new BufferedReader(new FileReader("C:/Users/kevin/Downloads/proteomics/timsTOF/" +
+                        "DeepCCS_pred_diannName.csv"));
+                String line1 = "";
+                while ((line1 = newTSVReader.readLine()) != null) {
+                    String[] line1Split = line1.split(",");
+                    MassCalculator mc = new MassCalculator(line1Split[0], line1Split[1]);
+                    allPredIMs.put(mc.fullPeptide, Float.valueOf(line1Split[2]));
+                }
+                newTSVReader.close();
 
             } catch (IOException e) {
                 e.printStackTrace();

@@ -26,8 +26,7 @@ public interface SpectralPredictionMapper {
             return new mgfFileReader(file);
         } else if (extension.equals("msp")) {
             return new MspReader(file);
-        }
-        else {
+        } else {
             System.out.println("not valid prediction file format");
             return null;
         }

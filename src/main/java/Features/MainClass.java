@@ -108,45 +108,51 @@ public class MainClass {
                     continue;
                 }
                 String[] lineSplit = line.split("=", 2);
-                params.put(lineSplit[0].trim(), lineSplit[1].trim());
+
+                //check if null here
+                if (! lineSplit[1].trim().equals("null")) {
+                    params.put(lineSplit[0].trim(), lineSplit[1].trim());
+                }
             }
             reader.close();
         }
 
         if (params.containsKey("fragger")) { //upload fasta digestion params from fragger file. Does not use PTM info. Will override paramsList
-            String line;
-            BufferedReader reader = new BufferedReader(new FileReader(params.get("fragger")));
-            while ((line = reader.readLine()) != null) {
-                String[] lineSplit = line.split("#")[0].split("=");
-                if (lineSplit.length != 2) {
-                    continue;
-                }
-                String key = lineSplit[0].trim();
-                String val = lineSplit[1].trim();
-                switch (key) {
-                    case "fragment_mass_tolerance":
-                        params.put("ppmTolerance", val);
-                        break;
-                    case "decoy_prefix":
-                        params.put("decoyPrefix", ">" + val);
-                        break;
-                    case "search_enzyme_cutafter":
-                        params.put("cutAfter", val);
-                        break;
-                    case "search_enzyme_butnotafter":
-                        params.put("butNotAfter", val);
-                        break;
-                    case "digest_min_length":
-                        params.put("digestMinLength", val);
-                        break;
-                    case "digest_max_length":
-                        params.put("digestMaxLength", val);
-                        break;
-                    case "digest_mass_range":
-                        String[] vals = val.split(" ");
-                        params.put("digestMinMass", vals[0]);
-                        params.put("digestMaxMass", vals[1]);
-                        break;
+            if (! params.get("fragger").equals("null")) {
+                String line;
+                BufferedReader reader = new BufferedReader(new FileReader(params.get("fragger")));
+                while ((line = reader.readLine()) != null) {
+                    String[] lineSplit = line.split("#")[0].split("=");
+                    if (lineSplit.length != 2) {
+                        continue;
+                    }
+                    String key = lineSplit[0].trim();
+                    String val = lineSplit[1].trim();
+                    switch (key) {
+                        case "fragment_mass_tolerance":
+                            params.put("ppmTolerance", val);
+                            break;
+                        case "decoy_prefix":
+                            params.put("decoyPrefix", ">" + val);
+                            break;
+                        case "search_enzyme_cutafter":
+                            params.put("cutAfter", val);
+                            break;
+                        case "search_enzyme_butnotafter":
+                            params.put("butNotAfter", val);
+                            break;
+                        case "digest_min_length":
+                            params.put("digestMinLength", val);
+                            break;
+                        case "digest_max_length":
+                            params.put("digestMaxLength", val);
+                            break;
+                        case "digest_mass_range":
+                            String[] vals = val.split(" ");
+                            params.put("digestMinMass", vals[0]);
+                            params.put("digestMaxMass", vals[1]);
+                            break;
+                    }
                 }
             }
         }
@@ -161,7 +167,7 @@ public class MainClass {
                 Field field = Constants.class.getField(key);
                 Class<?> myClass = field.getType();
 
-                //do not parse Boolean if null
+                //do not parse use[something] if null
                 if (myClass.getTypeName().equals("java.lang.Boolean")) {
                     if (entry.getValue().equals("null")) {
                         continue;

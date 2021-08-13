@@ -8,14 +8,10 @@ import java.lang.reflect.InvocationTargetException;
 public class RandomThings {
 
     public RandomThings(){
-
     }
 
     public static void main(String[] args) throws IOException, FileParsingException, NoSuchMethodException, IllegalAccessException, InvocationTargetException, InterruptedException {
-        Boolean a = null;
-        if (a) {
-            System.out.println("hi");
-        }
+        System.out.println(3 / 2);
     }
 
     //this is for creating tsv for creating histograms for scores between target and decoy in python

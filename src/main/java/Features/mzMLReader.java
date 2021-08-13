@@ -19,6 +19,7 @@ import java.nio.file.Paths;
 import java.util.*;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 
 import static Features.StatMethods.LOESS;
@@ -46,7 +47,7 @@ public class mzMLReader {
     public double[][] expAndPredRTs;
     private List<Future> futureList = new ArrayList<>(Constants.numThreads);
 
-    public mzMLReader(String filename) throws FileParsingException {
+    public mzMLReader(String filename, ExecutorService executorService) throws FileParsingException, ExecutionException, InterruptedException {
 
         // Creating data source
         //path = Paths.get(filename); //
@@ -75,14 +76,14 @@ public class mzMLReader {
         scans.loadData(LCMSDataSubset.MS1_WITH_SPECTRA);
 
         Constants.useIM = false;
-        createScanNumObjects(); //seems like we always need this anyway
+        createScanNumObjects(executorService); //seems like we always need this anyway
 
         scanNums = new ArrayList<>(scanNumberObjects.size());
         scanNums.addAll(scanNumberObjects.keySet());
         //this.getMzFreq(); only if we end up using weights
     }
 
-    public mzMLReader(mgfFileReader mgf) throws FileParsingException { //uncalibrated mgf from MSFragger .d search
+    public mzMLReader(mgfFileReader mgf, ExecutorService executorService) throws FileParsingException, ExecutionException, InterruptedException { //uncalibrated mgf from MSFragger .d search
         pathStr = null;
 
         scans = new ScanCollectionDefault(true);
@@ -105,7 +106,7 @@ public class mzMLReader {
         mgf.clear();
 
         Constants.useIM = true;
-        createScanNumObjects(); //seems like we always need this anyway
+        createScanNumObjects(executorService); //seems like we always need this anyway
 
         scanNums = new ArrayList<>(scanNumberObjects.size());
         scanNums.addAll(scanNumberObjects.keySet());
@@ -218,28 +219,58 @@ public class mzMLReader {
         }
     }
 
-    public void createScanNumObjects() throws FileParsingException {
+    public void createScanNumObjects(ExecutorService executorService) throws FileParsingException, ExecutionException, InterruptedException {
         long startTime = System.nanoTime();
         futureList.clear();
 
-        int scanNum = -1;
-        IScan scan = scans.getNextScanAtMsLevel(scanNum, 2);
+        //get all scan nums
+        ArrayList<Integer> allScanNums = new ArrayList<>();
+        IScan scan = scans.getNextScanAtMsLevel(-1, 2);
+        while (scan != null) {
+            allScanNums.add(scan.getNum());
+            scan = scans.getNextScanAtMsLevel(scan.getNum(), 2);
+        }
+
         if (Constants.useIM) {
-            while (scan != null) {
-                scanNum = scan.getNum();
-                //double windowStart = scan.getPrecursor().getMzRangeStart();
-                scanNumberObjects.put(scanNum, new mzmlScanNumber(this, scanNum, scan.getRt().floatValue(),
-                        scan.getIm().floatValue()));
-                scan = scans.getNextScanAtMsLevel(scanNum, 2);
+            for (int i = 0; i < Constants.numThreads; i++) {
+                int start = (int) (allScanNums.size() * (long) i) / Constants.numThreads;
+                int end = (int) (allScanNums.size() * (long) (i + 1)) / Constants.numThreads;
+                futureList.add(executorService.submit(() -> {
+                    IScan myScan = scans.getScanByNum(allScanNums.get(start));
+                    for (int j = 0; j < end - start; j++) {
+                        try {
+                            scanNumberObjects.put(myScan.getNum(), new mzmlScanNumber(this, myScan.getNum(),
+                                    myScan.getRt().floatValue(), myScan.getIm().floatValue()));
+                            myScan = scans.getNextScanAtMsLevel(myScan.getNum(), 2);
+                        } catch (FileParsingException e) {
+                            e.printStackTrace();
+                        }
+                    }
+                }));
             }
         } else {
-            while (scan != null) {
-                scanNum = scan.getNum();
-                //double windowStart = scan.getPrecursor().getMzRangeStart();
-                scanNumberObjects.put(scanNum, new mzmlScanNumber(this, scanNum, scan.getRt().floatValue(), null));
-                scan = scans.getNextScanAtMsLevel(scanNum, 2);
+            for (int i = 0; i < Constants.numThreads; i++) {
+                int start = (int) (allScanNums.size() * (long) i) / Constants.numThreads;
+                int end = (int) (allScanNums.size() * (long) (i + 1)) / Constants.numThreads;
+                futureList.add(executorService.submit(() -> {
+                    IScan myScan = scans.getScanByNum(allScanNums.get(start));
+                    for (int j = 0; j < end - start; j++) {
+                        try {
+                            scanNumberObjects.put(myScan.getNum(), new mzmlScanNumber(this, myScan.getNum(),
+                                    myScan.getRt().floatValue(), null));
+                            myScan = scans.getNextScanAtMsLevel(myScan.getNum(), 2);
+                        } catch (FileParsingException e) {
+                            e.printStackTrace();
+                        }
+                    }
+                }));
             }
         }
+
+        for (Future future : futureList) {
+            future.get();
+        }
+
         scans.reset(); //free up memory. Could consider setting to null as well, but idk how to check if it's garbage collected
         long endTime = System.nanoTime();
         long duration = (endTime - startTime);
@@ -652,10 +683,6 @@ public class mzMLReader {
         System.out.println("Calculating deltaIMLOESS took " + duration / 1000000000 +" seconds");
     }
 
-    public HashMap<Integer, mzmlScanNumber> getScanNumberObjects(){
-        return this.scanNumberObjects;
-    }
-
     public static void main(String[] args) throws Exception {
         //code below generates files for analysis/data exploration in jupyter notebook
 //        mgfFileReader mgf = new mgfFileReader("C:/Users/kevin/Downloads/proteomics/timsTOF/" +
@@ -719,14 +746,18 @@ public class mzMLReader {
 //            exp += 1;
 //        }
 //        writer.close();
+
 //        mgfFileReader mgf = new mgfFileReader("C:/Users/kevin/Downloads/proteomics/timsTOF/" +
 //                "20180819_TIMS2_12-2_AnBr_SA_200ng_HeLa_50cm_120min_100ms_11CT_3_A1_01_2769_uncalibrated.mgf");
 //        System.out.println("done loading mgf");
 //        mzMLReader mzml = new mzMLReader(mgf);
+        ExecutorService executorService = Executors.newFixedThreadPool(Constants.numThreads);
         long startTime = System.nanoTime();
-        mzMLReader mzml = new mzMLReader("C:/Users/kevin/OneDriveUmich/proteomics/mzml/wideWindow/23aug2017_hela_serum_timecourse_pool_wide_003.mzML");
+        mzMLReader mzml = new mzMLReader("C:/Users/kevin/OneDriveUmich/proteomics/mzml/wideWindow/23aug2017_hela_serum_timecourse_pool_wide_001.mzML",
+                executorService);
         long endTime = System.nanoTime();
         long duration = (endTime - startTime);
         System.out.println("total mzml processing took " + duration / 1000000 +" milliseconds");
+        executorService.shutdown();
     }
 }

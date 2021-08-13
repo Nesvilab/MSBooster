@@ -213,9 +213,9 @@ public class percolatorFormatter {
 
                 mzMLReader mzml;
                 if (mzmlFiles[i].getName().substring( mzmlFiles[i].getName().length() - 3).toLowerCase().equals("mgf")) {
-                    mzml = new mzMLReader(new mgfFileReader(mzmlFiles[i].getCanonicalPath()));
+                    mzml = new mzMLReader(new mgfFileReader(mzmlFiles[i].getCanonicalPath()), executorService);
                 } else {
-                    mzml = new mzMLReader(mzmlFiles[i].getCanonicalPath());
+                    mzml = new mzMLReader(mzmlFiles[i].getCanonicalPath(), executorService);
                 }
                 endTime = System.nanoTime();
                 duration = (endTime - startTime);

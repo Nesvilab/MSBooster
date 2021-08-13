@@ -588,21 +588,21 @@ public class percolatorFormatter {
 //                ("RTprobabilityUnifPrior,deltaRTLOESS,deltaRTLOESSnormalized").split(","),
 //                "C:/Users/kevin/Downloads/proteomics/cptac/2021-2-21/pep1XML1tmp/percToPep/test_");
 
-//                editPin("C:/Users/kevin/Downloads/proteomics/wide",
-//                "C:/Users/kevin/OneDriveUmich/proteomics/mzml/wideWindow",
-//                "C:/Users/kevin/Downloads/proteomics/wide/spectraRT.predicted.bin",
-//                "C:/Users/kevin/OneDriveUmich/proteomics/preds/detectWideAll_Predictions.txt",
-//                ("brayCurtis,deltaRTLOESS").split(","),
-//                "C:/Users/kevin/Downloads/proteomics/wide/edited_");
-        editPin("C:/Users/kevin/Downloads/proteomics/timsTOF/20180819_TIMS2_12-2_AnBr_SA_200ng_HeLa_50cm_120min_100ms_11CT_3_A1_01_2769.pin",
-                "C:/Users/kevin/Downloads/proteomics/timsTOF/" +
-                        "20180819_TIMS2_12-2_AnBr_SA_200ng_HeLa_50cm_120min_100ms_11CT_3_A1_01_2769_uncalibrated.mgf",
-                "C:/Users/kevin/Downloads/proteomics/timsTOF/DIANN.predicted.bin",
-                "C:/Users/kevin/Downloads/proteomics/timsTOF/detect_Predictions.txt",
-                ("cosineSimilarity,spectralContrastAngle,euclideanDistance,brayCurtis,pearsonCorr,dotProduct," +
-                        "deltaRTLOESS,deltaRTLOESSnormalized,RTprobabilityUnifPrior," +
-                        "detectFractionGreater,detectSubtractMissing,deltaIMLOESS").split(","),
-                "C:/Users/kevin/Downloads/proteomics/timsTOF/edited_");
+                editPin("C:/Users/kevin/Downloads/proteomics/wide",
+                "C:/Users/kevin/OneDriveUmich/proteomics/mzml/wideWindow",
+                "C:/Users/kevin/Downloads/proteomics/wide/spectraRT.predicted.bin",
+                "C:/Users/kevin/OneDriveUmich/proteomics/preds/detectWideAll_Predictions.txt",
+                ("brayCurtis,deltaRTLOESS").split(","),
+                "C:/Users/kevin/Downloads/proteomics/wide/edited_");
+//        editPin("C:/Users/kevin/Downloads/proteomics/timsTOF/20180819_TIMS2_12-2_AnBr_SA_200ng_HeLa_50cm_120min_100ms_11CT_3_A1_01_2769.pin",
+//                "C:/Users/kevin/Downloads/proteomics/timsTOF/" +
+//                        "20180819_TIMS2_12-2_AnBr_SA_200ng_HeLa_50cm_120min_100ms_11CT_3_A1_01_2769_uncalibrated.mgf",
+//                "C:/Users/kevin/Downloads/proteomics/timsTOF/DIANN.predicted.bin",
+//                "C:/Users/kevin/Downloads/proteomics/timsTOF/detect_Predictions.txt",
+//                ("cosineSimilarity,spectralContrastAngle,euclideanDistance,brayCurtis,pearsonCorr,dotProduct," +
+//                        "deltaRTLOESS,deltaRTLOESSnormalized,RTprobabilityUnifPrior," +
+//                        "detectFractionGreater,detectSubtractMissing,deltaIMLOESS").split(","),
+//                "C:/Users/kevin/Downloads/proteomics/timsTOF/edited_");
 
 
     }

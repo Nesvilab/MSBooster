@@ -225,10 +225,23 @@ public class mzMLReader {
 
         //get all scan nums
         ArrayList<Integer> allScanNums = new ArrayList<>();
+        ArrayList<Float> allRTs = new ArrayList<>();
+        ArrayList<Float> allIMs = new ArrayList<>();
+
         IScan scan = scans.getNextScanAtMsLevel(-1, 2);
-        while (scan != null) {
-            allScanNums.add(scan.getNum());
-            scan = scans.getNextScanAtMsLevel(scan.getNum(), 2);
+        if (Constants.useIM) {
+            while (scan != null) {
+                allScanNums.add(scan.getNum());
+                allRTs.add(scan.getRt().floatValue());
+                allIMs.add(scan.getIm().floatValue());
+                scan = scans.getNextScanAtMsLevel(scan.getNum(), 2);
+            }
+        } else {
+            while (scan != null) {
+                allScanNums.add(scan.getNum());
+                allRTs.add(scan.getRt().floatValue());
+                scan = scans.getNextScanAtMsLevel(scan.getNum(), 2);
+            }
         }
 
         if (Constants.useIM) {
@@ -236,12 +249,10 @@ public class mzMLReader {
                 int start = (int) (allScanNums.size() * (long) i) / Constants.numThreads;
                 int end = (int) (allScanNums.size() * (long) (i + 1)) / Constants.numThreads;
                 futureList.add(executorService.submit(() -> {
-                    IScan myScan = scans.getScanByNum(allScanNums.get(start));
-                    for (int j = 0; j < end - start; j++) {
+                    for (int j = start; j < end; j++) {
                         try {
-                            scanNumberObjects.put(myScan.getNum(), new mzmlScanNumber(this, myScan.getNum(),
-                                    myScan.getRt().floatValue(), myScan.getIm().floatValue()));
-                            myScan = scans.getNextScanAtMsLevel(myScan.getNum(), 2);
+                            scanNumberObjects.put(allScanNums.get(j), new mzmlScanNumber(this, allScanNums.get(j),
+                                    allRTs.get(j), allIMs.get(j)));
                         } catch (FileParsingException e) {
                             e.printStackTrace();
                         }
@@ -253,12 +264,10 @@ public class mzMLReader {
                 int start = (int) (allScanNums.size() * (long) i) / Constants.numThreads;
                 int end = (int) (allScanNums.size() * (long) (i + 1)) / Constants.numThreads;
                 futureList.add(executorService.submit(() -> {
-                    IScan myScan = scans.getScanByNum(allScanNums.get(start));
-                    for (int j = 0; j < end - start; j++) {
+                    for (int j = start; j < end; j++) {
                         try {
-                            scanNumberObjects.put(myScan.getNum(), new mzmlScanNumber(this, myScan.getNum(),
-                                    myScan.getRt().floatValue(), null));
-                            myScan = scans.getNextScanAtMsLevel(myScan.getNum(), 2);
+                            scanNumberObjects.put(allScanNums.get(j), new mzmlScanNumber(this, allScanNums.get(j),
+                                    allRTs.get(j), null));
                         } catch (FileParsingException e) {
                             e.printStackTrace();
                         }
@@ -753,7 +762,7 @@ public class mzMLReader {
 //        mzMLReader mzml = new mzMLReader(mgf);
         ExecutorService executorService = Executors.newFixedThreadPool(Constants.numThreads);
         long startTime = System.nanoTime();
-        mzMLReader mzml = new mzMLReader("C:/Users/kevin/OneDriveUmich/proteomics/mzml/wideWindow/23aug2017_hela_serum_timecourse_pool_wide_001.mzML",
+        mzMLReader mzml = new mzMLReader("C:/Users/kevin/OneDriveUmich/proteomics/mzml/wideWindow/23aug2017_hela_serum_timecourse_pool_wide_003.mzML",
                 executorService);
         long endTime = System.nanoTime();
         long duration = (endTime - startTime);

@@ -5,11 +5,7 @@ import smile.stat.distribution.KernelDensity;
 import umich.ms.datatypes.LCMSDataSubset;
 import umich.ms.datatypes.scan.IScan;
 import umich.ms.datatypes.scan.StorageStrategy;
-import umich.ms.datatypes.scan.impl.ScanDefault;
-import umich.ms.datatypes.scan.props.PrecursorInfo;
 import umich.ms.datatypes.scancollection.impl.ScanCollectionDefault;
-import umich.ms.datatypes.spectrum.ISpectrum;
-import umich.ms.datatypes.spectrum.impl.SpectrumDefault;
 import umich.ms.fileio.exceptions.FileParsingException;
 import umich.ms.fileio.filetypes.mzml.MZMLFile;
 
@@ -19,7 +15,6 @@ import java.nio.file.Paths;
 import java.util.*;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 
 import static Features.StatMethods.LOESS;
@@ -34,7 +29,7 @@ public class mzMLReader {
                       //similarity measures might be calculated using different weights. If you want to use different
                       //weights, just make new mzmlReader object
 
-    HashMap<Integer, mzmlScanNumber> scanNumberObjects = new HashMap<>();
+    HashMap<Integer, mzmlScanNumber> scanNumberObjects;
     List<Integer> scanNums;
     private float[] betas;
     public ArrayList<Float>[] RTbins = null;
@@ -47,8 +42,7 @@ public class mzMLReader {
     public double[][] expAndPredRTs;
     private List<Future> futureList = new ArrayList<>(Constants.numThreads);
 
-    public mzMLReader(String filename, ExecutorService executorService) throws FileParsingException, ExecutionException, InterruptedException {
-
+    public mzMLReader(String filename) throws FileParsingException, ExecutionException, InterruptedException {
         // Creating data source
         //path = Paths.get(filename); //
         Path path = Paths.get(filename);
@@ -73,40 +67,22 @@ public class mzMLReader {
         // on an MS2 spectrum, for which the spectrum has not been parsed, it will be
         // obtained from disk automatically. And because of Soft referencing, the GC
         // will be able to reclaim it.
-        scans.loadData(LCMSDataSubset.MS1_WITH_SPECTRA);
-
+        scans.loadData(LCMSDataSubset.MS2_WITH_SPECTRA);
         Constants.useIM = false;
-        createScanNumObjects(executorService); //seems like we always need this anyway
+        scanNumberObjects = new HashMap<>(scans.getScanCount());
+        createScanNumObjects(); //seems like we always need this anyway
 
         scanNums = new ArrayList<>(scanNumberObjects.size());
         scanNums.addAll(scanNumberObjects.keySet());
         //this.getMzFreq(); only if we end up using weights
     }
 
-    public mzMLReader(mgfFileReader mgf, ExecutorService executorService) throws FileParsingException, ExecutionException, InterruptedException { //uncalibrated mgf from MSFragger .d search
+    public mzMLReader(mgfFileReader mgf) throws FileParsingException, ExecutionException, InterruptedException { //uncalibrated mgf from MSFragger .d search
         pathStr = null;
 
-        scans = new ScanCollectionDefault(true);
-        scans.setDefaultStorageStrategy(StorageStrategy.SOFT);
-        for (String key : mgf.getRtDict().keySet()) {
-            //get scan number
-            String[] dotSplit = key.split("\\.");
-            int scanNum = Integer.parseInt(dotSplit[dotSplit.length - 2]);
-
-            IScan scan = new ScanDefault(scanNum, mgf.getRtDict().get(key), 2, true);
-            scan.setIm(Double.valueOf(mgf.getIMDict().get(key)));
-            PrecursorInfo pi = new PrecursorInfo();
-            pi.setMzTargetMono(mgf.getMassesDict().get(key));
-            scan.setPrecursor(pi);
-            ISpectrum spectrum = new SpectrumDefault(floatUtils.floatToDouble(mgf.getMzDict().get(key)),
-                    floatUtils.floatToDouble(mgf.getIntensityDict().get(key)), null);
-            scan.setSpectrum(spectrum, false);
-            scans.addScan(scan);
-        }
-        mgf.clear();
-
         Constants.useIM = true;
-        createScanNumObjects(executorService); //seems like we always need this anyway
+        scanNumberObjects = mgf.scanNumberObjects;
+        mgf.clear();
 
         scanNums = new ArrayList<>(scanNumberObjects.size());
         scanNums.addAll(scanNumberObjects.keySet());
@@ -219,65 +195,16 @@ public class mzMLReader {
         }
     }
 
-    public void createScanNumObjects(ExecutorService executorService) throws FileParsingException, ExecutionException, InterruptedException {
+    public void createScanNumObjects() throws FileParsingException, ExecutionException, InterruptedException {
         long startTime = System.nanoTime();
-        futureList.clear();
 
         //get all scan nums
-        ArrayList<Integer> allScanNums = new ArrayList<>();
-        ArrayList<Float> allRTs = new ArrayList<>();
-        ArrayList<Float> allIMs = new ArrayList<>();
-
         IScan scan = scans.getNextScanAtMsLevel(-1, 2);
-        if (Constants.useIM) {
-            while (scan != null) {
-                allScanNums.add(scan.getNum());
-                allRTs.add(scan.getRt().floatValue());
-                allIMs.add(scan.getIm().floatValue());
-                scan = scans.getNextScanAtMsLevel(scan.getNum(), 2);
-            }
-        } else {
-            while (scan != null) {
-                allScanNums.add(scan.getNum());
-                allRTs.add(scan.getRt().floatValue());
-                scan = scans.getNextScanAtMsLevel(scan.getNum(), 2);
-            }
-        }
 
-        if (Constants.useIM) {
-            for (int i = 0; i < Constants.numThreads; i++) {
-                int start = (int) (allScanNums.size() * (long) i) / Constants.numThreads;
-                int end = (int) (allScanNums.size() * (long) (i + 1)) / Constants.numThreads;
-                futureList.add(executorService.submit(() -> {
-                    for (int j = start; j < end; j++) {
-                        try {
-                            scanNumberObjects.put(allScanNums.get(j), new mzmlScanNumber(this, allScanNums.get(j),
-                                    allRTs.get(j), allIMs.get(j)));
-                        } catch (FileParsingException e) {
-                            e.printStackTrace();
-                        }
-                    }
-                }));
-            }
-        } else {
-            for (int i = 0; i < Constants.numThreads; i++) {
-                int start = (int) (allScanNums.size() * (long) i) / Constants.numThreads;
-                int end = (int) (allScanNums.size() * (long) (i + 1)) / Constants.numThreads;
-                futureList.add(executorService.submit(() -> {
-                    for (int j = start; j < end; j++) {
-                        try {
-                            scanNumberObjects.put(allScanNums.get(j), new mzmlScanNumber(this, allScanNums.get(j),
-                                    allRTs.get(j), null));
-                        } catch (FileParsingException e) {
-                            e.printStackTrace();
-                        }
-                    }
-                }));
-            }
-        }
-
-        for (Future future : futureList) {
-            future.get();
+        while (! (scan == null)) {
+            mzmlScanNumber msn = new mzmlScanNumber(scan);
+            scanNumberObjects.put(scan.getNum(), msn);
+            scan = scans.getNextScanAtMsLevel(scan.getNum(), 2);
         }
 
         scans.reset(); //free up memory. Could consider setting to null as well, but idk how to check if it's garbage collected
@@ -760,13 +687,10 @@ public class mzMLReader {
 //                "20180819_TIMS2_12-2_AnBr_SA_200ng_HeLa_50cm_120min_100ms_11CT_3_A1_01_2769_uncalibrated.mgf");
 //        System.out.println("done loading mgf");
 //        mzMLReader mzml = new mzMLReader(mgf);
-        ExecutorService executorService = Executors.newFixedThreadPool(Constants.numThreads);
         long startTime = System.nanoTime();
-        mzMLReader mzml = new mzMLReader("C:/Users/kevin/OneDriveUmich/proteomics/mzml/wideWindow/23aug2017_hela_serum_timecourse_pool_wide_003.mzML",
-                executorService);
+        mzMLReader mzml = new mzMLReader("C:/Users/kevin/OneDriveUmich/proteomics/mzml/wideWindow/23aug2017_hela_serum_timecourse_pool_wide_001.mzML");
         long endTime = System.nanoTime();
         long duration = (endTime - startTime);
         System.out.println("total mzml processing took " + duration / 1000000 +" milliseconds");
-        executorService.shutdown();
     }
 }

@@ -223,6 +223,27 @@ public class StatMethods {
         return median;
     }
 
+    public static int consecutiveMatches(float[] array) {
+        int maxConsecutive = 0;
+        int currentScore = 0;
+
+        for (float f : array) {
+            if (f > 0f) {
+                currentScore += 1;
+            } else {
+                if (currentScore > maxConsecutive) {
+                    maxConsecutive = currentScore;
+                }
+                currentScore = 0;
+            }
+        }
+        if (currentScore > maxConsecutive) {
+            maxConsecutive = currentScore;
+        }
+
+        return maxConsecutive;
+    }
+
     public static void main(String[] args) {
         System.out.println(variance(new double[] {1.0, 1.0}));
         System.out.println( 1f / Float.POSITIVE_INFINITY);

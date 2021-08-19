@@ -4,14 +4,46 @@ import umich.ms.fileio.exceptions.FileParsingException;
 
 import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;
+import java.util.Arrays;
+import java.util.concurrent.ExecutionException;
 
 public class RandomThings {
 
     public RandomThings(){
+
     }
 
-    public static void main(String[] args) throws IOException, FileParsingException, NoSuchMethodException, IllegalAccessException, InvocationTargetException, InterruptedException {
-        System.out.println(3 / 2);
+    public static void main(String[] args) throws IOException, FileParsingException, NoSuchMethodException, IllegalAccessException, InvocationTargetException, InterruptedException, ExecutionException {
+        float[] a = new float[2];
+        a[0] = 1f;
+        float[] b = a;
+        a[1] = 1f;
+        System.out.println(Arrays.toString(a));
+        System.out.println(Arrays.toString(b));
+        //        ExecutorService executorService = Executors.newFixedThreadPool(Constants.numThreads);
+//        List<Future> futureList = new ArrayList<>(Constants.numThreads);
+//
+//        for (int i = 0; i < Constants.numThreads; i++) {
+//            int start = (int) (1000000 * (long) i) / Constants.numThreads;
+//            int end = (int) (1000000 * (long) (i + 1)) / Constants.numThreads;
+//            futureList.add(executorService.submit(() -> {
+//                for (int j = start; j < end; j++) {
+//                    int[] arr = new int[1];
+//                    arr[0] = 1;
+//                }
+//            }));
+//        }
+//
+//        long startTime = System.nanoTime();
+//        for (Future future : futureList) {
+//            future.get();
+//        }
+//
+//        long endTime = System.nanoTime();
+//        long duration = (endTime - startTime);
+//        System.out.println("process took " + duration / 1000000 +" milliseconds");
+//        executorService.shutdown();
+
     }
 
     //this is for creating tsv for creating histograms for scores between target and decoy in python

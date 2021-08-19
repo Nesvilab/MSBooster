@@ -120,7 +120,11 @@ public class DiannSpeclibReader implements SpectralPredictionMapper{
 
     public static void main(String[] args) throws IOException {
         //DiannSpeclibReader d = new DiannSpeclibReader("C:/Users/kevin/OneDriveUmich/proteomics/preds/cptacDiann.predicted.bin");
+        long startTime = System.nanoTime();
         SpectralPredictionMapper spm = SpectralPredictionMapper.createSpectralPredictionMapper(
-                "C:/Users/kevin/OneDriveUmich/proteomics/preds/cptacDiann.predicted.bin");
+                "C:/Users/kevin/Downloads/proteomics/wide/spectraRT.predicted.bin");
+        long endTime = System.nanoTime();
+        long duration = (endTime - startTime);
+        System.out.println("Spectra/RT/IM prediction loading took " + duration / 1000000 +" milliseconds");
     }
 }

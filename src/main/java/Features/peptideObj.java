@@ -11,7 +11,7 @@ public class peptideObj {
     final int rank;
     final mzmlScanNumber scanNumObj;
     final int scanNum;
-    final String mzml;
+    //final String mzml;
     final int targetORdecoy;
     final String escore; //TODO: if DDA, use actual evalue?
     final float RT;
@@ -39,7 +39,7 @@ public class peptideObj {
         this.rank = rank;
         this.scanNumObj = scanNumObj;
         this.scanNum = scanNumObj.scanNum;
-        this.mzml = scanNumObj.mzmlPath;
+        //this.mzml = scanNumObj.mzmlPath;
         this.targetORdecoy = targetORdecoy;
         this.escore = escore;
         this.spectralSimObj = new spectrumComparison(scanNumObj.getExpMZs(), scanNumObj.getExpIntensities(),

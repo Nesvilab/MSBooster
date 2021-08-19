@@ -213,9 +213,10 @@ public class percolatorFormatter {
 
                 mzMLReader mzml;
                 if (mzmlFiles[i].getName().substring( mzmlFiles[i].getName().length() - 3).toLowerCase().equals("mgf")) {
-                    mzml = new mzMLReader(new mgfFileReader(mzmlFiles[i].getCanonicalPath()), executorService);
+                    //mzml = new mzMLReader(new mgfFileReader(mzmlFiles[i].getCanonicalPath()));
+                    mzml = new mzMLReader(new mgfFileReader(mzmlFiles[i].getCanonicalPath(), true));
                 } else {
-                    mzml = new mzMLReader(mzmlFiles[i].getCanonicalPath(), executorService);
+                    mzml = new mzMLReader(mzmlFiles[i].getCanonicalPath());
                 }
                 endTime = System.nanoTime();
                 duration = (endTime - startTime);
@@ -338,11 +339,11 @@ public class percolatorFormatter {
                     String pep = pin.getPep();
 
                     //trying filtering out low detectability
-                    if (featuresList.contains("detectability")) {
-                        if (dm.getDetectability(pep) < Constants.detectThreshold) {
-                            continue;
-                        }
-                    }
+//                    if (featuresList.contains("detectability")) {
+//                        if (dm.getDetectability(pep) < Constants.detectThreshold) {
+//                            continue;
+//                        }
+//                    }
 
                     //get entry
                     peptideObj pepObj = null;
@@ -554,6 +555,12 @@ public class percolatorFormatter {
                                         pepObj.scanNumObj.IMbinSize, (float) pepObj.IMprob);
                                 writer.addValue("IMprobabilityUnifPrior", prob);
                                 break;
+                            case "maxConsecutiveFragments":
+                                MassCalculator mc = new MassCalculator(pep);
+                                mzmlScanNumber msn = mzml.scanNumberObjects.get(pin.getScanNum());
+                                writer.addValue("maxConsecutiveFragments",
+                                        mc.maxConsecutiveIonSeries(msn.getExpMZs(), msn.getExpIntensities()));
+                                break;
                         }
                     }
                     //flush values to output
@@ -588,11 +595,11 @@ public class percolatorFormatter {
 //                ("RTprobabilityUnifPrior,deltaRTLOESS,deltaRTLOESSnormalized").split(","),
 //                "C:/Users/kevin/Downloads/proteomics/cptac/2021-2-21/pep1XML1tmp/percToPep/test_");
 
-                editPin("C:/Users/kevin/Downloads/proteomics/wide",
-                "C:/Users/kevin/OneDriveUmich/proteomics/mzml/wideWindow",
+                editPin("C:/Users/kevin/Downloads/proteomics/wide/23aug2017_hela_serum_timecourse_pool_wide_001.pin",
+                "C:/Users/kevin/OneDriveUmich/proteomics/mzml/wideWindow/23aug2017_hela_serum_timecourse_pool_wide_001.mzML",
                 "C:/Users/kevin/Downloads/proteomics/wide/spectraRT.predicted.bin",
-                "C:/Users/kevin/OneDriveUmich/proteomics/preds/detectWideAll_Predictions.txt",
-                ("brayCurtis,deltaRTLOESS").split(","),
+                "C:/Users/kevin/OneDriveUmich/proteomics/preds/detect_Predictions.txt",
+                ("cosineSimilarity").split(","),
                 "C:/Users/kevin/Downloads/proteomics/wide/edited_");
 //        editPin("C:/Users/kevin/Downloads/proteomics/timsTOF/20180819_TIMS2_12-2_AnBr_SA_200ng_HeLa_50cm_120min_100ms_11CT_3_A1_01_2769.pin",
 //                "C:/Users/kevin/Downloads/proteomics/timsTOF/" +

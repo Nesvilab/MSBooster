@@ -45,7 +45,7 @@ public class Constants {
     }
 
     //locations of executables and other models
-    public static Integer numThreads = 12;
+    public static Integer numThreads = 0;
     public static String DiaNN = null; //C:/DIA-NN/1.7.15beta1/DiaNN.exe
     public static final String spectraRTPredModel = "DIA-NN"; //mgf, bin, msp
                                                         //pDeep3, DIA-NN, Prosit
@@ -111,7 +111,8 @@ public class Constants {
             "pearsonCorr", "dotProduct",
             "deltaRTlinear", "deltaRTbins", "deltaRTLOESS", "RTzscore", "RTprobability", "RTprobabilityUnifPrior", "deltaRTLOESSnormalized",
             "detectFractionGreater", "detectability", "detectSubtractMissing", "detectProtSpearman",
-            "deltaIMLOESS", "deltaIMLOESSnormalized", "IMprobabilityUnifPrior"));
+            "deltaIMLOESS", "deltaIMLOESSnormalized", "IMprobabilityUnifPrior",
+            "maxConsecutiveFragments"));
     public static final HashSet<String> detectFeatures =
             new HashSet<>(Arrays.asList("detectFractionGreater", "detectability", "detectSubtractMissing", "detectProtSpearman"));
     public static final HashSet<String> spectraRTFeatures = new HashSet<>(Arrays.asList(

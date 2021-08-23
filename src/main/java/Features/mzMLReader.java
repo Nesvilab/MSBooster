@@ -82,7 +82,7 @@ public class mzMLReader {
 
         Constants.useIM = true;
         scanNumberObjects = mgf.scanNumberObjects;
-        mgf.clear();
+        mgf.reset();
 
         scanNums = new ArrayList<>(scanNumberObjects.size());
         scanNums.addAll(scanNumberObjects.keySet());
@@ -229,14 +229,14 @@ public class mzMLReader {
         for (int i = 0; i < iterations; i++) {
             String pep = peptides[i];
             scanNumberObjects.get(scanNums[i]).setPeptideObject(pep, rank, tdArray[i], escore[i],
-                    spm.getMzDict(), spm.getIntensityDict(), spm.getRtDict(), spm.getIMDict());
+                    spm.getPreds());
         }
     }
 
     public void setPinEntries(pinReader pin, SpectralPredictionMapper spm) throws AssertionError, Exception {
         while(pin.next()) {
             scanNumberObjects.get(pin.getScanNum()).setPeptideObject(pin.getPep(), pin.getRank(), pin.getTD(), pin.getEScore(),
-                    spm.getMzDict(), spm.getIntensityDict(), spm.getRtDict(), spm.getIMDict());
+                    spm.getPreds());
         }
         pin.close();
         pin.reset();
@@ -692,5 +692,6 @@ public class mzMLReader {
         long endTime = System.nanoTime();
         long duration = (endTime - startTime);
         System.out.println("total mzml processing took " + duration / 1000000 +" milliseconds");
+        System.out.println(mzml.scans.getNextScanAtMsLevel(-1,2).getPrecursor().getIntensity());
     }
 }

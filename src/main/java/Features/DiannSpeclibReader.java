@@ -4,15 +4,11 @@ import java.io.*;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.HashMap;
 
 public class DiannSpeclibReader implements SpectralPredictionMapper{
     final ArrayList<String> filenames;
-    private HashMap<String, float[]> allPredMZs = new HashMap<>();
-    private HashMap<String, float[]> allPredIntensities = new HashMap<>();
-    private HashMap<String, Float> allPredRTs = new HashMap<>();
-    private HashMap<String, Float> allPredIMs = new HashMap<>();
+    private HashMap<String, PredictionEntry> allPreds = new HashMap<>();
 
     //https://stackoverflow.com/questions/46163114/get-bit-values-from-byte-array
     //https://www.geeksforgeeks.org/bitwise-operators-in-java/
@@ -78,24 +74,19 @@ public class DiannSpeclibReader implements SpectralPredictionMapper{
                     }
 
                     //add to hashmap
-                    allPredMZs.put(mc.fullPeptide, mzs);
-                    allPredIntensities.put(mc.fullPeptide, intensities);
-                    allPredRTs.put(mc.fullPeptide, iRT);
-                    allPredIMs.put(mc.fullPeptide, IM);
+                    allPreds.put(mc.fullPeptide, new PredictionEntry(mzs, intensities, iRT, IM));
                 }
-
-                TSVReader.close();
 
                 //changing to deepccs values
-                BufferedReader newTSVReader = new BufferedReader(new FileReader("C:/Users/kevin/Downloads/proteomics/timsTOF/" +
-                        "DeepCCS_pred_diannName.csv"));
-                String line1 = "";
-                while ((line1 = newTSVReader.readLine()) != null) {
-                    String[] line1Split = line1.split(",");
-                    MassCalculator mc = new MassCalculator(line1Split[0], line1Split[1]);
-                    allPredIMs.put(mc.fullPeptide, Float.valueOf(line1Split[2]));
-                }
-                newTSVReader.close();
+//                BufferedReader newTSVReader = new BufferedReader(new FileReader("C:/Users/kevin/Downloads/proteomics/timsTOF/" +
+//                        "DeepCCS_pred_diannName.csv"));
+//                String line1 = "";
+//                while ((line1 = newTSVReader.readLine()) != null) {
+//                    String[] line1Split = line1.split(",");
+//                    MassCalculator mc = new MassCalculator(line1Split[0], line1Split[1]);
+//                    allPredIMs.put(mc.fullPeptide, Float.valueOf(line1Split[2]));
+//                }
+//                newTSVReader.close();
 
             } catch (IOException e) {
                 e.printStackTrace();
@@ -108,15 +99,21 @@ public class DiannSpeclibReader implements SpectralPredictionMapper{
         return n >> (32 - offset - length) & ~(-1 << length);
     }
 
-    public HashMap<String, float[]> getMzDict() { return allPredMZs; }
+    public HashMap<String, PredictionEntry> getPreds() { return allPreds; }
 
-    public HashMap<String, float[]> getIntensityDict() { return allPredIntensities; }
+    public float getMaxPredRT() {
+        float maxRT = 0f;
+        for (PredictionEntry entry : allPreds.values()) {
+            if (entry.RT > maxRT) {
+                maxRT = entry.RT;
+            }
+        }
+        return maxRT;
+    }
 
-    public HashMap<String, Float> getRtDict() { return allPredRTs; }
-
-    public HashMap<String, Float> getIMDict() { return allPredIMs; } //not available in pDeep3
-
-    public float getMaxPredRT() { return Collections.max(allPredRTs.values()); }
+    public void reset() {
+        allPreds.clear();
+    }
 
     public static void main(String[] args) throws IOException {
         //DiannSpeclibReader d = new DiannSpeclibReader("C:/Users/kevin/OneDriveUmich/proteomics/preds/cptacDiann.predicted.bin");

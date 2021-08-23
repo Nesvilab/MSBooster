@@ -45,7 +45,7 @@ public class Constants {
     }
 
     //locations of executables and other models
-    public static Integer numThreads = 0;
+    public static Integer numThreads = 11;
     public static String DiaNN = null; //C:/DIA-NN/1.7.15beta1/DiaNN.exe
     public static final String spectraRTPredModel = "DIA-NN"; //mgf, bin, msp
                                                         //pDeep3, DIA-NN, Prosit
@@ -101,7 +101,7 @@ public class Constants {
     //default auto, everything, or all? Or a combination I figure out empirically
     public static String features = "cosineSimilarity,spectralContrastAngle,euclideanDistance,brayCurtis,pearsonCorr,dotProduct," +
             "deltaRTLOESS,deltaRTLOESSnormalized,RTprobabilityUnifPrior," +
-            "detectFractionGreater,detectSubtractMissing,detectProtSpearman";
+            "detectFractionGreater,detectSubtractMissing";
     //public static String features = "auto";
 
     //don't currently support weighted similarity features

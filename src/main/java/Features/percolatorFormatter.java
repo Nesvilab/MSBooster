@@ -328,11 +328,12 @@ public class percolatorFormatter {
                         mzml.setKernelDensities(executorService, "IM");
                     }
                 }
+                predictedSpectra.reset();
 
                 System.out.println("Getting predictions for each row");
                 int totalPSMs = 0;
                 SpearmansCorrelation sc = new SpearmansCorrelation();
-                //PearsonsCorrelation sc = new PearsonsCorrelation();
+
                 while (pin.next()) {
                     totalPSMs += 1;
                     //peptide name
@@ -598,9 +599,9 @@ public class percolatorFormatter {
                 editPin("C:/Users/kevin/Downloads/proteomics/wide/23aug2017_hela_serum_timecourse_pool_wide_001.pin",
                 "C:/Users/kevin/OneDriveUmich/proteomics/mzml/wideWindow/23aug2017_hela_serum_timecourse_pool_wide_001.mzML",
                 "C:/Users/kevin/Downloads/proteomics/wide/spectraRT.predicted.bin",
-                "C:/Users/kevin/OneDriveUmich/proteomics/preds/detect_Predictions.txt",
-                ("cosineSimilarity").split(","),
-                "C:/Users/kevin/Downloads/proteomics/wide/edited_");
+                "C:/Users/kevin/Downloads/proteomics/wide/detect_Predictions.txt",
+                ("detectProtSpearman").split(","),
+                "C:/Users/kevin/Downloads/proteomics/wide/old_");
 //        editPin("C:/Users/kevin/Downloads/proteomics/timsTOF/20180819_TIMS2_12-2_AnBr_SA_200ng_HeLa_50cm_120min_100ms_11CT_3_A1_01_2769.pin",
 //                "C:/Users/kevin/Downloads/proteomics/timsTOF/" +
 //                        "20180819_TIMS2_12-2_AnBr_SA_200ng_HeLa_50cm_120min_100ms_11CT_3_A1_01_2769_uncalibrated.mgf",

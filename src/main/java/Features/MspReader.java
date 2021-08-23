@@ -3,14 +3,11 @@ package Features;
 import java.io.*;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.HashMap;
 
 public class MspReader implements SpectralPredictionMapper {
     final ArrayList<String> filenames;
-    private HashMap<String, float[]> allPredMZs = new HashMap<>();
-    private HashMap<String, float[]> allPredIntensities = new HashMap<>();
-    private HashMap<String, Float> allPredRTs = new HashMap<>();
+    private HashMap<String, PredictionEntry> allPreds = new HashMap<>();
 
     private String prositPepFormat(String pep) {
         String[] pepSplit = pep.split("/");
@@ -80,9 +77,7 @@ public class MspReader implements SpectralPredictionMapper {
                         ints[i] = Float.parseFloat(lineSplit[1]);
                     }
 
-                    allPredMZs.put(pep, mzs);
-                    allPredIntensities.put(pep, ints);
-                    allPredRTs.put(pep, RT);
+                    allPreds.put(pep, new PredictionEntry(mzs, ints, RT, 0f));
                 }
             } catch (IOException e) {
                 e.printStackTrace();
@@ -90,18 +85,21 @@ public class MspReader implements SpectralPredictionMapper {
         }
     }
 
-    public HashMap<String, float[]> getMzDict() { return allPredMZs; }
+    public HashMap<String, PredictionEntry> getPreds() { return allPreds; }
 
-    public HashMap<String, float[]> getIntensityDict() { return allPredIntensities; }
-
-    public HashMap<String, Float> getRtDict() { return allPredRTs; }
-
-    public HashMap<String, Float> getIMDict() {
-        System.out.println("no IM predictions");
-        return null;
+    public float getMaxPredRT() {
+        float maxRT = 0f;
+        for (PredictionEntry entry : allPreds.values()) {
+            if (entry.RT > maxRT) {
+                maxRT = entry.RT;
+            }
+        }
+        return maxRT;
     }
 
-    public float getMaxPredRT() { return Collections.max(allPredRTs.values()); }
+    public void reset() {
+        allPreds.clear();
+    }
 
     public static void main(String[] args) throws IOException {
         //MspReader m = new MspReader("C:/Users/kevin/OneDriveUmich/proteomics/preds/cptacProsit.msp");

@@ -8,20 +8,16 @@ import java.io.File;
 import java.io.FileReader;
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.HashMap;
 
 public class mgfFileReader implements SpectralPredictionMapper{
     //mgfFileReader can handle both single files and entire directories
 
     final ArrayList<String> filenames;
-    private final HashMap<String, float[]> allPredMZs = new HashMap<>();
-    private final HashMap<String, float[]> allPredIntensities = new HashMap<>();
-    private final HashMap<String, Float> allPredRTs = new HashMap<>();
-    private final HashMap<String, Float> allPredIMs = new HashMap<>();
-    private final HashMap<String, Double> allMasses = new HashMap<>();
+    private HashMap<String, PredictionEntry> allPreds = new HashMap<>();
     public HashMap<Integer, mzmlScanNumber> scanNumberObjects = new HashMap<>();
 
+    //this version if loading pDeep3 predictions
     public mgfFileReader(String files) throws IOException {
         File predsDirectory = new File(files);
         String[] predsFiles = predsDirectory.list();
@@ -47,6 +43,9 @@ public class mgfFileReader implements SpectralPredictionMapper{
         ArrayList<Float> intensities = new ArrayList<>();
         ArrayList<Float> mzs = new ArrayList<>();
         String[] lineSplit;
+        float[] finalMzs;
+        float[] finalIntensities;
+
         for (String fname : filenames) {
 //            MgfReader reader = new MgfReader(new File(fname), PeakList.Precision.FLOAT);
 //            reader.acceptUnsortedSpectra();
@@ -71,12 +70,9 @@ public class mgfFileReader implements SpectralPredictionMapper{
 //                            charge = Integer.parseInt(lineSplit[1].replace("+", ""));
                             break;
                         case "PEPMASS":
-                            lineSplit = lineSplit[1].split(" ");
-                            pepmass = Double.parseDouble(lineSplit[0]);
-                            allMasses.put(title, pepmass);
-//                            if (lineSplit.length == 2) {
-//                                precursorIntensity = Double.parseDouble(lineSplit[1]);
-//                            }
+//                            lineSplit = lineSplit[1].split(" ");
+//                            pepmass = Double.parseDouble(lineSplit[0]);
+//                            allMasses.put(title, pepmass);
                             break;
                         case "RTINSECONDS":
                             RT = Float.parseFloat(lineSplit[1]);
@@ -102,8 +98,8 @@ public class mgfFileReader implements SpectralPredictionMapper{
                             }
 
                             if (zeroFrags.size() == 0) {
-                                allPredMZs.put(title, ArrayUtils.toPrimitive(mzs.toArray(new Float[0]), 0.0F));
-                                allPredIntensities.put(title, ArrayUtils.toPrimitive(intensities.toArray(new Float[0]), 0.0F));
+                                finalMzs = ArrayUtils.toPrimitive(mzs.toArray(new Float[0]), 0.0F);
+                                finalIntensities = ArrayUtils.toPrimitive(intensities.toArray(new Float[0]), 0.0F);
                             } else { //some empty frags
                                 float[] newIntensities = new float[intensities.size() - zeroFrags.size()];
                                 float[] newMzs = new float[intensities.size() - zeroFrags.size()];
@@ -125,12 +121,11 @@ public class mgfFileReader implements SpectralPredictionMapper{
                                         k += 1;
                                     }
                                 }
-                                allPredMZs.put(title, newMzs);
-                                allPredIntensities.put(title, newIntensities);
+                                finalMzs = newMzs;
+                                finalIntensities = newIntensities;
                             }
 
-                            allPredRTs.put(title, RT);
-                            allPredIMs.put(title, IM);
+                            allPreds.put(title, new PredictionEntry(finalMzs, finalIntensities, RT, IM));
 
                             //reset for next peptide/PSM
                             mzs.clear();
@@ -143,6 +138,7 @@ public class mgfFileReader implements SpectralPredictionMapper{
         }
     }
 
+    //this version for uncalibrated mgf acting as mzml
     public mgfFileReader(String files, boolean createScanNumObjects) throws IOException, FileParsingException {
         File predsDirectory = new File(files);
         String[] predsFiles = predsDirectory.list();
@@ -230,8 +226,6 @@ public class mgfFileReader implements SpectralPredictionMapper{
                                         k += 1;
                                     }
                                 }
-                                allPredMZs.put(title, newMzs);
-                                allPredIntensities.put(title, newIntensities);
                                 scanNumberObjects.put(scanNum, new mzmlScanNumber(scanNum, newMzs,
                                         newIntensities, RT, IM));
                             }
@@ -247,23 +241,21 @@ public class mgfFileReader implements SpectralPredictionMapper{
         }
     }
 
-    public HashMap<String, float[]> getMzDict() { return allPredMZs; }
+    public HashMap<String, PredictionEntry> getPreds() { return allPreds; }
 
-    public HashMap<String, float[]> getIntensityDict() { return allPredIntensities; }
+    public float getMaxPredRT() {
+        float maxRT = 0f;
+        for (PredictionEntry entry : allPreds.values()) {
+            if (entry.RT > maxRT) {
+                maxRT = entry.RT;
+            }
+        }
+        return maxRT;
+    }
 
-    public HashMap<String, Float> getRtDict() { return allPredRTs; }
-
-    public HashMap<String, Float> getIMDict() { return allPredIMs; }
-
-    public HashMap<String, Double> getMassesDict() { return allMasses; }
-
-    public float getMaxPredRT() { return Collections.max(allPredRTs.values()); }
-
-    public void clear() {
-        allPredMZs.clear();
-        allPredIntensities.clear();
-        allPredRTs.clear();
-        allPredIMs.clear();
+    public void reset() {
+        allPreds.clear();
+        scanNumberObjects.clear();
     }
 
     public static void main(String[] args) throws IOException, FileParsingException {

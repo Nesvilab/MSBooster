@@ -92,17 +92,17 @@ public class mzmlScanNumber {
     public float[] getExpIntensities() { return expIntensities; }
 
     public void setPeptideObject(String name, int rank, int targetORdecoy, String escore,
-                                 HashMap<String, float[]> allPredMZs, HashMap<String, float[]> allPredIntensities,
-                                 HashMap<String, Float> allPredRTs, HashMap<String, Float> allPredIMs) throws Exception {
+                                 HashMap<String, PredictionEntry> allPreds) throws Exception {
 
         if (rank != peptideObjects.size() + 1) { //need to add entries in order
             throw new AssertionError("must add next rank");
         }
         try {
-            float[] predMZs = allPredMZs.get(name);
-            float[] predIntensities = allPredIntensities.get(name);
-            float predRT = allPredRTs.get(name);
-            float predIM = allPredIMs.get(name);
+            PredictionEntry predictionEntry = allPreds.get(name);
+            float[] predMZs = predictionEntry.mzs;
+            float[] predIntensities = predictionEntry.intensities;
+            float predRT = predictionEntry.RT;
+            float predIM = predictionEntry.IM;
 
             peptideObj newPepObj;
             if (predMZs.length > 1) {

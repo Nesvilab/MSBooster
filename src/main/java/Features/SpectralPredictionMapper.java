@@ -5,13 +5,8 @@ import java.util.HashMap;
 
 public interface SpectralPredictionMapper {
 
-    public HashMap<String, float[]> getMzDict() throws IOException;
-
-    public HashMap<String, float[]> getIntensityDict() throws IOException;;
-
-    public HashMap<String, Float> getRtDict() throws IOException;
-
-    public HashMap<String, Float> getIMDict() throws IOException;
+    public HashMap<String, PredictionEntry> getPreds() throws IOException;
+    public void reset();
 
     public float getMaxPredRT();
 

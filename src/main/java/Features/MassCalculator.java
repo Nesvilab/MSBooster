@@ -6,7 +6,11 @@ import java.util.HashMap;
 
 public class MassCalculator {
     private final float proton = 1.00727647f;
-    private final float H2O = 18.01056f;
+    private final float H = 1.0078250321f;
+    private final float O = 15.9949146221f;
+    //private final float N = 14.0030740052f;
+    private final float H2O = H * 2 + O;
+    //private final float OH = O + H;
     public String fullPeptide;
     private String peptide;
     public int charge;
@@ -106,16 +110,17 @@ public class MassCalculator {
             this.charge = (int) charge;
         }
 
-        this.mass = calcMass(pep.length(), 0, 1);
-        this.b1 = new float[peptide.length()];
-        this.y1 = new float[peptide.length()];
-        if (this.charge >= 2) {
-            this.b2 = new float[peptide.length()];
-            this.y2 = new float[peptide.length()];
-        }
+        this.mass = calcMass(pep.length(), 1, 1) - H;
+//        this.b1 = new float[peptide.length()];
+//        this.y1 = new float[peptide.length()];
+//        if (this.charge >= 2) {
+//            this.b2 = new float[peptide.length()];
+//            this.y2 = new float[peptide.length()];
+//        }
     }
 
     //using common peptide form pep|mod|charge
+    //TODO: correct this, but probably won't have to use since no consecutiveFragment feature calculation
     public MassCalculator(String pep) {
         this.fullPeptide = pep;
 
@@ -175,18 +180,18 @@ public class MassCalculator {
     public void calcAllMasses() { //currently up to charge 2, does not include precursor peak
         int maxCharge = Math.min(2, charge);
 
-        for (int i = 1; i < peptide.length(); i++) {
-            b1[i] = calcMass(i, 0, 1);
+        for (int i = 1; i < peptide.length() + 1; i++) {
+            b1[i - 1] = calcMass(i, 0, 1);
         }
-        for (int i = 1; i < peptide.length(); i++) {
-            y1[i] = calcMass(i, 1, 1);
+        for (int i = 1; i < peptide.length() + 1; i++) {
+            y1[i - 1] = calcMass(i, 1, 1);
         }
         if (maxCharge == 2) {
-            for (int i = 1; i < peptide.length(); i++) {
-                b2[i] = calcMass(i, 0, 2);
+            for (int i = 1; i < peptide.length() + 1; i++) {
+                b2[i - 1] = calcMass(i, 0, 2);
             }
-            for (int i = 1; i < peptide.length(); i++) {
-                y2[i] = calcMass(i, 1, 2);
+            for (int i = 1; i < peptide.length() + 1; i++) {
+                y2[i - 1] = calcMass(i, 1, 2);
             }
         }
     }
@@ -218,7 +223,13 @@ public class MassCalculator {
     }
 
     public static void main(String[] args) {
-        MassCalculator mc = new MassCalculator("SLPPALSCPPPQPAMLEHLSSLPTQMDYK", 1);
+        MassCalculator mc = new MassCalculator("[unimod:1]VC[unimod:4]AKIGDFGMAR", 2);
+        mc.calcAllMasses();
         System.out.println(mc.mass);
+        System.out.println(Arrays.toString(mc.b1));
+        System.out.println(Arrays.toString(mc.y1));
+        System.out.println(Arrays.toString(mc.b2));
+        System.out.println(Arrays.toString(mc.y2));
+        System.out.println(mc.calcMass(2,0,2));
     }
 }

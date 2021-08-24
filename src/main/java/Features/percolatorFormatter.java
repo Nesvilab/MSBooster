@@ -127,6 +127,7 @@ public class percolatorFormatter {
                 || featuresList.contains("detectProtSpearman")) {
 
             //get all peptides present in pin
+            //TODO: this part is all protSpearman
             for (File pinFile : pmMatcher.pinFiles) {
                 pinReader pin = new pinReader(pinFile.getCanonicalPath());
 
@@ -328,14 +329,13 @@ public class percolatorFormatter {
                         mzml.setKernelDensities(executorService, "IM");
                     }
                 }
-                predictedSpectra.reset();
 
                 System.out.println("Getting predictions for each row");
-                int totalPSMs = 0;
+                //int totalPSMs = 0;
                 SpearmansCorrelation sc = new SpearmansCorrelation();
 
                 while (pin.next()) {
-                    totalPSMs += 1;
+                    //totalPSMs += 1;
                     //peptide name
                     String pep = pin.getPep();
 
@@ -572,7 +572,7 @@ public class percolatorFormatter {
                 duration = (endTime - startTime);
                 System.out.println("Pin editing took " + duration / 1000000000 +" seconds");
                 if (!(ps == null)) {
-                    ps.println(totalPSMs + " PSMs");
+                    //ps.println(totalPSMs + " PSMs");
                     ps.println("Pin editing took " + duration / 1000000000 +" seconds");
                 }
                 writer.close();
@@ -601,7 +601,7 @@ public class percolatorFormatter {
                 "C:/Users/kevin/Downloads/proteomics/wide/spectraRT.predicted.bin",
                 "C:/Users/kevin/Downloads/proteomics/wide/detect_Predictions.txt",
                 ("detectProtSpearman").split(","),
-                "C:/Users/kevin/Downloads/proteomics/wide/old_");
+                "C:/Users/kevin/Downloads/proteomics/wide/edited_");
 //        editPin("C:/Users/kevin/Downloads/proteomics/timsTOF/20180819_TIMS2_12-2_AnBr_SA_200ng_HeLa_50cm_120min_100ms_11CT_3_A1_01_2769.pin",
 //                "C:/Users/kevin/Downloads/proteomics/timsTOF/" +
 //                        "20180819_TIMS2_12-2_AnBr_SA_200ng_HeLa_50cm_120min_100ms_11CT_3_A1_01_2769_uncalibrated.mgf",

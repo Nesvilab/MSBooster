@@ -107,27 +107,28 @@ public class percolatorFormatter {
             needsMGF = true;
         }
 
-        //detectability
+        //create detectMap to store detectabilities for base sequence peptides
+        //store peptide detectabilities in PredictionEntry
         detectMap dm = null;
         ArrayList<String> dFeatures = new ArrayList<String>(Constants.detectFeatures);
         dFeatures.retainAll(featuresList);
         long startTime = System.nanoTime();
         if (dFeatures.size() > 0) {
             dm = new detectMap(detectFile);
+            HashMap<String, PredictionEntry> allPreds = predictedSpectra.getPreds();
+            for (Map.Entry<String, PredictionEntry> e : allPreds.entrySet()) {
+                e.getValue().setDetectability(dm.getDetectability(e.getKey()));
+            }
         }
 
-        //for storing detects and whether peptides are present
-        HashMap<String, float[]> detects = new HashMap<>();
-        HashMap<String, float[]> presence = new HashMap<>();
-        HashMap<String, Integer> pepCounter = new HashMap<>();
-        HashMap<String, float[]> spectralCounts = new HashMap<>();
         FastaReader fasta = null;
 
         if (featuresList.contains("detectFractionGreater") || featuresList.contains("detectSubtractMissing")
-                || featuresList.contains("detectProtSpearman")) {
+                || featuresList.contains("detectProtSpearmanDiff")) {
+
+            HashMap<String, Integer> pepCounter = new HashMap<>();
 
             //get all peptides present in pin
-            //TODO: this part is all protSpearman
             for (File pinFile : pmMatcher.pinFiles) {
                 pinReader pin = new pinReader(pinFile.getCanonicalPath());
 
@@ -153,16 +154,17 @@ public class percolatorFormatter {
             }
 
             System.out.println("Loading detectabilities for unique peptides from each protein");
-            for (Map.Entry<String, ArrayList<String>> e : fasta.protToPep.entrySet()) {
-                float[] protDetects = new float[e.getValue().size()]; //for storing initial detect order
+            for (Map.Entry<String, ProteinEntry> e : fasta.protToPep.entrySet()) {
+                ArrayList<String> pepList = e.getValue().peptides;
+                float[] protDetects = new float[pepList.size()]; //for storing initial detect order
 
-                //store detect
-                //TODO: consider sorted array?
-                for (int pep = 0; pep < e.getValue().size(); pep++) {
-                    protDetects[pep] = dm.getDetectability(e.getValue().get(pep));
+                //store detect unsorted
+                for (int pep = 0; pep < pepList.size(); pep++) {
+                    protDetects[pep] = dm.getDetectability(pepList.get(pep));
                 }
 
-                //save sorted detect in detects hashmap
+                //dual pivot quicksort
+                //sorted indices
                 int[] sortedIndices = IntStream.range(0, protDetects.length)
                         .boxed().sorted((k, j) -> Float.compare(protDetects[k], protDetects[j]))
                         .mapToInt(ele -> ele).toArray();
@@ -171,29 +173,33 @@ public class percolatorFormatter {
                 for (int j = 0; j < protDetects.length; j++) {
                     sortedDetect[j] = protDetects[sortedIndices[j]];
                 }
-                detects.put(e.getKey(), sortedDetect);
+                e.getValue().detects = sortedDetect;
 
                 //check which peptides present, and get spectral counts
                 float[] protPresence = new float[protDetects.length];
                 float[] pepCounts = new float[protDetects.length];
-                for (int j = 0; j < protDetects.length; j++) {
-                    String currentPep = e.getValue().get(sortedIndices[j]);
+                float numPresent = 1f;
+                for (int j = protDetects.length - 1; j > -1; j--) {
+                    String currentPep = pepList.get(sortedIndices[j]);
 
                     if (pepCounter.containsKey(currentPep)) {
-                        protPresence[j] = 1f;
-                    } else {
-                        protPresence[j] = 0f;
-                    }
-
-                    try {
+                        protPresence[j] = numPresent;
+                        numPresent += 1f;
                         pepCounts[j] = pepCounter.get(currentPep);
-                    } catch (Exception ee) {
-                        pepCounts[j] = 0;
                     }
                 }
-                presence.put(e.getKey(), protPresence);
-                spectralCounts.put(e.getKey(), pepCounts);
+                fasta.protToPep.get(e.getKey()).presence = protPresence;
+                fasta.protToPep.get(e.getKey()).spectralCounts = pepCounts;
             }
+
+            HashMap<String, PredictionEntry> allPreds = predictedSpectra.getPreds();
+            for (Map.Entry<String, PredictionEntry> e : allPreds.entrySet()) {
+                try {
+                    e.getValue().setCounter(pepCounter.get(e.getKey().split("\\|")[0]));
+                } catch (Exception ee) { //peptide was in a pin file from another run
+                }
+            }
+            dm.clear();
         }
         long endTime = System.nanoTime();
         long duration = (endTime - startTime);
@@ -368,8 +374,7 @@ public class percolatorFormatter {
                     for (String feature : features) {
                         switch (feature) {
                             case "detectFractionGreater":
-                                //TODO: target peptides should not be compared to decoy proteins
-                                float d = dm.getDetectability(pep);
+                                float d = predictedSpectra.getPreds().get(pep).detectability;
                                 //for each protein, get the position of pep's detect and see how many peptides with greater detect are present
                                 //take max (proxy for protein that actually generated peptide)
                                 String[] r = pin.getRow();
@@ -381,27 +386,33 @@ public class percolatorFormatter {
                                     if (prot.startsWith(Constants.decoyPrefix.substring(1))) {
                                         if (r[pin.labelIdx].equals("1")) {
                                             continue;
-                                        } else { //decoy
+                                        } else { //decoy peptide compared to target protein
                                             protAbr = prot.substring(Constants.decoyPrefix.length() - 1);
                                         }
                                     } else {
                                         protAbr = prot;
                                     }
 
-                                    float[] arr = detects.get(protAbr);
-                                    if (arr == null) { //no peptides qualify from this protein
+                                    float[] arr;
+                                    try {
+                                        arr = fasta.protToPep.get(protAbr).detects;
+                                    } catch (Exception e) { //no peptides qualify from this protein
                                         continue;
                                     }
+
                                     int idx = Arrays.binarySearch(arr, d);
                                     if (idx < 0) { //not found
                                         idx = (-1 * idx) - 1;
                                     } else {
                                         idx += 1; //don't want to include itself in calculation
                                     }
-                                    float[] presenceArr = Arrays.copyOfRange(presence.get(protAbr), idx, arr.length);
+                                    float[] presenceArr = Arrays.copyOfRange(fasta.protToPep.get(protAbr).presence, idx, arr.length);
                                     float total = 0f;
                                     for (float j : presenceArr) {
-                                        total += j;
+                                        if (j != 0f) {
+                                            total = j;
+                                            break;
+                                        }
                                     }
                                     float fraction = (total + Constants.detectFractionGreaterNumerator) /
                                             (presenceArr.length + Constants.detectFractionGreaterDenominator); //customizable prior
@@ -412,7 +423,7 @@ public class percolatorFormatter {
                                 writer.addValue("detectFractionGreater", maxFraction);
                                 break;
                             case "detectSubtractMissing":
-                                d = dm.getDetectability(pep);
+                                d = predictedSpectra.getPreds().get(pep).detectability;
                                 //for each protein, get the position of pep's detect and see how many peptides with greater detect are present
                                 //take max (proxy for protein that actually generated peptide)
                                 r = pin.getRow();
@@ -431,17 +442,20 @@ public class percolatorFormatter {
                                         protAbr = prot;
                                     }
 
-                                    float[] arr = detects.get(protAbr);
-                                    if (arr == null) { //no peptides qualify from this protein
+                                    float[] arr;
+                                    try {
+                                        arr = fasta.protToPep.get(protAbr).detects;
+                                    } catch (Exception e) { //no peptides qualify from this protein
                                         continue;
                                     }
+
                                     int idx = Arrays.binarySearch(arr, d);
                                     if (idx < 0) { //not found
                                         idx = (-1 * idx) - 1;
                                     } else {
                                         idx += 1; //don't want to include itself in calculation
                                     }
-                                    float[] presenceArr = Arrays.copyOfRange(presence.get(protAbr), idx, arr.length);
+                                    float[] presenceArr = Arrays.copyOfRange(fasta.protToPep.get(protAbr).presence, idx, arr.length);
                                     float[] detectArr = Arrays.copyOfRange(arr, idx, arr.length);
                                     float total = 0f;
                                     for (int k = 0; k < presenceArr.length; k++) {
@@ -459,50 +473,60 @@ public class percolatorFormatter {
                                 }
                                 writer.addValue("detectSubtractMissing", minDiff);
                                 break;
-                            case "detectProtSpearman":
+                            case "detectProtSpearmanDiff":
                                 r = pin.getRow();
                                 prots = Arrays.copyOfRange(r, pin.pepIdx + 1, r.length);
-                                double maxSpearman = -1;
+                                double maxSpearmanDiff = -2;
+                                float detect = predictedSpectra.getPreds().get(pep).detectability;;
                                 for (String prot : prots) { //if more than one, this peptide is shared among proteins
                                     //skip protein if it is decoy and looking at target peptide
+                                    String protAbr;
                                     if (prot.startsWith(Constants.decoyPrefix.substring(1))) {
                                         if (r[pin.labelIdx].equals("1")) {
                                             continue;
+                                        } else {
+                                            protAbr = prot.substring(Constants.decoyPrefix.length() - 1);
                                         }
+                                    } else {
+                                        protAbr = prot;
                                     }
 
-                                    float[] arr = detects.get(prot);
-                                    if (arr == null || arr.length == 1) { //no peptides qualify from this protein
+                                    float[] arr;
+                                    try {
+                                        arr = fasta.protToPep.get(protAbr).detects;
+                                    } catch (Exception e) { //no peptides qualify from this protein
                                         continue;
                                     }
-                                    float[] counts = spectralCounts.get(prot);
 
-                                    double spear = -1;
-                                    String minipep = pep.split("\\|")[0];
+                                    float[] counts = fasta.protToPep.get(protAbr).spectralCounts;
 
                                     //only add if not 0 spectral counts (lots of missing ones, need to be more lenient for targets)
                                     ArrayList<Double> newDetects = new ArrayList<>();
                                     ArrayList<Double> newCounts = new ArrayList<>();
                                     for (int k = 0; k < arr.length; k++) {
                                         if (counts[k] != 0) {
-                                            newDetects.add((double) arr[k]);
-                                            newCounts.add((double) counts[k]);
+                                            if (! (arr[k] == detect)) { //will add later
+                                                newDetects.add((double) arr[k]);
+                                                newCounts.add((double) counts[k]);
+                                            }
                                         }
-                                    }
-                                    if (! fasta.protToPep.get(prot).contains(minipep)) { //add new pep to this calculation
-                                        newDetects.add((double) dm.getDetectability(minipep));
-                                        newCounts.add((double) pepCounter.get(minipep));
                                     }
                                     if (newDetects.size() < 2) {
                                         continue;
                                     }
-                                    spear = sc.correlation(newDetects.stream().mapToDouble(dd -> dd).toArray(),
+                                    double spear = sc.correlation(newDetects.stream().mapToDouble(dd -> dd).toArray(),
                                             newCounts.stream().mapToDouble(dd -> dd).toArray() );
-                                    if (spear > maxSpearman) {
-                                        maxSpearman = spear;
+
+                                    //add new pep to this calculation
+                                    newDetects.add((double) detect);
+                                    newCounts.add((double) predictedSpectra.getPreds().get(pep).counter);
+                                    double spearDiff = sc.correlation(newDetects.stream().mapToDouble(dd -> dd).toArray(),
+                                            newCounts.stream().mapToDouble(dd -> dd).toArray() ) - spear;
+                                    if (spearDiff > maxSpearmanDiff) {
+                                        maxSpearmanDiff = spearDiff;
                                     }
                                 }
-                                writer.addValue("detectProtSpearman", maxSpearman);
+                                writer.addValue("detectProtSpearmanDiff", maxSpearmanDiff);
                                 break;
                             case "deltaRTlinear":
                                 writer.addValue("deltaRTlinear", pepObj.deltaRT);
@@ -576,6 +600,7 @@ public class percolatorFormatter {
                     ps.println("Pin editing took " + duration / 1000000000 +" seconds");
                 }
                 writer.close();
+                mzml.clear();
                 System.out.println("Edited pin file at " + newOutfile);
             }
         } catch (Exception e) {
@@ -596,12 +621,20 @@ public class percolatorFormatter {
 //                ("RTprobabilityUnifPrior,deltaRTLOESS,deltaRTLOESSnormalized").split(","),
 //                "C:/Users/kevin/Downloads/proteomics/cptac/2021-2-21/pep1XML1tmp/percToPep/test_");
 
-                editPin("C:/Users/kevin/Downloads/proteomics/wide/23aug2017_hela_serum_timecourse_pool_wide_001.pin",
-                "C:/Users/kevin/OneDriveUmich/proteomics/mzml/wideWindow/23aug2017_hela_serum_timecourse_pool_wide_001.mzML",
-                "C:/Users/kevin/Downloads/proteomics/wide/spectraRT.predicted.bin",
-                "C:/Users/kevin/Downloads/proteomics/wide/detect_Predictions.txt",
-                ("detectProtSpearman").split(","),
-                "C:/Users/kevin/Downloads/proteomics/wide/edited_");
+        editPin("C:/Users/kevin/Downloads/proteomics/narrow/",
+                "C:/Users/kevin/OneDriveUmich/proteomics/mzml/narrowWindow/23aug2017_hela_serum_timecourse_4mz_narrow_6.mzML",
+                "C:/Users/kevin/Downloads/proteomics/narrow/spectraRT.predicted.bin",
+                "C:/Users/kevin/Downloads/proteomics/narrow/detect_Predictions.txt",
+                (Constants.features).split(","),
+                "C:/Users/kevin/Downloads/proteomics/narrow/edited_");
+//        editPin("C:/Users/kevin/Downloads/proteomics/wide/",
+//                "C:/Users/kevin/OneDriveUmich/proteomics/mzml/wideWindow/23aug2017_hela_serum_timecourse_pool_wide_001.mzML",
+//                "C:/Users/kevin/Downloads/proteomics/wide/spectraRT.predicted.bin",
+//                "C:/Users/kevin/Downloads/proteomics/wide/detect_Predictions.txt",
+//                ("cosineSimilarity,spectralContrastAngle,euclideanDistance,brayCurtis,pearsonCorr,dotProduct," +
+//                        "deltaRTLOESS,deltaRTLOESSnormalized,RTprobabilityUnifPrior," +
+//                        "detectSubtractMissing").split(","),
+//                "C:/Users/kevin/Downloads/proteomics/wide/edited_");
 //        editPin("C:/Users/kevin/Downloads/proteomics/timsTOF/20180819_TIMS2_12-2_AnBr_SA_200ng_HeLa_50cm_120min_100ms_11CT_3_A1_01_2769.pin",
 //                "C:/Users/kevin/Downloads/proteomics/timsTOF/" +
 //                        "20180819_TIMS2_12-2_AnBr_SA_200ng_HeLa_50cm_120min_100ms_11CT_3_A1_01_2769_uncalibrated.mgf",

@@ -4,11 +4,14 @@ import java.io.BufferedReader;
 import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.IOException;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Map;
 
 //only interested in unique target peptides
 public class FastaReader {
-    HashMap<String, ArrayList<String>> protToPep = new HashMap<String, ArrayList<String>>();
+    HashMap<String, ProteinEntry> protToPep = new HashMap<>();
 
     private String[] getHeaderProtein(BufferedReader reader) throws IOException {
         String header = reader.readLine();
@@ -47,32 +50,36 @@ public class FastaReader {
             while (header != null) {
                 String protID = header.split(" ")[0];
 
-                protID = protID.substring(1); //remove >
-                //split by whatever is digestion rules
-                int start = 0;
-                for (int i = 0; i < protein.length(); i++) {
-                    boolean doIt = false;
-                    if (i == protein.length() - 1) { //end of protein sequence
-                        doIt = true;
-                    } else if (Constants.cutAfter.contains(protein.substring(i, i + 1))) {
-                        if (! Constants.butNotAfter.contains(protein.substring(i + 1, i + 2))) {
-                            doIt = true;
-                        }
-                    }
+                if (! protID.startsWith(Constants.decoyPrefix)) {
+                    protID = protID.substring(1); //remove >
 
-                    if (doIt) {
-                        String pep = protein.substring(start, i + 1);
-                        HashSet<String> value;
-                        if (pepToProt.containsKey(pep)) {
-                            value = pepToProt.get(pep);
-                        } else {
-                            value = new HashSet<String>();
+                    //split by whatever is digestion rules
+                    int start = 0;
+                    for (int i = 0; i < protein.length(); i++) {
+                        boolean doIt = false;
+                        if (i == protein.length() - 1) { //end of protein sequence
+                            doIt = true;
+                        } else if (Constants.cutAfter.contains(protein.substring(i, i + 1))) {
+                            if (! Constants.butNotAfter.contains(protein.substring(i + 1, i + 2))) {
+                                doIt = true;
+                            }
                         }
-                        value.add(protID);
-                        pepToProt.put(pep, value);
-                        start = i + 1;
+
+                        if (doIt) {
+                            String pep = protein.substring(start, i + 1);
+                            HashSet<String> value;
+                            if (pepToProt.containsKey(pep)) {
+                                value = pepToProt.get(pep);
+                            } else {
+                                value = new HashSet<String>();
+                            }
+                            value.add(protID);
+                            pepToProt.put(pep, value);
+                            start = i + 1;
+                        }
                     }
                 }
+
                 sArray = getHeaderProtein(reader);
                 header = sArray[0];
                 protein = sArray[1];
@@ -116,12 +123,12 @@ public class FastaReader {
                 ArrayList<String> value;
                 String prot = prots.iterator().next();
                 if (protToPep.containsKey(prot)) {
-                    value = protToPep.get(prot);
+                    protToPep.get(prot).peptides.add(pep);
                 } else {
-                    value = new ArrayList<String>();
+                    ProteinEntry newProt = new ProteinEntry();
+                    newProt.peptides.add(pep);
+                    protToPep.put(prot, newProt);
                 }
-                value.add(pep);
-                protToPep.put(prot, value);
             }
         } catch (IOException e) {
             e.printStackTrace();

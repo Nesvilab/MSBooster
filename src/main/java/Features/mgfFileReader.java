@@ -14,7 +14,7 @@ public class mgfFileReader implements SpectralPredictionMapper{
     //mgfFileReader can handle both single files and entire directories
 
     final ArrayList<String> filenames;
-    private HashMap<String, PredictionEntry> allPreds = new HashMap<>();
+    HashMap<String, PredictionEntry> allPreds = new HashMap<>();
     public HashMap<Integer, mzmlScanNumber> scanNumberObjects = new HashMap<>();
 
     //this version if loading pDeep3 predictions
@@ -125,7 +125,12 @@ public class mgfFileReader implements SpectralPredictionMapper{
                                 finalIntensities = newIntensities;
                             }
 
-                            allPreds.put(title, new PredictionEntry(finalMzs, finalIntensities, RT, IM));
+                            PredictionEntry newPred = new PredictionEntry();
+                            newPred.setMzs(finalMzs);
+                            newPred.setIntensities(finalIntensities);
+                            newPred.setRT(RT);
+                            newPred.setIM(IM);
+                            allPreds.put(title, newPred);
 
                             //reset for next peptide/PSM
                             mzs.clear();
@@ -253,7 +258,7 @@ public class mgfFileReader implements SpectralPredictionMapper{
         return maxRT;
     }
 
-    public void reset() {
+    public void clear() {
         allPreds.clear();
         scanNumberObjects.clear();
     }

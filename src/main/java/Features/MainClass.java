@@ -152,6 +152,9 @@ public class MainClass {
                             params.put("digestMinMass", vals[0]);
                             params.put("digestMaxMass", vals[1]);
                             break;
+                        case "database_name":
+                            params.put("fasta", val);
+                            break;
                     }
                 }
             }

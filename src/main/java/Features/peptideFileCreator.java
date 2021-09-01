@@ -112,8 +112,8 @@ public class peptideFileCreator {
         if (modelFormat.equals("DeepMSPeptideAll")) {
             //add all targets from fasta
             fasta = new FastaReader(Constants.fasta);
-            for (ArrayList<String> array : fasta.protToPep.values()) {
-                hSetHits.addAll(array);
+            for (ProteinEntry proteinEntry : fasta.protToPep.values()) {
+                hSetHits.addAll(proteinEntry.peptides);
             }
         }
 

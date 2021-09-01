@@ -24,9 +24,13 @@ public class detectMap {
     public float getDetectability(String pep) {
         //try to intelligently reformat peptide to one the Hashmap recognizes
         try {
-            return detectabilities.get(pep);
-        } catch (Exception e) {
             return detectabilities.get(pep.split("\\|")[0]);
+        } catch (Exception e) {
+            return detectabilities.get(pep);
         }
+    }
+
+    public void clear() {
+        detectabilities.clear();
     }
 }

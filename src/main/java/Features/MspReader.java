@@ -7,7 +7,7 @@ import java.util.HashMap;
 
 public class MspReader implements SpectralPredictionMapper {
     final ArrayList<String> filenames;
-    private HashMap<String, PredictionEntry> allPreds = new HashMap<>();
+    HashMap<String, PredictionEntry> allPreds = new HashMap<>();
 
     private String prositPepFormat(String pep) {
         String[] pepSplit = pep.split("/");
@@ -77,7 +77,12 @@ public class MspReader implements SpectralPredictionMapper {
                         ints[i] = Float.parseFloat(lineSplit[1]);
                     }
 
-                    allPreds.put(pep, new PredictionEntry(mzs, ints, RT, 0f));
+                    PredictionEntry newPred = new PredictionEntry();
+                    newPred.setMzs(mzs);
+                    newPred.setIntensities(ints);
+                    newPred.setRT(RT);
+                    newPred.setIM(0f);
+                    allPreds.put(pep, newPred);
                 }
             } catch (IOException e) {
                 e.printStackTrace();
@@ -97,7 +102,7 @@ public class MspReader implements SpectralPredictionMapper {
         return maxRT;
     }
 
-    public void reset() {
+    public void clear() {
         allPreds.clear();
     }
 

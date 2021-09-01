@@ -45,7 +45,7 @@ public class Constants {
     }
 
     //locations of executables and other models
-    public static Integer numThreads = 11;
+    public static Integer numThreads = 0;
     public static String DiaNN = null; //C:/DIA-NN/1.7.15beta1/DiaNN.exe
     public static final String spectraRTPredModel = "DIA-NN"; //mgf, bin, msp
                                                         //pDeep3, DIA-NN, Prosit
@@ -85,7 +85,7 @@ public class Constants {
     public static Boolean useDetect = null;
     public static final Float detectThreshold = 0.0000002f; //for detectability filtering
     public static final Float detectFractionGreaterNumerator = 1f;
-    public static final Float detectFractionGreaterDenominator = 1f; //prior
+    public static final Float detectFractionGreaterDenominator = 2f; //prior
 
     //ion mobility
     public static Boolean useIM = null;
@@ -101,7 +101,7 @@ public class Constants {
     //default auto, everything, or all? Or a combination I figure out empirically
     public static String features = "cosineSimilarity,spectralContrastAngle,euclideanDistance,brayCurtis,pearsonCorr,dotProduct," +
             "deltaRTLOESS,deltaRTLOESSnormalized,RTprobabilityUnifPrior," +
-            "detectFractionGreater,detectSubtractMissing";
+            "detectProtSpearmanDiff";
     //public static String features = "auto";
 
     //don't currently support weighted similarity features
@@ -110,11 +110,11 @@ public class Constants {
             "euclideanDistance", "brayCurtis",
             "pearsonCorr", "dotProduct",
             "deltaRTlinear", "deltaRTbins", "deltaRTLOESS", "RTzscore", "RTprobability", "RTprobabilityUnifPrior", "deltaRTLOESSnormalized",
-            "detectFractionGreater", "detectability", "detectSubtractMissing", "detectProtSpearman",
+            "detectFractionGreater", "detectability", "detectSubtractMissing", "detectProtSpearmanDiff",
             "deltaIMLOESS", "deltaIMLOESSnormalized", "IMprobabilityUnifPrior",
             "maxConsecutiveFragments"));
     public static final HashSet<String> detectFeatures =
-            new HashSet<>(Arrays.asList("detectFractionGreater", "detectability", "detectSubtractMissing", "detectProtSpearman"));
+            new HashSet<>(Arrays.asList("detectFractionGreater", "detectability", "detectSubtractMissing", "detectProtSpearmanDiff"));
     public static final HashSet<String> spectraRTFeatures = new HashSet<>(Arrays.asList(
             "cosineSimilarity", "weightedCosineSimilarity", "spectralContrastAngle", "weightedSpectralContrastAngle",
             "euclideanDistance", "weightedEuclideanDistance", "brayCurtis", "weightedBrayCurtis",

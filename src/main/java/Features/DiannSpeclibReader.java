@@ -8,7 +8,7 @@ import java.util.HashMap;
 
 public class DiannSpeclibReader implements SpectralPredictionMapper{
     final ArrayList<String> filenames;
-    private HashMap<String, PredictionEntry> allPreds = new HashMap<>();
+    HashMap<String, PredictionEntry> allPreds = new HashMap<>();
 
     //https://stackoverflow.com/questions/46163114/get-bit-values-from-byte-array
     //https://www.geeksforgeeks.org/bitwise-operators-in-java/
@@ -74,7 +74,12 @@ public class DiannSpeclibReader implements SpectralPredictionMapper{
                     }
 
                     //add to hashmap
-                    allPreds.put(mc.fullPeptide, new PredictionEntry(mzs, intensities, iRT, IM));
+                    PredictionEntry newPred = new PredictionEntry();
+                    newPred.setMzs(mzs);
+                    newPred.setIntensities(intensities);
+                    newPred.setRT(iRT);
+                    newPred.setIM(IM);
+                    allPreds.put(mc.fullPeptide, newPred);
                 }
 
                 //changing to deepccs values
@@ -111,7 +116,7 @@ public class DiannSpeclibReader implements SpectralPredictionMapper{
         return maxRT;
     }
 
-    public void reset() {
+    public void clear() {
         allPreds.clear();
     }
 

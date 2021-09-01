@@ -6,7 +6,7 @@ import java.util.HashMap;
 public interface SpectralPredictionMapper {
 
     public HashMap<String, PredictionEntry> getPreds() throws IOException;
-    public void reset();
+    public void clear();
 
     public float getMaxPredRT();
 

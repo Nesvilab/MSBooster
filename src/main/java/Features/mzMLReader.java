@@ -29,7 +29,7 @@ public class mzMLReader {
                       //similarity measures might be calculated using different weights. If you want to use different
                       //weights, just make new mzmlReader object
 
-    HashMap<Integer, mzmlScanNumber> scanNumberObjects;
+    HashMap<Integer, mzmlScanNumber> scanNumberObjects = new HashMap<>();
     List<Integer> scanNums;
     private float[] betas;
     public ArrayList<Float>[] RTbins = null;
@@ -81,8 +81,11 @@ public class mzMLReader {
         pathStr = null;
 
         Constants.useIM = true;
-        scanNumberObjects = mgf.scanNumberObjects;
-        mgf.reset();
+        //scanNumberObjects = mgf.scanNumberObjects;
+        for (Map.Entry<Integer, mzmlScanNumber> entry : mgf.scanNumberObjects.entrySet()) {
+            scanNumberObjects.put(entry.getKey(), entry.getValue());
+        }
+        mgf.clear();
 
         scanNums = new ArrayList<>(scanNumberObjects.size());
         scanNums.addAll(scanNumberObjects.keySet());
@@ -617,6 +620,13 @@ public class mzMLReader {
         long endTime = System.nanoTime();
         long duration = (endTime - startTime);
         System.out.println("Calculating deltaIMLOESS took " + duration / 1000000000 +" seconds");
+    }
+
+    public void clear() {
+        scanNumberObjects.clear();
+        scanNums.clear();
+        IMLOESS.clear();
+        peptideIMs.clear();
     }
 
     public static void main(String[] args) throws Exception {

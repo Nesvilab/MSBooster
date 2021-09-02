@@ -176,19 +176,19 @@ public class percolatorFormatter {
                 e.getValue().detects = sortedDetect;
 
                 //check which peptides present, and get spectral counts
-                float[] protPresence = new float[protDetects.length];
+                //float[] protPresence = new float[protDetects.length];
                 float[] pepCounts = new float[protDetects.length];
-                float numPresent = 1f;
+                //float numPresent = 1f;
                 for (int j = protDetects.length - 1; j > -1; j--) {
                     String currentPep = pepList.get(sortedIndices[j]);
 
                     if (pepCounter.containsKey(currentPep)) {
-                        protPresence[j] = numPresent;
-                        numPresent += 1f;
+                        //protPresence[j] = numPresent;
+                        //numPresent += 1f;
                         pepCounts[j] = pepCounter.get(currentPep);
                     }
                 }
-                fasta.protToPep.get(e.getKey()).presence = protPresence;
+                //fasta.protToPep.get(e.getKey()).presence = protPresence;
                 fasta.protToPep.get(e.getKey()).spectralCounts = pepCounts;
             }
 
@@ -476,7 +476,7 @@ public class percolatorFormatter {
                             case "detectProtSpearmanDiff":
                                 r = pin.getRow();
                                 prots = Arrays.copyOfRange(r, pin.pepIdx + 1, r.length);
-                                double maxSpearmanDiff = -2;
+                                double maxSpearmanDiff = -3;
                                 float detect = predictedSpectra.getPreds().get(pep).detectability;;
                                 for (String prot : prots) { //if more than one, this peptide is shared among proteins
                                     //skip protein if it is decoy and looking at target peptide
@@ -525,6 +525,9 @@ public class percolatorFormatter {
                                     if (spearDiff > maxSpearmanDiff) {
                                         maxSpearmanDiff = spearDiff;
                                     }
+                                }
+                                if (maxSpearmanDiff == -3) {
+                                    maxSpearmanDiff = 0;
                                 }
                                 writer.addValue("detectProtSpearmanDiff", maxSpearmanDiff);
                                 break;

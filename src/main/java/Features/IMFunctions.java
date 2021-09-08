@@ -1,9 +1,7 @@
 package Features;
 
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Comparator;
-import java.util.TreeSet;
+import java.util.*;
 import java.util.stream.IntStream;
 
 public class IMFunctions {
@@ -12,13 +10,16 @@ public class IMFunctions {
     public static double[][][] getIMarrays(mzMLReader mzml, int IMregressionSize) {
         double[][][] finalIMs = new double[numCharges][2][];
 
-        ArrayList<ArrayList<Float>> expIMs = new ArrayList<ArrayList<Float>>(numCharges);
+        //ArrayList<ArrayList<Float>> expIMs = new ArrayList<ArrayList<Float>>(numCharges);
         ArrayList<ArrayList<Float>> predIMs = new ArrayList<ArrayList<Float>>(numCharges);
         ArrayList<ArrayList<Float>> eScores = new ArrayList<ArrayList<Float>>(numCharges); //for sorting
+        ArrayList<ArrayList<String>> peptides = new ArrayList<>(numCharges);
+        HashMap<String, ArrayList<Float>> IMoccurences = new HashMap<>();
         for (int i = 0; i < numCharges; i++) {
-            expIMs.add(new ArrayList<>());
+            //expIMs.add(new ArrayList<>());
             predIMs.add(new ArrayList<>());
             eScores.add(new ArrayList<>());
+            peptides.add(new ArrayList<>());
         }
 
         //collect RTs and escores
@@ -34,9 +35,21 @@ public class IMFunctions {
                 if (e > Constants.IMescoreCutoff) {
                     break;
                 }
-                expIMs.get(charge).add(im);
+                //use this if using experimental IM straight up
+                //expIMs.get(charge).add(im);
+
+                //use this if using some summary of all occurences of peptide
+                if (! IMoccurences.containsKey(pep.name)) {
+                    ArrayList<Float> arrayList = new ArrayList<>();
+                    arrayList.add(im);
+                    IMoccurences.put(pep.name, arrayList);
+                } else {
+                    IMoccurences.get(pep.name).add(im);
+                }
+
                 predIMs.get(charge).add(pep.IM);
                 eScores.get(charge).add(e);
+                peptides.get(charge).add(pep.name);
             }
         }
 
@@ -48,53 +61,42 @@ public class IMFunctions {
         //if negative, use all
         //can consider e score cutoff in constants
         for (int c = 0; c < numCharges; c++) {
-            int sizeLimit = expIMs.get(c).size();
+            int sizeLimit = predIMs.get(c).size();
             if (sizeLimit == 0) { //no PSMs with this charge
                 continue;
             }
 
-            if (IMregressionSize > 0 && IMregressionSize <= sizeLimit) {
-                //get top e score PSMs
-                int[] sortedIndices = IntStream.range(0, eScores.get(c).size())
-                        .boxed().sorted(Comparator.comparing(eScores.get(c)::get))
-                        .mapToInt(ele -> ele).toArray();
+            int imSize = Math.min(sizeLimit, IMregressionSize);
+            //get top e score PSMs
+            int[] sortedIndices = IntStream.range(0, eScores.get(c).size())
+                    .boxed().sorted(Comparator.comparing(eScores.get(c)::get))
+                    .mapToInt(ele -> ele).toArray();
 
-                double[][] IMs = new double[2][IMregressionSize];
-                for (int i = 0; i < IMregressionSize; i++) {
-                    int idx = sortedIndices[i];
-                    IMs[0][i] = expIMs.get(c).get(idx);
-                    IMs[1][i] = predIMs.get(c).get(idx);
-                }
+            double[][] IMs = new double[2][imSize];
+            for (int i = 0; i < imSize; i++) {
+                int idx = sortedIndices[i];
+                //use this if using experimental IM straight up
+                //IMs[0][i] = expIMs.get(c).get(idx);
 
-                //sort by experimental IM
-                int[] sortedIndices2 = IntStream.range(0, IMregressionSize)
-                        .boxed().sorted(Comparator.comparingDouble(k -> IMs[0][k]))
-                        .mapToInt(ele -> ele).toArray();
+                //use this if using some summary of all occurences of peptide
+                IMs[0][i] = StatMethods.median(IMoccurences.get(peptides.get(c).get(idx)));
 
-                double[][] IMs2 = new double[2][IMregressionSize];
-                for (int i = 0; i < IMregressionSize; i++) {
-                    int idx = sortedIndices2[i];
-                    IMs2[0][i] = IMs[0][idx];
-                    IMs2[1][i] = IMs[1][idx];
-                }
-
-                 finalIMs[c] = IMs2;
-
-            } else {
-                //sort by experimental IM
-                int[] sortedIndices = IntStream.range(0, expIMs.get(c).size())
-                        .boxed().sorted(Comparator.comparing(expIMs.get(c)::get))
-                        .mapToInt(ele -> ele).toArray();
-
-                double[][] IMs = new double[2][sizeLimit];
-                for (int i = 0; i < sizeLimit; i++) {
-                    int idx = sortedIndices[i];
-                    IMs[0][i] = expIMs.get(c).get(idx);
-                    IMs[1][i] = predIMs.get(c).get(idx);
-                }
-
-                finalIMs[c] = IMs;
+                IMs[1][i] = predIMs.get(c).get(idx);
             }
+
+            //sort by experimental IM
+            int[] sortedIndices2 = IntStream.range(0, imSize)
+                    .boxed().sorted(Comparator.comparingDouble(k -> IMs[0][k]))
+                    .mapToInt(ele -> ele).toArray();
+
+            double[][] IMs2 = new double[2][imSize];
+            for (int i = 0; i < imSize; i++) {
+                int idx = sortedIndices2[i];
+                IMs2[0][i] = IMs[0][idx];
+                IMs2[1][i] = IMs[1][idx];
+            }
+
+             finalIMs[c] = IMs2;
         }
 
         return finalIMs;

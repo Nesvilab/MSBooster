@@ -89,7 +89,7 @@ public class Constants {
 
     //ion mobility
     public static Boolean useIM = null;
-    public static Integer IMregressionSize = 2500;
+    public static Integer IMregressionSize = 5000;
     public static Float IMescoreCutoff = (float) Math.pow(10, -3.5);
     public static Integer IMbinMultiplier = 100;
     public static final Float IMIQR = 50f;

@@ -299,7 +299,8 @@ public class MainClass {
 
         //if detectFractionGreater, need fasta
         boolean createDetectAllPredFile = false;
-        if (featureLL.contains("detectFractionGreater") || featureLL.contains("detectSubtractMissing") || autoFeatures) {
+        if (featureLL.contains("detectFractionGreater") || featureLL.contains("detectSubtractMissing") || autoFeatures ||
+                featureLL.contains("detectProtSpearmanDiff")) {
             if (Constants.fasta == null) {
                 throw new IllegalArgumentException("Using current combination of features, " +
                         "detectFractionGreater is calculated and needs a fasta provided using " +

@@ -18,8 +18,8 @@ public class mzmlScanNumber {
     //final String mzmlPath;
     private float[] expMZs; //made private so don't accidentally access it, given that it may change
     private float[] expIntensities;
-    public float[] OGexpMZs;
-    public float[] OGexpIntensities;
+//    public float[] OGexpMZs;
+//    public float[] OGexpIntensities;
     float RT;
     int RTbinSize;
     float normalizedRT;
@@ -46,12 +46,12 @@ public class mzmlScanNumber {
         ISpectrum spectrum = scan.fetchSpectrum();
         this.expMZs = doubleToFloat(spectrum.getMZs());
         this.expIntensities = doubleToFloat(spectrum.getIntensities());
-        this.OGexpMZs = new float[expMZs.length];
-        this.OGexpIntensities = new float[expIntensities.length];
-        for (int i = 0; i < expMZs.length; i++) { //for maxConsecutive score
-            OGexpMZs[i] = expMZs[i];
-            OGexpIntensities[i] = expIntensities[i];
-        }
+//        this.OGexpMZs = new float[expMZs.length];
+//        this.OGexpIntensities = new float[expIntensities.length];
+//        for (int i = 0; i < expMZs.length; i++) { //for maxConsecutive score
+//            OGexpMZs[i] = expMZs[i];
+//            OGexpIntensities[i] = expIntensities[i];
+//        }
         this.RT = scan.getRt().floatValue();
         if (Constants.useIM) {
             this.IM = scan.getIm().floatValue();
@@ -62,12 +62,12 @@ public class mzmlScanNumber {
         this.scanNum = scanNum;
         this.expMZs = expMZs;
         this.expIntensities = expInts;
-        this.OGexpMZs = new float[expMZs.length];
-        this.OGexpIntensities = new float[expIntensities.length];
-        for (int i = 0; i < expMZs.length; i++) { //for maxConsecutive score
-            OGexpMZs[i] = expMZs[i];
-            OGexpIntensities[i] = expIntensities[i];
-        }
+//        this.OGexpMZs = new float[expMZs.length];
+//        this.OGexpIntensities = new float[expIntensities.length];
+//        for (int i = 0; i < expMZs.length; i++) { //for maxConsecutive score
+//            OGexpMZs[i] = expMZs[i];
+//            OGexpIntensities[i] = expIntensities[i];
+//        }
         this.RT = RT;
         this.IM = IM;
     }
@@ -75,12 +75,12 @@ public class mzmlScanNumber {
         this.scanNum = scanNum;
         this.expMZs = expMZs;
         this.expIntensities = expInts;
-        this.OGexpMZs = new float[expMZs.length];
-        this.OGexpIntensities = new float[expIntensities.length];
-        for (int i = 0; i < expMZs.length; i++) { //for maxConsecutive score
-            OGexpMZs[i] = expMZs[i];
-            OGexpIntensities[i] = expIntensities[i];
-        }
+//        this.OGexpMZs = new float[expMZs.length];
+//        this.OGexpIntensities = new float[expIntensities.length];
+//        for (int i = 0; i < expMZs.length; i++) { //for maxConsecutive score
+//            OGexpMZs[i] = expMZs[i];
+//            OGexpIntensities[i] = expIntensities[i];
+//        }
         this.RT = RT;
     }
 

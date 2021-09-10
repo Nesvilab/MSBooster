@@ -275,9 +275,9 @@ public class MainClass {
                     Set<String> intersection = new HashSet<String>(featureLL);
                     intersection.retainAll(Constants.imFeatures);
                     if (intersection.size() == 0) {
-                        //featureLL.add("deltaIMLOESS");
+                        featureLL.add("deltaIMLOESS");
                         featureLL.add("deltaIMLOESSnormalized");
-                        //featureLL.add("IMprobabilityUnifPrior");
+                        featureLL.add("IMprobabilityUnifPrior");
                     }
                 } else {
                     for (String feature : Constants.imFeatures) {

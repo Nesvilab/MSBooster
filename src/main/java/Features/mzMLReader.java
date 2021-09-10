@@ -71,7 +71,7 @@ public class mzMLReader {
         // obtained from disk automatically. And because of Soft referencing, the GC
         // will be able to reclaim it.
         scans.loadData(LCMSDataSubset.MS2_WITH_SPECTRA);
-        Constants.useIM = false;
+        //Constants.useIM = false;
         scanNumberObjects = new HashMap<>(scans.getScanCount());
         createScanNumObjects(); //seems like we always need this anyway
 
@@ -83,7 +83,7 @@ public class mzMLReader {
     public mzMLReader(mgfFileReader mgf) throws FileParsingException, ExecutionException, InterruptedException { //uncalibrated mgf from MSFragger .d search
         pathStr = null;
 
-        Constants.useIM = true;
+        //Constants.useIM = true;
         //scanNumberObjects = mgf.scanNumberObjects;
         for (Map.Entry<Integer, mzmlScanNumber> entry : mgf.scanNumberObjects.entrySet()) {
             scanNumberObjects.put(entry.getKey(), entry.getValue());

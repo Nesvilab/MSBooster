@@ -18,6 +18,7 @@ public class mgfFileReader implements SpectralPredictionMapper{
     public HashMap<Integer, mzmlScanNumber> scanNumberObjects = new HashMap<>();
 
     //this version if loading pDeep3 predictions
+    //TODO: are different constructors doing similar things?
     public mgfFileReader(String files) throws IOException {
         File predsDirectory = new File(files);
         String[] predsFiles = predsDirectory.list();

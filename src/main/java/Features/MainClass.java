@@ -95,7 +95,13 @@ public class MainClass {
                 System.exit(0);
             }
             i++;
-            params.put(key, args[i]);
+            StringBuilder sb = new StringBuilder(args[i]);
+            while ((! args[i + 1].startsWith("--")) && (i + 1) < args.length) {
+                i++;
+                sb.append(" ");
+                sb.append(args[i]);
+            }
+            params.put(key, sb.toString());
         }
 
         //adding to constants class

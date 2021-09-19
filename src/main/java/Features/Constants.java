@@ -73,7 +73,7 @@ public class Constants {
     public static Boolean useRT = null;
     public static Integer RTregressionSize = 5000;
     public static Double uniformPriorPercentile = 10d;
-    public static Float RTescoreCutoff = (float) Math.pow(10, -3.5); //PSMs with e score higher than this won't make it into RT linear regression modeling
+    public static Float RTescoreCutoff = (float) Math.pow(10, -3.5); //PSMs with e score higher than this won't make it into RT regression modeling
     public static final Integer RTbinMultiplier = 1;
     public static final Float RTIQR = 50f;
 
@@ -129,6 +129,25 @@ public class Constants {
             "deltaRTLOESSnormalized"));
     public static final HashSet<String> imFeatures =
             new HashSet<>(Arrays.asList("deltaIMLOESS", "deltaIMLOESSnormalized", "IMprobabilityUnifPrior"));
+
+    public static final HashMap<String, String> camelToUnderscore = makeCamelToUnderscore();
+    private static HashMap<String, String> makeCamelToUnderscore() {
+        HashMap<String, String> map = new HashMap<>();
+        map.put("cosineSimilarity", "cosine_similarity");
+        map.put("spectralContrastAngle", "spectral_contrast_angle");
+        map.put("euclideanDistance", "euclidean_distance");
+        map.put("brayCurtis", "bray_curtis");
+        map.put("pearsonCorr", "pearson_corr");
+        map.put("dotProduct", "dot_product");
+        map.put("deltaRTLOESS", "delta_RT_loess");
+        map.put("deltaRTLOESSnormalized", "delta_RT_loess_normalized");
+        map.put("RTprobabilityUnifPrior", "RT_probability_unif_prior");
+        map.put("deltaIMLOESS", "delta_IM_loess");
+        map.put("deltaIMLOESSnormalized", "delta_IM_loess_normalized");
+        map.put("IMprobabilityUnifPrior", "IM_probability_unif_prior");
+        map.put("detectProtSpearmanDiff", "detect_prot_spearman_diff");
+        return map;
+    }
     ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
     //Handling PTMs
 

@@ -13,6 +13,8 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.stream.IntStream;
 
+import static Features.Constants.camelToUnderscore;
+
 public class percolatorFormatter {
 
     public static String percolatorPepFormat(String[] columns, int pepIdx, int specIDidx) {
@@ -221,7 +223,7 @@ public class percolatorFormatter {
                 mzMLReader mzml;
                 if (mzmlFiles[i].getName().substring( mzmlFiles[i].getName().length() - 3).toLowerCase().equals("mgf")) {
                     //mzml = new mzMLReader(new mgfFileReader(mzmlFiles[i].getCanonicalPath()));
-                    mzml = new mzMLReader(new mgfFileReader(mzmlFiles[i].getCanonicalPath(), true));
+                    mzml = new mzMLReader(new mgfFileReader(mzmlFiles[i].getCanonicalPath(), true, executorService));
                 } else {
                     mzml = new mzMLReader(mzmlFiles[i].getCanonicalPath());
                 }
@@ -238,8 +240,15 @@ public class percolatorFormatter {
                 //add header to written tsv
                 ArrayList<String> newHeader = new ArrayList<>();
                 newHeader.addAll(Arrays.asList(pin.header));
-                newHeader.addAll(pin.pepIdx, featuresList); //add features before Peptide
+                    //replace column names
+                ArrayList<String> newNames = new ArrayList<>(featuresList.size());
+                for (String s : featuresList) {
+                    String newName = camelToUnderscore.get(s);
+                    newNames.add(newName);
+                }
+                newHeader.addAll(pin.pepIdx, newNames); //add features before Peptide
                 newHeader.remove("detectability");
+                //TODO: change header
                 writer.writeHeaders(newHeader);
 
                 //Special preparations dependent on features we require
@@ -420,7 +429,7 @@ public class percolatorFormatter {
                                         maxFraction = fraction;
                                     }
                                 }
-                                writer.addValue("detectFractionGreater", maxFraction);
+                                writer.addValue("detect_fraction_greater", maxFraction);
                                 break;
                             case "detectSubtractMissing":
                                 d = predictedSpectra.getPreds().get(pep).detectability;
@@ -471,7 +480,7 @@ public class percolatorFormatter {
                                         break;
                                     }
                                 }
-                                writer.addValue("detectSubtractMissing", minDiff);
+                                writer.addValue("detect_subtract_missing", minDiff);
                                 break;
                             case "detectProtSpearmanDiff":
                                 r = pin.getRow();
@@ -529,7 +538,7 @@ public class percolatorFormatter {
                                 if (maxSpearmanDiff == -3) {
                                     maxSpearmanDiff = 0;
                                 }
-                                writer.addValue("detectProtSpearmanDiff", maxSpearmanDiff);
+                                writer.addValue("detect_prot_spearman_diff", maxSpearmanDiff);
                                 break;
                             case "deltaRTlinear":
                                 writer.addValue("deltaRTlinear", pepObj.deltaRT);
@@ -538,10 +547,10 @@ public class percolatorFormatter {
                                 writer.addValue("deltaRTbins", pepObj.deltaRTbin);
                                 break;
                             case "deltaRTLOESS":
-                                writer.addValue("deltaRTLOESS", pepObj.deltaRTLOESS);
+                                writer.addValue("delta_RT_loess", pepObj.deltaRTLOESS);
                                 break;
                             case "deltaRTLOESSnormalized":
-                                writer.addValue("deltaRTLOESSnormalized", pepObj.deltaRTLOESSnormalized);
+                                writer.addValue("delta_RT_loess_normalized", pepObj.deltaRTLOESSnormalized);
                                 break;
                             case "RTzscore":
                                 writer.addValue("RTzscore", pepObj.RTzscore);
@@ -552,36 +561,36 @@ public class percolatorFormatter {
                             case "RTprobabilityUnifPrior":
                                 float prob = StatMethods.probabilityWithUniformPrior(unifPriorSize, unifProb,
                                         pepObj.scanNumObj.RTbinSize, (float) pepObj.RTprob);
-                                writer.addValue("RTprobabilityUnifPrior", prob);
+                                writer.addValue("RT_probability_unif_prior", prob);
                                 break;
                             case "brayCurtis":
-                                writer.addValue("brayCurtis", pepObj.spectralSimObj.brayCurtis());
+                                writer.addValue("bray_curtis", pepObj.spectralSimObj.brayCurtis());
                                 break;
                             case "cosineSimilarity":
-                                writer.addValue("cosineSimilarity", pepObj.spectralSimObj.cosineSimilarity());
+                                writer.addValue("cosine_similarity", pepObj.spectralSimObj.cosineSimilarity());
                                 break;
                             case "spectralContrastAngle":
-                                writer.addValue("spectralContrastAngle", pepObj.spectralSimObj.spectralContrastAngle());
+                                writer.addValue("spectral_contrast_angle", pepObj.spectralSimObj.spectralContrastAngle());
                                 break;
                             case "euclideanDistance":
-                                writer.addValue("euclideanDistance", pepObj.spectralSimObj.euclideanDistance());
+                                writer.addValue("euclidean_distance", pepObj.spectralSimObj.euclideanDistance());
                                 break;
                             case "pearsonCorr":
-                                writer.addValue("pearsonCorr", pepObj.spectralSimObj.pearsonCorr());
+                                writer.addValue("pearson_corr", pepObj.spectralSimObj.pearsonCorr());
                                 break;
                             case "dotProduct":
-                                writer.addValue("dotProduct", pepObj.spectralSimObj.dotProduct());
+                                writer.addValue("dot_product", pepObj.spectralSimObj.dotProduct());
                                 break;
                             case "deltaIMLOESS":
-                                writer.addValue("deltaIMLOESS", pepObj.deltaIMLOESS);
+                                writer.addValue("delta_IM_loess", pepObj.deltaIMLOESS);
                                 break;
                             case "deltaIMLOESSnormalized":
-                                writer.addValue("deltaIMLOESSnormalized", pepObj.deltaIMLOESSnormalized);
+                                writer.addValue("delta_IM_loess_normalized", pepObj.deltaIMLOESSnormalized);
                                 break;
                             case "IMprobabilityUnifPrior":
                                 prob = StatMethods.probabilityWithUniformPrior(unifPriorSizeIM[pepObj.charge - 1], unifProbIM[pepObj.charge - 1],
                                         pepObj.scanNumObj.IMbinSize, (float) pepObj.IMprob);
-                                writer.addValue("IMprobabilityUnifPrior", prob);
+                                writer.addValue("IM_probability_unif_prior", prob);
                                 break;
                             case "maxConsecutiveFragments":
                                 MassCalculator mc = new MassCalculator(pep);

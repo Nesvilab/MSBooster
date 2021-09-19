@@ -9,15 +9,12 @@ import umich.ms.datatypes.scancollection.impl.ScanCollectionDefault;
 import umich.ms.fileio.exceptions.FileParsingException;
 import umich.ms.fileio.filetypes.mzml.MZMLFile;
 
-import java.io.BufferedWriter;
-import java.io.FileWriter;
 import java.io.IOException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.*;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 
 import static Features.StatMethods.LOESS;
@@ -71,7 +68,7 @@ public class mzMLReader {
         // obtained from disk automatically. And because of Soft referencing, the GC
         // will be able to reclaim it.
         scans.loadData(LCMSDataSubset.MS2_WITH_SPECTRA);
-        //Constants.useIM = false;
+        Constants.useIM = false;
         scanNumberObjects = new HashMap<>(scans.getScanCount());
         createScanNumObjects(); //seems like we always need this anyway
 
@@ -83,7 +80,7 @@ public class mzMLReader {
     public mzMLReader(mgfFileReader mgf) throws FileParsingException, ExecutionException, InterruptedException { //uncalibrated mgf from MSFragger .d search
         pathStr = null;
 
-        //Constants.useIM = true;
+        Constants.useIM = true;
         //scanNumberObjects = mgf.scanNumberObjects;
         for (Map.Entry<Integer, mzmlScanNumber> entry : mgf.scanNumberObjects.entrySet()) {
             scanNumberObjects.put(entry.getKey(), entry.getValue());
@@ -633,67 +630,94 @@ public class mzMLReader {
     }
 
     public static void main(String[] args) throws Exception {
+        //code below to get num ms2 scans
+//        String[] directories = new String[] {"narrowYeast", "wideYeast", "narrowWindow", "wideWindow", "ccrcc_dia_20", "PXD022992_DIA_Melanoma"};
+//        for (String s : directories) {
+//            File folder = new File("C:/Users/yangkl/OneDriveUmich/proteomics/mzml/" + s);
+//            File[] listOfFiles = folder.listFiles();
+//            int scans = 0;
+//            for (File f : listOfFiles) {
+//                //mzMLReader mzml = new mzMLReader(f.getCanonicalPath());
+//                mzMLReader mzml = new mzMLReader(f.getCanonicalPath());
+//                scans += mzml.scanNumberObjects.size();
+//            }
+//            System.out.println(scans);
+//        }
+
+        //code below to get num ms2 scans
+//        File folder = new File("C:/Users/yangkl/OneDriveUmich/proteomics/mzml/");
+//        File[] listOfFiles = folder.listFiles();
+//        int scans = 0;
+//        for (File f : listOfFiles) {
+//            if (f.getName().contains(".mgf")) {
+//                mzMLReader mzml = new mzMLReader(new mgfFileReader(f.getCanonicalPath(), true));
+//                scans += mzml.scanNumberObjects.size();
+//            }
+//        }
+//        System.out.println(scans);
+
+
         //code below generates files for analysis/data exploration in jupyter notebook
 //        mzMLReader mzml = new mzMLReader("C:/Users/yangkl/OneDriveUmich/proteomics/mzml/wideWindow/" +
 //                "23aug2017_hela_serum_timecourse_pool_wide_001.mzML");
-        System.out.println("Reading mgf and mzml");
-        mzMLReader mzml = new mzMLReader(new mgfFileReader("C:/Users/yangkl/OneDriveUmich/proteomics/mzml/" +
-                "20180819_TIMS2_12-2_AnBr_SA_200ng_HeLa_50cm_120min_100ms_11CT_1_A1_01_2767_uncalibrated.mgf", true));
-        System.out.println("Loading predictions");
-        SpectralPredictionMapper spm = new DiannSpeclibReader("C:/Users/yangkl/Downloads/proteomics/timstof/spectraRT.predicted.bin");
-        System.out.println("Loading pin");
-        pinReader pin = new pinReader("C:/Users/yangkl/Downloads/proteomics/timstof/original/" +
-                "20180819_TIMS2_12-2_AnBr_SA_200ng_HeLa_50cm_120min_100ms_11CT_1_A1_01_2767.pin");
-        System.out.println("Setting pin");
-        mzml.setPinEntries(pin, spm);
-        mzml.setBetas(spm, 5000);
-        Constants.numThreads = 11;
-        ExecutorService executorService = Executors.newFixedThreadPool(Constants.numThreads);
-        mzml.setLOESS(Constants.RTregressionSize, Constants.bandwidth, Constants.robustIters, "RT");
-        mzml.predictRTLOESS(executorService);
-        mzml.setLOESS(Constants.IMregressionSize, Constants.bandwidth, Constants.robustIters, "IM");
-        mzml.predictIMLOESS(executorService);
-        executorService.shutdown();
-        BufferedWriter writer = new BufferedWriter(new FileWriter("C:/Users/yangkl/OneDriveUmich/proteomics/figures/IManalysis.tsv"));
-        writer.write("td" + "\t" + "escore" + "\t" + "scanNum" + "\t" + "rank" + "\t" + "charge" + "\t" + "expRT" + "\t" + "predRT" + "\t" +
-                "expIM" + "\t" + "predIM" + "\t" + "calibratedIM" + "\t" + "peptide" + "\n");
-        for (mzmlScanNumber msn : mzml.scanNumberObjects.values()) {
-            if (msn.peptideObjects.size() == 0) {
-                continue;
-            }
-            for (peptideObj pObj : msn.peptideObjects) {
-                int td = pObj.targetORdecoy;
-                String escore = pObj.escore;
-                int scanNum = pObj.scanNum;
-                int rank = pObj.rank;
-                int charge = Integer.parseInt(pObj.name.split("\\|")[2]);
-                float expRT = msn.RT;
-                float predRT = pObj.RT;
-                Float expIM = msn.IM;
-                Float predIM = pObj.IM;
-                double calibratedIM = mzml.IMLOESS.get(charge - 1).invoke((double) expIM);
-                //double deltaIMloess = pObj.deltaIMLOESS;
-                String pep = pObj.name;
-                //double mass = mzml.scans.getScanByNum(msn.scanNum).getPrecursor().getMzTargetMono(); //comment out scans.reset() in createScanNumObjects
-//                writer.write(expIM + "\t" + predIM + "\t" + td + "\t" + escore + "\t" + scanNum + "\t" + charge + "\t"
-//                        + expRT + "\t" + predRT + "\t" + deltaIMloess + "\t" + pep + "\t" + mass + "\n");
-                writer.write(td + "\t" + escore + "\t" + scanNum + "\t" + rank + "\t" + charge + "\t" + expRT + "\t" + predRT + "\t" +
-                        expIM + "\t" + predIM + "\t" + calibratedIM + "\t" + pep + "\n");
-            }
-        }
-        writer.close();
-
-        //plot points of loess
-        for (int i = 1; i < 6; i++) {
-            writer = new BufferedWriter(new FileWriter("C:/Users/yangkl/OneDriveUmich/proteomics/figures/IM" + i + ".tsv"));
-            Function1<Double, Double> loess = mzml.IMLOESS.get(i - 1);
-            double exp = 0.679;
-            while (exp < 1.488) {
-                writer.write(exp + "\t" + loess.invoke(exp) + "\n");
-                exp += 0.001;
-            }
-            writer.close();
-        }
+//        System.out.println("Reading mgf and mzml");
+//        mzMLReader mzml = new mzMLReader(new mgfFileReader("C:/Users/yangkl/OneDriveUmich/proteomics/mzml/" +
+//                "20180819_TIMS2_12-2_AnBr_SA_200ng_HeLa_50cm_120min_100ms_11CT_1_A1_01_2767_uncalibrated.mgf", true));
+//        System.out.println("Loading predictions");
+//        SpectralPredictionMapper spm = new DiannSpeclibReader("C:/Users/yangkl/Downloads/proteomics/timstof/spectraRT.predicted.bin");
+//        System.out.println("Loading pin");
+//        pinReader pin = new pinReader("C:/Users/yangkl/Downloads/proteomics/timstof/original/" +
+//                "20180819_TIMS2_12-2_AnBr_SA_200ng_HeLa_50cm_120min_100ms_11CT_1_A1_01_2767.pin");
+//        System.out.println("Setting pin");
+//        mzml.setPinEntries(pin, spm);
+//        mzml.setBetas(spm, 5000);
+//        Constants.numThreads = 11;
+//        ExecutorService executorService = Executors.newFixedThreadPool(Constants.numThreads);
+//        mzml.setLOESS(Constants.RTregressionSize, Constants.bandwidth, Constants.robustIters, "RT");
+//        mzml.predictRTLOESS(executorService);
+//        mzml.setLOESS(Constants.IMregressionSize, Constants.bandwidth, Constants.robustIters, "IM");
+//        mzml.predictIMLOESS(executorService);
+//        executorService.shutdown();
+//        BufferedWriter writer = new BufferedWriter(new FileWriter("C:/Users/yangkl/OneDriveUmich/proteomics/figures/IManalysis.tsv"));
+//        writer.write("td" + "\t" + "escore" + "\t" + "scanNum" + "\t" + "rank" + "\t" + "charge" + "\t" + "expRT" + "\t" + "predRT" + "\t" +
+//                "expIM" + "\t" + "predIM" + "\t" + "calibratedIM" + "\t" + "peptide" + "\n");
+//        for (mzmlScanNumber msn : mzml.scanNumberObjects.values()) {
+//            if (msn.peptideObjects.size() == 0) {
+//                continue;
+//            }
+//            for (peptideObj pObj : msn.peptideObjects) {
+//                int td = pObj.targetORdecoy;
+//                String escore = pObj.escore;
+//                int scanNum = pObj.scanNum;
+//                int rank = pObj.rank;
+//                int charge = Integer.parseInt(pObj.name.split("\\|")[2]);
+//                float expRT = msn.RT;
+//                float predRT = pObj.RT;
+//                Float expIM = msn.IM;
+//                Float predIM = pObj.IM;
+//                double calibratedIM = mzml.IMLOESS.get(charge - 1).invoke((double) expIM);
+//                //double deltaIMloess = pObj.deltaIMLOESS;
+//                String pep = pObj.name;
+//                //double mass = mzml.scans.getScanByNum(msn.scanNum).getPrecursor().getMzTargetMono(); //comment out scans.reset() in createScanNumObjects
+////                writer.write(expIM + "\t" + predIM + "\t" + td + "\t" + escore + "\t" + scanNum + "\t" + charge + "\t"
+////                        + expRT + "\t" + predRT + "\t" + deltaIMloess + "\t" + pep + "\t" + mass + "\n");
+//                writer.write(td + "\t" + escore + "\t" + scanNum + "\t" + rank + "\t" + charge + "\t" + expRT + "\t" + predRT + "\t" +
+//                        expIM + "\t" + predIM + "\t" + calibratedIM + "\t" + pep + "\n");
+//            }
+//        }
+//        writer.close();
+//
+//        //plot points of loess
+//        for (int i = 1; i < 6; i++) {
+//            writer = new BufferedWriter(new FileWriter("C:/Users/yangkl/OneDriveUmich/proteomics/figures/IM" + i + ".tsv"));
+//            Function1<Double, Double> loess = mzml.IMLOESS.get(i - 1);
+//            double exp = 0.679;
+//            while (exp < 1.488) {
+//                writer.write(exp + "\t" + loess.invoke(exp) + "\n");
+//                exp += 0.001;
+//            }
+//            writer.close();
+//        }
 
 //        writer = new BufferedWriter(new FileWriter("C:/Users/yangkl/OneDriveUmich/proteomics/figures/RTLOESSanalysis.tsv"));
 //        double exp = 0;

@@ -2,80 +2,72 @@ package Features;
 
 import java.io.File;
 import java.io.IOException;
-import java.util.Arrays;
+import java.util.ArrayList;
 import java.util.Collection;
-import java.util.HashSet;
+import java.util.HashMap;
 
 import static org.apache.commons.io.FileUtils.listFiles;
 
-//TODO: if only running through percolator in the end, need to support merging of pin files into 1. How to address that with mzml files?
 public class PinMzmlMatcher {
     public File[] mzmlFiles;
     public File[] pinFiles;
-    public File mzmlDirectory;
-    public File pinDirectory;
 
-    //TODO: maybe just load pin files into pinReader array. Can do the same with mzml, if multithreading. Or just combine pin files at end
-    //TODO: if just 1 pin/mzml, automatically load and store
     public PinMzmlMatcher(String mzmlDirectory, String pinDirectory) throws IOException {
-
-        //get names of mzml files
-        //check if file or directory
-        if (mzmlDirectory.substring(mzmlDirectory.length() - 4).toLowerCase().equals("mzml") ||
-                mzmlDirectory.substring(mzmlDirectory.length() - 3).toLowerCase().equals("mgf")) {
-            mzmlFiles = new File[]{new File(mzmlDirectory)};
-            this.mzmlDirectory = new File(mzmlFiles[0].getAbsoluteFile().getParent());
-        } else {
-            this.mzmlDirectory = new File(mzmlDirectory);
-            Collection<File> mzmlFilesCollection = listFiles(this.mzmlDirectory, new String[]{"mzML"}, false);
-            if (mzmlFilesCollection.size() == 0) { //using mgf instead of mzml ?
-                mzmlFilesCollection = listFiles(this.mzmlDirectory, new String[]{"mgf"}, false);
-                for (File f : mzmlFilesCollection) {
-                    String name = f.getName();
-                    if (! name.substring(name.length() - 16).equals("uncalibrated.mgf")) {
-                        mzmlFilesCollection.remove(f);
-                    }
+        //get pin files
+        String[] allPinDirectories = pinDirectory.split(" ");
+        ArrayList<String> pinFileList = new ArrayList<>();
+        for (String directory : allPinDirectories) {
+            if (directory.substring(directory.length() - 3).toLowerCase().equals("pin")) { //single file
+                pinFileList.add(directory);
+            } else { //directory, but not recursive
+                Collection<File> pinFilesCollection = listFiles(new File(pinDirectory), new String[]{"pin"}, false);
+                for (File file : pinFilesCollection) {
+                    pinFileList.add(file.getCanonicalPath());
                 }
             }
-
-            mzmlFiles = new File[mzmlFilesCollection.size()];
-            int FileIdx = 0;
-            for (File f : mzmlFilesCollection) {
-                mzmlFiles[FileIdx] = f;
-                FileIdx++;
-            }
-            Arrays.sort(mzmlFiles);
         }
 
-        //check that corresponding pin files exist
-        if (pinDirectory.substring(pinDirectory.length() - 3).toLowerCase().equals("pin")) {
-            //check that only one mzml file provided
-            if (mzmlFiles.length > 1) {
-                throw new IllegalArgumentException("If only one pin file provided, only one mzML file can be provided");
-            }
-
-            pinFiles = new File[]{new File(pinDirectory)};
-            this.pinDirectory = new File(pinFiles[0].getAbsoluteFile().getParent());
-        } else {
-            this.pinDirectory = new File(pinDirectory);
-            Collection<File> pinFilesCollection = listFiles(this.pinDirectory, new String[]{"pin"}, false);
-            HashSet<String> pinFilesSet = new HashSet<String>();
-            for (File f : pinFilesCollection) {
-                pinFilesSet.add(f.getName());
-            }
-
-            pinFiles = new File[mzmlFiles.length];
-            for (int i = 0; i < mzmlFiles.length; i++) {
-                String name = mzmlFiles[i].getName();
-                name = name.substring(0, name.length() - 4) + "pin";
-                if (!pinFilesSet.contains(name)) {
-                    name = mzmlFiles[i].getName().substring(0, name.length() - 16) + ".pin";
-                    if (!pinFilesSet.contains(name)) {
-                        throw new AssertionError("mzML file must have corresponding pin file. " +
-                                pinFiles[i] + " does not exist");
-                    }
+        //look for corresponding mzml files
+        String[] allMzmlDirectories = mzmlDirectory.split(" ");
+        HashMap<String, File> mzmlFileMap = new HashMap<>();
+        for (String directory : allMzmlDirectories) {
+            File f = new File(directory);
+            if (directory.substring(directory.length() - 4).toLowerCase().equals("mzml")) {
+                mzmlFileMap.put(f.getName().substring(0, f.getName().length() - 4), f);
+            } else if (directory.substring(directory.length() - 3).toLowerCase().equals("mgf")) {
+                mzmlFileMap.put(f.getName().substring(0, f.getName().length() - 3), f);
+            } else { //directory
+                Collection<File> mzmlFilesCollection = listFiles(f, new String[]{"mzML"}, false);
+                for (File file : mzmlFilesCollection) {
+                    mzmlFileMap.put(file.getName().substring(0, file.getName().length() - 4), file);
                 }
-                pinFiles[i] = new File(pinDirectory + File.separator + name);
+
+                mzmlFilesCollection = listFiles(f, new String[]{"mgf"}, false);
+                for (File file : mzmlFilesCollection) {
+                    //editing if calibrated or uncalibrated in name
+                    String mgfName = file.getName();
+                    if (mgfName.contains("_uncalibrated.mgf")) {
+                        mgfName = mgfName.substring(0, mgfName.length() - 17);
+                    } else if (mgfName.contains("_calibrated.mgf")) {
+                        mgfName = mgfName.substring(0, mgfName.length() - 15);
+                    }
+                    mzmlFileMap.put(mgfName, file);
+                }
+            }
+        }
+
+        //add files to array
+        pinFileList.sort(String::compareToIgnoreCase);
+        pinFiles = new File[pinFileList.size()];
+        mzmlFiles = new File[mzmlFileMap.size()];
+        for (int i = 0; i < pinFiles.length; i++) {
+            pinFiles[i] = new File(pinFileList.get(i));
+            String baseName = pinFiles[i].getName().substring(0, pinFiles[i].getName().length() - 4);
+            if (mzmlFileMap.containsKey(baseName)) {
+                mzmlFiles[i] = mzmlFileMap.get(baseName);
+            } else { //no matching mzml file
+                throw new IllegalArgumentException("No matching mzml/mgf file for " + baseName + ".pin, " +
+                        "please check that provided mzml directories contain proper mzml files.");
             }
         }
     }

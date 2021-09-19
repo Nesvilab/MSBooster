@@ -96,12 +96,19 @@ public class MainClass {
             }
             i++;
             StringBuilder sb = new StringBuilder(args[i]);
-            while ((! args[i + 1].startsWith("--")) && (i + 1) < args.length) {
-                i++;
-                sb.append(" ");
-                sb.append(args[i]);
+            if (i + 1 >= args.length) {
+                params.put(key, sb.toString());
+            } else {
+                while (!args[i + 1].startsWith("--")) {
+                    i++;
+                    sb.append(" ");
+                    sb.append(args[i]);
+                    if (i + 1 >= args.length) {
+                        break;
+                    }
+                }
+                params.put(key, sb.toString());
             }
-            params.put(key, sb.toString());
         }
 
         //adding to constants class

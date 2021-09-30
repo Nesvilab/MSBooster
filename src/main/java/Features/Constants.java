@@ -74,15 +74,15 @@ public class Constants {
     public static Integer RTregressionSize = 5000;
     public static Double uniformPriorPercentile = 10d;
     public static Float RTescoreCutoff = (float) Math.pow(10, -3.5); //PSMs with e score higher than this won't make it into RT regression modeling
-    public static final Integer RTbinMultiplier = 1;
-    public static final Float RTIQR = 50f;
+    public static Integer RTbinMultiplier = 1;
+    public static Float RTIQR = 50f;
 
     //LOESS
-    public static final Double bandwidth = 0.25;
+    public static Double bandwidth = 0.25;
     public static final Integer robustIters = 2;
 
     //detect
-    public static Boolean useDetect = null;
+    public static Boolean useDetect = false;
     public static final Float detectThreshold = 0.0000002f; //for detectability filtering
     public static final Float detectFractionGreaterNumerator = 1f;
     public static final Float detectFractionGreaterDenominator = 2f; //prior
@@ -105,7 +105,7 @@ public class Constants {
     //public static String features = "auto";
 
     //don't currently support weighted similarity features
-    public static final HashSet<String> allowedFeatures = new HashSet<>(Arrays.asList("all", "auto",
+    public static final HashSet<String> allowedFeatures = new HashSet<>(Arrays.asList(
             "cosineSimilarity", "spectralContrastAngle",
             "euclideanDistance", "brayCurtis",
             "pearsonCorr", "dotProduct",

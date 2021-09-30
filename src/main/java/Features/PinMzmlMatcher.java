@@ -33,13 +33,13 @@ public class PinMzmlMatcher {
         for (String directory : allMzmlDirectories) {
             File f = new File(directory);
             if (directory.substring(directory.length() - 4).toLowerCase().equals("mzml")) {
-                mzmlFileMap.put(f.getName().substring(0, f.getName().length() - 4), f);
+                mzmlFileMap.put(f.getName().substring(0, f.getName().length() - 5), f);
             } else if (directory.substring(directory.length() - 3).toLowerCase().equals("mgf")) {
-                mzmlFileMap.put(f.getName().substring(0, f.getName().length() - 3), f);
+                mzmlFileMap.put(f.getName().substring(0, f.getName().length() - 4), f);
             } else { //directory
                 Collection<File> mzmlFilesCollection = listFiles(f, new String[]{"mzML"}, false);
                 for (File file : mzmlFilesCollection) {
-                    mzmlFileMap.put(file.getName().substring(0, file.getName().length() - 4), file);
+                    mzmlFileMap.put(file.getName().substring(0, file.getName().length() - 5), file);
                 }
 
                 mzmlFilesCollection = listFiles(f, new String[]{"mgf"}, false);

@@ -64,6 +64,6 @@ public class ExternalModelCaller {
         }
         long endTime = System.nanoTime();
         long duration = (endTime - startTime);
-        System.out.println("Model running took " + duration / 1000000000 +" seconds");
+        System.out.println("Model running took " + duration / 1000000 +" milliseconds");
     }
 }

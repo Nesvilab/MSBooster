@@ -19,6 +19,7 @@ public class Constants {
     public static String mzmlDirectory = null; //C:/Users/kevin/OneDriveUmich/proteomics/mzml/cptac/
     public static String outputDirectory = null; //where to write all intermediate and final files
     public static String editedPin = null; //a prefix. Default is edited_
+    public static Integer renamePin = 1;
     public static String spectraRTPredInput = null;
     public static String detectPredInput = null;
     public static String spectraRTPredFile = null; //use this if predFile already made
@@ -174,14 +175,15 @@ public class Constants {
     //methods
     public void updatePaths() {
         if (outputDirectory == null) {
-            File newFile = new File(pinPepXMLDirectory);
+            String firstFile = pinPepXMLDirectory.split(" ")[0];
+            File newFile = new File(firstFile);
             if (newFile.isDirectory()) {
-                outputDirectory = pinPepXMLDirectory;
+                outputDirectory = firstFile;
             } else { //file
                 outputDirectory = newFile.getAbsoluteFile().getParent();
             }
         }
-        if (editedPin == null) {
+        if (editedPin == null || renamePin == 0) { //if 0, replace at end
             editedPin = outputDirectory + File.separator + "edited_";
         }
         if (spectraRTPredInput == null) {

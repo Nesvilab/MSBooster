@@ -80,7 +80,7 @@ public class mzMLReader {
     public mzMLReader(mgfFileReader mgf) throws FileParsingException, ExecutionException, InterruptedException { //uncalibrated mgf from MSFragger .d search
         pathStr = null;
 
-        Constants.useIM = true;
+        //Constants.useIM = true;
         //scanNumberObjects = mgf.scanNumberObjects;
         for (Map.Entry<Integer, mzmlScanNumber> entry : mgf.scanNumberObjects.entrySet()) {
             scanNumberObjects.put(entry.getKey(), entry.getValue());
@@ -91,17 +91,6 @@ public class mzMLReader {
         scanNums.addAll(scanNumberObjects.keySet());
         //this.getMzFreq(); only if we end up using weights
     }
-
-    //for deserialized mzmlReaders, need to reload scans
-//    public void setScans() throws FileParsingException {
-//        MZMLFile source = new MZMLFile(pathStr);
-//        scans = new ScanCollectionDefault();
-//        scans.setDefaultStorageStrategy(StorageStrategy.SOFT);
-//        scans.isAutoloadSpectra(true);
-//        scans.setDataSource(source);
-//        source.setNumThreadsForParsing(null);
-//        scans.loadData(LCMSDataSubset.MS1_WITH_SPECTRA);
-//    }
 
     //get experimental spectra
     public float[] getIntensity(int scanNum) throws FileParsingException {
@@ -498,7 +487,7 @@ public class mzMLReader {
             }
             long endTime = System.nanoTime();
             long duration = (endTime - startTime);
-            System.out.println("Calculating RT probabilities took " + duration / 1000000000 + " seconds");
+            System.out.println("Calculating RT probabilities took " + duration / 1000000 + " milliseconds");
         } else if (mode.equals("IM")) {
             KernelDensity[][] kernelDensities = new KernelDensity[IMFunctions.numCharges][];
             for (int c = 0; c < IMFunctions.numCharges; c++) {
@@ -572,7 +561,7 @@ public class mzMLReader {
         }
         long endTime = System.nanoTime();
         long duration = (endTime - startTime);
-        System.out.println("Calculating deltaRTLOESS took " + duration / 1000000000 +" seconds");
+        System.out.println("Calculating deltaRTLOESS took " + duration / 1000000 +" milliseconds");
     }
 
     public void predictIMLOESS(ExecutorService executorService) throws ExecutionException, InterruptedException {
@@ -619,7 +608,7 @@ public class mzMLReader {
         }
         long endTime = System.nanoTime();
         long duration = (endTime - startTime);
-        System.out.println("Calculating deltaIMLOESS took " + duration / 1000000000 +" seconds");
+        System.out.println("Calculating deltaIMLOESS took " + duration / 1000000 +" milliseconds");
     }
 
     public void clear() {

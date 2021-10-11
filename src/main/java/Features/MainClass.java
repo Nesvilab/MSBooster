@@ -43,8 +43,13 @@ public class MainClass {
                 System.out.println("\t--mzmlDirectory: One or more directories where mzML files are stored, " +
                         "or one or more file names. These shoudl be separated by a space. " +
                         "It is assumed that pin and mzML files have the same prefix (ex. sample1.pin and sample1.mzML)");
-                System.out.println("\t--outputDirectory: Directory to store all intermediate and final files (default: pinPepXMLDirectory)");
-                System.out.println("\t--editedPin: prefix for edited pin file (default: {outputDirectory}/edited_)");
+                System.out.println("\t--outputDirectory: Directory to store all intermediate and final files (default: pinPepXMLDirectory. " +
+                        "If multiple directories/files are provided, the first directory or folder of the file will be used.)");
+                System.out.println("\t--editedPin: prefix for edited pin file (default: {outputDirectory}/edited_). " +
+                        "If {renamePin} is not 1, this is ignored, as the edited pin file will replace the old files.");
+                System.out.println("\t--renamePin: If 1, new pin files will be produced using the {editedPin} prefix, " +
+                        "and old pin files will be kept. Otherwise, the new pin files will replace the old pin files using the same name " +
+                        "(Default = 1).");
                 System.out.println("\t--spectraRTPredInput: path to the prediction input file for DIA-NN. " +
                         "If not yet produced, it will be generated as saved with this name (default: {outputDirectory}/spectraRT.tsv)");
                 System.out.println("\t--detectPredInput: path to the detectability prediction input file (default: {outputDirectory}/detect.tsv)");
@@ -393,11 +398,6 @@ public class MainClass {
 
         c.updatePaths(); //setting null paths
 
-        //write log file
-        FileOutputStream fos = new FileOutputStream(Constants.outputDirectory + File.separator +
-                Calendar.getInstance().getTime().getTime() + "log.txt");
-        PrintStream ps = new PrintStream(fos);
-
         //generate files for prediction models
 
         //get matched pin files for mzML files
@@ -405,7 +405,6 @@ public class MainClass {
         if (createSpectraRTPredFile) {
             if (Constants.spectraRTPredModel.equals("DIA-NN")) {
                 if (Constants.DiaNN == null) {
-                    ps.println("path to DIA-NN executable must be provided");
                     throw new IllegalArgumentException("path to DIA-NN executable must be provided");
                 }
                 System.out.println("Generating input file for DIA-NN");
@@ -413,7 +412,6 @@ public class MainClass {
                 peptideFileCreator.createPeptideFile(pmMatcher.pinFiles, Constants.spectraRTPredInput, "Diann", "pin");
                 long endTime = System.nanoTime();
                 long duration = (endTime - startTime);
-                ps.println("DIANN input file generation took " + duration / 1000000000 +" seconds");
             } else if (Constants.spectraRTPredModel.equals("pDeep3")) {
                 System.out.println("Generating input file for pDeep3");
                 peptideFileCreator.createPeptideFile(pmMatcher.pinFiles, Constants.spectraRTPredInput, "pDeep3", "pin");
@@ -425,7 +423,6 @@ public class MainClass {
             Constants.setFastaReader(peptideFileCreator.createPeptideFile(pmMatcher.pinFiles, Constants.detectPredInput, "DeepMSPeptideAll", "pin"));
             long endTime = System.nanoTime();
             long duration = (endTime - startTime);
-            ps.println("DeepMSPeptide input file generation took " + duration / 1000000000 +" seconds");
         } else if (createDetectPredFile) {
             System.out.println("Generating input file for DeepMSPeptide");
             peptideFileCreator.createPeptideFile(pmMatcher.pinFiles, Constants.detectPredInput, "DeepMSPeptide", "pin");
@@ -437,24 +434,20 @@ public class MainClass {
             ExternalModelCaller.callModel(run, "DIA-NN");
             long endTime = System.nanoTime();
             long duration = (endTime - startTime);
-            ps.println("DIANN prediction took " + duration / 1000000000 +" seconds");
         }
         if ((Constants.detectPredFile == null) && (createDetectPredFile2)) {
             long startTime = System.nanoTime();
             ExternalModelCaller.callModel(run, "DeepMSPeptide");
             long endTime = System.nanoTime();
             long duration = (endTime - startTime);
-            ps.println("DeepMSPeptide prediction took " + duration / 1000000000 +" seconds");
         }
 
         //print parameters to ps
-        printParamsPS(ps);
+        printParamsPS();
 
         //create new pin file with features
         System.out.println("Generating edited pin with following features: " + Arrays.toString(featuresArray));
-        percolatorFormatter.editPin(pmMatcher, Constants.spectraRTPredFile, Constants.detectPredFile, featuresArray, Constants.editedPin, ps);
-        ps.flush();
-        ps.close();
+        percolatorFormatter.editPin(pmMatcher, Constants.spectraRTPredFile, Constants.detectPredFile, featuresArray, Constants.editedPin);
     }
 
     static private void printParams(String directory) {
@@ -477,20 +470,19 @@ public class MainClass {
         }
     }
 
-    static private void printParamsPS(PrintStream ps) {
+    static private void printParamsPS() {
         try {
-            ps.println("Final parameters used for feature annotation:");
+            System.out.println("Final parameters used for feature annotation:");
             Constants c = new Constants();
 
             Field[] f = Constants.class.getFields();
             for (Field field : f) {
                 if ((field.getModifiers() & Modifier.FINAL) != Modifier.FINAL) {
                     if (!field.getName().equals("paramsList")) {
-                        ps.println("\t" + field.getName() + " = " + field.get(c));
+                        System.out.println("\t" + field.getName() + " = " + field.get(c));
                     }
                 }
             }
-            ps.println("\n");
         } catch (Exception e) {
             System.out.println("could not write final params");
             e.getStackTrace();

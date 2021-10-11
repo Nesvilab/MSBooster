@@ -2,9 +2,11 @@ package Features;
 
 import umich.ms.fileio.exceptions.FileParsingException;
 
+import java.io.BufferedReader;
+import java.io.File;
+import java.io.FileReader;
 import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;
-import java.util.Arrays;
 import java.util.concurrent.ExecutionException;
 
 public class RandomThings {
@@ -14,8 +16,12 @@ public class RandomThings {
     }
 
     public static void main(String[] args) throws IOException, FileParsingException, NoSuchMethodException, IllegalAccessException, InvocationTargetException, InterruptedException, ExecutionException {
-        String a = "a";
-        System.out.println(Arrays.toString(a.split(" ")));
+        BufferedReader br = new BufferedReader(new FileReader(new File("C:/Users/yangkl/Downloads/proteomics/" +
+                "timstof/20180819_TIMS2_12-2_AnBr_SA_200ng_HeLa_50cm_120min_100ms_11CT_3_A1_01_2769_quant.csv")));
+        System.out.println(br.readLine());
+        System.out.println(br.readLine());
+        System.out.println(br.readLine().split(",")[11].equals(""));
+        br.close();
         //        ExecutorService executorService = Executors.newFixedThreadPool(Constants.numThreads);
 //        List<Future> futureList = new ArrayList<>(Constants.numThreads);
 //

@@ -50,6 +50,7 @@ public class MassCalculator {
         put('B', 0f);
         put('X', 0f);
     }};
+    //TODO: handling oxidation on other amino acids
     private final HashMap<String, String> unimodToMods = new HashMap<String, String>()
     {{
         put("1", "Acetyl[AnyN-term]");

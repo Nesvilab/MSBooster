@@ -331,7 +331,7 @@ public class mgfFileReader implements SpectralPredictionMapper{
         mzMLReader mzml = new mzMLReader(mgf);
         long endTime = System.nanoTime();
         long duration = (endTime - startTime);
-        System.out.println("loading took " + duration / 1000000000 +" seconds");
+        System.out.println("loading took " + duration / 1000000 +" milliseconds");
 
         mgf = new mgfFileReader("C:/Users/yangkl/OneDriveUmich/proteomics/mzml/" +
                 "20180819_TIMS2_12-2_AnBr_SA_200ng_HeLa_50cm_120min_100ms_11CT_2_A1_01_2768.mgf", true,
@@ -352,7 +352,7 @@ public class mgfFileReader implements SpectralPredictionMapper{
 
         endTime = System.nanoTime();
         duration = (endTime - startTime);
-        System.out.println("loading took " + duration / 1000000000 +" seconds");
+        System.out.println("loading took " + duration / 1000000 +" milliseconds");
         executorService.shutdown();
     }
 }

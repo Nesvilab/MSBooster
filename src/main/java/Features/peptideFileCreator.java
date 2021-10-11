@@ -110,6 +110,7 @@ public class peptideFileCreator {
         HashSet<String> hSetHits = getUniqueHits(allHits);
         FastaReader fasta = null;
         if (modelFormat.equals("DeepMSPeptideAll")) {
+            //TODO: I don't think this is needed anymore, if only using protSpearman?
             //add all targets from fasta
             fasta = new FastaReader(Constants.fasta);
             for (ProteinEntry proteinEntry : fasta.protToPep.values()) {
@@ -160,7 +161,7 @@ public class peptideFileCreator {
 
             long endTime = System.nanoTime();
             long duration = (endTime - startTime);
-            System.out.println(modelFormat + " input file generation took " + duration / 1000000000 +" seconds");
+            System.out.println(modelFormat + " input file generation took " + duration / 1000000 +" milliseconds");
             myWriter.close();
             System.out.println("Input file at  " + outfile);
 

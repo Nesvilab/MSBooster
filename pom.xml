@@ -14,13 +14,24 @@
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
 
         <ver.batmass.io>1.17.4</ver.batmass.io>
+        <lib.scope>compile</lib.scope>
     </properties>
+
+    <profiles>
+        <profile>
+            <id>fragpipe</id>
+            <properties>
+                <lib.scope>provided</lib.scope>
+            </properties>
+        </profile>
+    </profiles>
 
     <dependencies>
         <dependency>
             <groupId>com.github.chhh</groupId>
             <artifactId>batmass-io</artifactId>
             <version>${ver.batmass.io}</version>
+            <scope>${lib.scope}</scope>
             <exclusions>
                 <exclusion>
                     <groupId>org.slf4j</groupId>
@@ -32,25 +43,11 @@
                 </exclusion>
             </exclusions>
         </dependency>
-
-        <!-- To include the proteomic module -->
-<!--        <dependency>-->
-<!--            <groupId>org.expasy.mzjava</groupId>-->
-<!--            <artifactId>mzjava-proteomics</artifactId>-->
-<!--            <version>1.1.0</version>-->
-<!--        </dependency>-->
-
-        <!-- To include the hadoop proteomic module -->
-<!--        <dependency>-->
-<!--            <groupId>org.expasy.mzjava</groupId>-->
-<!--            <artifactId>mzjava-hadoop-proteomics</artifactId>-->
-<!--            <version>1.1.0</version>-->
-<!--        </dependency>-->
-
         <dependency>
             <groupId>com.github.haifengl</groupId>
             <artifactId>smile-core</artifactId>
             <version>2.6.0</version>
+            <scope>${lib.scope}</scope>
         </dependency>
         <dependency>
             <groupId>com.univocity</groupId>
@@ -136,10 +133,6 @@
     </build>
 
     <repositories>
-        <repository>
-            <id>Expasy MzJava</id>
-            <url>http://mzjava.expasy.org/maven</url>
-        </repository>
         <repository>
             <id>jitpack.io</id>
             <url>https://jitpack.io</url>

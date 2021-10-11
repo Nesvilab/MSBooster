@@ -7,7 +7,6 @@ import org.apache.commons.math3.stat.correlation.SpearmansCorrelation;
 
 import java.io.File;
 import java.io.IOException;
-import java.io.PrintStream;
 import java.util.*;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -58,6 +57,42 @@ public class percolatorFormatter {
         return pep + "|" + mods + "|" + charge;
     }
 
+    public static String ionQuantFormat(String pep, String charge) {
+        StringBuilder mods = new StringBuilder();
+
+        //n term acetylation
+        if (pep.charAt(0) == 'n') {
+            pep = pep.replace("n[42.0106]", "");
+            mods.append("0,Acetyl[AnyN-term];");
+        }
+
+        pep = pep.replace("C[57.0215]", "c");
+        pep = pep.replace("M[15.9949]", "m");
+        TreeMap<Integer, String> modsMap = new TreeMap<>();
+
+        //carbamidometylation
+        while (pep.contains("c")) {
+            int pos = pep.indexOf("c") + 1;
+            pep = pep.replaceFirst("c", "C");
+            modsMap.put(pos, ",Carbamidomethyl[C];");
+        }
+
+        //methionine oxidation
+        while (pep.contains("m")) {
+            int pos = pep.indexOf("m") + 1;
+            pep = pep.replaceFirst("m", "M");
+            modsMap.put(pos, ",Oxidation[M];");
+        }
+
+        for (Map.Entry<Integer, String> entry : modsMap.entrySet()) {
+            mods.append(entry.getKey()).append(entry.getValue());
+        }
+
+        //charge
+
+        return pep + "|" + mods + "|" + charge;
+    }
+
     //set mgf or detectFile as null if not applicable
     //baseNames is the part before mzml or pin extensions
     public static void editPin(String pinDirectory, String mzmlDirectory, String mgf, String detectFile,
@@ -66,11 +101,11 @@ public class percolatorFormatter {
 
         PinMzmlMatcher pmMatcher = new PinMzmlMatcher(mzmlDirectory, pinDirectory);
 
-        editPin(pmMatcher, mgf, detectFile, features, outfile, null);
+        editPin(pmMatcher, mgf, detectFile, features, outfile);
     }
 
     public static void editPin(PinMzmlMatcher pmMatcher, String mgf, String detectFile,
-                               String[] features, String outfile, PrintStream ps) throws IOException {
+                               String[] features, String outfile) throws IOException {
         //defining num threads, in case using this outside of jar file
         Runtime run  = Runtime.getRuntime();
         if (Constants.numThreads <= 0) {
@@ -103,9 +138,6 @@ public class percolatorFormatter {
             long endTime = System.nanoTime();
             long duration = (endTime - startTime);
             System.out.println("Spectra/RT/IM prediction loading took " + duration / 1000000 +" milliseconds");
-            if (!(ps == null)) {
-                ps.println("Spectra/RT/IM prediction loading took " + duration / 1000000000 +" seconds");
-            }
             needsMGF = true;
         }
 
@@ -206,9 +238,6 @@ public class percolatorFormatter {
         long endTime = System.nanoTime();
         long duration = (endTime - startTime);
         System.out.println("Detectability map and formatting loading took " + duration / 1000000 +" milliseconds");
-        if (!(ps == null)) {
-            ps.println("Detectability map and formatting loading took " + duration / 1000000000 +" seconds");
-        }
 
         ExecutorService executorService = Executors.newFixedThreadPool(Constants.numThreads);
         try {
@@ -224,15 +253,51 @@ public class percolatorFormatter {
                 if (mzmlFiles[i].getName().substring( mzmlFiles[i].getName().length() - 3).toLowerCase().equals("mgf")) {
                     //mzml = new mzMLReader(new mgfFileReader(mzmlFiles[i].getCanonicalPath()));
                     mzml = new mzMLReader(new mgfFileReader(mzmlFiles[i].getCanonicalPath(), true, executorService));
+                    endTime = System.nanoTime();
+                    duration = (endTime - startTime);
+                    System.out.println("mgf loading took " + duration / 1000000 +" milliseconds");
                 } else {
                     mzml = new mzMLReader(mzmlFiles[i].getCanonicalPath());
+                    endTime = System.nanoTime();
+                    duration = (endTime - startTime);
+                    System.out.println("mzML loading took " + duration / 1000000 +" milliseconds");
                 }
-                endTime = System.nanoTime();
-                duration = (endTime - startTime);
-                System.out.println("mzML loading took " + duration / 1000000000 +" seconds");
-                if (!(ps == null)) {
-                    ps.println("mzML loading took " + duration / 1000000000 +" seconds");
-                }
+
+                //proposed change to using apex IM
+                //read in ionquant file
+//                if (useIM == true) {
+//                    String ionquantFile = "C:/Users/yangkl/Downloads/proteomics/" +
+//                            "timstof/exp1/" + pinFiles[i].getName().substring(0, pinFiles[i].getName().length() - 4) + "_quant.csv";
+//                    System.out.println(ionquantFile);
+//                    BufferedReader br = new BufferedReader(new FileReader(new File(ionquantFile)));
+//                    br.readLine(); //header
+//                    String line;
+//                    String apexIM;
+//                    String peptide;
+//                    String myCharge;
+//                    HashMap<String, Float> apexIMs = new HashMap<>();
+//                    while ((line = br.readLine()) != null) { //make hashmap of peptide,IM
+//                        //check that im is not empty
+//                        peptide = line.split(",")[2];
+//                        apexIM = line.split(",")[16];
+//                        myCharge = line.split(",")[10];
+//                        if (!apexIM.equals("")) {
+//                            apexIMs.put(ionQuantFormat(peptide, myCharge), Float.parseFloat(apexIM));
+//                        }
+//                    }
+//                    br.close();
+//                    //iterate through mzmlScanNum peptide objects and change
+//                    for (mzmlScanNumber msn : mzml.scanNumberObjects.values()) {
+//                        for (peptideObj pObj : msn.peptideObjects) {
+//                            if (apexIMs.containsKey(pObj.name)) {
+//                                pObj.IM = apexIMs.get(pObj.name);
+//                            }
+//                            //else keep it the same
+//                        }
+//                    }
+//                    //clear hashmap
+//                    apexIMs.clear();
+//                }
 
                 //load pin file, which already includes all ranks
                 pinReader pin = new pinReader(pinFiles[i].getCanonicalPath());
@@ -248,7 +313,6 @@ public class percolatorFormatter {
                 }
                 newHeader.addAll(pin.pepIdx, newNames); //add features before Peptide
                 newHeader.remove("detectability");
-                //TODO: change header
                 writer.writeHeaders(newHeader);
 
                 //Special preparations dependent on features we require
@@ -259,7 +323,7 @@ public class percolatorFormatter {
                     mzml.setPinEntries(pin, predictedSpectra);
                     endTime = System.nanoTime();
                     duration = (endTime - startTime1);
-                    System.out.println("PSM loading took " + duration / 1000000000 +" seconds");
+                    System.out.println("PSM loading took " + duration / 1000000 +" milliseconds");
                     System.out.println("Done loading PSMs onto mzml object");
                 }
                 if (featuresList.contains("deltaRTLOESS") || featuresList.contains("deltaRTLOESSnormalized")) {
@@ -606,14 +670,17 @@ public class percolatorFormatter {
                 pin.close();
                 endTime = System.nanoTime();
                 duration = (endTime - startTime);
-                System.out.println("Pin editing took " + duration / 1000000000 +" seconds");
-                if (!(ps == null)) {
-                    //ps.println(totalPSMs + " PSMs");
-                    ps.println("Pin editing took " + duration / 1000000000 +" seconds");
-                }
+                System.out.println("Pin editing took " + duration / 1000000 +" milliseconds");
                 writer.close();
                 mzml.clear();
-                System.out.println("Edited pin file at " + newOutfile);
+                if (Constants.renamePin == 1) {
+                    System.out.println("Edited pin file at " + newOutfile);
+                } else { //really should be 0
+                    //move file at newOutfile to pinFiles[i] canonical name
+                    File movedFile = new File(newOutfile);
+                    pinFiles[i].delete();
+                    movedFile.renameTo(pinFiles[i]);
+                }
             }
         } catch (Exception e) {
             executorService.shutdown();
@@ -633,12 +700,12 @@ public class percolatorFormatter {
 //                ("RTprobabilityUnifPrior,deltaRTLOESS,deltaRTLOESSnormalized").split(","),
 //                "C:/Users/kevin/Downloads/proteomics/cptac/2021-2-21/pep1XML1tmp/percToPep/test_");
 
-        editPin("C:/Users/kevin/Downloads/proteomics/narrow/",
-                "C:/Users/kevin/OneDriveUmich/proteomics/mzml/narrowWindow/23aug2017_hela_serum_timecourse_4mz_narrow_6.mzML",
-                "C:/Users/kevin/Downloads/proteomics/narrow/spectraRT.predicted.bin",
-                "C:/Users/kevin/Downloads/proteomics/narrow/detect_Predictions.txt",
-                (Constants.features).split(","),
-                "C:/Users/kevin/Downloads/proteomics/narrow/edited_");
+//        editPin("C:/Users/kevin/Downloads/proteomics/narrow/",
+//                "C:/Users/kevin/OneDriveUmich/proteomics/mzml/narrowWindow/23aug2017_hela_serum_timecourse_4mz_narrow_6.mzML",
+//                "C:/Users/kevin/Downloads/proteomics/narrow/spectraRT.predicted.bin",
+//                "C:/Users/kevin/Downloads/proteomics/narrow/detect_Predictions.txt",
+//                (Constants.features).split(","),
+//                "C:/Users/kevin/Downloads/proteomics/narrow/edited_");
 //        editPin("C:/Users/kevin/Downloads/proteomics/wide/",
 //                "C:/Users/kevin/OneDriveUmich/proteomics/mzml/wideWindow/23aug2017_hela_serum_timecourse_pool_wide_001.mzML",
 //                "C:/Users/kevin/Downloads/proteomics/wide/spectraRT.predicted.bin",
@@ -647,15 +714,13 @@ public class percolatorFormatter {
 //                        "deltaRTLOESS,deltaRTLOESSnormalized,RTprobabilityUnifPrior," +
 //                        "detectSubtractMissing").split(","),
 //                "C:/Users/kevin/Downloads/proteomics/wide/edited_");
-//        editPin("C:/Users/kevin/Downloads/proteomics/timsTOF/20180819_TIMS2_12-2_AnBr_SA_200ng_HeLa_50cm_120min_100ms_11CT_3_A1_01_2769.pin",
-//                "C:/Users/kevin/Downloads/proteomics/timsTOF/" +
-//                        "20180819_TIMS2_12-2_AnBr_SA_200ng_HeLa_50cm_120min_100ms_11CT_3_A1_01_2769_uncalibrated.mgf",
-//                "C:/Users/kevin/Downloads/proteomics/timsTOF/DIANN.predicted.bin",
-//                "C:/Users/kevin/Downloads/proteomics/timsTOF/detect_Predictions.txt",
-//                ("cosineSimilarity,spectralContrastAngle,euclideanDistance,brayCurtis,pearsonCorr,dotProduct," +
-//                        "deltaRTLOESS,deltaRTLOESSnormalized,RTprobabilityUnifPrior," +
-//                        "detectFractionGreater,detectSubtractMissing,deltaIMLOESS").split(","),
-//                "C:/Users/kevin/Downloads/proteomics/timsTOF/edited_");
+        editPin("C:/Users/yangkl/Downloads/proteomics/timsTOF/20180819_TIMS2_12-2_AnBr_SA_200ng_HeLa_50cm_120min_100ms_11CT_3_A1_01_2769.pin",
+                "C:/Users/yangkl/OneDriveUmich/proteomics/mzml/" +
+                        "20180819_TIMS2_12-2_AnBr_SA_200ng_HeLa_50cm_120min_100ms_11CT_3_A1_01_2769_uncalibrated.mgf",
+                "C:/Users/yangkl/Downloads/proteomics/timsTOF/DIANN.predicted.bin",
+                "C:/Users/yangkl/Downloads/proteomics/timsTOF/detect_Predictions.txt",
+                ("deltaIMLOESS,deltaIMLOESSnormalized,IMprobabilityUnifPrior").split(","),
+                "C:/Users/kevin/Downloads/proteomics/timsTOF/edited_");
 
 
     }

@@ -66,7 +66,14 @@ public class pinReader {
 
     public int getScanNum() {return Integer.parseInt(row[scanNumIdx]);}
 
-    public int getRank() {return Integer.parseInt(row[rankIdx]);}
+    public int getRank() {
+        try {
+            return Integer.parseInt(row[rankIdx]);
+        } catch (Exception e) {
+            String[] specIdxSplit = row[specIdx].split("_");
+            return Integer.parseInt(specIdxSplit[specIdxSplit.length - 1]);
+        }
+    }
 
     //public String getEScore() {return String.valueOf(Math.pow(10, Double.parseDouble(row[eScoreIdx])));}
     public String getEScore() {return String.valueOf(Math.exp(15.0 - Double.parseDouble(row[eScoreIdx])));}
@@ -96,6 +103,7 @@ public class pinReader {
         }
         return peps.toArray(new String[0]);
     }
+    //TODO: how to handle shifting of uncommon PTMS?
     public String[] createDiannList() throws IOException {
         ArrayList<String> peps = new ArrayList<String>();
         TreeMap<Integer, Integer> modMap = new TreeMap<>(); //sorted for future use

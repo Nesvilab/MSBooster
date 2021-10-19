@@ -17,8 +17,7 @@ public class peptideFileCreator {
         //can reduce number of hits to a third
         HashSet<String> hSetHits = new HashSet<>();
         Collections.addAll(hSetHits, allHits);
-        System.out.println("Before filtering: " + allHits.length +
-                " peptides, after filtering: " + hSetHits.size() + " peptides");
+        System.out.println(hSetHits.size() + " unique peptides from " + allHits.length + " PSMs");
         return hSetHits;
     }
 
@@ -68,9 +67,9 @@ public class peptideFileCreator {
                     case "DeepMSPeptideAll": //ignores charge and mods
                         hitsToAdd = xmlReader.createDeepMSPeptideList();
                         break;
-                    case "Diann":
-                        hitsToAdd = xmlReader.createDiannList();
-                        break;
+//                    case "Diann":
+//                        hitsToAdd = xmlReader.createDiannList();
+//                        break;
                     case "prosit":
                         hitsToAdd = xmlReader.createPrositList(34);
                 }
@@ -98,6 +97,9 @@ public class peptideFileCreator {
                     //TODO: prosit case
 //                    case "prosit":
 //                        hitsToAdd = pin.createPrositList(34);
+                    case "DiannFull":
+                        hitsToAdd = pin.createDiannListFull();
+                        break;
                 }
                 pin.close();
 
@@ -153,8 +155,10 @@ public class peptideFileCreator {
                     System.out.println("Writing DIA-NN input file");
                     myWriter.write("peptide" + "\t" + "charge\n");
                     break;
+                case "DiannFull":
+                    myWriter.write("peptide" + "\t" + "charge\n");
+                    break;
             }
-
             for (String hSetHit : hSetHits) {
                 myWriter.write(hSetHit + "\n");
             }

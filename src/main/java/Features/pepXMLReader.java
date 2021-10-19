@@ -7,8 +7,6 @@ import umich.ms.fileio.filetypes.pepxml.jaxb.standard.*;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.List;
-import java.util.Map;
-import java.util.TreeMap;
 
 public class pepXMLReader {
 
@@ -309,47 +307,47 @@ public class pepXMLReader {
         return array;
     }
 
-    public String[] createDiannList() {
-        List<SpectrumQuery> spectrumQueries = getSpectrumQueries();
-        String[] array = new String[spectrumQueries.size()];
-        int index = 0;
-        for (SpectrumQuery sq : spectrumQueries) {
-            String charge = String.valueOf(sq.getAssumedCharge());
-            SearchHit hit = sq.getSearchResult().get(0).getSearchHit().get(0);
-            StringBuilder pep = new StringBuilder(hit.getPeptide());
-
-            ModificationInfo modinfo = hit.getModificationInfo();
-            TreeMap<Integer, Integer> modMap = new TreeMap<>(); //sorted for future use
-            if (modinfo != null) {
-                //n term acetylation
-                if (modinfo.getModNtermMass() != null) {
-                    modMap.put(0, Constants.modNtermToUnimod.get(modinfo.getModNtermMass()));
-                }
-
-                //modifications besides n term acetylation
-                List<ModAminoacidMass> mods = modinfo.getModAminoacidMass();
-                for (ModAminoacidMass mod : mods) {
-                    //match modmass to unimod
-                    //pep.insert(mod.getPosition(), "[unimod:" + constants.modAAmassToUnimod.get(mod.getMass()) + "]");
-                    modMap.put(mod.getPosition(), Constants.modAAmassToUnimod.get(mod.getMass()));
-                }
-
-                //add mods to peptide
-                int strLen = 0;
-                for (Map.Entry<Integer, Integer> entry : modMap.entrySet()) {
-                    String mod = "[unimod:" + entry.getValue() + "]";
-                    pep.insert(strLen + entry.getKey(), mod);
-                    strLen += mod.length();
-                }
-
-            }
-
-            //set peptide
-            array[index] = pep.toString() + "\t" + charge;
-            index++;
-        }
-        return array;
-    }
+//    public String[] createDiannList() {
+//        List<SpectrumQuery> spectrumQueries = getSpectrumQueries();
+//        String[] array = new String[spectrumQueries.size()];
+//        int index = 0;
+//        for (SpectrumQuery sq : spectrumQueries) {
+//            String charge = String.valueOf(sq.getAssumedCharge());
+//            SearchHit hit = sq.getSearchResult().get(0).getSearchHit().get(0);
+//            StringBuilder pep = new StringBuilder(hit.getPeptide());
+//
+//            ModificationInfo modinfo = hit.getModificationInfo();
+//            TreeMap<Integer, Integer> modMap = new TreeMap<>(); //sorted for future use
+//            if (modinfo != null) {
+//                //n term acetylation
+//                if (modinfo.getModNtermMass() != null) {
+//                    modMap.put(0, Constants.modNtermToUnimod.get(modinfo.getModNtermMass()));
+//                }
+//
+//                //modifications besides n term acetylation
+//                List<ModAminoacidMass> mods = modinfo.getModAminoacidMass();
+//                for (ModAminoacidMass mod : mods) {
+//                    //match modmass to unimod
+//                    //pep.insert(mod.getPosition(), "[unimod:" + constants.modAAmassToUnimod.get(mod.getMass()) + "]");
+//                    modMap.put(mod.getPosition(), Constants.modAAmassToUnimod.get(mod.getMass()));
+//                }
+//
+//                //add mods to peptide
+//                int strLen = 0;
+//                for (Map.Entry<Integer, Integer> entry : modMap.entrySet()) {
+//                    String mod = "[unimod:" + entry.getValue() + "]";
+//                    pep.insert(strLen + entry.getKey(), mod);
+//                    strLen += mod.length();
+//                }
+//
+//            }
+//
+//            //set peptide
+//            array[index] = pep.toString() + "\t" + charge;
+//            index++;
+//        }
+//        return array;
+//    }
 
     //method to return iterable of scan numbers
     public int[] getScanNumbers() {

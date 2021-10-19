@@ -3,17 +3,25 @@ package Features;
 public class PredictionEntry {
     float[] mzs;
     float[] intensities;
+    int[] fragNums;
+    int[] flags;
+    int[] charges;
     float RT;
     float IM;
     float detectability;
     int counter;
 
-    //TODO: make all set methods
     public PredictionEntry() {}
 
     public void setMzs(float[] mzs) {this.mzs = mzs;}
 
     public void setIntensities(float[] intensities) {this.intensities = intensities;}
+
+    public void setFragNums(int[] fragNums) {this.fragNums = fragNums;}
+
+    public void setFlags(int[] flags) {this.flags = flags;}
+
+    public void setCharges(int[] charges) {this.charges = charges;}
 
     public void setRT(float RT) {this.RT = RT;}
 

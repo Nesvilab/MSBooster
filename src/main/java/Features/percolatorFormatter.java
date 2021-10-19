@@ -17,36 +17,41 @@ import static Features.Constants.camelToUnderscore;
 public class percolatorFormatter {
 
     public static String percolatorPepFormat(String[] columns, int pepIdx, int specIDidx) {
+        //first is peptide, then missed masses
         String pep = columns[pepIdx];
         pep = pep.substring(2, pep.length() - 2);
-        StringBuilder mods = new StringBuilder();
 
         //n term acetylation
         if (pep.charAt(0) == 'n') {
-            pep = pep.replace("n[42.0106]", "");
-            mods.append("0,Acetyl[AnyN-term];");
+            pep = pep.replace("n", "");
         }
 
-        pep = pep.replace("C[57.0215]", "c");
-        pep = pep.replace("M[15.9949]", "m");
-        TreeMap<Integer, String> modsMap = new TreeMap<>();
-
-        //carbamidometylation
-        while (pep.contains("c")) {
-            int pos = pep.indexOf("c") + 1;
-            pep = pep.replaceFirst("c", "C");
-            modsMap.put(pos, ",Carbamidomethyl[C];");
+        //find locations of PTMs
+        ArrayList<Integer> starts = new ArrayList<>();
+        ArrayList<Integer> ends = new ArrayList<>();
+        for (int i = 0; i < pep.length(); i++) {
+            if (pep.charAt(i) == '[') {
+                starts.add(i);
+            } else if (pep.charAt(i) == ']') {
+                ends.add(i);
+            }
         }
 
-        //methionine oxidation
-        while (pep.contains("m")) {
-            int pos = pep.indexOf("m") + 1;
-            pep = pep.replaceFirst("m", "M");
-            modsMap.put(pos, ",Oxidation[M];");
-        }
-
-        for (Map.Entry<Integer, String> entry : modsMap.entrySet()) {
-            mods.append(entry.getKey()).append(entry.getValue());
+        for (int i = starts.size() - 1; i > -1; i--) {
+            double reportedMass = Double.parseDouble(pep.substring(starts.get(i) + 1, ends.get(i)));
+            boolean foundReplacement = false;
+            for (double PTMmass : Constants.modAAmassToUnimod.keySet()) {
+                if (Math.abs(PTMmass - reportedMass) < 0.01) {
+                    pep = pep.substring(0, starts.get(i) + 1) + "UniMod:" + Constants.modAAmassToUnimod.get(PTMmass) +
+                            pep.substring(ends.get(i), pep.length());
+                    foundReplacement = true;
+                    break;
+                }
+            }
+            if (! foundReplacement) {
+                //DIANN won't predict this anyway
+                pep = pep.substring(0, starts.get(i)) + pep.substring(ends.get(i) + 1);
+            }
         }
 
         //charge
@@ -54,44 +59,50 @@ public class percolatorFormatter {
         String chargeStr = charges[charges.length - 2];
         int charge = Integer.parseInt(chargeStr.substring(chargeStr.length() - 1));
 
-        return pep + "|" + mods + "|" + charge;
+        return pep + "|" + charge;
     }
 
-    public static String ionQuantFormat(String pep, String charge) {
-        StringBuilder mods = new StringBuilder();
+    public static String percolatorPepFormatFull(String[] columns, int pepIdx, int specIDidx) {
+        //first is peptide, then missed masses
+        String pep = columns[pepIdx];
+        pep = pep.substring(2, pep.length() - 2);
 
         //n term acetylation
         if (pep.charAt(0) == 'n') {
-            pep = pep.replace("n[42.0106]", "");
-            mods.append("0,Acetyl[AnyN-term];");
+            pep = pep.replace("n", "");
         }
 
-        pep = pep.replace("C[57.0215]", "c");
-        pep = pep.replace("M[15.9949]", "m");
-        TreeMap<Integer, String> modsMap = new TreeMap<>();
-
-        //carbamidometylation
-        while (pep.contains("c")) {
-            int pos = pep.indexOf("c") + 1;
-            pep = pep.replaceFirst("c", "C");
-            modsMap.put(pos, ",Carbamidomethyl[C];");
+        //find locations of PTMs
+        ArrayList<Integer> starts = new ArrayList<>();
+        ArrayList<Integer> ends = new ArrayList<>();
+        for (int i = 0; i < pep.length(); i++) {
+            if (pep.charAt(i) == '[') {
+                starts.add(i);
+            } else if (pep.charAt(i) == ']') {
+                ends.add(i);
+            }
         }
 
-        //methionine oxidation
-        while (pep.contains("m")) {
-            int pos = pep.indexOf("m") + 1;
-            pep = pep.replaceFirst("m", "M");
-            modsMap.put(pos, ",Oxidation[M];");
-        }
-
-        for (Map.Entry<Integer, String> entry : modsMap.entrySet()) {
-            mods.append(entry.getKey()).append(entry.getValue());
+        for (int i = starts.size() - 1; i > -1; i--) {
+            double reportedMass = Double.parseDouble(pep.substring(starts.get(i) + 1, ends.get(i)));
+            for (double PTMmass : Constants.modAAmassToUnimod.keySet()) {
+                if (Math.abs(PTMmass - reportedMass) < 0.01) {
+                    pep = pep.substring(0, starts.get(i) + 1) + "UniMod:" + Constants.modAAmassToUnimod.get(PTMmass) +
+                            pep.substring(ends.get(i), pep.length());
+                    break;
+                }
+            }
         }
 
         //charge
+        String[] charges = columns[specIDidx].split("_");
+        String chargeStr = charges[charges.length - 2];
+        int charge = Integer.parseInt(chargeStr.substring(chargeStr.length() - 1));
 
-        return pep + "|" + mods + "|" + charge;
+        return pep + "|" + charge;
     }
+
+    //TODO: need a version of this that keeps the masses in place
 
     //set mgf or detectFile as null if not applicable
     //baseNames is the part before mzml or pin extensions
@@ -137,7 +148,7 @@ public class percolatorFormatter {
             predictedSpectra = SpectralPredictionMapper.createSpectralPredictionMapper(mgf);
             long endTime = System.nanoTime();
             long duration = (endTime - startTime);
-            System.out.println("Spectra/RT/IM prediction loading took " + duration / 1000000 +" milliseconds");
+            //System.out.println("Spectra/RT/IM prediction loading took " + duration / 1000000 +" milliseconds");
             needsMGF = true;
         }
 
@@ -237,14 +248,14 @@ public class percolatorFormatter {
         }
         long endTime = System.nanoTime();
         long duration = (endTime - startTime);
-        System.out.println("Detectability map and formatting loading took " + duration / 1000000 +" milliseconds");
+        //System.out.println("Detectability map and formatting loading took " + duration / 1000000 +" milliseconds");
 
         ExecutorService executorService = Executors.newFixedThreadPool(Constants.numThreads);
         try {
             //////////////////////////////iterate through pin and mzml files//////////////////////////////////////////
             for (int i = 0; i < pinFiles.length; i++) {
                 startTime = System.nanoTime();
-                String newOutfile = outfile + pinFiles[i].getName();
+                String newOutfile = pinFiles[i].getParent() + File.separator + outfile + pinFiles[i].getName();
                 TsvWriter writer = new TsvWriter(new File(newOutfile), new TsvWriterSettings());
                 //load mzml file
                 System.out.println("Loading " + mzmlFiles[i].getName());
@@ -255,12 +266,12 @@ public class percolatorFormatter {
                     mzml = new mzMLReader(new mgfFileReader(mzmlFiles[i].getCanonicalPath(), true, executorService));
                     endTime = System.nanoTime();
                     duration = (endTime - startTime);
-                    System.out.println("mgf loading took " + duration / 1000000 +" milliseconds");
+                    //System.out.println("mgf loading took " + duration / 1000000 +" milliseconds");
                 } else {
                     mzml = new mzMLReader(mzmlFiles[i].getCanonicalPath());
                     endTime = System.nanoTime();
                     duration = (endTime - startTime);
-                    System.out.println("mzML loading took " + duration / 1000000 +" milliseconds");
+                    //System.out.println("mzML loading took " + duration / 1000000 +" milliseconds");
                 }
 
                 //proposed change to using apex IM
@@ -317,22 +328,22 @@ public class percolatorFormatter {
 
                 //Special preparations dependent on features we require
                 if (needsMGF) {
-                    System.out.println("Loading PSMs onto mzml object");
+                    //System.out.println("Loading PSMs onto mzml object");
                     long startTime1 = System.nanoTime();
                     //TODO: can we detect before this how many ranks there are?
                     mzml.setPinEntries(pin, predictedSpectra);
                     endTime = System.nanoTime();
                     duration = (endTime - startTime1);
-                    System.out.println("PSM loading took " + duration / 1000000 +" milliseconds");
-                    System.out.println("Done loading PSMs onto mzml object");
+                    //System.out.println("PSM loading took " + duration / 1000000 +" milliseconds");
+                    //.out.println("Done loading PSMs onto mzml object");
                 }
                 if (featuresList.contains("deltaRTLOESS") || featuresList.contains("deltaRTLOESSnormalized")) {
-                    System.out.println("Generating RT LOESS regression");
+                    //System.out.println("Generating RT LOESS regression");
                     mzml.setLOESS(Constants.RTregressionSize, Constants.bandwidth, Constants.robustIters, "RT");
                     mzml.predictRTLOESS(executorService); //potentially only invoke once if normalized included
                 }
                 if (featuresList.contains("deltaRTlinear")) {
-                    System.out.println("Calculating delta RT linear");
+                    //System.out.println("Calculating delta RT linear");
                     if (mzml.expAndPredRTs != null) {
                         mzml.setBetas();
                     } else { mzml.setBetas(predictedSpectra, Constants.RTregressionSize);
@@ -342,7 +353,7 @@ public class percolatorFormatter {
                 if (featuresList.contains("deltaRTbins") || featuresList.contains("RTzscore") ||
                         featuresList.contains("RTprobability") || featuresList.contains("RTprobabilityUnifPrior") ||
                         featuresList.contains("deltaRTLOESSnormalized")) {
-                    System.out.println("Generating RT bins");
+                    //System.out.println("Generating RT bins");
                     mzml.setRTbins();
                     mzml.calculateBinStats("RT");
                 }
@@ -370,16 +381,16 @@ public class percolatorFormatter {
                     unifProb = 1.0f / predictedSpectra.getMaxPredRT();
                 }
                 if (featuresList.contains("RTprobability") || featuresList.contains("RTprobabilityUnifPrior")) {
-                    System.out.println("Generating RT empirical densities");
+                    //System.out.println("Generating RT empirical densities");
                     mzml.setKernelDensities(executorService, "RT");
                 }
                 if (featuresList.contains("deltaIMLOESS") || featuresList.contains("deltaIMLOESSnormalized")) {
-                    System.out.println("Generating IM LOESS regression");
+                    //System.out.println("Generating IM LOESS regression");
                     mzml.setLOESS(Constants.IMregressionSize, Constants.bandwidth, Constants.robustIters, "IM");
                     mzml.predictIMLOESS(executorService);
                 }
                 if (featuresList.contains("deltaIMLOESSnormalized") || featuresList.contains("IMprobabilityUnifPrior")) {
-                    System.out.println("Generating IM bins");
+                    //System.out.println("Generating IM bins");
                     mzml.setIMbins();
                     mzml.calculateBinStats("IM");
                 }
@@ -392,7 +403,7 @@ public class percolatorFormatter {
                     mzml.setIMBinSizes(executorService);
 
                     //decide how many uniform points to add
-                    System.out.println("Generating IM empirical densities");
+                    //System.out.println("Generating IM empirical densities");
                     for (int charge = 0; charge < IMFunctions.numCharges; charge++) {
                         int[] binSizes = new int[mzml.IMbins[charge].length];
                         for (int bin = 0; bin < mzml.IMbins[charge].length; bin++) {
@@ -409,7 +420,7 @@ public class percolatorFormatter {
                     }
                 }
 
-                System.out.println("Getting predictions for each row");
+                //System.out.println("Getting predictions for each row");
                 //int totalPSMs = 0;
                 SpearmansCorrelation sc = new SpearmansCorrelation();
 
@@ -670,7 +681,7 @@ public class percolatorFormatter {
                 pin.close();
                 endTime = System.nanoTime();
                 duration = (endTime - startTime);
-                System.out.println("Pin editing took " + duration / 1000000 +" milliseconds");
+                //System.out.println("Pin editing took " + duration / 1000000 +" milliseconds");
                 writer.close();
                 mzml.clear();
                 if (Constants.renamePin == 1) {

@@ -4,6 +4,7 @@ import java.io.File;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Map;
 
 public class Constants {
     //file input
@@ -153,24 +154,24 @@ public class Constants {
     //Handling PTMs
 
     //TODO: better handling of PTMs, all in one location
-    private static HashMap<Object, Integer> makeModAAToUnimod() {
-        HashMap<Object, Integer> map = new HashMap<>();
-        map.put(160.03065d, 4);
-        map.put("Carbamidomethyl[C]", 4);
-        map.put(147.0354d, 35);
-        map.put("Oxidation[M]", 35);
-        map.put(43.018425d, 1);
-        map.put("Acetyl[AnyN-term]", 1);
+    private static HashMap<Double, Integer> makeModAAToUnimod() {
+        HashMap<Double, Integer> map = new HashMap<>();
+        map.put(57.0215, 4);
+        map.put(15.9949, 35);
+        map.put(42.0106, 1);
+        map.put(79.96633, 21);
+        map.put(114.042927, 121);
         return map;
     }
-    public static final HashMap<Object, Integer> modAAmassToUnimod = makeModAAToUnimod();
-    private static HashMap<Object, Integer> makeModNtermToUnimod() {
-        HashMap<Object, Integer> map = new HashMap<>();
-        map.put(43.018425d, 1);
-        map.put("Acetyl[AnyN-term]", 1);
+    public static final HashMap<Double, Integer> modAAmassToUnimod = makeModAAToUnimod();
+    private static HashMap<String, Double> makeUnimodtoModAA() {
+        HashMap<String, Double> map = new HashMap<>();
+        for (Map.Entry<Double, Integer> entry : modAAmassToUnimod.entrySet()) {
+            map.put(String.valueOf(entry.getValue()), entry.getKey());
+        }
         return map;
     }
-    public static final HashMap<Object, Integer> modNtermToUnimod = makeModNtermToUnimod();
+    public static final HashMap<String, Double> AAmassToUnimod = makeUnimodtoModAA();
 
     //methods
     public void updatePaths() {
@@ -184,7 +185,7 @@ public class Constants {
             }
         }
         if (editedPin == null || renamePin == 0) { //if 0, replace at end
-            editedPin = outputDirectory + File.separator + "edited_";
+            editedPin = "edited_";
         }
         if (spectraRTPredInput == null) {
             spectraRTPredInput = outputDirectory + File.separator + "spectraRT.tsv";

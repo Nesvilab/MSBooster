@@ -20,7 +20,7 @@ public class PinMzmlMatcher {
             if (directory.substring(directory.length() - 3).toLowerCase().equals("pin")) { //single file
                 pinFileList.add(directory);
             } else { //directory, but not recursive
-                Collection<File> pinFilesCollection = listFiles(new File(pinDirectory), new String[]{"pin"}, false);
+                Collection<File> pinFilesCollection = listFiles(new File(directory), new String[]{"pin"}, false);
                 for (File file : pinFilesCollection) {
                     pinFileList.add(file.getCanonicalPath());
                 }
@@ -32,12 +32,19 @@ public class PinMzmlMatcher {
         HashMap<String, File> mzmlFileMap = new HashMap<>();
         for (String directory : allMzmlDirectories) {
             File f = new File(directory);
-            if (directory.substring(directory.length() - 4).toLowerCase().equals("mzml")) {
-                mzmlFileMap.put(f.getName().substring(0, f.getName().length() - 5), f);
-            } else if (directory.substring(directory.length() - 3).toLowerCase().equals("mgf")) {
-                mzmlFileMap.put(f.getName().substring(0, f.getName().length() - 4), f);
+            if (f.isFile()) {
+                if (directory.substring(directory.length() - 4).toLowerCase().equals("mzml")) {
+                    mzmlFileMap.put(f.getName().substring(0, f.getName().length() - 5), f);
+                } else if (directory.substring(directory.length() - 16).toLowerCase().equals("uncalibrated.mgf")) {
+                    mzmlFileMap.put(f.getName().substring(0, f.getName().length() - 17), f);
+                }
             } else { //directory
                 Collection<File> mzmlFilesCollection = listFiles(f, new String[]{"mzML"}, false);
+                for (File file : mzmlFilesCollection) {
+                    mzmlFileMap.put(file.getName().substring(0, file.getName().length() - 5), file);
+                }
+
+                mzmlFilesCollection = listFiles(f, new String[]{"mzml"}, false);
                 for (File file : mzmlFilesCollection) {
                     mzmlFileMap.put(file.getName().substring(0, file.getName().length() - 5), file);
                 }
@@ -59,7 +66,7 @@ public class PinMzmlMatcher {
         //add files to array
         pinFileList.sort(String::compareToIgnoreCase);
         pinFiles = new File[pinFileList.size()];
-        mzmlFiles = new File[mzmlFileMap.size()];
+        mzmlFiles = new File[pinFileList.size()];
         for (int i = 0; i < pinFiles.length; i++) {
             pinFiles[i] = new File(pinFileList.get(i));
             String baseName = pinFiles[i].getName().substring(0, pinFiles[i].getName().length() - 4);

@@ -410,6 +410,9 @@ public class MainClass {
                 System.out.println("Generating input file for DIA-NN");
                 long startTime = System.nanoTime();
                 peptideFileCreator.createPeptideFile(pmMatcher.pinFiles, Constants.spectraRTPredInput, "Diann", "pin");
+                peptideFileCreator.createPeptideFile(pmMatcher.pinFiles,
+                        Constants.spectraRTPredInput.substring(0, Constants.spectraRTPredInput.length() - 4) + "_full.tsv",
+                        "DiannFull", "pin");
                 long endTime = System.nanoTime();
                 long duration = (endTime - startTime);
             } else if (Constants.spectraRTPredModel.equals("pDeep3")) {
@@ -447,7 +450,11 @@ public class MainClass {
 
         //create new pin file with features
         System.out.println("Generating edited pin with following features: " + Arrays.toString(featuresArray));
+        long start = System.nanoTime();
         percolatorFormatter.editPin(pmMatcher, Constants.spectraRTPredFile, Constants.detectPredFile, featuresArray, Constants.editedPin);
+        long end = System.nanoTime();
+        long duration = (end - start);
+        System.out.println("Done in " + duration / 1000000 + " ms");
     }
 
     static private void printParams(String directory) {

@@ -87,7 +87,7 @@ public class RTFunctions {
                     .mapToInt(ele -> ele).toArray();
 
             int[] sortedIndices2 = Arrays.copyOfRange(sortedIndices, 0, RTregressionSize);
-            Arrays.sort(sortedIndices2);
+            Arrays.sort(sortedIndices2); //this ensures increasing RT
 
             double[][] RTs = new double[2][RTregressionSize];
             for (int i = 0; i < RTregressionSize; i++) {
@@ -117,8 +117,13 @@ public class RTFunctions {
     //to do: test for normal dist nature of each bin (Shapiro Wilk test)
     public static ArrayList<Float>[] RTbins(mzMLReader mzml) throws IOException {
         //get max index
-        int maxKey = Collections.max(mzml.scanNumberObjects.keySet());
-        int numBins = (int) (mzml.scanNumberObjects.get(maxKey).RT * Constants.RTbinMultiplier) + 1;
+        float maxRT = -1;
+        for (mzmlScanNumber msn : mzml.scanNumberObjects.values()) {
+            if (msn.RT > maxRT) {
+                maxRT = msn.RT;
+            }
+        }
+        int numBins = (int) (maxRT * Constants.RTbinMultiplier) + 1;
 
         ArrayList<Float>[] predRTround = new ArrayList[numBins + 1];
         for (int col = 0; col < numBins + 1; col++) {

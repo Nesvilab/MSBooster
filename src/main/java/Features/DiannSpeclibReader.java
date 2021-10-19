@@ -30,12 +30,21 @@ public class DiannSpeclibReader implements SpectralPredictionMapper{
         for (String bFile : filenames) {
             //try to infer binary file name from text file
             int splitDot = bFile.indexOf("predicted.bin");
+            if (! new File(bFile).exists()) {
+                System.out.println("Error: no prediction file available at: " + bFile);
+                System.exit(-1);
+            }
             String textFile = bFile.substring(0, splitDot) + "tsv"; //enforces tsv naming convention
+            if (! new File(textFile).exists()) {
+                System.out.println("Error: no prediction file available at: " + textFile);
+                System.exit(-1);
+            }
+            //TODO: have a different file that still includes the nonsupported PTM masses
 
-            try (
-                    InputStream is = new FileInputStream(bFile);
-                    BufferedReader TSVReader = new BufferedReader(new FileReader(textFile));
-            ) {
+            try{
+                InputStream is = new FileInputStream(bFile);
+                BufferedReader TSVReader = new BufferedReader(new FileReader(textFile));
+
                 int len; //holds length of bytes
                 byte[] buffer1 = new byte[12];
                 String[] line = TSVReader.readLine().split("\t"); //header
@@ -52,6 +61,9 @@ public class DiannSpeclibReader implements SpectralPredictionMapper{
                     //arrays for hashmap
                     float[] mzs = new float[numFrags];
                     float[] intensities = new float[numFrags];
+                    int[] fragNums = new int[numFrags];
+                    int[] flags = new int[numFrags];
+                    int[] charges = new int[numFrags];
 
                     //load fragment info
                     byte[] buffer2 = new byte[4 * numFrags];
@@ -71,28 +83,72 @@ public class DiannSpeclibReader implements SpectralPredictionMapper{
                         //add to arrays
                         mzs[i] = fragMZ;
                         intensities[i] = intensity;
+                        fragNums[i] = fragNum;
+                        flags[i] = flag;
+                        charges[i] = charge;
                     }
 
                     //add to hashmap
                     PredictionEntry newPred = new PredictionEntry();
                     newPred.setMzs(mzs);
                     newPred.setIntensities(intensities);
+                    newPred.setFragNums(fragNums);
+                    newPred.setFlags(flags);
+                    newPred.setCharges(charges);
                     newPred.setRT(iRT);
                     newPred.setIM(IM);
                     allPreds.put(mc.fullPeptide, newPred);
                 }
+                is.close();
+                TSVReader.close();
 
-                //changing to deepccs values
-//                BufferedReader newTSVReader = new BufferedReader(new FileReader("C:/Users/kevin/Downloads/proteomics/timsTOF/" +
-//                        "DeepCCS_pred_diannName.csv"));
-//                String line1 = "";
-//                while ((line1 = newTSVReader.readLine()) != null) {
-//                    String[] line1Split = line1.split(",");
-//                    MassCalculator mc = new MassCalculator(line1Split[0], line1Split[1]);
-//                    allPredIMs.put(mc.fullPeptide, Float.valueOf(line1Split[2]));
-//                }
-//                newTSVReader.close();
+                //repeat this process with full peptides
+                textFile = bFile.substring(0, splitDot - 1) + "_full.tsv";
+                TSVReader = new BufferedReader(new FileReader(textFile));
+                line = TSVReader.readLine().split("\t");
+                String l;
 
+                while ((l = TSVReader.readLine()) != null) {
+                    line = l.split("\t");
+                    if (! allPreds.containsKey(line[0] + "|" + line[1])) {
+                        //find base peptide with recognized unimod
+                        String basePep = line[0];
+
+                        //find locations of PTMs
+                        ArrayList<Integer> starts = new ArrayList<>();
+                        ArrayList<Integer> ends = new ArrayList<>();
+                        for (int i = 0; i < basePep.length(); i++) {
+                            if (basePep.charAt(i) == '[') {
+                                starts.add(i);
+                            } else if (basePep.charAt(i) == ']') {
+                                ends.add(i);
+                            }
+                        }
+
+                        //removing if unknown
+                        for (int i = starts.size() - 1; i > -1; i--) {
+                            if (basePep.charAt(starts.get(i) + 1) != 'U') {
+                                basePep = basePep.substring(0, starts.get(i)) + basePep.substring(ends.get(i) + 1);
+                            }
+                        }
+
+                        //get predictionEntry
+                        PredictionEntry tmp = allPreds.get(basePep + "|" + line[1]);
+                        MassCalculator mc = new MassCalculator(line[0], line[1]);
+                        float[] newMZs = new float[tmp.mzs.length];
+                        for (int i = 0; i < newMZs.length; i++) {
+                            newMZs[i] = mc.calcMass(tmp.fragNums[i], tmp.flags[i], tmp.charges[i]);
+                        }
+
+                        //add to hashmap
+                        PredictionEntry newPred = new PredictionEntry();
+                        newPred.setMzs(newMZs);
+                        newPred.setIntensities(tmp.intensities);
+                        newPred.setRT(tmp.RT);
+                        newPred.setIM(tmp.IM);
+                        allPreds.put(mc.fullPeptide, newPred);
+                    }
+                }
             } catch (IOException e) {
                 e.printStackTrace();
             }

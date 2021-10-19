@@ -202,7 +202,7 @@ public class mzMLReader {
         scans.reset(); //free up memory. Could consider setting to null as well, but idk how to check if it's garbage collected
         long endTime = System.nanoTime();
         long duration = (endTime - startTime);
-        System.out.println("createScanNumObjects took " + duration / 1000000 +" milliseconds");
+        //System.out.println("createScanNumObjects took " + duration / 1000000 +" milliseconds");
     }
 
     public mzmlScanNumber getScanNumObject(int scanNum) {
@@ -487,7 +487,7 @@ public class mzMLReader {
             }
             long endTime = System.nanoTime();
             long duration = (endTime - startTime);
-            System.out.println("Calculating RT probabilities took " + duration / 1000000 + " milliseconds");
+            //System.out.println("Calculating RT probabilities took " + duration / 1000000 + " milliseconds");
         } else if (mode.equals("IM")) {
             KernelDensity[][] kernelDensities = new KernelDensity[IMFunctions.numCharges][];
             for (int c = 0; c < IMFunctions.numCharges; c++) {
@@ -561,7 +561,7 @@ public class mzMLReader {
         }
         long endTime = System.nanoTime();
         long duration = (endTime - startTime);
-        System.out.println("Calculating deltaRTLOESS took " + duration / 1000000 +" milliseconds");
+        //System.out.println("Calculating deltaRTLOESS took " + duration / 1000000 +" milliseconds");
     }
 
     public void predictIMLOESS(ExecutorService executorService) throws ExecutionException, InterruptedException {
@@ -608,7 +608,7 @@ public class mzMLReader {
         }
         long endTime = System.nanoTime();
         long duration = (endTime - startTime);
-        System.out.println("Calculating deltaIMLOESS took " + duration / 1000000 +" milliseconds");
+        //System.out.println("Calculating deltaIMLOESS took " + duration / 1000000 +" milliseconds");
     }
 
     public void clear() {

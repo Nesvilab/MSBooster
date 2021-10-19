@@ -7,6 +7,7 @@ import org.apache.commons.math3.analysis.interpolation.LoessInterpolator;
 import smile.stat.distribution.KernelDensity;
 
 import java.util.*;
+import java.util.stream.IntStream;
 
 public class StatMethods {
     public static float mean(double[] vector) {
@@ -116,12 +117,24 @@ public class StatMethods {
     }
 
     public static Function1<Double, Double> LOESS(double[][] bins, double bandwidth, int robustIters) {
+        //need to sort arrays (DIA-U mzml not in order)
+        int[] sortedIndices = IntStream.range(0, bins[0].length)
+                .boxed().sorted(Comparator.comparingDouble(k -> bins[0][k])).mapToInt(ele -> ele).toArray();
+        double[] newX = new double[sortedIndices.length];
+        double[] newY = new double[sortedIndices.length];
+        for (int i = 0; i < sortedIndices.length; i++) {
+            newX[i] = bins[0][sortedIndices[i]];
+        }
+        for (int i = 0; i < sortedIndices.length; i++) {
+            newY[i] = bins[1][sortedIndices[i]];
+        }
+
         //solve monotonicity issue
         double compare = -1;
-        for (int i = 0; i < bins[0].length; i++) {
-            double d = bins[0][i];
+        for (int i = 0; i < newX.length; i++) {
+            double d = newX[i];
             if (d == compare) {
-                bins[0][i] = bins[0][i - 1] + 0.00000001; //arbitrary increment to handle smooth method
+                newX[i] = newX[i - 1] + 0.00000001; //arbitrary increment to handle smooth method
             } else {
                 compare = d;
             }
@@ -130,12 +143,12 @@ public class StatMethods {
         //fit loess
         //may not need if sanity version uses spline
         LoessInterpolator loessInterpolator = new LoessInterpolator(bandwidth, robustIters);
-        double[] y = loessInterpolator.smooth(bins[0], bins[1]);
+        double[] y = loessInterpolator.smooth(newX, newY);
 
         //isotonic regression
         List<Point> points = new LinkedList<>();
         for (int i = 0; i < y.length; i++) {
-            points.add(new Point(bins[0][i], y[i]));
+            points.add(new Point(newX[i], y[i]));
         }
         PairAdjacentViolators pav = new PairAdjacentViolators(points);
 

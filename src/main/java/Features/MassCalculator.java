@@ -15,7 +15,7 @@ public class MassCalculator {
     private String peptide;
     public int charge;
     public float mass;
-    private ArrayList<Float> modMasses = new ArrayList<Float>(); //no inclusion of C-terminal mods?
+    public ArrayList<Double> modMasses = new ArrayList<Double>(); //no inclusion of C-terminal mods?
 
     //ion series
     public float[] b1;
@@ -51,18 +51,18 @@ public class MassCalculator {
         put('X', 0f);
     }};
     //TODO: handling oxidation on other amino acids
-    private final HashMap<String, String> unimodToMods = new HashMap<String, String>()
-    {{
-        put("1", "Acetyl[AnyN-term]");
-        put("4", "Carbamidomethyl[C]");
-        put("35", "Oxidation[M]");
-    }};
-    private final HashMap<String, Float> unimodToMass = new HashMap<String, Float>()
-    {{
-        put("1", 42.010565f);
-        put("4", 57.021464f);
-        put("35", 15.994915f);
-    }};
+//    private final HashMap<String, String> unimodToMods = new HashMap<String, String>()
+//    {{
+//        put("1", "Acetyl[AnyN-term]");
+//        put("4", "Carbamidomethyl[C]");
+//        put("35", "Oxidation[M]");
+//    }};
+//    private final HashMap<String, Float> unimodToMass = new HashMap<String, Float>()
+//    {{
+//        put("1", 42.010565f);
+//        put("4", 57.021464f);
+//        put("35", 15.994915f);
+//    }};
     private final HashMap<String, Float> modToMass = new HashMap<String, Float>()
     {{
         put("Acetyl[AnyN-term]", 42.010565f);
@@ -72,7 +72,7 @@ public class MassCalculator {
 
     //first formatting DIA-NN format to common one
     public MassCalculator(String pep, Object charge) {
-        StringBuilder myMods = new StringBuilder();
+        fullPeptide = pep + "|" + charge;
 
         while (true) {
             int ind = pep.indexOf("[");
@@ -82,26 +82,32 @@ public class MassCalculator {
             int ind2 = pep.indexOf("]");
 
             //get mod
-            String modNum = pep.substring(ind, ind2).split(":")[1];
-            String mod = unimodToMods.get(modNum);
-            myMods.append(ind).append(",").append(mod).append(";");
+            String modNum;
+            try { //known mod
+                modNum = pep.substring(ind, ind2).split(":")[1];
+                //add modNum to modMasses
+                while (modMasses.size() < ind) {
+                    modMasses.add(0d);
+                }
+                modMasses.add(Constants.AAmassToUnimod.get(modNum));
+            } catch (Exception e) {
+                modNum = pep.substring(ind + 1, ind2);
+                //add modNum to modMasses
+                while (modMasses.size() < ind) {
+                    modMasses.add(0d);
+                }
+                modMasses.add(Double.parseDouble(modNum));
+            }
 
             //replace mod
             pep = pep.substring(0, ind) + pep.substring(ind2 + 1);
-
-            //add modNum to modMasses
-            while (modMasses.size() < ind) {
-                modMasses.add(0f);
-            }
-            modMasses.add(unimodToMass.get(modNum));
         }
 
         peptide = pep;
-        fullPeptide = pep + "|" + myMods + "|" + charge;
 
         //fill in remaining zeros
         while (modMasses.size() < peptide.length() + 1) {
-            modMasses.add(0f);
+            modMasses.add(0d);
         }
 
         //set charge
@@ -142,7 +148,7 @@ public class MassCalculator {
         }
 
         //add to modMasses
-        for (float f : modsArray) {
+        for (double f : modsArray) {
             modMasses.add(f);
         }
 

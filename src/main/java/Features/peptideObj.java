@@ -35,7 +35,7 @@ public class peptideObj {
     public peptideObj(mzmlScanNumber scanNumObj, String name, int rank, int targetORdecoy, String escore,
                       float[] predMZs, float[] predIntensities, float predRT, Float predIM) {
         this.name = name;
-        this.charge = Integer.parseInt(name.split("\\|")[2]);
+        this.charge = Integer.parseInt(name.split("\\|")[1]);
         this.rank = rank;
         this.scanNumObj = scanNumObj;
         this.scanNum = scanNumObj.scanNum;

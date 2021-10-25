@@ -37,6 +37,8 @@ public class PinMzmlMatcher {
                     mzmlFileMap.put(f.getName().substring(0, f.getName().length() - 5), f);
                 } else if (directory.substring(directory.length() - 16).toLowerCase().equals("uncalibrated.mgf")) {
                     mzmlFileMap.put(f.getName().substring(0, f.getName().length() - 17), f);
+                } else if (directory.substring(directory.length() - 3).toLowerCase().equals("mgf")) {
+                    mzmlFileMap.put(f.getName().substring(0, f.getName().length() - 4), f);
                 }
             } else { //directory
                 Collection<File> mzmlFilesCollection = listFiles(f, new String[]{"mzML"}, false);
@@ -55,6 +57,8 @@ public class PinMzmlMatcher {
                     String mgfName = file.getName();
                     if (mgfName.contains("_uncalibrated.mgf")) {
                         mgfName = mgfName.substring(0, mgfName.length() - 17);
+                    } else if (!mgfName.contains("_calibrated.mgf")) {
+                        mgfName = mgfName.substring(0, mgfName.length() - 4);
                     }
                     if (! mzmlFileMap.containsKey(mgfName)) { //only want mzml
                         mzmlFileMap.put(mgfName, file);
@@ -74,7 +78,7 @@ public class PinMzmlMatcher {
                 mzmlFiles[i] = mzmlFileMap.get(baseName);
             } else { //no matching mzml file
                 throw new IllegalArgumentException("No matching mzml/mgf file for " + baseName + ".pin, " +
-                        "please check that provided mzml directories contain proper mzml files.");
+                        "please check that provided mzml/mgf directories contain proper mzml/mgf files.");
             }
         }
     }

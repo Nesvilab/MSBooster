@@ -170,6 +170,7 @@ public class MainClass {
         if (params.containsKey("fragger")) { //upload fasta digestion params from fragger file. Does not use PTM info. Will override paramsList
             if (! params.get("fragger").equals("null")) {
                 String line;
+                boolean DaToPPM = false;
                 BufferedReader reader = new BufferedReader(new FileReader(params.get("fragger")));
                 while ((line = reader.readLine()) != null) {
                     String[] lineSplit = line.split("#")[0].split("=");
@@ -181,6 +182,11 @@ public class MainClass {
                     switch (key) {
                         case "fragment_mass_tolerance":
                             params.put("ppmTolerance", val);
+                            break;
+                        case "fragment_mass_units":
+                            if (val.equals("0")) {
+                                DaToPPM = true;
+                            }
                             break;
                         case "decoy_prefix":
                             params.put("decoyPrefix", ">" + val);
@@ -205,6 +211,22 @@ public class MainClass {
                         case "database_name":
                             params.put("fasta", val);
                             break;
+                    }
+                }
+
+                if (DaToPPM) {
+                    float tol = (float) Math.ceil(Float.parseFloat(params.get("ppmTolerance")) * 1000f);
+                    if (tol >= 100f) {
+                        params.put("lowResppmTolerance", String.valueOf(tol));
+                    } else {
+                        params.put("highResppmTolerance", String.valueOf(tol));
+                    }
+                } else {
+                    float tol = Float.parseFloat(params.get("ppmTolerance"));
+                    if (tol >= 100f) {
+                        params.put("lowResppmTolerance", String.valueOf(tol));
+                    } else {
+                        params.put("highResppmTolerance", String.valueOf(tol));
                     }
                 }
             }
@@ -408,13 +430,13 @@ public class MainClass {
                     throw new IllegalArgumentException("path to DIA-NN executable must be provided");
                 }
                 System.out.println("Generating input file for DIA-NN");
-                long startTime = System.nanoTime();
+                //long startTime = System.nanoTime();
                 peptideFileCreator.createPeptideFile(pmMatcher.pinFiles, Constants.spectraRTPredInput, "Diann", "pin");
                 peptideFileCreator.createPeptideFile(pmMatcher.pinFiles,
                         Constants.spectraRTPredInput.substring(0, Constants.spectraRTPredInput.length() - 4) + "_full.tsv",
                         "DiannFull", "pin");
-                long endTime = System.nanoTime();
-                long duration = (endTime - startTime);
+                //long endTime = System.nanoTime();
+                //long duration = (endTime - startTime);
             } else if (Constants.spectraRTPredModel.equals("pDeep3")) {
                 System.out.println("Generating input file for pDeep3");
                 peptideFileCreator.createPeptideFile(pmMatcher.pinFiles, Constants.spectraRTPredInput, "pDeep3", "pin");
@@ -422,10 +444,10 @@ public class MainClass {
         }
         if (createDetectAllPredFile) {
             System.out.println("Generating input file for DeepMSPeptide");
-            long startTime = System.nanoTime();
+            //long startTime = System.nanoTime();
             Constants.setFastaReader(peptideFileCreator.createPeptideFile(pmMatcher.pinFiles, Constants.detectPredInput, "DeepMSPeptideAll", "pin"));
-            long endTime = System.nanoTime();
-            long duration = (endTime - startTime);
+            //long endTime = System.nanoTime();
+            //long duration = (endTime - startTime);
         } else if (createDetectPredFile) {
             System.out.println("Generating input file for DeepMSPeptide");
             peptideFileCreator.createPeptideFile(pmMatcher.pinFiles, Constants.detectPredInput, "DeepMSPeptide", "pin");
@@ -433,16 +455,16 @@ public class MainClass {
 
         //generate predictions
         if ((Constants.spectraRTPredFile == null) && (createSpectraRTPredFile2)) {
-            long startTime = System.nanoTime();
+            //long startTime = System.nanoTime();
             ExternalModelCaller.callModel(run, "DIA-NN");
-            long endTime = System.nanoTime();
-            long duration = (endTime - startTime);
+            //long endTime = System.nanoTime();
+            //long duration = (endTime - startTime);
         }
         if ((Constants.detectPredFile == null) && (createDetectPredFile2)) {
-            long startTime = System.nanoTime();
+            //long startTime = System.nanoTime();
             ExternalModelCaller.callModel(run, "DeepMSPeptide");
-            long endTime = System.nanoTime();
-            long duration = (endTime - startTime);
+            //long endTime = System.nanoTime();
+            //long duration = (endTime - startTime);
         }
 
         //print parameters to ps

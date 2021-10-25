@@ -188,20 +188,41 @@ public class mzMLReader {
     }
 
     public void createScanNumObjects() throws FileParsingException, ExecutionException, InterruptedException {
-        long startTime = System.nanoTime();
+        //long startTime = System.nanoTime();
 
         //get all scan nums
         IScan scan = scans.getNextScanAtMsLevel(-1, 2);
 
+        //for checking resolution
+        boolean hasFTMS = false;
+        boolean hasITMS = false;
+
         while (! (scan == null)) {
+            if (scan.getFilterString() != null) {
+                if (!hasFTMS && scan.getFilterString().contains("FTMS")) {
+                    hasFTMS = true;
+                }
+                if (!hasITMS && scan.getFilterString().contains("ITMS")) {
+                    hasITMS = true;
+                }
+            }
+
             mzmlScanNumber msn = new mzmlScanNumber(scan);
             scanNumberObjects.put(scan.getNum(), msn);
             scan = scans.getNextScanAtMsLevel(scan.getNum(), 2);
         }
 
+        //what happens with resolution
+        //needs to be updated for each mzml
+        if (hasFTMS && ! hasITMS) { //only high resoltuion
+            Constants.ppmTolerance = Constants.highResppmTolerance;
+        } else if (hasITMS) { //low resolution, or both high and low are present so default to low
+            Constants.ppmTolerance = Constants.lowResppmTolerance;
+        }
+
         scans.reset(); //free up memory. Could consider setting to null as well, but idk how to check if it's garbage collected
-        long endTime = System.nanoTime();
-        long duration = (endTime - startTime);
+        //long endTime = System.nanoTime();
+        //long duration = (endTime - startTime);
         //System.out.println("createScanNumObjects took " + duration / 1000000 +" milliseconds");
     }
 
@@ -465,7 +486,7 @@ public class mzMLReader {
         if (mode.equals("RT")) {
             KernelDensity[] kernelDensities = RTFunctions.generateEmpiricalDist(RTbins);
 
-            long startTime = System.nanoTime();
+            //long startTime = System.nanoTime();
             futureList.clear();
 
             //iterate over this list of scan numbers
@@ -485,8 +506,8 @@ public class mzMLReader {
             for (Future future : futureList) {
                 future.get();
             }
-            long endTime = System.nanoTime();
-            long duration = (endTime - startTime);
+            //long endTime = System.nanoTime();
+            //long duration = (endTime - startTime);
             //System.out.println("Calculating RT probabilities took " + duration / 1000000 + " milliseconds");
         } else if (mode.equals("IM")) {
             KernelDensity[][] kernelDensities = new KernelDensity[IMFunctions.numCharges][];
@@ -538,7 +559,7 @@ public class mzMLReader {
     }
 
     public void predictRTLOESS(ExecutorService executorService) throws ExecutionException, InterruptedException {
-        long startTime = System.nanoTime();
+        //long startTime = System.nanoTime();
         futureList.clear();
 
         //iterate over this list of scan numbers
@@ -559,13 +580,13 @@ public class mzMLReader {
         for (Future future : futureList) {
             future.get();
         }
-        long endTime = System.nanoTime();
-        long duration = (endTime - startTime);
+        //long endTime = System.nanoTime();
+        //long duration = (endTime - startTime);
         //System.out.println("Calculating deltaRTLOESS took " + duration / 1000000 +" milliseconds");
     }
 
     public void predictIMLOESS(ExecutorService executorService) throws ExecutionException, InterruptedException {
-        long startTime = System.nanoTime();
+        //long startTime = System.nanoTime();
         futureList.clear();
 
         //iterate over this list of scan numbers
@@ -606,8 +627,8 @@ public class mzMLReader {
         for (Future future : futureList) {
             future.get();
         }
-        long endTime = System.nanoTime();
-        long duration = (endTime - startTime);
+        //long endTime = System.nanoTime();
+        //long duration = (endTime - startTime);
         //System.out.println("Calculating deltaIMLOESS took " + duration / 1000000 +" milliseconds");
     }
 
@@ -722,5 +743,8 @@ public class mzMLReader {
 //                "20180819_TIMS2_12-2_AnBr_SA_200ng_HeLa_50cm_120min_100ms_11CT_3_A1_01_2769_uncalibrated.mgf");
 //        System.out.println("done loading mgf");
 //        mzMLReader mzml = new mzMLReader(mgf);
+        mzMLReader m = new mzMLReader("C:/Users/kevin/Downloads/proteomics/cystmt/" +
+                "JM4989_8988T_Cys_TMT_1.mzML");
+        System.out.println(Constants.ppmTolerance);
     }
 }

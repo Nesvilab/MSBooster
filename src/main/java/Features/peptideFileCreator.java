@@ -24,7 +24,7 @@ public class peptideFileCreator {
     //infile is pepXML file locations
     public static void createPeptideFile(String infile, String outfile, String modelFormat, String psmFormat)
             throws IOException { //pepXML or pin
-        long startTime = System.nanoTime();
+        //long startTime = System.nanoTime();
 
         //file or directory
         Collection<File> x = new ArrayList<File>();

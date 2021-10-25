@@ -62,6 +62,8 @@ public class Constants {
     public static final Integer mzFreqWindow = 1;
 
     public static Float ppmTolerance = 20f; //ppm tolerance of MS2 scans
+    public static Float lowResppmTolerance = 300f;
+    public static Float highResppmTolerance = 20f;
 
     //for limiting number of fragments used
     public static Boolean useSpectra = null;
@@ -185,7 +187,7 @@ public class Constants {
             }
         }
         if (editedPin == null || renamePin == 0) { //if 0, replace at end
-            editedPin = "edited_";
+            editedPin = "edited";
         }
         if (spectraRTPredInput == null) {
             spectraRTPredInput = outputDirectory + File.separator + "spectraRT.tsv";

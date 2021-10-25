@@ -144,10 +144,10 @@ public class percolatorFormatter {
         //could consider an mgf constant
         if (mgf != null) {
             System.out.println("Loading predicted spectra");
-            long startTime = System.nanoTime();
+            //long startTime = System.nanoTime();
             predictedSpectra = SpectralPredictionMapper.createSpectralPredictionMapper(mgf);
-            long endTime = System.nanoTime();
-            long duration = (endTime - startTime);
+            //long endTime = System.nanoTime();
+            //long duration = (endTime - startTime);
             //System.out.println("Spectra/RT/IM prediction loading took " + duration / 1000000 +" milliseconds");
             needsMGF = true;
         }
@@ -157,7 +157,7 @@ public class percolatorFormatter {
         detectMap dm = null;
         ArrayList<String> dFeatures = new ArrayList<String>(Constants.detectFeatures);
         dFeatures.retainAll(featuresList);
-        long startTime = System.nanoTime();
+        //long startTime = System.nanoTime();
         if (dFeatures.size() > 0) {
             dm = new detectMap(detectFile);
             HashMap<String, PredictionEntry> allPreds = predictedSpectra.getPreds();
@@ -246,16 +246,17 @@ public class percolatorFormatter {
             }
             dm.clear();
         }
-        long endTime = System.nanoTime();
-        long duration = (endTime - startTime);
+        //long endTime = System.nanoTime();
+        //long duration = (endTime - startTime);
         //System.out.println("Detectability map and formatting loading took " + duration / 1000000 +" milliseconds");
 
         ExecutorService executorService = Executors.newFixedThreadPool(Constants.numThreads);
         try {
             //////////////////////////////iterate through pin and mzml files//////////////////////////////////////////
             for (int i = 0; i < pinFiles.length; i++) {
-                startTime = System.nanoTime();
-                String newOutfile = pinFiles[i].getParent() + File.separator + outfile + pinFiles[i].getName();
+                //startTime = System.nanoTime();
+                String newOutfile = pinFiles[i].getAbsolutePath().replaceAll("\\.pin$", "_" + outfile + ".pin");
+
                 TsvWriter writer = new TsvWriter(new File(newOutfile), new TsvWriterSettings());
                 //load mzml file
                 System.out.println("Loading " + mzmlFiles[i].getName());
@@ -264,13 +265,13 @@ public class percolatorFormatter {
                 if (mzmlFiles[i].getName().substring( mzmlFiles[i].getName().length() - 3).toLowerCase().equals("mgf")) {
                     //mzml = new mzMLReader(new mgfFileReader(mzmlFiles[i].getCanonicalPath()));
                     mzml = new mzMLReader(new mgfFileReader(mzmlFiles[i].getCanonicalPath(), true, executorService));
-                    endTime = System.nanoTime();
-                    duration = (endTime - startTime);
+                    //endTime = System.nanoTime();
+                    //duration = (endTime - startTime);
                     //System.out.println("mgf loading took " + duration / 1000000 +" milliseconds");
                 } else {
                     mzml = new mzMLReader(mzmlFiles[i].getCanonicalPath());
-                    endTime = System.nanoTime();
-                    duration = (endTime - startTime);
+                    //endTime = System.nanoTime();
+                    //duration = (endTime - startTime);
                     //System.out.println("mzML loading took " + duration / 1000000 +" milliseconds");
                 }
 
@@ -329,11 +330,11 @@ public class percolatorFormatter {
                 //Special preparations dependent on features we require
                 if (needsMGF) {
                     //System.out.println("Loading PSMs onto mzml object");
-                    long startTime1 = System.nanoTime();
+                    //long startTime1 = System.nanoTime();
                     //TODO: can we detect before this how many ranks there are?
                     mzml.setPinEntries(pin, predictedSpectra);
-                    endTime = System.nanoTime();
-                    duration = (endTime - startTime1);
+                    //endTime = System.nanoTime();
+                    //duration = (endTime - startTime1);
                     //System.out.println("PSM loading took " + duration / 1000000 +" milliseconds");
                     //.out.println("Done loading PSMs onto mzml object");
                 }
@@ -679,8 +680,8 @@ public class percolatorFormatter {
                     writer.writeValuesToRow();
                 }
                 pin.close();
-                endTime = System.nanoTime();
-                duration = (endTime - startTime);
+                //endTime = System.nanoTime();
+                //duration = (endTime - startTime);
                 //System.out.println("Pin editing took " + duration / 1000000 +" milliseconds");
                 writer.close();
                 mzml.clear();

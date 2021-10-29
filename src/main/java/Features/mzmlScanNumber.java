@@ -124,8 +124,15 @@ public class mzmlScanNumber {
         } catch (Exception e) {
             //when peptide isn't in predictions, like U peptides.
             //Set to arbitrary 0 vectors so nothing matches, similarity 0
-            peptideObjects.add(rank - 1, new peptideObj(this, name, rank, targetORdecoy, escore,
-                    zeroFloatArray, zeroFloatArray, 0.0f, null));
+            String nameCheck = name;
+            nameCheck.replace("UniMod", "");
+            if (nameCheck.contains("U")) {
+                peptideObjects.add(rank - 1, new peptideObj(this, name, rank, targetORdecoy, escore,
+                        zeroFloatArray, zeroFloatArray, 0.0f, null));
+            } else {
+                System.out.println("Prediction missing in file for " + name);
+                System.exit(-1);
+            }
         }
 
 //        //recording experimental IMs for peptides

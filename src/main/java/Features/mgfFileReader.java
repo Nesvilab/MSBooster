@@ -4,6 +4,7 @@ import org.apache.commons.lang3.ArrayUtils;
 import umich.ms.fileio.exceptions.FileParsingException;
 
 import java.io.*;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -13,7 +14,7 @@ import java.util.concurrent.*;
 public class mgfFileReader implements SpectralPredictionMapper{
     //mgfFileReader can handle both single files and entire directories
 
-    ArrayList<String> filenames;
+    ArrayList<String> filenames = new ArrayList<>();
     HashMap<String, PredictionEntry> allPreds = new HashMap<>();
     public ConcurrentHashMap<Integer, mzmlScanNumber> scanNumberObjects = new ConcurrentHashMap<>();
     private List<Future> futureList = new ArrayList<>(Constants.numThreads);
@@ -23,7 +24,6 @@ public class mgfFileReader implements SpectralPredictionMapper{
     public mgfFileReader(String files) throws IOException {
         File predsDirectory = new File(files);
         String[] predsFiles = predsDirectory.list();
-        filenames = new ArrayList<String>();
 
         if (predsFiles == null) { //if user provided a file, not a directory
             filenames.add(files);
@@ -166,12 +166,27 @@ public class mgfFileReader implements SpectralPredictionMapper{
     public mgfFileReader(String file, boolean createScanNumObjects, ExecutorService executorService)
             throws IOException, FileParsingException, ExecutionException, InterruptedException {
 
+        //add name
+        filenames.add(file);
+
         //load data
         File myFile = new File(file);
         byte[] data = new byte[(int) myFile.length()];
         DataInputStream in = new DataInputStream(new BufferedInputStream(new FileInputStream(myFile), 1 << 24));
         in.read(data);
         in.close();
+
+        //removing comments
+        boolean hasComment = false;
+        for (byte b : data) {
+            if (b == 35) {
+                hasComment = true;
+                break;
+            }
+        }
+        if (hasComment) {
+            data = (new String(data, StandardCharsets.UTF_8)).replaceAll("#[^\r\n]*[\r\n]", "").getBytes(StandardCharsets.UTF_8);
+        }
 
         //find where specific lines are
         int[] chunks = new int[Constants.numThreads + 1];
@@ -190,10 +205,11 @@ public class mgfFileReader implements SpectralPredictionMapper{
                 start++;
             }
         }
-        
+
         //parallelize
         for (int i = 0; i < Constants.numThreads; i++) {
             int finalI = i;
+            byte[] finalData = data;
             futureList.add(executorService.submit(() -> {
                 int scanNum = 0;
                 float RT = 0;
@@ -205,13 +221,13 @@ public class mgfFileReader implements SpectralPredictionMapper{
                 String line = "";
 
                 while (start < end - 11) {
-                    switch (data[start]) {
+                    switch (finalData[start]) {
                         case 'T': //TITLE
                             start += 6;
                             //TODO: make below part a private method. 2 versions, 1 where no bytearray/string is made.
                             // accept \n or space.
                             // toAdd will be length of string
-                            line = returnString('\n', data, start);
+                            line = returnString('\n', finalData, start);
 
                             String[] dotSplit = line.split("\\.");
                             scanNum = Integer.parseInt(dotSplit[dotSplit.length - 2]);
@@ -219,15 +235,15 @@ public class mgfFileReader implements SpectralPredictionMapper{
                             break;
                         case 'C': //CHARGE
                             start += 7;
-                            start += returnAdd('\n', data, start) + 1;
+                            start += returnAdd('\n', finalData, start) + 1;
                             break;
                         case 'P': //PEPMASS
                             start += 8;
-                            start += returnAdd('\n', data, start) + 1;
+                            start += returnAdd('\n', finalData, start) + 1;
                             break;
                         case 'R': //RTINSECONDS
                             start += 12;
-                            line = returnString('\n', data, start);
+                            line = returnString('\n', finalData, start);
                             RT = Float.parseFloat(line);
                             start += line.length() + 1;
                             break;
@@ -256,18 +272,18 @@ public class mgfFileReader implements SpectralPredictionMapper{
                             start += 11;
                             break;
                         case '1': // 1/K0
-                            if (data[start + 1] == '/') {
+                            if (finalData[start + 1] == '/') {
                                 start += 5;
-                                line = returnString('\n', data, start);
+                                line = returnString('\n', finalData, start);
                                 IM = Float.parseFloat(line);
                                 start += line.length() + 1;
                                 break;
                             } else {
-                                line = returnString(' ', data, start);
+                                line = returnString(' ', finalData, start);
                                 mzs.add(Float.parseFloat(line));
                                 start += line.length() + 1;
 
-                                line = returnString('\n', data, start);
+                                line = returnString('\n', finalData, start);
                                 intensities.add(Float.parseFloat(line));
                                 start += line.length() + 1;
                                 break;
@@ -281,11 +297,11 @@ public class mgfFileReader implements SpectralPredictionMapper{
                         case '8':
                         case '9':
                         case '0':
-                            line = returnString(' ', data, start);
+                            line = returnString(' ', finalData, start);
                             mzs.add(Float.parseFloat(line));
                             start += line.length() + 1;
 
-                            line = returnString('\n', data, start);
+                            line = returnString('\n', finalData, start);
                             intensities.add(Float.parseFloat(line));
                             start += line.length() + 1;
                             break;
@@ -318,41 +334,37 @@ public class mgfFileReader implements SpectralPredictionMapper{
 
     public static void main(String[] args) throws IOException, FileParsingException, ExecutionException, InterruptedException {
         //mgfFileReader mgf = new mgfFileReader("C:/Users/kevin/OneDriveUmich/proteomics/preds/cptacPreds.mgf");
-        ExecutorService executorService = Executors.newFixedThreadPool(12);
-        Constants.numThreads = 12;
+        Constants.numThreads = 11;
+        ExecutorService executorService = Executors.newFixedThreadPool(Constants.numThreads);
         long startTime = System.nanoTime();
-        mgfFileReader mgf = new mgfFileReader("C:/Users/yangkl/OneDriveUmich/proteomics/mzml/" +
-                "20180819_TIMS2_12-2_AnBr_SA_200ng_HeLa_50cm_120min_100ms_11CT_1_A1_01_2767_uncalibrated.mgf", true,
+        mgfFileReader mgf = new mgfFileReader("C:/Users/kevin/OneDriveUmich/proteomics/DDA_mgf/" +
+                "20190705_HeLa_90min_PASEF_FastCE_Frac_23_Slot2-23_1_73_5_3_0.mgf", true,
                 executorService);
-        System.out.println(mgf.scanNumberObjects.size());
-        System.out.println(mgf.scanNumberObjects.get(176229).RT);
-        System.out.println(mgf.scanNumberObjects.containsKey(5));
-        System.out.println(mgf.scanNumberObjects.get(5).RT);
-        mzMLReader mzml = new mzMLReader(mgf);
+        //mzMLReader mzml = new mzMLReader(mgf);
         long endTime = System.nanoTime();
         long duration = (endTime - startTime);
         System.out.println("loading took " + duration / 1000000 +" milliseconds");
 
-        mgf = new mgfFileReader("C:/Users/yangkl/OneDriveUmich/proteomics/mzml/" +
-                "20180819_TIMS2_12-2_AnBr_SA_200ng_HeLa_50cm_120min_100ms_11CT_2_A1_01_2768.mgf", true,
-                executorService);
-        mzml = new mzMLReader(mgf);
-        System.out.println("hi");
-
-        mgf = new mgfFileReader("C:/Users/yangkl/OneDriveUmich/proteomics/mzml/" +
-                "20180819_TIMS2_12-2_AnBr_SA_200ng_HeLa_50cm_120min_100ms_11CT_3_A1_01_2769.mgf", true,
-                executorService);
-        mzml = new mzMLReader(mgf);
-        System.out.println("hi");
-
-        mgf = new mgfFileReader("C:/Users/yangkl/OneDriveUmich/proteomics/mzml/" +
-                "20180819_TIMS2_12-2_AnBr_SA_200ng_HeLa_50cm_120min_100ms_11CT_4_A1_01_2770.mgf", true,
-                executorService);
-        mzml = new mzMLReader(mgf);
-
-        endTime = System.nanoTime();
-        duration = (endTime - startTime);
-        System.out.println("loading took " + duration / 1000000 +" milliseconds");
+//        mgf = new mgfFileReader("C:/Users/yangkl/OneDriveUmich/proteomics/mzml/" +
+//                "20180819_TIMS2_12-2_AnBr_SA_200ng_HeLa_50cm_120min_100ms_11CT_2_A1_01_2768.mgf", true,
+//                executorService);
+//        mzml = new mzMLReader(mgf);
+//        System.out.println("hi");
+//
+//        mgf = new mgfFileReader("C:/Users/yangkl/OneDriveUmich/proteomics/mzml/" +
+//                "20180819_TIMS2_12-2_AnBr_SA_200ng_HeLa_50cm_120min_100ms_11CT_3_A1_01_2769.mgf", true,
+//                executorService);
+//        mzml = new mzMLReader(mgf);
+//        System.out.println("hi");
+//
+//        mgf = new mgfFileReader("C:/Users/yangkl/OneDriveUmich/proteomics/mzml/" +
+//                "20180819_TIMS2_12-2_AnBr_SA_200ng_HeLa_50cm_120min_100ms_11CT_4_A1_01_2770.mgf", true,
+//                executorService);
+//        mzml = new mzMLReader(mgf);
+//
+//        endTime = System.nanoTime();
+//        duration = (endTime - startTime);
+//        System.out.println("loading took " + duration / 1000000 +" milliseconds");
         executorService.shutdown();
     }
 }

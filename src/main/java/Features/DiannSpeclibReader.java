@@ -4,7 +4,9 @@ import java.io.*;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
+import java.util.Map;
 
 public class DiannSpeclibReader implements SpectralPredictionMapper{
     final ArrayList<String> filenames;
@@ -100,6 +102,11 @@ public class DiannSpeclibReader implements SpectralPredictionMapper{
                     allPreds.put(mc.fullPeptide, newPred);
                 }
                 is.close();
+
+                if (TSVReader.readLine() != null) {
+                    System.out.println("Prediction file is missing some entries. Please rerun MSBooster");
+                    System.exit(-1);
+                }
                 TSVReader.close();
 
                 //repeat this process with full peptides
@@ -180,9 +187,15 @@ public class DiannSpeclibReader implements SpectralPredictionMapper{
         //DiannSpeclibReader d = new DiannSpeclibReader("C:/Users/kevin/OneDriveUmich/proteomics/preds/cptacDiann.predicted.bin");
         long startTime = System.nanoTime();
         SpectralPredictionMapper spm = SpectralPredictionMapper.createSpectralPredictionMapper(
-                "C:/DIA-NN/1.7.15beta1/spectraRT.predicted.bin");
+                "C:/Users/kevin/Downloads/testDIANN.predicted.bin");
+        for (Map.Entry<String, PredictionEntry> m : spm.getPreds().entrySet()) {
+            System.out.println(m.getKey());
+            System.out.println(Arrays.toString(m.getValue().mzs));
+            System.out.println(Arrays.toString(m.getValue().intensities));
+        }
         long endTime = System.nanoTime();
         long duration = (endTime - startTime);
         System.out.println("Spectra/RT/IM prediction loading took " + duration / 1000000 +" milliseconds");
+        System.out.println(spm.getPreds().size());
     }
 }

@@ -3,6 +3,7 @@ package External;
 import Features.Constants;
 
 import java.io.*;
+import java.nio.file.Files;
 
 public class ExternalModelCaller {
     //TODO: can we make the repeated parts more concise?
@@ -17,7 +18,8 @@ public class ExternalModelCaller {
                             Constants.spectraRTPredInput,
                             "--predict",
                             "--threads",
-                            String.valueOf(Constants.numThreads));
+                            String.valueOf(Constants.numThreads),
+                            "--strip-unknown-mods");
                     System.out.println(String.join(" ", builder.command()));
                     builder.redirectErrorStream(true);
                     Process process = builder.start();
@@ -32,8 +34,17 @@ public class ExternalModelCaller {
                     Constants.spectraRTPredFile =
                             Constants.spectraRTPredInput.substring(0, Constants.spectraRTPredInput.length() - 4) +
                             ".predicted.bin";
-                    System.out.println("Done generating DIA-NN predictions");
-                } catch (IOException e) {
+                    process.waitFor();
+
+                    File predFile = new File(Constants.spectraRTPredFile);
+                    if (Files.isReadable(predFile.toPath())) {
+                        System.out.println("Done generating DIA-NN predictions");
+                    } else {
+                        System.out.println("Cannot find DIA-NN's output. Please rerun MSBooster");
+                        System.exit(-1);
+                    }
+
+                } catch (IOException | InterruptedException e) {
                     e.printStackTrace();
                 }
                 break;

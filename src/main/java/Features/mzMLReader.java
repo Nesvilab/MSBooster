@@ -34,7 +34,7 @@ public class mzMLReader {
     private float[] betas;
     public ArrayList<Float>[] RTbins = null;
     public float[][] RTbinStats;
-    private Function1<Double, Double> RTLOESS;
+    public Function1<Double, Double> RTLOESS;
     public ArrayList<Float>[][] IMbins = null;
     public float[][][] IMbinStats = new float[IMFunctions.numCharges][2 * Constants.IMbinMultiplier + 1][3];
     private ArrayList<Function1<Double, Double>> IMLOESS = new ArrayList<>();
@@ -78,7 +78,7 @@ public class mzMLReader {
     }
 
     public mzMLReader(mgfFileReader mgf) throws FileParsingException, ExecutionException, InterruptedException { //uncalibrated mgf from MSFragger .d search
-        pathStr = null;
+        pathStr = mgf.filenames.get(0);
 
         //Constants.useIM = true;
         //scanNumberObjects = mgf.scanNumberObjects;

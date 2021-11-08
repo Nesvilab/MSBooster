@@ -230,13 +230,16 @@ public class MassCalculator {
     }
 
     public static void main(String[] args) {
-        MassCalculator mc = new MassCalculator("[unimod:1]VC[unimod:4]AKIGDFGMAR", 2);
-        mc.calcAllMasses();
+        MassCalculator mc = new MassCalculator("Q[-17.0265]LVPALAKV", 1);
+        //mc.calcAllMasses();
         System.out.println(mc.mass);
-        System.out.println(Arrays.toString(mc.b1));
-        System.out.println(Arrays.toString(mc.y1));
-        System.out.println(Arrays.toString(mc.b2));
-        System.out.println(Arrays.toString(mc.y2));
-        System.out.println(mc.calcMass(2,0,2));
+        System.out.println(mc.calcMass(8, 0, 1));
+        System.out.println(mc.calcMass(5, 0, 1));
+        System.out.println(mc.calcMass(8, 1, 1));
+        System.out.println(mc.calcMass(5, 1, 1));
+//        System.out.println(Arrays.toString(mc.b1));
+//        System.out.println(Arrays.toString(mc.y1));
+//        System.out.println(Arrays.toString(mc.b2));
+//        System.out.println(Arrays.toString(mc.y2));
     }
 }

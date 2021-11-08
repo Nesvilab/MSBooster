@@ -142,7 +142,12 @@ public class StatMethods {
 
         //fit loess
         //may not need if sanity version uses spline
-        LoessInterpolator loessInterpolator = new LoessInterpolator(bandwidth, robustIters);
+        LoessInterpolator loessInterpolator;
+        try {
+            loessInterpolator = new LoessInterpolator(bandwidth / 5f, robustIters);
+        } catch (Exception e) {
+            loessInterpolator = new LoessInterpolator(bandwidth, robustIters);
+        }
         double[] y = loessInterpolator.smooth(newX, newY);
 
         //isotonic regression

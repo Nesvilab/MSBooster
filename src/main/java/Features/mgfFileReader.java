@@ -154,6 +154,15 @@ public class mgfFileReader implements SpectralPredictionMapper{
         return new String(byteArray);
     }
 
+    private String returnString(char[] endChar, byte[] myData, int startInt) {
+        int addInt = 0;
+        while (!(myData[startInt + addInt] == endChar[0]) && !(myData[startInt + addInt] == endChar[1])) {
+            addInt++;
+        }
+        byte[] byteArray = Arrays.copyOfRange(myData, startInt, startInt + addInt);
+        return new String(byteArray);
+    }
+
     private int returnAdd(char endChar, byte[] myData, int startInt) {
         int addInt = 0;
         while (!(myData[startInt + addInt] == endChar)) {
@@ -172,11 +181,13 @@ public class mgfFileReader implements SpectralPredictionMapper{
         //load data
         File myFile = new File(file);
         byte[] data = new byte[(int) myFile.length()];
+        //ArrayList<Byte> data = new ArrayList<>();
         DataInputStream in = new DataInputStream(new BufferedInputStream(new FileInputStream(myFile), 1 << 24));
         in.read(data);
         in.close();
 
         //removing comments
+        //TODO: can we assume that comments means it's from timsTOF?
         boolean hasComment = false;
         for (byte b : data) {
             if (b == 35) {
@@ -185,19 +196,19 @@ public class mgfFileReader implements SpectralPredictionMapper{
             }
         }
         if (hasComment) {
-            data = (new String(data, StandardCharsets.UTF_8)).replaceAll("#[^\r\n]*[\r\n]", "").getBytes(StandardCharsets.UTF_8);
+            data = (new String(data, StandardCharsets.UTF_8)).replaceAll("#[^\r\n]*[\r\n]", "").trim().getBytes(StandardCharsets.UTF_8);
         }
 
         //find where specific lines are
         int[] chunks = new int[Constants.numThreads + 1];
-        chunks[0] = 11; //skip first BEGIN IONS
+        chunks[0] = 0; //skip first BEGIN IONS
         chunks[Constants.numThreads] = data.length;
         int jump = data.length / Constants.numThreads;
         for (int l = 1; l < Constants.numThreads; l++) {
             int start = jump * l;
             while (true) {
                 if (data[start] == '\n') {
-                    if (data[start + 1] == 'B') {
+                    if (new String(Arrays.copyOfRange(data, start + 1, start + 11)).equals("BEGIN IONS")) {
                         chunks[l] = start + 12; //skip first BEGIN IONS
                         break;
                     }
@@ -229,12 +240,27 @@ public class mgfFileReader implements SpectralPredictionMapper{
                             // toAdd will be length of string
                             line = returnString('\n', finalData, start);
 
-                            String[] dotSplit = line.split("\\.");
-                            scanNum = Integer.parseInt(dotSplit[dotSplit.length - 2]);
+                            //timstof
+                            if (line.contains("Cmpd")) {
+                                String[] dotSplit = line.split(",");
+                                scanNum = Integer.parseInt(dotSplit[0].split(" ")[1]);
+
+                                //read in 1/K0
+                                for (String s : dotSplit) {
+                                    if (s.startsWith("1/K0")) {
+                                        IM = Float.parseFloat(s.split("=")[1]);
+                                    }
+                                }
+                            } else {
+                                String[] dotSplit = line.split("\\.");
+                                scanNum = Integer.parseInt(dotSplit[dotSplit.length - 2]);
+                            }
                             start += line.length() + 1;
                             break;
                         case 'C': //CHARGE
-                            start += 7;
+                            if (finalData[start + 1] == 'H') {
+                                start += 7;
+                            }
                             start += returnAdd('\n', finalData, start) + 1;
                             break;
                         case 'P': //PEPMASS
@@ -242,9 +268,13 @@ public class mgfFileReader implements SpectralPredictionMapper{
                             start += returnAdd('\n', finalData, start) + 1;
                             break;
                         case 'R': //RTINSECONDS
-                            start += 12;
-                            line = returnString('\n', finalData, start);
-                            RT = Float.parseFloat(line);
+                            if (finalData[start + 1] == 'T') {
+                                start += 12;
+                                line = returnString('\n', finalData, start);
+                                RT = Float.parseFloat(line);
+                            } else {
+                                line = returnString('\n', finalData, start);
+                            }
                             start += line.length() + 1;
                             break;
                         case 'E': // END IONS
@@ -276,18 +306,19 @@ public class mgfFileReader implements SpectralPredictionMapper{
                                 start += 5;
                                 line = returnString('\n', finalData, start);
                                 IM = Float.parseFloat(line);
-                                start += line.length() + 1;
-                                break;
                             } else {
-                                line = returnString(' ', finalData, start);
+                                line = returnString(new char[] {' ', '\t'}, finalData, start);
+//                                if (line.length() > returnString('\n', finalData, start).length()) {
+//                                    line = returnString('\t', finalData, start); //timstof
+//                                }
                                 mzs.add(Float.parseFloat(line));
                                 start += line.length() + 1;
 
                                 line = returnString('\n', finalData, start);
-                                intensities.add(Float.parseFloat(line));
-                                start += line.length() + 1;
-                                break;
+                                intensities.add(Float.parseFloat(line.split("\t")[0]));
                             }
+                            start += line.length() + 1;
+                            break;
                         case '2': //if number, skip switch
                         case '3':
                         case '4':
@@ -297,21 +328,48 @@ public class mgfFileReader implements SpectralPredictionMapper{
                         case '8':
                         case '9':
                         case '0':
-                            line = returnString(' ', finalData, start);
+                            line = returnString(new char[] {' ', '\t'}, finalData, start);
+//                            if (line.length() > returnString('\n', finalData, start).length()) {
+//                                line = returnString('\t', finalData, start); //timstof
+//                            }
                             mzs.add(Float.parseFloat(line));
                             start += line.length() + 1;
 
                             line = returnString('\n', finalData, start);
-                            intensities.add(Float.parseFloat(line));
+                            intensities.add(Float.parseFloat(line.split("\t")[0]));
+                            start += line.length() + 1;
+                            break;
+                        default: //USERNAME
+                            line = returnString('\n', finalData, start);
                             start += line.length() + 1;
                             break;
                     }
                 }
+                start += 9;
+                //do create scanNumObj
+                float[] mzArray = new float[mzs.size()];
+                for (int h = 0; h < mzs.size(); h++) {
+                    mzArray[h] = mzs.get(h);
+                }
+                float[] intArray = new float[intensities.size()];
+                for (int h = 0; h < intensities.size(); h++) {
+                    intArray[h] = intensities.get(h);
+                }
+                try {
+                    scanNumberObjects.put(scanNum, new mzmlScanNumber(scanNum, mzArray, intArray, RT, IM));
+                } catch (FileParsingException fileParsingException) {
+                    fileParsingException.printStackTrace();
+                }
+
+                //reset for next peptide/PSM
+                mzs.clear();
+                intensities.clear();
             }));
         }
         for (Future future : futureList) {
             future.get();
         }
+        data = null; //maybe better memory management
     }
 
     public HashMap<String, PredictionEntry> getPreds() { return allPreds; }
@@ -337,10 +395,13 @@ public class mgfFileReader implements SpectralPredictionMapper{
         Constants.numThreads = 11;
         ExecutorService executorService = Executors.newFixedThreadPool(Constants.numThreads);
         long startTime = System.nanoTime();
-        mgfFileReader mgf = new mgfFileReader("C:/Users/kevin/OneDriveUmich/proteomics/DDA_mgf/" +
-                "20190705_HeLa_90min_PASEF_FastCE_Frac_23_Slot2-23_1_73_5_3_0.mgf", true,
+        mgfFileReader mgf = new mgfFileReader("C:/Users/kevin/Downloads/" +
+                "20210702-06_2021027-HL1_1051_uncalibrated.mgf", true,
                 executorService);
-        //mzMLReader mzml = new mzMLReader(mgf);
+//        mgfFileReader mgf = new mgfFileReader("C:/Users/kevin/OneDriveUmich/proteomics/mzml/" +
+//                "20180819_TIMS2_12-2_AnBr_SA_200ng_HeLa_50cm_120min_100ms_11CT_3_A1_01_2769.mgf", true,
+//                executorService);
+        mzMLReader mzml = new mzMLReader(mgf);
         long endTime = System.nanoTime();
         long duration = (endTime - startTime);
         System.out.println("loading took " + duration / 1000000 +" milliseconds");

@@ -4,10 +4,7 @@ import umich.ms.fileio.exceptions.FileParsingException;
 
 import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;
-import java.util.Arrays;
-import java.util.Comparator;
 import java.util.concurrent.ExecutionException;
-import java.util.stream.IntStream;
 
 public class RandomThings {
 
@@ -16,10 +13,7 @@ public class RandomThings {
     }
 
     public static void main(String[] args) throws IOException, FileParsingException, NoSuchMethodException, IllegalAccessException, InvocationTargetException, InterruptedException, ExecutionException {
-        int[] a = new int[] {3,4,2};
-        int[] sortedIndices = IntStream.range(0, a.length)
-                .boxed().sorted(Comparator.comparingInt(k -> a[k])).mapToInt(ele -> ele).toArray();
-        System.out.println(Arrays.toString(sortedIndices));
+        byte[] data = new byte[Integer.MAX_VALUE + 1];
         //        ExecutorService executorService = Executors.newFixedThreadPool(Constants.numThreads);
 //        List<Future> futureList = new ArrayList<>(Constants.numThreads);
 //

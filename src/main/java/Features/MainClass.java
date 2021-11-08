@@ -474,6 +474,21 @@ public class MainClass {
         System.out.println("Generating edited pin with following features: " + Arrays.toString(featuresArray));
         long start = System.nanoTime();
         percolatorFormatter.editPin(pmMatcher, Constants.spectraRTPredFile, Constants.detectPredFile, featuresArray, Constants.editedPin);
+
+        //delete pred files
+        if (Constants.deletePreds) {
+            File predFile = new File(Constants.outputDirectory + File.separator + "spectraRT.tsv");
+            predFile.delete();
+            predFile = new File(Constants.outputDirectory + File.separator + "spectraRT_full.tsv");
+            predFile.delete();
+            predFile = new File(Constants.outputDirectory + File.separator + "spectraRT.predicted.bin");
+            predFile.delete();
+            predFile = new File(Constants.outputDirectory + File.separator + "detect.tsv");
+            predFile.delete();
+            predFile = new File(Constants.outputDirectory + File.separator + "detect_Predictions.txt");
+            predFile.delete();
+        }
+
         long end = System.nanoTime();
         long duration = (end - start);
         System.out.println("Done in " + duration / 1000000 + " ms");

@@ -22,6 +22,7 @@ public class Constants {
     public static String detectPredInput = null;
     public static String spectraRTPredFile = null; //use this if predFile already made
     public static String detectPredFile = null;
+    public static Boolean deletePreds = true;
 
     //optional file locations and parameters
     //if calculating detectFractionGreater, these are used for FastaReader class
@@ -80,7 +81,7 @@ public class Constants {
 
     //LOESS
     public static Double bandwidth = 0.25;
-    public static final Integer robustIters = 2;
+    public static Integer robustIters = 2;
 
     //detect
     public static Boolean useDetect = false;

@@ -344,7 +344,7 @@ public class percolatorFormatter {
                     mzml.predictRTLOESS(executorService); //potentially only invoke once if normalized included
 
                     //generate calibration figure, need mzml and loess
-                    RTCalibrationFigure rtfc = new RTCalibrationFigure(mzml, Constants.outputDirectory, 0.2f);
+                    RTCalibrationFigure rtfc = new RTCalibrationFigure(mzml, pinFiles[i].getCanonicalPath(), 0.2f);
                 }
                 if (featuresList.contains("deltaRTlinear")) {
                     //System.out.println("Calculating delta RT linear");

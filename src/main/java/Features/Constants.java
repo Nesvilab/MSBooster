@@ -80,7 +80,7 @@ public class Constants {
     public static Float RTIQR = 50f;
 
     //LOESS
-    public static Double bandwidth = 0.25;
+    public static Double bandwidth = 0.05;
     public static Integer robustIters = 2;
 
     //detect

@@ -13,7 +13,9 @@ public class RandomThings {
     }
 
     public static void main(String[] args) throws IOException, FileParsingException, NoSuchMethodException, IllegalAccessException, InvocationTargetException, InterruptedException, ExecutionException {
-        byte[] data = new byte[Integer.MAX_VALUE + 1];
+        long a = 3L;
+        int b = 2;
+        System.out.println(a / b);
         //        ExecutorService executorService = Executors.newFixedThreadPool(Constants.numThreads);
 //        List<Future> futureList = new ArrayList<>(Constants.numThreads);
 //

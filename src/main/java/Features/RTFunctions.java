@@ -87,7 +87,7 @@ public class RTFunctions {
                     .mapToInt(ele -> ele).toArray();
 
             int[] sortedIndices2 = Arrays.copyOfRange(sortedIndices, 0, RTregressionSize);
-            Arrays.sort(sortedIndices2); //this ensures increasing RT
+            //Arrays.sort(sortedIndices2); //this ensures increasing RT (sorted in LOESS anyways)
 
             double[][] RTs = new double[2][RTregressionSize];
             for (int i = 0; i < RTregressionSize; i++) {

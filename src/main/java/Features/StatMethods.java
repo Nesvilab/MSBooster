@@ -116,7 +116,17 @@ public class StatMethods {
         return ((x - mean) / sd);
     }
 
+    //TODO: automatic bandwidth selection
     public static Function1<Double, Double> LOESS(double[][] bins, double bandwidth, int robustIters) {
+        if (bandwidth <= 0) {
+            System.out.println("bandwidth is set to " + bandwidth + " but it must be greater than 0. Setting it to 0.05");
+            bandwidth = 0.05;
+        }
+        if (bandwidth > 1) {
+            System.out.println("bandwidth is set to " + bandwidth + " but maximum allowed is 1. Setting it to 1");
+            bandwidth = 1;
+        }
+
         //need to sort arrays (DIA-U mzml not in order)
         int[] sortedIndices = IntStream.range(0, bins[0].length)
                 .boxed().sorted(Comparator.comparingDouble(k -> bins[0][k])).mapToInt(ele -> ele).toArray();
@@ -142,13 +152,54 @@ public class StatMethods {
 
         //fit loess
         //may not need if sanity version uses spline
-        LoessInterpolator loessInterpolator;
-        try {
-            loessInterpolator = new LoessInterpolator(bandwidth / 5f, robustIters);
-        } catch (Exception e) {
-            loessInterpolator = new LoessInterpolator(bandwidth, robustIters);
+        LoessInterpolator loessInterpolator = null;
+        double[] y = null;
+
+        while (loessInterpolator == null) {
+            try {
+                if (bandwidth == 1d) {
+                    loessInterpolator = new LoessInterpolator(bandwidth, robustIters);
+                    y = loessInterpolator.smooth(newX, newY);
+
+                    ArrayList<Integer> nanIdx = new ArrayList<>();
+                    int i = 0;
+                    for (double yval : y) {
+                        if (Double.isNaN(yval)) {
+                            nanIdx.add(i);
+                        }
+                        i += 1;
+                    }
+
+                    if (nanIdx.size() > 0) {
+                        ArrayList<Double> newnewX = new ArrayList<>();
+                        ArrayList<Double> newnewY = new ArrayList<>();
+                        for (int j = 0; j < newX.length; j++) {
+                            if (! nanIdx.contains(j)) {
+                                newnewX.add(newX[j]);
+                                newnewY.add(newY[j]);
+                            }
+                        }
+                        newX = new double[newnewX.size()];
+                        y = new double[newnewX.size()];
+                        for (int j = 0; j < newnewX.size(); j++) {
+                            newX[j] = newnewX.get(j);
+                            y[j] = newnewY.get(j);
+                        }
+                    }
+                } else {
+                    loessInterpolator = new LoessInterpolator(bandwidth, robustIters);
+                    y = loessInterpolator.smooth(newX, newY);
+                    for (double yval : y) {
+                        if (Double.isNaN(yval)) {
+                            throw new Exception(bandwidth + " bandwidth is too small");
+                        }
+                    }
+                }
+            } catch (Exception e) {
+                loessInterpolator = null;
+                bandwidth = Math.min(bandwidth * 2d, 1);
+            }
         }
-        double[] y = loessInterpolator.smooth(newX, newY);
 
         //isotonic regression
         List<Point> points = new LinkedList<>();
@@ -158,6 +209,14 @@ public class StatMethods {
         PairAdjacentViolators pav = new PairAdjacentViolators(points);
 
         return pav.interpolator(); //extrapolationStrategy can use flat or tangent (default tangent)
+    }
+
+    public static double residualSumOfSquares(double[] x, double[] y) {
+        double sum = 0;
+        for (int i = 0; i < x.length; i++) {
+            sum += Math.pow(x[i] - y[i], 2);
+        }
+        return sum;
     }
 
     public static float[] movingAverage(float[] array, int windowSize) {

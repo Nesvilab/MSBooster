@@ -50,6 +50,8 @@ public class RTCalibrationFigure {
                 if (Float.parseFloat(pep.escore) < Constants.RTescoreCutoff && pep.targetORdecoy == 1) {
                     xData.add(rt);
                     yData.add(pep.RT);
+                } else {
+                    break;
                 }
             }
         }

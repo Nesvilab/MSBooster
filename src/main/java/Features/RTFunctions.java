@@ -48,8 +48,10 @@ public class RTFunctions {
         ArrayList<Float> expRTs = new ArrayList<>();
         ArrayList<Float> predRTs = new ArrayList<>();
         ArrayList<Float> eScores = new ArrayList<>(); //for sorting
-        //collect RTs and escores
+        HashMap<String, ArrayList<Integer>> pepIdx = new HashMap<>();
+        //collect RTs and escores. Collect peptide IDs for selecting best PSM for each
 
+        int added = 0;
         for (int scanNum : new TreeSet<Integer>(mzml.scanNumberObjects.keySet())) {
             mzmlScanNumber scanNumObj = mzml.getScanNumObject(scanNum);
             float rt = scanNumObj.RT; //experimental RT for this scan
@@ -57,20 +59,98 @@ public class RTFunctions {
             //add RT until you reach decoy
             //when doing good regression, decoys don't appear, so once decoy appears, expectation score is already too low
 
-            for (int i = 1; i < scanNumObj.peptideObjects.size() + 1; i++) {
-                peptideObj pep = scanNumObj.getPeptideObject(i);
-//                if (pep.targetORdecoy == 0) {
-//                    break;
-//                }
-                float e = Float.parseFloat(pep.escore);
-                if (e > Constants.RTescoreCutoff) {
-                    break;
+            //for (int i = 1; i < scanNumObj.peptideObjects.size() + 1; i++) { //changed so only looking at rank 1
+                if (scanNumObj.peptideObjects.size() == 0) {
+                    continue;
                 }
-                expRTs.add(rt);
-                predRTs.add(pep.RT);
-                eScores.add(e);
+            peptideObj pep = scanNumObj.getPeptideObject(1);
+            if (pep.targetORdecoy == 0) {
+                continue;
+            }
+            float e = Float.parseFloat(pep.escore);
+            if (e > Constants.RTescoreCutoff) {
+                continue;
+            }
+            expRTs.add(rt);
+            predRTs.add(pep.RT);
+            eScores.add(e);
+            if (pepIdx.containsKey(pep.name)) {
+                ArrayList<Integer> tmpList = pepIdx.get(pep.name);
+                tmpList.add(added);
+                pepIdx.put(pep.name, tmpList);
+            } else {
+                ArrayList<Integer> tmpList = new ArrayList<>();
+                tmpList.add(added);
+                pepIdx.put(pep.name, tmpList);
+            }
+            added += 1;
+            //}
+        }
+        if (expRTs.size() == 0) { //no more e score threshold
+            Constants.RTescoreCutoff = Float.MAX_VALUE;
+            added = 0;
+            for (int scanNum : new TreeSet<Integer>(mzml.scanNumberObjects.keySet())) {
+                mzmlScanNumber scanNumObj = mzml.getScanNumObject(scanNum);
+                float rt = scanNumObj.RT; //experimental RT for this scan
+
+                //add RT until you reach decoy
+                //when doing good regression, decoys don't appear, so once decoy appears, expectation score is already too low
+
+                for (int i = 1; i < scanNumObj.peptideObjects.size() + 1; i++) {
+                    peptideObj pep = scanNumObj.getPeptideObject(i);
+                    if (pep.targetORdecoy == 0) {
+                        break;
+                    }
+                    float e = Float.parseFloat(pep.escore);
+                    expRTs.add(rt);
+                    predRTs.add(pep.RT);
+                    eScores.add(e);
+                    if (pepIdx.containsKey(pep.name)) {
+                        ArrayList<Integer> tmpList = pepIdx.get(pep.name);
+                        tmpList.add(added);
+                        pepIdx.put(pep.name, tmpList);
+                    } else {
+                        ArrayList<Integer> tmpList = new ArrayList<>();
+                        tmpList.add(added);
+                        pepIdx.put(pep.name, tmpList);
+                    }
+                    added += 1;
+                }
             }
         }
+
+        //remove duplicate PSMs from same peptide
+        ArrayList<Integer> PSMtoRemove = new ArrayList<>();
+        for (Map.Entry<String, ArrayList<Integer>> entry : pepIdx.entrySet()) {
+            if (entry.getValue().size() == 1) {
+                continue;
+            }
+            ArrayList<Float> escores = new ArrayList<>(); //escores stores e values of PSMs
+            for (int escoreIdx : entry.getValue()) {
+                escores.add(eScores.get(escoreIdx));
+            }
+            int bestScore = 0;
+            for (int i = 1; i < escores.size(); i++) {
+                if (escores.get(i) < escores.get(bestScore)) {
+                    bestScore = i;
+                }
+            }
+            for (int i = 0; i < escores.size(); i++) {
+                if (i != bestScore) {
+                    PSMtoRemove.add(entry.getValue().get(i));
+                }
+            }
+        }
+        Collections.sort(PSMtoRemove);
+        Collections.reverse(PSMtoRemove);
+        for (int removed : PSMtoRemove) {
+            expRTs.remove(removed);
+            predRTs.remove(removed);
+            eScores.remove(removed);
+        }
+//        PSMtoRemove.forEach(expRTs::remove);
+//        PSMtoRemove.forEach(predRTs::remove);
+//        PSMtoRemove.forEach(eScores::remove);
 
         //get top peptides based on eScore
         //https://stackoverflow.com/questions/4859261/get-the-indices-of-an-array-after-sorting
@@ -80,8 +160,20 @@ public class RTFunctions {
         //if negative, use all
         //can consider e score cutoff in constants
         int sizeLimit = expRTs.size();
+        if (sizeLimit < 2) {
+            System.out.println("Warning: not enough target PSMs are available for regression, " +
+                    "setting RT scores equal to 0");
+            Constants.noRTscores = true;
+
+            //just so that there's an output
+            double[][] RTs = new double[2][2];
+            RTs[0] = new double[2] ;
+            RTs[1] = new double[2] ;
+            return RTs;
+        }
 
         if (RTregressionSize > 0 && RTregressionSize <= sizeLimit) {
+            System.out.println("RT regression using " + RTregressionSize + " PSMs");
             int[] sortedIndices = IntStream.range(0, eScores.size())
                     .boxed().sorted(Comparator.comparing(eScores::get))
                     .mapToInt(ele -> ele).toArray();
@@ -98,6 +190,7 @@ public class RTFunctions {
             return RTs;
 
         } else {
+            System.out.println("RT regression using " + sizeLimit + " PSMs");
             double[][] RTs = new double[2][];
             RTs[0] = expRTs.stream().mapToDouble(i -> i).toArray();
             RTs[1] = predRTs.stream().mapToDouble(i -> i).toArray();

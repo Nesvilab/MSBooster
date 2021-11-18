@@ -248,8 +248,13 @@ public class mzMLReader {
 
     public void setPinEntries(pinReader pin, SpectralPredictionMapper spm) throws AssertionError, Exception {
         while (pin.next()) {
-            scanNumberObjects.get(pin.getScanNum()).setPeptideObject(pin.getPep(), pin.getRank(), pin.getTD(), pin.getEScore(),
-                    spm.getPreds());
+            try {
+                scanNumberObjects.get(pin.getScanNum()).setPeptideObject(pin.getPep(), pin.getRank(), pin.getTD(), pin.getEScore(),
+                        spm.getPreds());
+            } catch (Exception e) {
+                e.printStackTrace();
+                System.exit(1);
+            }
         }
         pin.close();
         pin.reset();

@@ -78,6 +78,7 @@ public class Constants {
     public static Float RTescoreCutoff = (float) Math.pow(10, -3.5); //PSMs with e score higher than this won't make it into RT regression modeling
     public static Integer RTbinMultiplier = 1;
     public static Float RTIQR = 50f;
+    public static boolean noRTscores = false;
 
     //LOESS
     public static Double bandwidth = 0.05;

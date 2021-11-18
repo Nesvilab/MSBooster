@@ -61,6 +61,28 @@ public class pinReader {
 
     public String getPep() {return percolatorFormatter.percolatorPepFormat(row, pepIdx, specIdx);}
 
+    public String getStrippedPep() {
+        String peptide = percolatorFormatter.percolatorPepFormat(row, pepIdx, specIdx).split("\\|")[0];
+        ArrayList<Integer> starts = new ArrayList<>();
+        ArrayList<Integer> ends = new ArrayList<>();
+        ends.add(0);
+        for (int i = 0; i < peptide.length(); i++) {
+            String myChar = peptide.substring(i, i + 1);
+            if (myChar.equals("[")) {
+                starts.add(i);
+            } else if (myChar.equals("]")) {
+                ends.add(i + 1);
+            }
+        }
+        starts.add(peptide.length());
+
+        StringBuilder sb = new StringBuilder();
+        for (int i = 0; i < starts.size(); i++) {
+            sb.append(peptide.substring(ends.get(i), starts.get(i)));
+        }
+        return sb.toString();
+    }
+
     public String getFullPep() {return percolatorFormatter.percolatorPepFormatFull(row, pepIdx, specIdx);}
 
     public int getTD() {return Math.max(0, Integer.parseInt(row[labelIdx]));}
@@ -100,7 +122,7 @@ public class pinReader {
     public String[] createDeepMSPeptideList() throws IOException {
         ArrayList<String> peps = new ArrayList<String>();
         while (next()) {
-            peps.add(getPep().split("\\|")[0]);
+            peps.add(getStrippedPep());
         }
         return peps.toArray(new String[0]);
     }

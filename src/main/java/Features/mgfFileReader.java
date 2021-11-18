@@ -210,13 +210,16 @@ public class mgfFileReader implements SpectralPredictionMapper{
             //generate smaller sub files
             br = new BufferedReader(new FileReader(myFile));
             lineNum = 0;
+            line = "";
             for (int split : Arrays.copyOfRange(splitPoints, 1, splitPoints.length)) {
                 String name = file.substring(0, file.length() - 4) + "tmp" + split + ".mgf";
                 BufferedWriter bw = new BufferedWriter(new FileWriter(name));
+                bw.write(line + "\n");
                 while ((line = br.readLine()) != null && lineNum < split) {
                     bw.write(line + "\n");
                     lineNum += 1;
                 }
+                lineNum += 1;
                 allPaths.add(name);
                 bw.close();
             }
@@ -250,35 +253,45 @@ public class mgfFileReader implements SpectralPredictionMapper{
             }
 
             //find where specific lines are
-            int[] chunks = new int[Constants.numThreads + 1];
-            chunks[0] = 0; //skip first BEGIN IONS
-            chunks[Constants.numThreads] = data.length;
-            int jump = data.length / Constants.numThreads;
-            for (int l = 1; l < Constants.numThreads; l++) {
-                int start = jump * l;
-                while (true) {
-                    if (data[start] == '\n') {
-                        if (new String(Arrays.copyOfRange(data, start + 1, start + 11)).equals("BEGIN IONS")) {
-                            chunks[l] = start + 12; //skip first BEGIN IONS
-                            break;
+            int[] chunks = null;
+            int ogNumThreads = Constants.numThreads;
+            try {
+                chunks = new int[Constants.numThreads + 1];
+                chunks[0] = 0; //skip first BEGIN IONS
+                chunks[Constants.numThreads] = data.length;
+                int jump = data.length / Constants.numThreads;
+                for (int l = 1; l < Constants.numThreads; l++) {
+                    int start = jump * l;
+                    while (true) {
+                        if (data[start] == '\n') {
+                            if (new String(Arrays.copyOfRange(data, start + 1, start + 11)).equals("BEGIN IONS")) {
+                                chunks[l] = start + 12; //skip first BEGIN IONS
+                                break;
+                            }
                         }
+                        start++;
                     }
-                    start++;
                 }
+            } catch (Exception e) { //short mgf
+                Constants.numThreads = 1;
+                chunks = new int[Constants.numThreads + 1];
+                chunks[0] = 0; //skip first BEGIN IONS
+                chunks[1] = data.length;
             }
 
             //parallelize
             for (int i = 0; i < Constants.numThreads; i++) {
                 int finalI = i;
                 byte[] finalData = data;
+                int[] finalChunks = chunks;
                 futureList.add(executorService.submit(() -> {
                     int scanNum = 0;
                     float RT = 0;
                     float IM = 0;
                     ArrayList<Float> intensities = new ArrayList<>(12000);
                     ArrayList<Float> mzs = new ArrayList<>(12000);
-                    int start = chunks[finalI];
-                    int end = chunks[finalI + 1];
+                    int start = finalChunks[finalI];
+                    int end = finalChunks[finalI + 1];
                     String line = "";
 
                     while (start < end - 11) {
@@ -419,6 +432,7 @@ public class mgfFileReader implements SpectralPredictionMapper{
             for (Future future : futureList) {
                 future.get();
             }
+            Constants.numThreads = ogNumThreads;
         }
     }
 
@@ -445,8 +459,8 @@ public class mgfFileReader implements SpectralPredictionMapper{
         Constants.numThreads = 11;
         ExecutorService executorService = Executors.newFixedThreadPool(Constants.numThreads);
         long startTime = System.nanoTime();
-        mgfFileReader mgf = new mgfFileReader("C:/Users/kevin/Downloads/20210702-05_2021027-HL5_1050/" +
-                "20210702-05_2021027-HL5_1050.mgf", true,
+        mgfFileReader mgf = new mgfFileReader("C:/Users/kevin/Downloads/" +
+                "Ex07192021_53_DAGNEG_uncalibrated.mgf", true,
                 executorService);
 //        mgfFileReader mgf = new mgfFileReader("C:/Users/kevin/OneDriveUmich/proteomics/mzml/" +
 //                "20180819_TIMS2_12-2_AnBr_SA_200ng_HeLa_50cm_120min_100ms_11CT_3_A1_01_2769.mgf", true,
@@ -455,6 +469,7 @@ public class mgfFileReader implements SpectralPredictionMapper{
         long endTime = System.nanoTime();
         long duration = (endTime - startTime);
         System.out.println("loading took " + duration / 1000000 +" milliseconds");
+        System.out.println(Constants.numThreads);
 
 //        mgf = new mgfFileReader("C:/Users/yangkl/OneDriveUmich/proteomics/mzml/" +
 //                "20180819_TIMS2_12-2_AnBr_SA_200ng_HeLa_50cm_120min_100ms_11CT_2_A1_01_2768.mgf", true,

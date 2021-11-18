@@ -12,6 +12,7 @@ public class ExternalModelCaller {
         switch (model) {
             case "DIA-NN":
                 try {
+                    //DIA-NN command
                     System.out.println("Generating DIA-NN predictions");
                     ProcessBuilder builder = new ProcessBuilder(Constants.DiaNN,
                             "--lib",
@@ -26,6 +27,7 @@ public class ExternalModelCaller {
                     InputStream is = process.getInputStream();
                     BufferedReader reader = new BufferedReader(new InputStreamReader(is));
 
+                    //print DIA-NN output while running
                     String line = null;
                     while ((line = reader.readLine()) != null) {
                         System.out.println(line);
@@ -34,8 +36,11 @@ public class ExternalModelCaller {
                     Constants.spectraRTPredFile =
                             Constants.spectraRTPredInput.substring(0, Constants.spectraRTPredInput.length() - 4) +
                             ".predicted.bin";
-                    process.waitFor();
+                    int DIANNtermination = process.waitFor();
 
+                    if (DIANNtermination != 0) {
+                        System.out.println("Abnormal DIANN termination: " + DIANNtermination);
+                    }
                     File predFile = new File(Constants.spectraRTPredFile);
                     if (Files.isReadable(predFile.toPath())) {
                         System.out.println("Done generating DIA-NN predictions");

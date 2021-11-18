@@ -62,6 +62,27 @@ public class percolatorFormatter {
         return pep + "|" + charge;
     }
 
+    public static String getStrippedPep(String peptide) {
+        ArrayList<Integer> starts = new ArrayList<>();
+        ArrayList<Integer> ends = new ArrayList<>();
+        ends.add(0);
+        for (int i = 0; i < peptide.length(); i++) {
+            String myChar = peptide.substring(i, i + 1);
+            if (myChar.equals("[")) {
+                starts.add(i);
+            } else if (myChar.equals("]")) {
+                ends.add(i + 1);
+            }
+        }
+        starts.add(peptide.length());
+
+        StringBuilder sb = new StringBuilder();
+        for (int i = 0; i < starts.size(); i++) {
+            sb.append(peptide.substring(ends.get(i), starts.get(i)));
+        }
+        return sb.toString();
+    }
+
     public static String percolatorPepFormatFull(String[] columns, int pepIdx, int specIDidx) {
         //first is peptide, then missed masses
         String pep = columns[pepIdx];
@@ -162,7 +183,7 @@ public class percolatorFormatter {
             dm = new detectMap(detectFile);
             HashMap<String, PredictionEntry> allPreds = predictedSpectra.getPreds();
             for (Map.Entry<String, PredictionEntry> e : allPreds.entrySet()) {
-                e.getValue().setDetectability(dm.getDetectability(e.getKey()));
+                e.getValue().setDetectability(dm.getDetectability(getStrippedPep(e.getKey())));
             }
         }
 
@@ -257,7 +278,10 @@ public class percolatorFormatter {
                 //startTime = System.nanoTime();
                 String newOutfile = pinFiles[i].getAbsolutePath().replaceAll("\\.pin$", "_" + outfile + ".pin");
 
-                TsvWriter writer = new TsvWriter(new File(newOutfile), new TsvWriterSettings());
+                TsvWriterSettings tws = new TsvWriterSettings();
+                tws.setMaxCharsPerColumn(-1);
+                tws.setMaxColumns(50000); //who knows if it needs to be longer?
+                TsvWriter writer = new TsvWriter(new File(newOutfile), tws);
                 //load mzml file
                 System.out.println("Loading " + mzmlFiles[i].getName());
 
@@ -339,12 +363,13 @@ public class percolatorFormatter {
                     //.out.println("Done loading PSMs onto mzml object");
                 }
                 if (featuresList.contains("deltaRTLOESS") || featuresList.contains("deltaRTLOESSnormalized")) {
-                    //System.out.println("Generating RT LOESS regression");
                     mzml.setLOESS(Constants.RTregressionSize, Constants.bandwidth, Constants.robustIters, "RT");
                     mzml.predictRTLOESS(executorService); //potentially only invoke once if normalized included
 
                     //generate calibration figure, need mzml and loess
-                    RTCalibrationFigure rtfc = new RTCalibrationFigure(mzml, pinFiles[i].getCanonicalPath(), 0.2f);
+                    if (! Constants.noRTscores) {
+                        RTCalibrationFigure rtfc = new RTCalibrationFigure(mzml, pinFiles[i].getCanonicalPath(), 0.2f);
+                    }
                 }
                 if (featuresList.contains("deltaRTlinear")) {
                     //System.out.println("Calculating delta RT linear");
@@ -620,27 +645,49 @@ public class percolatorFormatter {
                                 writer.addValue("detect_prot_spearman_diff", maxSpearmanDiff);
                                 break;
                             case "deltaRTlinear":
+                                if (Constants.noRTscores) {
+                                    pepObj.deltaRT = 0;
+                                }
                                 writer.addValue("deltaRTlinear", pepObj.deltaRT);
                                 break;
                             case "deltaRTbins":
+                                if (Constants.noRTscores) {
+                                    pepObj.deltaRTbin = 0;
+                                }
                                 writer.addValue("deltaRTbins", pepObj.deltaRTbin);
                                 break;
                             case "deltaRTLOESS":
+                                if (Constants.noRTscores) {
+                                    pepObj.deltaRTLOESS = 0;
+                                }
                                 writer.addValue("delta_RT_loess", pepObj.deltaRTLOESS);
                                 break;
                             case "deltaRTLOESSnormalized":
+                                if (Constants.noRTscores) {
+                                    pepObj.deltaRTLOESSnormalized = 0;
+                                }
                                 writer.addValue("delta_RT_loess_normalized", pepObj.deltaRTLOESSnormalized);
                                 break;
                             case "RTzscore":
+                                if (Constants.noRTscores) {
+                                    pepObj.RTzscore = 0;
+                                }
                                 writer.addValue("RTzscore", pepObj.RTzscore);
                                 break;
                             case "RTprobability":
+                                if (Constants.noRTscores) {
+                                    pepObj.RTprob = 0;
+                                }
                                 writer.addValue("RTprobability", pepObj.RTprob);
                                 break;
                             case "RTprobabilityUnifPrior":
-                                float prob = StatMethods.probabilityWithUniformPrior(unifPriorSize, unifProb,
-                                        pepObj.scanNumObj.RTbinSize, (float) pepObj.RTprob);
-                                writer.addValue("RT_probability_unif_prior", prob);
+                                if (Constants.noRTscores) {
+                                    writer.addValue("RT_probability_unif_prior", 0);
+                                } else {
+                                    float prob = StatMethods.probabilityWithUniformPrior(unifPriorSize, unifProb,
+                                            pepObj.scanNumObj.RTbinSize, (float) pepObj.RTprob);
+                                    writer.addValue("RT_probability_unif_prior", prob);
+                                }
                                 break;
                             case "brayCurtis":
                                 writer.addValue("bray_curtis", pepObj.spectralSimObj.brayCurtis());
@@ -667,7 +714,7 @@ public class percolatorFormatter {
                                 writer.addValue("delta_IM_loess_normalized", pepObj.deltaIMLOESSnormalized);
                                 break;
                             case "IMprobabilityUnifPrior":
-                                prob = StatMethods.probabilityWithUniformPrior(unifPriorSizeIM[pepObj.charge - 1], unifProbIM[pepObj.charge - 1],
+                                float prob = StatMethods.probabilityWithUniformPrior(unifPriorSizeIM[pepObj.charge - 1], unifProbIM[pepObj.charge - 1],
                                         pepObj.scanNumObj.IMbinSize, (float) pepObj.IMprob);
                                 writer.addValue("IM_probability_unif_prior", prob);
                                 break;

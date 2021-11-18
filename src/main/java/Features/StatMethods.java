@@ -155,6 +155,9 @@ public class StatMethods {
         LoessInterpolator loessInterpolator = null;
         double[] y = null;
 
+        if (newX.length < 50) {
+            bandwidth = 1d;
+        }
         while (loessInterpolator == null) {
             try {
                 if (bandwidth == 1d) {

@@ -242,19 +242,19 @@ public class percolatorFormatter {
                 e.getValue().detects = sortedDetect;
 
                 //check which peptides present, and get spectral counts
-                //float[] protPresence = new float[protDetects.length];
+                float[] protPresence = new float[protDetects.length];
                 float[] pepCounts = new float[protDetects.length];
-                //float numPresent = 1f;
+                float numPresent = 1f;
                 for (int j = protDetects.length - 1; j > -1; j--) {
                     String currentPep = pepList.get(sortedIndices[j]);
 
                     if (pepCounter.containsKey(currentPep)) {
-                        //protPresence[j] = numPresent;
-                        //numPresent += 1f;
+                        protPresence[j] = numPresent;
+                        numPresent += 1f;
                         pepCounts[j] = pepCounter.get(currentPep);
                     }
                 }
-                //fasta.protToPep.get(e.getKey()).presence = protPresence;
+                fasta.protToPep.get(e.getKey()).presence = protPresence;
                 fasta.protToPep.get(e.getKey()).spectralCounts = pepCounts;
             }
 

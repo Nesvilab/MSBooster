@@ -149,6 +149,7 @@ public class Constants {
         map.put("deltaIMLOESSnormalized", "delta_IM_loess_normalized");
         map.put("IMprobabilityUnifPrior", "IM_probability_unif_prior");
         map.put("detectProtSpearmanDiff", "detect_prot_spearman_diff");
+        map.put("detectSubtractMissing", "detect_subtract_missing");
         return map;
     }
     ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////

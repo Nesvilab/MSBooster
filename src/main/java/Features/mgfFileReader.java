@@ -174,265 +174,269 @@ public class mgfFileReader implements SpectralPredictionMapper{
     //this version for uncalibrated mgf acting as mzml
     public mgfFileReader(String file, boolean createScanNumObjects, ExecutorService executorService)
             throws IOException, FileParsingException, ExecutionException, InterruptedException {
+        try {
+            //add name
+            filenames.add(file);
 
-        //add name
-        filenames.add(file);
+            //load data
+            File myFile = new File(file);
+            ArrayList<String> allPaths = new ArrayList<>();
 
-        //load data
-        File myFile = new File(file);
-        ArrayList<String> allPaths = new ArrayList<>();
+            //potentially split data files if mgf is too big
+            boolean delFiles = false;
+            if (myFile.length() > Integer.MAX_VALUE) {
+                int numSplits = (int) (myFile.length() / Integer.MAX_VALUE) + 2; //+2? to be safe
 
-        //potentially split data files if mgf is too big
-        boolean delFiles = false;
-        if (myFile.length() > Integer.MAX_VALUE) {
-            int numSplits = (int) (myFile.length() / Integer.MAX_VALUE) + 2; //+2? to be safe
+                delFiles = true;
 
-            delFiles = true;
-
-            BufferedReader br = new BufferedReader(new FileReader(myFile));
-            ArrayList<Integer> startLines = new ArrayList<>();
-            String line;
-            int lineNum = 0;
-            while ((line = br.readLine()) != null) {
-                if (line.contains("BEGIN IONS")) {
-                    startLines.add(lineNum);
-                }
-                lineNum += 1;
-            }
-            int[] splitPoints = new int[numSplits + 1];
-            for (int i = 0; i < numSplits; i++) {
-                int indexer = i * startLines.size() / numSplits;
-                splitPoints[i] = startLines.get(indexer);
-            }
-            splitPoints[numSplits] = lineNum;
-            br.close();
-
-            //generate smaller sub files
-            br = new BufferedReader(new FileReader(myFile));
-            lineNum = 0;
-            line = "";
-            for (int split : Arrays.copyOfRange(splitPoints, 1, splitPoints.length)) {
-                String name = file.substring(0, file.length() - 4) + "tmp" + split + ".mgf";
-                BufferedWriter bw = new BufferedWriter(new FileWriter(name));
-                bw.write(line + "\n");
-                while ((line = br.readLine()) != null && lineNum < split) {
-                    bw.write(line + "\n");
+                BufferedReader br = new BufferedReader(new FileReader(myFile));
+                ArrayList<Integer> startLines = new ArrayList<>();
+                String line;
+                int lineNum = 0;
+                while ((line = br.readLine()) != null) {
+                    if (line.contains("BEGIN IONS")) {
+                        startLines.add(lineNum);
+                    }
                     lineNum += 1;
                 }
-                lineNum += 1;
-                allPaths.add(name);
-                bw.close();
-            }
-        } else {
-            allPaths.add(file);
-        }
-
-        for (String filePath : allPaths) {
-            myFile = new File(filePath);
-
-            byte[] data = new byte[(int) myFile.length()];
-            DataInputStream in = new DataInputStream(new BufferedInputStream(new FileInputStream(myFile), 1 << 24));
-            in.read(data);
-            in.close();
-            if (delFiles) {
-                myFile.delete();
-            }
-
-            //removing comments
-            //TODO: can we assume that comments means it's from timsTOF?
-            boolean hasComment = false;
-            for (byte b : data) {
-                if (b == 35) {
-                    hasComment = true;
-                    break;
+                int[] splitPoints = new int[numSplits + 1];
+                for (int i = 0; i < numSplits; i++) {
+                    int indexer = i * startLines.size() / numSplits;
+                    splitPoints[i] = startLines.get(indexer);
                 }
-            }
-            if (hasComment) {
-                data = (new String(data, StandardCharsets.UTF_8)).replaceAll("#[^\r\n]*[\r\n]", "").trim()
-                        .getBytes(StandardCharsets.UTF_8);
+                splitPoints[numSplits] = lineNum;
+                br.close();
+
+                //generate smaller sub files
+                br = new BufferedReader(new FileReader(myFile));
+                lineNum = 0;
+                line = "";
+                for (int split : Arrays.copyOfRange(splitPoints, 1, splitPoints.length)) {
+                    String name = file.substring(0, file.length() - 4) + "tmp" + split + ".mgf";
+                    BufferedWriter bw = new BufferedWriter(new FileWriter(name));
+                    bw.write(line + "\n");
+                    while ((line = br.readLine()) != null && lineNum < split) {
+                        bw.write(line + "\n");
+                        lineNum += 1;
+                    }
+                    lineNum += 1;
+                    allPaths.add(name);
+                    bw.close();
+                }
+            } else {
+                allPaths.add(file);
             }
 
-            //find where specific lines are
-            int[] chunks = null;
-            int ogNumThreads = Constants.numThreads;
-            try {
-                chunks = new int[Constants.numThreads + 1];
-                chunks[0] = 0; //skip first BEGIN IONS
-                chunks[Constants.numThreads] = data.length;
-                int jump = data.length / Constants.numThreads;
-                for (int l = 1; l < Constants.numThreads; l++) {
-                    int start = jump * l;
-                    while (true) {
-                        if (data[start] == '\n') {
-                            if (new String(Arrays.copyOfRange(data, start + 1, start + 11)).equals("BEGIN IONS")) {
-                                chunks[l] = start + 12; //skip first BEGIN IONS
-                                break;
-                            }
-                        }
-                        start++;
+            for (String filePath : allPaths) {
+                myFile = new File(filePath);
+
+                byte[] data = new byte[(int) myFile.length()];
+                DataInputStream in = new DataInputStream(new BufferedInputStream(new FileInputStream(myFile), 1 << 24));
+                in.read(data);
+                in.close();
+                if (delFiles) {
+                    myFile.delete();
+                }
+
+                //removing comments
+                //TODO: can we assume that comments means it's from timsTOF?
+                boolean hasComment = false;
+                for (byte b : data) {
+                    if (b == 35) {
+                        hasComment = true;
+                        break;
                     }
                 }
-            } catch (Exception e) { //short mgf
-                Constants.numThreads = 1;
-                chunks = new int[Constants.numThreads + 1];
-                chunks[0] = 0; //skip first BEGIN IONS
-                chunks[1] = data.length;
-            }
+                if (hasComment) {
+                    data = (new String(data, StandardCharsets.UTF_8)).replaceAll("#[^\r\n]*[\r\n]", "").trim()
+                            .getBytes(StandardCharsets.UTF_8);
+                }
 
-            //parallelize
-            for (int i = 0; i < Constants.numThreads; i++) {
-                int finalI = i;
-                byte[] finalData = data;
-                int[] finalChunks = chunks;
-                futureList.add(executorService.submit(() -> {
-                    int scanNum = 0;
-                    float RT = 0;
-                    float IM = 0;
-                    ArrayList<Float> intensities = new ArrayList<>(12000);
-                    ArrayList<Float> mzs = new ArrayList<>(12000);
-                    int start = finalChunks[finalI];
-                    int end = finalChunks[finalI + 1];
-                    String line = "";
+                //find where specific lines are
+                int[] chunks = null;
+                int ogNumThreads = Constants.numThreads;
+                try {
+                    chunks = new int[Constants.numThreads + 1];
+                    chunks[0] = 0; //skip first BEGIN IONS
+                    chunks[Constants.numThreads] = data.length;
+                    int jump = data.length / Constants.numThreads;
+                    for (int l = 1; l < Constants.numThreads; l++) {
+                        int start = jump * l;
+                        while (true) {
+                            if (data[start] == '\n') {
+                                if (new String(Arrays.copyOfRange(data, start + 1, start + 11)).equals("BEGIN IONS")) {
+                                    chunks[l] = start + 12; //skip first BEGIN IONS
+                                    break;
+                                }
+                            }
+                            start++;
+                        }
+                    }
+                } catch (Exception e) { //short mgf
+                    Constants.numThreads = 1;
+                    chunks = new int[Constants.numThreads + 1];
+                    chunks[0] = 0; //skip first BEGIN IONS
+                    chunks[1] = data.length;
+                }
 
-                    while (start < end - 11) {
-                        switch (finalData[start]) {
-                            case 'T': //TITLE
-                                start += 6;
-                                //TODO: make below part a private method. 2 versions, 1 where no bytearray/string is made.
-                                // accept \n or space.
-                                // toAdd will be length of string
-                                line = returnString('\n', finalData, start);
+                //parallelize
+                for (int i = 0; i < Constants.numThreads; i++) {
+                    int finalI = i;
+                    byte[] finalData = data;
+                    int[] finalChunks = chunks;
+                    futureList.add(executorService.submit(() -> {
+                        int scanNum = 0;
+                        float RT = 0;
+                        float IM = 0;
+                        ArrayList<Float> intensities = new ArrayList<>(12000);
+                        ArrayList<Float> mzs = new ArrayList<>(12000);
+                        int start = finalChunks[finalI];
+                        int end = finalChunks[finalI + 1];
+                        String line = "";
 
-                                //timstof
-                                if (line.contains("Cmpd")) {
-                                    String[] dotSplit = line.split(",");
-                                    scanNum = Integer.parseInt(dotSplit[0].split(" ")[1]);
+                        while (start < end - 11) {
+                            switch (finalData[start]) {
+                                case 'T': //TITLE
+                                    start += 6;
+                                    //TODO: make below part a private method. 2 versions, 1 where no bytearray/string is made.
+                                    // accept \n or space.
+                                    // toAdd will be length of string
+                                    line = returnString('\n', finalData, start);
 
-                                    //read in 1/K0
-                                    for (String s : dotSplit) {
-                                        if (s.startsWith("1/K0")) {
-                                            IM = Float.parseFloat(s.split("=")[1]);
+                                    //timstof
+                                    if (line.contains("Cmpd")) {
+                                        String[] dotSplit = line.split(",");
+                                        scanNum = Integer.parseInt(dotSplit[0].split(" ")[1]);
+
+                                        //read in 1/K0
+                                        for (String s : dotSplit) {
+                                            if (s.startsWith("1/K0")) {
+                                                IM = Float.parseFloat(s.split("=")[1]);
+                                            }
                                         }
+                                    } else {
+                                        String[] dotSplit = line.split("\\.");
+                                        scanNum = Integer.parseInt(dotSplit[dotSplit.length - 2]);
                                     }
-                                } else {
-                                    String[] dotSplit = line.split("\\.");
-                                    scanNum = Integer.parseInt(dotSplit[dotSplit.length - 2]);
-                                }
-                                start += line.length() + 1;
-                                break;
-                            case 'C': //CHARGE
-                                if (finalData[start + 1] == 'H') {
-                                    start += 7;
-                                }
-                                start += returnAdd('\n', finalData, start) + 1;
-                                break;
-                            case 'P': //PEPMASS
-                                start += 8;
-                                start += returnAdd('\n', finalData, start) + 1;
-                                break;
-                            case 'R': //RTINSECONDS
-                                if (finalData[start + 1] == 'T') {
-                                    start += 12;
-                                    line = returnString('\n', finalData, start);
-                                    RT = Float.parseFloat(line);
-                                } else {
-                                    line = returnString('\n', finalData, start);
-                                }
-                                start += line.length() + 1;
-                                break;
-                            case 'E': // END IONS
-                                start += 9;
-                                //do create scanNumObj
-                                float[] mzArray = new float[mzs.size()];
-                                for (int h = 0; h < mzs.size(); h++) {
-                                    mzArray[h] = mzs.get(h);
-                                }
-                                float[] intArray = new float[intensities.size()];
-                                for (int h = 0; h < intensities.size(); h++) {
-                                    intArray[h] = intensities.get(h);
-                                }
-                                try {
-                                    scanNumberObjects.put(scanNum, new mzmlScanNumber(scanNum, mzArray, intArray, RT, IM));
-                                } catch (FileParsingException fileParsingException) {
-                                    fileParsingException.printStackTrace();
-                                }
+                                    start += line.length() + 1;
+                                    break;
+                                case 'C': //CHARGE
+                                    if (finalData[start + 1] == 'H') {
+                                        start += 7;
+                                    }
+                                    start += returnAdd('\n', finalData, start) + 1;
+                                    break;
+                                case 'P': //PEPMASS
+                                    start += 8;
+                                    start += returnAdd('\n', finalData, start) + 1;
+                                    break;
+                                case 'R': //RTINSECONDS
+                                    if (finalData[start + 1] == 'T') {
+                                        start += 12;
+                                        line = returnString('\n', finalData, start);
+                                        RT = Float.parseFloat(line);
+                                    } else {
+                                        line = returnString('\n', finalData, start);
+                                    }
+                                    start += line.length() + 1;
+                                    break;
+                                case 'E': // END IONS
+                                    start += 9;
+                                    //do create scanNumObj
+                                    float[] mzArray = new float[mzs.size()];
+                                    for (int h = 0; h < mzs.size(); h++) {
+                                        mzArray[h] = mzs.get(h);
+                                    }
+                                    float[] intArray = new float[intensities.size()];
+                                    for (int h = 0; h < intensities.size(); h++) {
+                                        intArray[h] = intensities.get(h);
+                                    }
+                                    try {
+                                        scanNumberObjects.put(scanNum, new mzmlScanNumber(scanNum, mzArray, intArray, RT, IM));
+                                    } catch (FileParsingException fileParsingException) {
+                                        fileParsingException.printStackTrace();
+                                    }
 
-                                //reset for next peptide/PSM
-                                mzs.clear();
-                                intensities.clear();
-                                break;
-                            case 'B': // BEGIN IONS
-                                start += 11;
-                                break;
-                            case '1': // 1/K0
-                                if (finalData[start + 1] == '/') {
-                                    start += 5;
-                                    line = returnString('\n', finalData, start);
-                                    IM = Float.parseFloat(line);
-                                } else {
-                                    line = returnString(new char[]{' ', '\t'}, finalData, start);
+                                    //reset for next peptide/PSM
+                                    mzs.clear();
+                                    intensities.clear();
+                                    break;
+                                case 'B': // BEGIN IONS
+                                    start += 11;
+                                    break;
+                                case '1': // 1/K0
+                                    if (finalData[start + 1] == '/') {
+                                        start += 5;
+                                        line = returnString('\n', finalData, start);
+                                        IM = Float.parseFloat(line);
+                                    } else {
+                                        line = returnString(new char[]{' ', '\t'}, finalData, start);
 //                                if (line.length() > returnString('\n', finalData, start).length()) {
 //                                    line = returnString('\t', finalData, start); //timstof
 //                                }
+                                        mzs.add(Float.parseFloat(line));
+                                        start += line.length() + 1;
+
+                                        line = returnString('\n', finalData, start);
+                                        intensities.add(Float.parseFloat(line.split("\t")[0]));
+                                    }
+                                    start += line.length() + 1;
+                                    break;
+                                case '2': //if number, skip switch
+                                case '3':
+                                case '4':
+                                case '5':
+                                case '6':
+                                case '7':
+                                case '8':
+                                case '9':
+                                case '0':
+                                    line = returnString(new char[]{' ', '\t'}, finalData, start);
+//                            if (line.length() > returnString('\n', finalData, start).length()) {
+//                                line = returnString('\t', finalData, start); //timstof
+//                            }
                                     mzs.add(Float.parseFloat(line));
                                     start += line.length() + 1;
 
                                     line = returnString('\n', finalData, start);
                                     intensities.add(Float.parseFloat(line.split("\t")[0]));
-                                }
-                                start += line.length() + 1;
-                                break;
-                            case '2': //if number, skip switch
-                            case '3':
-                            case '4':
-                            case '5':
-                            case '6':
-                            case '7':
-                            case '8':
-                            case '9':
-                            case '0':
-                                line = returnString(new char[]{' ', '\t'}, finalData, start);
-//                            if (line.length() > returnString('\n', finalData, start).length()) {
-//                                line = returnString('\t', finalData, start); //timstof
-//                            }
-                                mzs.add(Float.parseFloat(line));
-                                start += line.length() + 1;
-
-                                line = returnString('\n', finalData, start);
-                                intensities.add(Float.parseFloat(line.split("\t")[0]));
-                                start += line.length() + 1;
-                                break;
-                            default: //USERNAME
-                                line = returnString('\n', finalData, start);
-                                start += line.length() + 1;
-                                break;
+                                    start += line.length() + 1;
+                                    break;
+                                default: //USERNAME
+                                    line = returnString('\n', finalData, start);
+                                    start += line.length() + 1;
+                                    break;
+                            }
                         }
-                    }
-                    start += 9;
-                    //do create scanNumObj
-                    float[] mzArray = new float[mzs.size()];
-                    for (int h = 0; h < mzs.size(); h++) {
-                        mzArray[h] = mzs.get(h);
-                    }
-                    float[] intArray = new float[intensities.size()];
-                    for (int h = 0; h < intensities.size(); h++) {
-                        intArray[h] = intensities.get(h);
-                    }
-                    try {
-                        scanNumberObjects.put(scanNum, new mzmlScanNumber(scanNum, mzArray, intArray, RT, IM));
-                    } catch (FileParsingException fileParsingException) {
-                        fileParsingException.printStackTrace();
-                    }
+                        start += 9;
+                        //do create scanNumObj
+                        float[] mzArray = new float[mzs.size()];
+                        for (int h = 0; h < mzs.size(); h++) {
+                            mzArray[h] = mzs.get(h);
+                        }
+                        float[] intArray = new float[intensities.size()];
+                        for (int h = 0; h < intensities.size(); h++) {
+                            intArray[h] = intensities.get(h);
+                        }
+                        try {
+                            scanNumberObjects.put(scanNum, new mzmlScanNumber(scanNum, mzArray, intArray, RT, IM));
+                        } catch (FileParsingException fileParsingException) {
+                            fileParsingException.printStackTrace();
+                        }
 
-                    //reset for next peptide/PSM
-                    mzs.clear();
-                    intensities.clear();
-                }));
+                        //reset for next peptide/PSM
+                        mzs.clear();
+                        intensities.clear();
+                    }));
+                }
+                for (Future future : futureList) {
+                    future.get();
+                }
+                Constants.numThreads = ogNumThreads;
             }
-            for (Future future : futureList) {
-                future.get();
-            }
-            Constants.numThreads = ogNumThreads;
+        } catch (Exception e) {
+            e.printStackTrace();
+            System.exit(1);
         }
     }
 

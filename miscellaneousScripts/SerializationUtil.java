@@ -1,8 +1,6 @@
 package Features;
 
 import umich.ms.fileio.exceptions.FileParsingException;
-
-import java.io.*;
 /**
  * A simple class with generic serialize and deserialize method implementations
  *

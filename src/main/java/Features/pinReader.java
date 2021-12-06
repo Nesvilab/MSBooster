@@ -22,6 +22,7 @@ public class pinReader {
     int eScoreIdx;
 
     public pinReader(String pin) throws IOException {
+        //TODO: use log10eval if available
         name = pin;
         in = new BufferedReader(new FileReader(name));
         String line = in.readLine();

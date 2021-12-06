@@ -275,8 +275,9 @@ public class MainClass {
             boolean allFeatures = false;
             boolean autoFeatures = false;
             String[] featuresArray = Constants.features.split(",");
+            //TODO: trim string whitespace
             for (String f : featuresArray) {
-                if (!Constants.allowedFeatures.contains(f)) {
+                if (!Constants.allowedFeatures.contains(f.trim())) {
                     throw new IllegalArgumentException(f + " is not an allowed feature. " +
                             "Please choose from the following: " + Constants.allowedFeatures);
                 }

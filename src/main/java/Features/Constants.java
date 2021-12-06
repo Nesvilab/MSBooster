@@ -102,7 +102,7 @@ public class Constants {
     //use single string sep by comma delimiter
     //should include parameter to calculate correlation and then choose
     //default auto, everything, or all? Or a combination I figure out empirically
-    public static String features = "cosineSimilarity,spectralContrastAngle,euclideanDistance,brayCurtis,pearsonCorr,dotProduct," +
+    public static String features = "brayCurtis,pearsonCorr,dotProduct," +
             "deltaRTLOESS,deltaRTLOESSnormalized,RTprobabilityUnifPrior," +
             "detectProtSpearmanDiff";
     //public static String features = "auto";

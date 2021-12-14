@@ -1,13 +1,13 @@
 package Features;
 
-import org.apache.commons.lang3.ArrayUtils;
 import org.apache.commons.math3.stat.correlation.PearsonsCorrelation;
 import umich.ms.fileio.exceptions.FileParsingException;
 
 import java.io.IOException;
-import java.lang.reflect.InvocationTargetException;
-import java.lang.reflect.Method;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.LinkedHashSet;
 import java.util.stream.IntStream;
 
 import static Features.floatUtils.floatToDouble;
@@ -40,7 +40,7 @@ public class spectrumComparison {
 
     public spectrumComparison(float[] eMZs, float[] eIntensities,
                               float[] pMZs, float[] pIntensities,
-                              boolean filter) {
+                              boolean filterTop, boolean filterBase) {
         int[] sortedIndices = IntStream.range(0, pMZs.length)
                 .boxed().sorted((k, j) -> Float.compare(pMZs[k], pMZs[j]))
                 .mapToInt(ele -> ele).toArray();
@@ -50,36 +50,18 @@ public class spectrumComparison {
             predMZs[i] = pMZs[sortedIndices[i]];
             predIntensities[i] = pIntensities[sortedIndices[i]];
         }
+        if (filterBase) {
+            this.filterIntensitiesByValue(Constants.percentBasePeak);
+        }
 
-        if (filter) {
+        if (filterTop) {
             this.filterTopFragments();
         }
         matchedIntensities = this.getMatchedIntensities(eMZs, eIntensities);
     }
 
-    //this version is used when shuffling intensities
-    private spectrumComparison(spectrumComparison specAngle) {
-        this.predMZs = specAngle.predMZs;
-        this.predIntensities = specAngle.predMZs;
-        this.matchedIntensities = specAngle.matchedIntensities;
-        this.unitNormMatchedIntensities = specAngle.unitNormMatchedIntensities;
-    }
-
-    private spectrumComparison(spectrumComparison specAngle, boolean filter) {
-        this.predMZs = specAngle.predMZs;
-        this.predIntensities = specAngle.predMZs;
-        if (filter) {
-            this.filterTopFragments();
-            this.matchedIntensities = specAngle.matchedIntensities;
-            //don't include unitNorm, because they'll have to be recalculated
-        } else {
-            this.matchedIntensities = specAngle.matchedIntensities;
-            this.unitNormMatchedIntensities = specAngle.unitNormMatchedIntensities;
-        }
-
-    }
-
     private void filterTopFragments() {
+        //stick with arraylist because finding minimum will be faster than linkedlist due to indexing
         //skip if shorter
         if (this.predMZs.length > Constants.topFragments) {
             tmpInts.clear();
@@ -119,46 +101,83 @@ public class spectrumComparison {
         int startPos = 0;
         int matchedNum = 0;
         float[] matchedInts = new float[predMZs.length];
-        double ppm = Constants.ppmTolerance / 1000000;
+        if (! Constants.matchWithDaltons) {
+            double ppm = Constants.ppmTolerance / 1000000;
 
         /* Get best peaks from experimental spectrum that match to predicted peaks.
            Same experimental peak may match to the multiple predicted peaks,
               if they're close enough and experimental peak is strong.
            Unmatched peaks assigned 0
          */
-        for (double mz : predMZs) {
-            //see if any experimental peaks in vicinity
-            //double fragmentError = ppm * mz;
-            double fragmentMin = mz * (1 - ppm);
-            double fragmentMax = mz * (1 + ppm);
+            for (double mz : predMZs) {
+                //see if any experimental peaks in vicinity
+                //double fragmentError = ppm * mz;
+                double fragmentMin = mz * (1 - ppm);
+                double fragmentMax = mz * (1 + ppm);
 
-            float predInt = 0;
-            int pastStart = 0;
+                float predInt = 0;
+                int pastStart = 0;
 
-            while (startPos + pastStart < expMZs.length) {
-                double startMass = expMZs[startPos + pastStart];
+                while (startPos + pastStart < expMZs.length) {
+                    double startMass = expMZs[startPos + pastStart];
 
-                if (startMass < fragmentMin) { //yet to reach peak within fragment tolerance
-                    startPos += 1;
-                } else if (startMass <= fragmentMax) { //peak within fragment tolerance
-                    //only for use when removing peaks from lower ranks
-                    if (Constants.removeRankPeaks) {
-                        matchedIdx.add(startPos + pastStart);
+                    if (startMass < fragmentMin) { //yet to reach peak within fragment tolerance
+                        startPos += 1;
+                    } else if (startMass <= fragmentMax) { //peak within fragment tolerance
+                        //only for use when removing peaks from lower ranks
+                        if (Constants.removeRankPeaks) {
+                            matchedIdx.add(startPos + pastStart);
+                        }
+
+                        float potentialInt = expIntensities[startPos + pastStart];
+
+                        if (potentialInt > predInt) { //new maximum intensity
+                            predInt = potentialInt;
+                        }
+                        pastStart += 1;
+                    } else { //outside of fragment tolerance range again
+                        break;
                     }
-
-                    float potentialInt = expIntensities[startPos + pastStart];
-
-                    if (potentialInt > predInt) { //new maximum intensity
-                        predInt = potentialInt;
-                    }
-                    pastStart += 1;
-                } else { //outside of fragment tolerance range again
-                    break;
                 }
-            }
 
-            matchedInts[matchedNum] = predInt;
-            matchedNum += 1;
+                matchedInts[matchedNum] = predInt;
+                matchedNum += 1;
+            }
+        } else {
+            for (double mz : predMZs) {
+                //see if any experimental peaks in vicinity
+                //double fragmentError = ppm * mz;
+                double fragmentMin = mz - Constants.DaTolerance;
+                double fragmentMax = mz + Constants.DaTolerance;
+
+                float predInt = 0;
+                int pastStart = 0;
+
+                while (startPos + pastStart < expMZs.length) {
+                    double startMass = expMZs[startPos + pastStart];
+
+                    if (startMass < fragmentMin) { //yet to reach peak within fragment tolerance
+                        startPos += 1;
+                    } else if (startMass <= fragmentMax) { //peak within fragment tolerance
+                        //only for use when removing peaks from lower ranks
+                        if (Constants.removeRankPeaks) {
+                            matchedIdx.add(startPos + pastStart);
+                        }
+
+                        float potentialInt = expIntensities[startPos + pastStart];
+
+                        if (potentialInt > predInt) { //new maximum intensity
+                            predInt = potentialInt;
+                        }
+                        pastStart += 1;
+                    } else { //outside of fragment tolerance range again
+                        break;
+                    }
+                }
+
+                matchedInts[matchedNum] = predInt;
+                matchedNum += 1;
+            }
         }
         return matchedInts;
     }
@@ -210,39 +229,59 @@ public class spectrumComparison {
         unitNormMatchedIntensities = subNormalize(matchedIntensities);
     }
 
-    public void filterIntensities(double min) {
-        //TODO: if this is ever used, need to consider not adding new arraylists
-        ArrayList<Float> removableIntensities = new ArrayList<>();
-        ArrayList<Float> removableMZs = new ArrayList<>();
+    public void filterIntensitiesByValue(double min) {
+        tmpMZs.clear();
+        tmpInts.clear();
 
         for (int i = 0; i < predIntensities.length; i++) {
             float intensity = predIntensities[i];
-            float mz = predMZs[i];
 
-            if (intensity < min) {
-                removableIntensities.add(intensity);
-                removableMZs.add(mz);
+            if (intensity >= min) {
+                tmpInts.add(intensity);
+                tmpMZs.add(predMZs[i]);
             }
         }
 
-        for (int i = 0; i < removableIntensities.size(); i++) {
-            predIntensities = ArrayUtils.removeElement(predIntensities, removableIntensities.get(i));
-            predMZs = ArrayUtils.removeElement(predMZs, removableMZs.get(i));
+        predMZs = new float[tmpMZs.size()];
+        predIntensities = new float[tmpInts.size()];
+
+        for (int i = 0; i < tmpInts.size(); i++) {
+            predIntensities[i] = tmpInts.get(i);
+            predMZs[i] = tmpMZs.get(i);
         }
     }
 
-    public double[] rankIntensities(double[] vector) { //need to adapt for unitNorm vectors too
-        double[] ranks = new double[vector.length];
+    public void filterIntensitiesByPercentage(double percentage) { //should be < 1
+        if (percentage > 1) {
+            System.out.println("percentBasePeak must be <= 1 but is set to " + Constants.percentBasePeak +
+                    ". Filtering will return all peaks.");
+        } else {
+            //get max intensity
+            float maxIntensity = 0f;
+            for (float f : predIntensities) {
+                if (f > maxIntensity) {
+                    maxIntensity = f;
+                }
+            }
 
-        double[] sortedVector = vector;
-        Arrays.sort(sortedVector);
-
-        for (int i = 0; i < sortedVector.length; i++) {
-            ranks[i] = ArrayUtils.indexOf(sortedVector, vector[i]) + 1;
+            //make cutoff by percentage
+            double cutoff = maxIntensity * percentage;
+            filterIntensitiesByValue(cutoff);
         }
-
-        return ranks;
     }
+
+//    public double[] rankIntensities(double[] vector) { //need to adapt for unitNorm vectors too
+//        double[] ranks = new double[vector.length];
+//
+//        double[] sortedVector = vector;
+//        Arrays.sort(sortedVector);
+//
+//        for (int i = 0; i < sortedVector.length; i++) {
+//            ranks[i] = ArrayUtils.indexOf(sortedVector, vector[i]) + 1;
+//        }
+//
+//        return ranks;
+//    }
 
     public double cosineSimilarity() {
 
@@ -548,26 +587,26 @@ public class spectrumComparison {
 //            throws NoSuchMethodException, IllegalAccessException, InvocationTargetException {
 //    }
 
-    public double getSimilarity(String similarityMeasure, double[] mzFreqs)
-            throws NoSuchMethodException, InvocationTargetException, IllegalAccessException {
-        boolean useWeights = (similarityMeasure.startsWith("weight"));
-        if (useWeights) {
-            Method method = this.getClass().getMethod(similarityMeasure, double[].class);
-            double[] weights = this.getWeights(mzFreqs);
-            return (double) method.invoke(this, weights);
-        } else {
-            Method method = this.getClass().getMethod(similarityMeasure);
-            return (double) method.invoke(this);
-        }
-    }
-
-    public double getSimilarity(String similarityMeasure)
-            throws NoSuchMethodException, InvocationTargetException, IllegalAccessException {
-        assert (!similarityMeasure.startsWith("weight"));
-
-        Method method = this.getClass().getMethod(similarityMeasure);
-        return (double) method.invoke(this);
-    }
+//    public double getSimilarity(String similarityMeasure, double[] mzFreqs)
+//            throws NoSuchMethodException, InvocationTargetException, IllegalAccessException {
+//        boolean useWeights = (similarityMeasure.startsWith("weight"));
+//        if (useWeights) {
+//            Method method = this.getClass().getMethod(similarityMeasure, double[].class);
+//            double[] weights = this.getWeights(mzFreqs);
+//            return (double) method.invoke(this, weights);
+//        } else {
+//            Method method = this.getClass().getMethod(similarityMeasure);
+//            return (double) method.invoke(this);
+//        }
+//    }
+//
+//    public double getSimilarity(String similarityMeasure)
+//            throws NoSuchMethodException, InvocationTargetException, IllegalAccessException {
+//        assert (!similarityMeasure.startsWith("weight"));
+//
+//        Method method = this.getClass().getMethod(similarityMeasure);
+//        return (double) method.invoke(this);
+//    }
 
     public static void main(String[] args) throws FileParsingException, IOException {
     }

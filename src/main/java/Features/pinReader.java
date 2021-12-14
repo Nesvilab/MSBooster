@@ -6,7 +6,6 @@ import java.io.BufferedReader;
 import java.io.FileReader;
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.TreeMap;
 
 public class pinReader {
     String name; //used for resetting
@@ -60,10 +59,16 @@ public class pinReader {
 
     public String[] getRow() {return row;}
 
-    public String getPep() {return percolatorFormatter.percolatorPepFormat(row, pepIdx, specIdx);}
+    public String getPep() {
+        if (Constants.spectraRTPredModel.equals("DIA-NN")) {
+            return percolatorFormatter.DiannPepFormat(row, pepIdx, specIdx);
+        } else { //PredFull
+            return percolatorFormatter.PredfullPepFormat(row, pepIdx, specIdx);
+        }
+    }
 
     public String getStrippedPep() {
-        String peptide = percolatorFormatter.percolatorPepFormat(row, pepIdx, specIdx).split("\\|")[0];
+        String peptide = percolatorFormatter.DiannPepFormat(row, pepIdx, specIdx).split("\\|")[0];
         ArrayList<Integer> starts = new ArrayList<>();
         ArrayList<Integer> ends = new ArrayList<>();
         ends.add(0);
@@ -130,7 +135,7 @@ public class pinReader {
     //TODO: how to handle shifting of uncommon PTMS?
     public String[] createDiannList() throws IOException {
         ArrayList<String> peps = new ArrayList<String>();
-        TreeMap<Integer, Integer> modMap = new TreeMap<>(); //sorted for future use
+        //TreeMap<Integer, Integer> modMap = new TreeMap<>(); //sorted for future use
         while (next()) {
             String[] pepSplit = getPep().split("\\|");
             peps.add(pepSplit[0] + "\t" + pepSplit[1]);
@@ -140,10 +145,73 @@ public class pinReader {
 
     public String[] createDiannListFull() throws IOException {
         ArrayList<String> peps = new ArrayList<String>();
-        TreeMap<Integer, Integer> modMap = new TreeMap<>(); //sorted for future use
+        //TreeMap<Integer, Integer> modMap = new TreeMap<>(); //sorted for future use
         while (next()) {
             String[] pepSplit = getFullPep().split("\\|");
             peps.add(pepSplit[0] + "\t" + pepSplit[1]);
+        }
+        return peps.toArray(new String[0]);
+    }
+
+    public String[] createPredFullList() throws IOException {
+        ArrayList<String> peps = new ArrayList<String>();
+        while (next()) {
+            //first is peptide, then missed masses
+            String pep = row[pepIdx];
+            pep = pep.substring(2, pep.length() - 2);
+
+            //n term acetylation
+            if (pep.charAt(0) == 'n') {
+                pep = pep.replace("n", "");
+            }
+
+            //replace oxidized M
+            pep = pep.replace("M[15.9949]", "M(O)");
+
+
+            //find locations of PTMs
+            ArrayList<Integer> starts = new ArrayList<>();
+            ArrayList<Integer> ends = new ArrayList<>();
+            for (int i = 0; i < pep.length(); i++) {
+                if (pep.charAt(i) == '[') {
+                    starts.add(i);
+                } else if (pep.charAt(i) == ']') {
+                    ends.add(i);
+                }
+            }
+
+            for (int i = starts.size() - 1; i > -1; i--) {
+                pep = pep.substring(0, starts.get(i)) + pep.substring(ends.get(i) + 1);
+            }
+
+            //charge
+            String[] charges = row[specIdx].split("_");
+            String chargeStr = charges[charges.length - 2];
+            int charge = Integer.parseInt(chargeStr.substring(chargeStr.length() - 1));
+
+            peps.add(pep + "\t" + charge + "\t" + Constants.FragmentationType + "\t" + Constants.NCE);
+        }
+        return peps.toArray(new String[0]);
+    }
+
+    public String[] createPredFullListFull() throws IOException {
+        ArrayList<String> peps = new ArrayList<String>();
+        while (next()) {
+            //first is peptide, then missed masses
+            String pep = row[pepIdx];
+            pep = pep.substring(2, pep.length() - 2);
+
+            //n term acetylation
+            if (pep.charAt(0) == 'n') {
+                pep = pep.replace("n", "");
+            }
+
+            //charge
+            String[] charges = row[specIdx].split("_");
+            String chargeStr = charges[charges.length - 2];
+            int charge = Integer.parseInt(chargeStr.substring(chargeStr.length() - 1));
+
+            peps.add(pep + "\t" + charge);
         }
         return peps.toArray(new String[0]);
     }

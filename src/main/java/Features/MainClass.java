@@ -10,7 +10,7 @@ import java.util.*;
 //this is what I use in the java jar file
 public class MainClass {
     public static void main(String[] args) throws Exception {
-        System.out.println("MSBooster v1.1");
+        System.out.println("MSBooster v1.2");
         try {
             //accept command line inputs
             HashSet<String> fields = new HashSet<>();
@@ -447,18 +447,32 @@ public class MainClass {
                 } else if (Constants.spectraRTPredModel.equals("pDeep3")) {
                     System.out.println("Generating input file for pDeep3");
                     peptideFileCreator.createPeptideFile(pmMatcher.pinFiles, Constants.spectraRTPredInput, "pDeep3", "pin");
+                } else if (Constants.spectraRTPredModel.equals("PredFull")) {
+                    System.out.println("Generating input file for PredFull");
+                    peptideFileCreator.createPeptideFile(pmMatcher.pinFiles, Constants.spectraRTPredInput, "PredFull", "pin");
+                    peptideFileCreator.createPeptideFile(pmMatcher.pinFiles,
+                            Constants.spectraRTPredInput.substring(0, Constants.spectraRTPredInput.length() - 4) + "_full.tsv",
+                            "PredFullFull", "pin");
+                } else {
+                    System.out.println("spectraRTPredModel must be one of DIA-NN or PredFull");
+                    System.exit(-1);
+                }
+
+                if (Constants.createPredFileOnly) {
+                    System.out.println("Successfully created input file for prediction model. Stopping here");
+                    System.exit(0);
                 }
             }
-            if (createDetectAllPredFile) {
-                System.out.println("Generating input file for DeepMSPeptide");
-                //long startTime = System.nanoTime();
-                Constants.setFastaReader(peptideFileCreator.createPeptideFile(pmMatcher.pinFiles, Constants.detectPredInput, "DeepMSPeptideAll", "pin"));
-                //long endTime = System.nanoTime();
-                //long duration = (endTime - startTime);
-            } else if (createDetectPredFile) {
-                System.out.println("Generating input file for DeepMSPeptide");
-                peptideFileCreator.createPeptideFile(pmMatcher.pinFiles, Constants.detectPredInput, "DeepMSPeptide", "pin");
-            }
+//            if (createDetectAllPredFile) {
+//                System.out.println("Generating input file for DeepMSPeptide");
+//                //long startTime = System.nanoTime();
+//                //Constants.setFastaReader(peptideFileCreator.createPeptideFile(pmMatcher.pinFiles, Constants.detectPredInput, "DeepMSPeptideAll", "pin"));
+//                //long endTime = System.nanoTime();
+//                //long duration = (endTime - startTime);
+//            } else if (createDetectPredFile) {
+//                System.out.println("Generating input file for DeepMSPeptide");
+//                peptideFileCreator.createPeptideFile(pmMatcher.pinFiles, Constants.detectPredInput, "DeepMSPeptide", "pin");
+//            }
 
             //generate predictions
             if ((Constants.spectraRTPredFile == null) && (createSpectraRTPredFile2)) {
@@ -467,20 +481,23 @@ public class MainClass {
                 //long endTime = System.nanoTime();
                 //long duration = (endTime - startTime);
             }
-            if ((Constants.detectPredFile == null) && (createDetectPredFile2)) {
-                //long startTime = System.nanoTime();
-                ExternalModelCaller.callModel(run, "DeepMSPeptide");
-                //long endTime = System.nanoTime();
-                //long duration = (endTime - startTime);
-            }
-
-            //print parameters to ps
-            printParamsPS();
+//            if ((Constants.detectPredFile == null) && (createDetectPredFile2)) {
+//                //long startTime = System.nanoTime();
+//                ExternalModelCaller.callModel(run, "DeepMSPeptide");
+//                //long endTime = System.nanoTime();
+//                //long duration = (endTime - startTime);
+//            }
 
             //create new pin file with features
             System.out.println("Generating edited pin with following features: " + Arrays.toString(featuresArray));
             long start = System.nanoTime();
+            if (Constants.spectraRTPredModel.equals("PredFull")) {
+                Constants.matchWithDaltons = true; //they report predictions in bins
+            }
             percolatorFormatter.editPin(pmMatcher, Constants.spectraRTPredFile, Constants.detectPredFile, featuresArray, Constants.editedPin);
+
+            //print parameters to ps
+            printParamsPS();
 
             //delete pred files
             if (Constants.deletePreds) {

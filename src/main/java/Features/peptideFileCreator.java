@@ -45,7 +45,7 @@ public class peptideFileCreator {
         createPeptideFile(infileArray, outfile, modelFormat, psmFormat);
     }
 
-    public static FastaReader createPeptideFile(File[] x, String outfile, String modelFormat, String psmFormat)
+    public static void createPeptideFile(File[] x, String outfile, String modelFormat, String psmFormat)
             throws IOException { //pepXML or pin
         //diff versions based on submitting File[] or pinReader
         long startTime = System.nanoTime();
@@ -100,6 +100,18 @@ public class peptideFileCreator {
                     case "DiannFull":
                         hitsToAdd = pin.createDiannListFull();
                         break;
+                    case "PredFull":
+                        if (Constants.FragmentationType == null || Constants.NCE == null) {
+                            System.out.println("Missing information for PredFull file generation. " +
+                                    "Please provide FragmentationType (HCD or ETD) and NCE (normalized collision energy) in " +
+                                    "parameter file via --paramsList or as arguments on command line.");
+                            System.exit(-1);
+                        }
+                        hitsToAdd = pin.createPredFullList();
+                        break;
+                    case "PredFullFull":
+                        hitsToAdd = pin.createPredFullListFull();
+                        break;
                 }
                 pin.close();
 
@@ -110,15 +122,15 @@ public class peptideFileCreator {
         //filter out redundant peptides
         //this step can reduce number of predictions needed to 1/3, decreasing prediction time
         HashSet<String> hSetHits = getUniqueHits(allHits);
-        FastaReader fasta = null;
-        if (modelFormat.equals("DeepMSPeptideAll")) {
-            //TODO: I don't think this is needed anymore, if only using protSpearman?
-            //add all targets from fasta
-            fasta = new FastaReader(Constants.fasta);
-            for (ProteinEntry proteinEntry : fasta.protToPep.values()) {
-                hSetHits.addAll(proteinEntry.peptides);
-            }
-        }
+//        FastaReader fasta = null;
+//        if (modelFormat.equals("DeepMSPeptideAll")) {
+//            //TODO: I don't think this is needed anymore, if only using protSpearman?
+//            //add all targets from fasta
+//            fasta = new FastaReader(Constants.fasta);
+//            for (ProteinEntry proteinEntry : fasta.protToPep.values()) {
+//                hSetHits.addAll(proteinEntry.peptides);
+//            }
+//        }
 
         //write to file
         try { //TODO: make fileWriter method
@@ -158,6 +170,9 @@ public class peptideFileCreator {
                 case "DiannFull":
                     myWriter.write("peptide" + "\t" + "charge\n");
                     break;
+                case "PredFull":
+                    myWriter.write("Peptide" + "\t" + "Charge" + "\t" + "Type" + "\t" + "NCE\n");
+                    break;
             }
             for (String hSetHit : hSetHits) {
                 myWriter.write(hSetHit + "\n");
@@ -168,12 +183,11 @@ public class peptideFileCreator {
             System.out.println(modelFormat + " input file generation took " + duration / 1000000 +" milliseconds");
             myWriter.close();
             System.out.println("Input file at  " + outfile);
-
-            return fasta; //save fasta for later
+            //return fasta; //save fasta for later
         } catch (IOException e) {
             System.out.println("An error occurred");
             e.printStackTrace();
-            return null;
+            //return null;
         }
     }
 

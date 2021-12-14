@@ -43,7 +43,7 @@ public class peptideObj {
         this.targetORdecoy = targetORdecoy;
         this.escore = escore;
         this.spectralSimObj = new spectrumComparison(scanNumObj.getExpMZs(), scanNumObj.getExpIntensities(),
-                predMZs, predIntensities, Constants.useTopFragments);
+                predMZs, predIntensities, Constants.useTopFragments, Constants.useBasePeak);
         this.RT = predRT;
         this.IM = predIM;
     }

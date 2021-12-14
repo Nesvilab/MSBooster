@@ -45,6 +45,9 @@ public class mzmlScanNumber {
         this.scanNum = scan.getNum();
         ISpectrum spectrum = scan.fetchSpectrum();
         this.expMZs = doubleToFloat(spectrum.getMZs());
+        if (expMZs.length == 0) {
+            System.out.println("scan with scan number " + scanNum + " is empty");
+        }
         this.expIntensities = doubleToFloat(spectrum.getIntensities());
 //        this.OGexpMZs = new float[expMZs.length];
 //        this.OGexpIntensities = new float[expIntensities.length];
@@ -115,6 +118,7 @@ public class mzmlScanNumber {
             peptideObjects.add(rank - 1, newPepObj);
 
             //remove higher ranked peaks
+            //TODO: base off fragger.params topN?
             if (Constants.removeRankPeaks) {
                 for (int i = newPepObj.spectralSimObj.matchedIdx.size() - 1; i > -1; i--) {
                     expMZs = ArrayUtils.remove(expMZs, i);
@@ -131,6 +135,7 @@ public class mzmlScanNumber {
                         zeroFloatArray, zeroFloatArray, 0.0f, null));
             } else {
                 System.out.println("Prediction missing in file for " + name);
+                e.printStackTrace();
                 System.exit(-1);
             }
         }

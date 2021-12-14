@@ -247,6 +247,7 @@ public class mzMLReader {
     }
 
     public void setPinEntries(pinReader pin, SpectralPredictionMapper spm) throws AssertionError, Exception {
+        //TODO: multithread?
         while (pin.next()) {
             try {
                 scanNumberObjects.get(pin.getScanNum()).setPeptideObject(pin.getPep(), pin.getRank(), pin.getTD(), pin.getEScore(),

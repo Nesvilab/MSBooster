@@ -47,7 +47,7 @@ public class Constants {
     //locations of executables and other models
     public static Integer numThreads = 0;
     public static String DiaNN = null; //C:/DIA-NN/1.7.15beta1/DiaNN.exe
-    public static final String spectraRTPredModel = "DIA-NN"; //mgf, bin, msp
+    public static String spectraRTPredModel = "DIA-NN"; //mgf, bin, msp
                                                         //pDeep3, DIA-NN, Prosit
                                                         //DIANN by default
                                                         //currently don't support changing this
@@ -62,12 +62,16 @@ public class Constants {
     public static Float ppmTolerance = 20f; //ppm tolerance of MS2 scans
     public static Float lowResppmTolerance = 300f;
     public static Float highResppmTolerance = 20f;
+    public static Boolean matchWithDaltons = false;
+    public static Float DaTolerance = 0.05f;
 
     //for limiting number of fragments used
     public static Boolean useSpectra = null;
     public static Boolean useTopFragments = true;
     public static Integer topFragments = 12;
     public static Boolean removeRankPeaks = true; //whether to remove peaks from higher ranks
+    public static Boolean useBasePeak = true;
+    public static Double percentBasePeak = 0.01;
 
     public static final Integer fineTuneSize = 100; //for generating a finetune file for pDeep3
 
@@ -96,6 +100,11 @@ public class Constants {
     public static Float IMescoreCutoff = (float) Math.pow(10, -3.5);
     public static Integer IMbinMultiplier = 100;
     public static final Float IMIQR = 50f;
+
+    //support for PredFull and Prosit
+    public static String FragmentationType = null;
+    public static String NCE = null;
+    public static Boolean createPredFileOnly = false;
 
     ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 

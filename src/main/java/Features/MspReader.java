@@ -108,7 +108,7 @@ public class MspReader implements SpectralPredictionMapper {
 
     public static void main(String[] args) throws IOException {
         //MspReader m = new MspReader("C:/Users/kevin/OneDriveUmich/proteomics/preds/cptacProsit.msp");
-        SpectralPredictionMapper m = SpectralPredictionMapper.createSpectralPredictionMapper(
-                "C:/Users/kevin/OneDriveUmich/proteomics/preds/cptacProsit.msp");
+//        SpectralPredictionMapper m = SpectralPredictionMapper.createSpectralPredictionMapper(
+//                "C:/Users/kevin/OneDriveUmich/proteomics/preds/cptacProsit.msp");
     }
 }

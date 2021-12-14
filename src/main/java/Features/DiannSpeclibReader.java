@@ -4,9 +4,7 @@ import java.io.*;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.HashMap;
-import java.util.Map;
 
 public class DiannSpeclibReader implements SpectralPredictionMapper{
     final ArrayList<String> filenames;
@@ -185,17 +183,17 @@ public class DiannSpeclibReader implements SpectralPredictionMapper{
 
     public static void main(String[] args) throws IOException {
         //DiannSpeclibReader d = new DiannSpeclibReader("C:/Users/kevin/OneDriveUmich/proteomics/preds/cptacDiann.predicted.bin");
-        long startTime = System.nanoTime();
-        SpectralPredictionMapper spm = SpectralPredictionMapper.createSpectralPredictionMapper(
-                "C:/Users/kevin/Downloads/testDIANN.predicted.bin");
-        for (Map.Entry<String, PredictionEntry> m : spm.getPreds().entrySet()) {
-            System.out.println(m.getKey());
-            System.out.println(Arrays.toString(m.getValue().mzs));
-            System.out.println(Arrays.toString(m.getValue().intensities));
-        }
-        long endTime = System.nanoTime();
-        long duration = (endTime - startTime);
-        System.out.println("Spectra/RT/IM prediction loading took " + duration / 1000000 +" milliseconds");
-        System.out.println(spm.getPreds().size());
+//        long startTime = System.nanoTime();
+//        SpectralPredictionMapper spm = SpectralPredictionMapper.createSpectralPredictionMapper(
+//                "C:/Users/kevin/Downloads/testDIANN.predicted.bin");
+//        for (Map.Entry<String, PredictionEntry> m : spm.getPreds().entrySet()) {
+//            System.out.println(m.getKey());
+//            System.out.println(Arrays.toString(m.getValue().mzs));
+//            System.out.println(Arrays.toString(m.getValue().intensities));
+//        }
+//        long endTime = System.nanoTime();
+//        long duration = (endTime - startTime);
+//        System.out.println("Spectra/RT/IM prediction loading took " + duration / 1000000 +" milliseconds");
+//        System.out.println(spm.getPreds().size());
     }
 }

@@ -4,10 +4,12 @@ import com.univocity.parsers.tsv.TsvWriter;
 import com.univocity.parsers.tsv.TsvWriterSettings;
 import org.apache.commons.lang3.ArrayUtils;
 import org.apache.commons.math3.stat.correlation.SpearmansCorrelation;
+import umich.ms.fileio.exceptions.FileParsingException;
 
 import java.io.File;
 import java.io.IOException;
 import java.util.*;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.stream.IntStream;
@@ -16,7 +18,7 @@ import static Features.Constants.camelToUnderscore;
 
 public class percolatorFormatter {
 
-    public static String percolatorPepFormat(String[] columns, int pepIdx, int specIDidx) {
+    public static String DiannPepFormat(String[] columns, int pepIdx, int specIDidx) {
         //first is peptide, then missed masses
         String pep = columns[pepIdx];
         pep = pep.substring(2, pep.length() - 2);
@@ -50,6 +52,45 @@ public class percolatorFormatter {
             }
             if (! foundReplacement) {
                 //DIANN won't predict this anyway
+                pep = pep.substring(0, starts.get(i)) + pep.substring(ends.get(i) + 1);
+            }
+        }
+
+        //charge
+        String[] charges = columns[specIDidx].split("_");
+        String chargeStr = charges[charges.length - 2];
+        int charge = Integer.parseInt(chargeStr.substring(chargeStr.length() - 1));
+
+        return pep + "|" + charge;
+    }
+
+    public static String PredfullPepFormat(String[] columns, int pepIdx, int specIDidx) {
+        //first is peptide, then missed masses
+        String pep = columns[pepIdx];
+        pep = pep.substring(2, pep.length() - 2);
+
+        //n term acetylation
+        if (pep.charAt(0) == 'n') {
+            pep = pep.replace("n", "");
+        }
+
+        //find locations of PTMs
+        ArrayList<Integer> starts = new ArrayList<>();
+        ArrayList<Integer> ends = new ArrayList<>();
+        for (int i = 0; i < pep.length(); i++) {
+            if (pep.charAt(i) == '[') {
+                starts.add(i);
+            } else if (pep.charAt(i) == ']') {
+                ends.add(i);
+            }
+        }
+
+        for (int i = starts.size() - 1; i > -1; i--) {
+            double reportedMass = Double.parseDouble(pep.substring(starts.get(i) + 1, ends.get(i)));
+            if (Math.abs(15.9949 - reportedMass) < 0.01) { //carbamidomethylation C
+                pep = pep.substring(0, starts.get(i)) + "(O)" +
+                        pep.substring(ends.get(i) + 1);
+            } else {
                 pep = pep.substring(0, starts.get(i)) + pep.substring(ends.get(i) + 1);
             }
         }
@@ -129,7 +170,7 @@ public class percolatorFormatter {
     //baseNames is the part before mzml or pin extensions
     public static void editPin(String pinDirectory, String mzmlDirectory, String mgf, String detectFile,
                                String[] features, String outfile)
-            throws IOException {
+            throws IOException, InterruptedException, ExecutionException, FileParsingException {
 
         PinMzmlMatcher pmMatcher = new PinMzmlMatcher(mzmlDirectory, pinDirectory);
 
@@ -137,7 +178,9 @@ public class percolatorFormatter {
     }
 
     public static void editPin(PinMzmlMatcher pmMatcher, String mgf, String detectFile,
-                               String[] features, String outfile) throws IOException {
+                               String[] features, String outfile) throws IOException, InterruptedException, ExecutionException, FileParsingException {
+        ExecutorService executorService = Executors.newFixedThreadPool(Constants.numThreads);
+
         //defining num threads, in case using this outside of jar file
         Runtime run  = Runtime.getRuntime();
         if (Constants.numThreads <= 0) {
@@ -166,7 +209,7 @@ public class percolatorFormatter {
         if (mgf != null) {
             System.out.println("Loading predicted spectra");
             //long startTime = System.nanoTime();
-            predictedSpectra = SpectralPredictionMapper.createSpectralPredictionMapper(mgf);
+            predictedSpectra = SpectralPredictionMapper.createSpectralPredictionMapper(mgf, executorService);
             //long endTime = System.nanoTime();
             //long duration = (endTime - startTime);
             //System.out.println("Spectra/RT/IM prediction loading took " + duration / 1000000 +" milliseconds");
@@ -271,7 +314,6 @@ public class percolatorFormatter {
         //long duration = (endTime - startTime);
         //System.out.println("Detectability map and formatting loading took " + duration / 1000000 +" milliseconds");
 
-        ExecutorService executorService = Executors.newFixedThreadPool(Constants.numThreads);
         try {
             //////////////////////////////iterate through pin and mzml files//////////////////////////////////////////
             for (int i = 0; i < pinFiles.length; i++) {
@@ -751,7 +793,7 @@ public class percolatorFormatter {
         executorService.shutdown();
     }
 
-    public static void main(String[] args) throws IOException {
+    public static void main(String[] args) throws IOException, InterruptedException, ExecutionException, FileParsingException {
         //CHANGE PPM TO 10 if wide, narrow
 
         //CHANGE PPM TO 20 if cptac

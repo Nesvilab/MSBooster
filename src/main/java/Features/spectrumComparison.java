@@ -11,7 +11,7 @@ import java.util.LinkedHashSet;
 import java.util.stream.IntStream;
 
 import static Features.floatUtils.floatToDouble;
-
+//TODO: also square root intensities?
 public class spectrumComparison {
     float[] predMZs;
     float[] predIntensities;

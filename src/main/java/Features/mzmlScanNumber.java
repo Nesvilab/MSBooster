@@ -100,7 +100,7 @@ public class mzmlScanNumber {
         if (rank != peptideObjects.size() + 1) { //need to add entries in order
             throw new AssertionError("must add next rank");
         }
-        try {
+        try { //TODO: if predfull, add PTM masses to mz
             PredictionEntry predictionEntry = allPreds.get(name);
             float[] predMZs = predictionEntry.mzs;
             float[] predIntensities = predictionEntry.intensities;

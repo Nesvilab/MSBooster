@@ -164,11 +164,13 @@ public class Constants {
     ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
     //Handling PTMs
 
-    //TODO: better handling of PTMs, all in one location
+    //TODO: better handling of PTMs, all in one location. Might need to import unimod mass file
+    public static Double oxidationMass = 15.9949;
+    public static Double carbamidomethylationMass = 57.0215;
     private static HashMap<Double, Integer> makeModAAToUnimod() {
         HashMap<Double, Integer> map = new HashMap<>();
-        map.put(57.0215, 4);
-        map.put(15.9949, 35);
+        map.put(carbamidomethylationMass, 4);
+        map.put(oxidationMass, 35);
         map.put(42.0106, 1);
         map.put(79.96633, 21);
         map.put(114.042927, 121);

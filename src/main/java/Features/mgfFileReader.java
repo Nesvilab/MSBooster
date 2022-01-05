@@ -17,7 +17,6 @@ public class mgfFileReader implements SpectralPredictionMapper{
     private List<Future> futureList = new ArrayList<>(Constants.numThreads);
 
     //this version if loading pDeep3 predictions
-    //TODO: are different constructors doing similar things?
     public mgfFileReader(String files) throws IOException {
         File predsDirectory = new File(files);
         String[] predsFiles = predsDirectory.list();
@@ -236,7 +235,7 @@ public class mgfFileReader implements SpectralPredictionMapper{
                 }
 
                 //removing comments
-                //TODO: can we assume that comments means it's from timsTOF?
+                //can we assume that comments means it's from timsTOF?
                 for (byte b : data) {
                     if (b == 35) {
                         data = (new String(data, StandardCharsets.UTF_8)).replaceAll("#[^\r\n]*[\r\n]", "").trim()
@@ -303,9 +302,6 @@ public class mgfFileReader implements SpectralPredictionMapper{
                             switch (finalData[start]) {
                                 case 'T': //TITLE
                                     start += 6;
-                                    //TODO: make below part a private method. 2 versions, 1 where no bytearray/string is made.
-                                    // accept \n or space.
-                                    // toAdd will be length of string
                                     line = returnString('\n', finalData, start);
                                     sb.append(line).append("|");
 

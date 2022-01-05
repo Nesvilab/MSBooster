@@ -10,7 +10,7 @@ import java.util.*;
 //this is what I use in the java jar file
 public class MainClass {
     public static void main(String[] args) throws Exception {
-        System.out.println("MSBooster v1.2");
+        System.out.println("MSBooster v1.3");
         try {
             //accept command line inputs
             HashSet<String> fields = new HashSet<>();
@@ -21,7 +21,6 @@ public class MainClass {
             HashMap<String, String> params = new HashMap<String, String>();
 
             //setting new values
-            //TODO: description of all flags. Make pinDirectory and mzmlDirectory positional arguments?
             for (int i = 0; i < args.length; i++) {
                 String key = args[i].substring(2); //remove --
                 if (key.equals("help")) { //help message
@@ -275,7 +274,6 @@ public class MainClass {
             boolean allFeatures = false;
             boolean autoFeatures = false;
             String[] featuresArray = Constants.features.split(",");
-            //TODO: trim string whitespace
             for (String f : featuresArray) {
                 if (!Constants.allowedFeatures.contains(f.trim())) {
                     throw new IllegalArgumentException(f + " is not an allowed feature. " +
@@ -450,9 +448,9 @@ public class MainClass {
                 } else if (Constants.spectraRTPredModel.equals("PredFull")) {
                     System.out.println("Generating input file for PredFull");
                     peptideFileCreator.createPeptideFile(pmMatcher.pinFiles, Constants.spectraRTPredInput, "PredFull", "pin");
-                    peptideFileCreator.createPeptideFile(pmMatcher.pinFiles,
-                            Constants.spectraRTPredInput.substring(0, Constants.spectraRTPredInput.length() - 4) + "_full.tsv",
-                            "PredFullFull", "pin");
+//                    peptideFileCreator.createPeptideFile(pmMatcher.pinFiles,
+//                            Constants.spectraRTPredInput.substring(0, Constants.spectraRTPredInput.length() - 4) + "_full.tsv",
+//                            "PredFullFull", "pin");
                 } else {
                     System.out.println("spectraRTPredModel must be one of DIA-NN or PredFull");
                     System.exit(-1);
@@ -481,12 +479,6 @@ public class MainClass {
                 //long endTime = System.nanoTime();
                 //long duration = (endTime - startTime);
             }
-//            if ((Constants.detectPredFile == null) && (createDetectPredFile2)) {
-//                //long startTime = System.nanoTime();
-//                ExternalModelCaller.callModel(run, "DeepMSPeptide");
-//                //long endTime = System.nanoTime();
-//                //long duration = (endTime - startTime);
-//            }
 
             //create new pin file with features
             System.out.println("Generating edited pin with following features: " + Arrays.toString(featuresArray));
@@ -507,10 +499,10 @@ public class MainClass {
                 predFile.delete();
                 predFile = new File(Constants.outputDirectory + File.separator + "spectraRT.predicted.bin");
                 predFile.delete();
-                predFile = new File(Constants.outputDirectory + File.separator + "detect.tsv");
-                predFile.delete();
-                predFile = new File(Constants.outputDirectory + File.separator + "detect_Predictions.txt");
-                predFile.delete();
+//                predFile = new File(Constants.outputDirectory + File.separator + "detect.tsv");
+//                predFile.delete();
+//                predFile = new File(Constants.outputDirectory + File.separator + "detect_Predictions.txt");
+//                predFile.delete();
             }
 
             long end = System.nanoTime();

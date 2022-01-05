@@ -6,6 +6,7 @@ import java.io.BufferedReader;
 import java.io.FileReader;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Arrays;
 
 public class pinReader {
     String name; //used for resetting
@@ -19,9 +20,9 @@ public class pinReader {
     int specIdx;
     int pepIdx;
     int eScoreIdx;
+    private boolean calcEvalue = false;
 
     public pinReader(String pin) throws IOException {
-        //TODO: use log10eval if available
         name = pin;
         in = new BufferedReader(new FileReader(name));
         String line = in.readLine();
@@ -33,7 +34,12 @@ public class pinReader {
         rankIdx = ArrayUtils.indexOf(header, "rank");
         specIdx = ArrayUtils.indexOf(header, "SpecId");
         pepIdx = ArrayUtils.indexOf(header, "Peptide");
-        eScoreIdx = ArrayUtils.indexOf(header, "hyperscore");
+        if (Arrays.stream(header).anyMatch("log10_evalue"::equals)) {
+            eScoreIdx = ArrayUtils.indexOf(header, "log10_evalue"); //DDA
+        } else {
+            eScoreIdx = ArrayUtils.indexOf(header, "hyperscore"); //DIA
+            calcEvalue = true;
+        }
     }
 
     //reload from start
@@ -105,7 +111,13 @@ public class pinReader {
     }
 
     //public String getEScore() {return String.valueOf(Math.pow(10, Double.parseDouble(row[eScoreIdx])));}
-    public String getEScore() {return String.valueOf(Math.exp(15.0 - Double.parseDouble(row[eScoreIdx])));}
+    public String getEScore() {
+        if (calcEvalue) {
+            return String.valueOf(Math.exp(15.0 - Double.parseDouble(row[eScoreIdx])));
+        } else {
+            return row[eScoreIdx];
+        }
+    }
 
 //    public HashSet<String> getAllPep() throws IOException {
 //        HashSet<String> peps = new HashSet<String>();
@@ -132,7 +144,7 @@ public class pinReader {
         }
         return peps.toArray(new String[0]);
     }
-    //TODO: how to handle shifting of uncommon PTMS?
+
     public String[] createDiannList() throws IOException {
         ArrayList<String> peps = new ArrayList<String>();
         //TreeMap<Integer, Integer> modMap = new TreeMap<>(); //sorted for future use
@@ -164,6 +176,7 @@ public class pinReader {
             if (pep.charAt(0) == 'n') {
                 pep = pep.replace("n", "");
             }
+            pep = pep.replace("c","");
 
             //replace oxidized M
             pep = pep.replace("M[15.9949]", "M(O)");
@@ -197,31 +210,30 @@ public class pinReader {
     public String[] createPredFullListFull() throws IOException {
         ArrayList<String> peps = new ArrayList<String>();
         while (next()) {
-            //first is peptide, then missed masses
-            String pep = row[pepIdx];
-            pep = pep.substring(2, pep.length() - 2);
-
-            //n term acetylation
-            if (pep.charAt(0) == 'n') {
-                pep = pep.replace("n", "");
-            }
-
-            //charge
-            String[] charges = row[specIdx].split("_");
-            String chargeStr = charges[charges.length - 2];
-            int charge = Integer.parseInt(chargeStr.substring(chargeStr.length() - 1));
-
-            peps.add(pep + "\t" + charge);
+//            //first is peptide, then missed masses
+//            String pep = row[pepIdx];
+//            pep = pep.substring(2, pep.length() - 2);
+//
+//            //n term acetylation
+//            if (pep.charAt(0) == 'n') {
+//                pep = pep.replace("n", "");
+//            }
+//            pep = pep.replace("c","");
+//
+//            //charge
+//            String[] charges = row[specIdx].split("_");
+//            String chargeStr = charges[charges.length - 2];
+//            int charge = Integer.parseInt(chargeStr.substring(chargeStr.length() - 1));
+//
+//            peps.add(pep + "\t" + charge);
+            peps.add(getPep());
         }
         return peps.toArray(new String[0]);
     }
 
     public static void main(String[] args) throws IOException {
-//        pinReader p = new pinReader("C:/Users/kevin/Downloads/proteomics/wideWindow/1-18/perc/combined.pin");
-//        while (p.next()) {
-//            if (p.getRow().length > 33) {
-//                System.out.println(p.getRow().length);
-//            }
-//        }
+        pinReader p = new pinReader("C:/Users/kevin/Downloads/proteomics/melanoma/201905024_F_7951_pro_1.pin");
+        p.next();
+        System.out.println(p.getEScore());
     }
 }

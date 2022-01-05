@@ -49,91 +49,56 @@ public class peptideFileCreator {
             throws IOException { //pepXML or pin
         //diff versions based on submitting File[] or pinReader
         long startTime = System.nanoTime();
-        //read in pepXML files
+        //read in pin files
         String[] allHits = new String[0];
 
-        if (psmFormat.equals("pepXML")) { //TODO: create pepXMLFileCreator method
-            for (File f : x) {
-                String fileName = f.getCanonicalPath();
-                pepXMLReader xmlReader = new pepXMLReader(fileName);
-                String[] hitsToAdd = new String[0];
-                switch (modelFormat) {
-                    case "pDeep3":
-                        hitsToAdd = xmlReader.createPDeep3List();
-                        break;
-                    case "DeepMSPeptide": //ignores charge and mods
-                        hitsToAdd = xmlReader.createDeepMSPeptideList();
-                        break;
-                    case "DeepMSPeptideAll": //ignores charge and mods
-                        hitsToAdd = xmlReader.createDeepMSPeptideList();
-                        break;
-//                    case "Diann":
-//                        hitsToAdd = xmlReader.createDiannList();
-//                        break;
-                    case "prosit":
-                        hitsToAdd = xmlReader.createPrositList(34);
-                }
-
-                allHits = ArrayUtils.addAll(allHits, hitsToAdd);
-            }
-        } else { //TODO: create pinFileCreator method
-            for (File f : x) {
-                String fileName = f.getCanonicalPath();
-                pinReader pin = new pinReader(fileName);
-                String[] hitsToAdd = new String[0];
-                switch (modelFormat) {
-                    case "pDeep3":
-                        hitsToAdd = pin.createPDeep3List();
-                        break;
-                    case "DeepMSPeptide": //ignores charge and mods
-                        hitsToAdd = pin.createDeepMSPeptideList();
-                        break;
-                    case "DeepMSPeptideAll": //ignores charge and mods
-                        hitsToAdd = pin.createDeepMSPeptideList();
-                        break;
-                    case "Diann":
-                        hitsToAdd = pin.createDiannList();
-                        break;
-                    //TODO: prosit case
+        for (File f : x) {
+            String fileName = f.getCanonicalPath();
+            pinReader pin = new pinReader(fileName);
+            String[] hitsToAdd = new String[0];
+            switch (modelFormat) {
+                case "pDeep3":
+                    hitsToAdd = pin.createPDeep3List();
+                    break;
+                case "DeepMSPeptide": //ignores charge and mods
+                    hitsToAdd = pin.createDeepMSPeptideList();
+                    break;
+                case "DeepMSPeptideAll": //ignores charge and mods
+                    hitsToAdd = pin.createDeepMSPeptideList();
+                    break;
+                case "Diann":
+                    hitsToAdd = pin.createDiannList();
+                    break;
+                //TODO: prosit case
 //                    case "prosit":
 //                        hitsToAdd = pin.createPrositList(34);
-                    case "DiannFull":
-                        hitsToAdd = pin.createDiannListFull();
-                        break;
-                    case "PredFull":
-                        if (Constants.FragmentationType == null || Constants.NCE == null) {
-                            System.out.println("Missing information for PredFull file generation. " +
-                                    "Please provide FragmentationType (HCD or ETD) and NCE (normalized collision energy) in " +
-                                    "parameter file via --paramsList or as arguments on command line.");
-                            System.exit(-1);
-                        }
-                        hitsToAdd = pin.createPredFullList();
-                        break;
-                    case "PredFullFull":
-                        hitsToAdd = pin.createPredFullListFull();
-                        break;
-                }
-                pin.close();
-
-                allHits = ArrayUtils.addAll(allHits, hitsToAdd);
+                case "DiannFull":
+                    hitsToAdd = pin.createDiannListFull();
+                    break;
+                case "PredFull":
+                    if (Constants.FragmentationType == null || Constants.NCE == null) {
+                        System.out.println("Missing information for PredFull file generation. " +
+                                "Please provide FragmentationType (HCD or ETD) and NCE (normalized collision energy) in " +
+                                "parameter file via --paramsList or as arguments on command line.");
+                        System.exit(-1);
+                    }
+                    hitsToAdd = pin.createPredFullList();
+                    break;
+                case "PredFullFull":
+                    hitsToAdd = pin.createPredFullListFull();
+                    break;
             }
+            pin.close();
+
+            allHits = ArrayUtils.addAll(allHits, hitsToAdd);
         }
 
         //filter out redundant peptides
         //this step can reduce number of predictions needed to 1/3, decreasing prediction time
         HashSet<String> hSetHits = getUniqueHits(allHits);
-//        FastaReader fasta = null;
-//        if (modelFormat.equals("DeepMSPeptideAll")) {
-//            //TODO: I don't think this is needed anymore, if only using protSpearman?
-//            //add all targets from fasta
-//            fasta = new FastaReader(Constants.fasta);
-//            for (ProteinEntry proteinEntry : fasta.protToPep.values()) {
-//                hSetHits.addAll(proteinEntry.peptides);
-//            }
-//        }
 
         //write to file
-        try { //TODO: make fileWriter method
+        try {
             FileWriter myWriter = new FileWriter(outfile);
             switch (modelFormat) {
                 case "prosit":
@@ -192,9 +157,9 @@ public class peptideFileCreator {
     }
 
     public static void main(String[] args) throws IOException {
-        createPeptideFile("C:/Users/kevin/OneDriveUmich/proteomics/pin/" +
-                        "20180819_TIMS2_12-2_AnBr_SA_200ng_HeLa_50cm_120min_100ms_11CT_3_A1_01_2769.pin",
-                "C:/Users/kevin/Downloads/proteomics/timsTOF/DIANN.tsv",
+        createPeptideFile("C:/Users/kevin/Downloads/" +
+                        "20190627_QX0_AnBr_SA_BPP_DDA_M01_01.pin",
+                "C:/Users/kevin/Downloads/proteomics/spectraRT1.tsv",
                 "Diann", "pin");
     }
 }

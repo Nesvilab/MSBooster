@@ -1,7 +1,6 @@
 package Features;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.HashMap;
 
 public class MassCalculator {
@@ -15,7 +14,7 @@ public class MassCalculator {
     private String peptide;
     public int charge;
     public float mass;
-    public ArrayList<Double> modMasses = new ArrayList<Double>(); //no inclusion of C-terminal mods?
+    public ArrayList<Double> modMasses = new ArrayList<Double>();
 
     //ion series
     public float[] b1;
@@ -49,25 +48,6 @@ public class MassCalculator {
         put('Z', 0f);
         put('B', 0f);
         put('X', 0f);
-    }};
-    //TODO: handling oxidation on other amino acids
-//    private final HashMap<String, String> unimodToMods = new HashMap<String, String>()
-//    {{
-//        put("1", "Acetyl[AnyN-term]");
-//        put("4", "Carbamidomethyl[C]");
-//        put("35", "Oxidation[M]");
-//    }};
-//    private final HashMap<String, Float> unimodToMass = new HashMap<String, Float>()
-//    {{
-//        put("1", 42.010565f);
-//        put("4", 57.021464f);
-//        put("35", 15.994915f);
-//    }};
-    private final HashMap<String, Float> modToMass = new HashMap<String, Float>()
-    {{
-        put("Acetyl[AnyN-term]", 42.010565f);
-        put("Carbamidomethyl[C]", 57.021464f);
-        put("Oxidation[M]", 15.994915f);
     }};
 
     //first formatting DIA-NN format to common one
@@ -118,47 +98,6 @@ public class MassCalculator {
         }
 
         this.mass = calcMass(pep.length(), 1, 1) - H;
-//        this.b1 = new float[peptide.length()];
-//        this.y1 = new float[peptide.length()];
-//        if (this.charge >= 2) {
-//            this.b2 = new float[peptide.length()];
-//            this.y2 = new float[peptide.length()];
-//        }
-    }
-
-    //using common peptide form pep|mod|charge
-    //TODO: correct this, but probably won't have to use since no consecutiveFragment feature calculation
-    public MassCalculator(String pep) {
-        this.fullPeptide = pep;
-
-        String[] pepSplit = pep.split("\\|");
-        this.peptide = pepSplit[0];
-        this.charge = Integer.parseInt(pepSplit[2]);
-
-        //get mod positions
-        float[] modsArray = new float[peptide.length() + 1];
-        String modsString = pepSplit[1];
-        String[] mods = modsString.split(";");
-        for (String mod : mods) {
-            if (mod.equals("")) {
-                break;
-            }
-            String[] stringSplit = mod.split(",");
-            modsArray[Integer.parseInt(stringSplit[0])] = modToMass.get(stringSplit[1]);
-        }
-
-        //add to modMasses
-        for (double f : modsArray) {
-            modMasses.add(f);
-        }
-
-        this.mass = calcMass(peptide.length(), 0, 1);
-        this.b1 = new float[peptide.length()];
-        this.y1 = new float[peptide.length()];
-        if (this.charge >= 2) {
-            this.b2 = new float[peptide.length()];
-            this.y2 = new float[peptide.length()];
-        }
     }
 
     public float calcMass(int num, int flag, int charge) {
@@ -201,32 +140,6 @@ public class MassCalculator {
                 y2[i - 1] = calcMass(i, 1, 2);
             }
         }
-    }
-
-    //Given an experimental spectrum, see which series has most consecutive fragment ions detected.
-    //Returns that int after checking b/y charge 1/2
-    //TODO: try with and without normalizing by peptide length
-    private int maxConsecutiveIonSeries(float[] expMZs, float[] expIntensities, float[] series) {
-        //we don't actually care what the fragment intensities are here
-        float[] predIntensities = new float[series.length];
-        Arrays.fill(predIntensities, 1f);
-
-        spectrumComparison sc = new spectrumComparison(expMZs, expIntensities, series, predIntensities);
-        float[] matchedFrags = sc.matchedIntensities;
-        return StatMethods.consecutiveMatches(matchedFrags);
-    }
-
-    //TODO: problem with DIANN peptide formatting?
-    public float maxConsecutiveIonSeries(float[] expMZs, float[] expIntensities) {
-        calcAllMasses();
-        int max = 0;
-        max = Math.max(max, maxConsecutiveIonSeries(expMZs, expIntensities, y1));
-        max = Math.max(max, maxConsecutiveIonSeries(expMZs, expIntensities, b1));
-        if (b2 != null) {
-            max = Math.max(max, maxConsecutiveIonSeries(expMZs, expIntensities, y2));
-            max = Math.max(max, maxConsecutiveIonSeries(expMZs, expIntensities, b2));
-        }
-        return (float) max / (float) peptide.length();
     }
 
     public static void main(String[] args) {

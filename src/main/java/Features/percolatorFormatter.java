@@ -8,7 +8,10 @@ import umich.ms.fileio.exceptions.FileParsingException;
 
 import java.io.File;
 import java.io.IOException;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -27,6 +30,7 @@ public class percolatorFormatter {
         if (pep.charAt(0) == 'n') {
             pep = pep.replace("n", "");
         }
+        pep = pep.replace("c","");
 
         //find locations of PTMs
         ArrayList<Integer> starts = new ArrayList<>();
@@ -73,6 +77,7 @@ public class percolatorFormatter {
         if (pep.charAt(0) == 'n') {
             pep = pep.replace("n", "");
         }
+        pep = pep.replace("c","");
 
         //find locations of PTMs
         ArrayList<Integer> starts = new ArrayList<>();
@@ -85,14 +90,30 @@ public class percolatorFormatter {
             }
         }
 
+        //PredFull only supports oxM and assumes C is carbamidomethylated. Below, we format it this way, but also keep on other PTM masses so m/z values for fragments can be adjusted
         for (int i = starts.size() - 1; i > -1; i--) {
             double reportedMass = Double.parseDouble(pep.substring(starts.get(i) + 1, ends.get(i)));
-            if (Math.abs(15.9949 - reportedMass) < 0.01) { //carbamidomethylation C
-                pep = pep.substring(0, starts.get(i)) + "(O)" +
-                        pep.substring(ends.get(i) + 1);
-            } else {
-                pep = pep.substring(0, starts.get(i)) + pep.substring(ends.get(i) + 1);
+            if (starts.get(i) - 1 > -1) { //no changes to nterm mod
+                if (pep.charAt(starts.get(i) - 1) == 'C') {
+                    if (Math.abs(Constants.carbamidomethylationMass - reportedMass) < 0.01) { //assumed c+57
+                        pep = pep.substring(0, starts.get(i)) + pep.substring(ends.get(i) + 1);
+                    } else { //any other mass on C
+                        pep = pep.substring(0, starts.get(i) + 1) + (reportedMass - Constants.carbamidomethylationMass) + pep.substring(ends.get(i));
+                    }
+                    continue;
+                }
+
+                if (Math.abs(Constants.oxidationMass - reportedMass) < 0.01) {
+                    if (pep.charAt(starts.get(i) - 1) == 'M') {
+                        pep = pep.substring(0, starts.get(i)) + "(O)" + pep.substring(ends.get(i) + 1);
+                    }
+                }
             }
+
+
+//            } else {
+//                pep = pep.substring(0, starts.get(i)) + pep.substring(ends.get(i) + 1); //TODO: why excluding masses?
+//            }
         }
 
         //charge
@@ -133,6 +154,7 @@ public class percolatorFormatter {
         if (pep.charAt(0) == 'n') {
             pep = pep.replace("n", "");
         }
+        pep = pep.replace("c","");
 
         //find locations of PTMs
         ArrayList<Integer> starts = new ArrayList<>();
@@ -163,8 +185,6 @@ public class percolatorFormatter {
 
         return pep + "|" + charge;
     }
-
-    //TODO: need a version of this that keeps the masses in place
 
     //set mgf or detectFile as null if not applicable
     //baseNames is the part before mzml or pin extensions
@@ -208,11 +228,7 @@ public class percolatorFormatter {
         //could consider an mgf constant
         if (mgf != null) {
             System.out.println("Loading predicted spectra");
-            //long startTime = System.nanoTime();
             predictedSpectra = SpectralPredictionMapper.createSpectralPredictionMapper(mgf, executorService);
-            //long endTime = System.nanoTime();
-            //long duration = (endTime - startTime);
-            //System.out.println("Spectra/RT/IM prediction loading took " + duration / 1000000 +" milliseconds");
             needsMGF = true;
         }
 
@@ -341,42 +357,6 @@ public class percolatorFormatter {
                     //System.out.println("mzML loading took " + duration / 1000000 +" milliseconds");
                 }
 
-                //proposed change to using apex IM
-                //read in ionquant file
-//                if (useIM == true) {
-//                    String ionquantFile = "C:/Users/yangkl/Downloads/proteomics/" +
-//                            "timstof/exp1/" + pinFiles[i].getName().substring(0, pinFiles[i].getName().length() - 4) + "_quant.csv";
-//                    System.out.println(ionquantFile);
-//                    BufferedReader br = new BufferedReader(new FileReader(new File(ionquantFile)));
-//                    br.readLine(); //header
-//                    String line;
-//                    String apexIM;
-//                    String peptide;
-//                    String myCharge;
-//                    HashMap<String, Float> apexIMs = new HashMap<>();
-//                    while ((line = br.readLine()) != null) { //make hashmap of peptide,IM
-//                        //check that im is not empty
-//                        peptide = line.split(",")[2];
-//                        apexIM = line.split(",")[16];
-//                        myCharge = line.split(",")[10];
-//                        if (!apexIM.equals("")) {
-//                            apexIMs.put(ionQuantFormat(peptide, myCharge), Float.parseFloat(apexIM));
-//                        }
-//                    }
-//                    br.close();
-//                    //iterate through mzmlScanNum peptide objects and change
-//                    for (mzmlScanNumber msn : mzml.scanNumberObjects.values()) {
-//                        for (peptideObj pObj : msn.peptideObjects) {
-//                            if (apexIMs.containsKey(pObj.name)) {
-//                                pObj.IM = apexIMs.get(pObj.name);
-//                            }
-//                            //else keep it the same
-//                        }
-//                    }
-//                    //clear hashmap
-//                    apexIMs.clear();
-//                }
-
                 //load pin file, which already includes all ranks
                 pinReader pin = new pinReader(pinFiles[i].getCanonicalPath());
 
@@ -395,14 +375,18 @@ public class percolatorFormatter {
 
                 //Special preparations dependent on features we require
                 if (needsMGF) {
-                    //System.out.println("Loading PSMs onto mzml object");
-                    //long startTime1 = System.nanoTime();
-                    //TODO: can we detect before this how many ranks there are?
+                    if (Constants.spectraRTPredModel.equals("PredFull")) {
+                        //need to update predictions with modified peptides
+                        while (pin.next()) {
+                            String peptide = pin.getPep();
+                            if (peptide.contains("[")) {
+                                //need to figure out all possible fragment masses
+                            }
+                        }
+                        pin.reset();
+                    }
+
                     mzml.setPinEntries(pin, predictedSpectra);
-                    //endTime = System.nanoTime();
-                    //duration = (endTime - startTime1);
-                    //System.out.println("PSM loading took " + duration / 1000000 +" milliseconds");
-                    //.out.println("Done loading PSMs onto mzml object");
                 }
                 if (featuresList.contains("deltaRTLOESS") || featuresList.contains("deltaRTLOESSnormalized")) {
                     mzml.setLOESS(Constants.RTregressionSize, Constants.bandwidth, Constants.robustIters, "RT");
@@ -760,12 +744,7 @@ public class percolatorFormatter {
                                         pepObj.scanNumObj.IMbinSize, (float) pepObj.IMprob);
                                 writer.addValue("IM_probability_unif_prior", prob);
                                 break;
-                            case "maxConsecutiveFragments":
-                                MassCalculator mc = new MassCalculator(pep);
-                                mzmlScanNumber msn = mzml.scanNumberObjects.get(pin.getScanNum());
-                                writer.addValue("maxConsecutiveFragments",
-                                        mc.maxConsecutiveIonSeries(msn.getExpMZs(), msn.getExpIntensities()));
-                                break;
+
                         }
                     }
                     //flush values to output

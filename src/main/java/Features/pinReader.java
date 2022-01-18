@@ -34,7 +34,7 @@ public class pinReader {
         rankIdx = ArrayUtils.indexOf(header, "rank");
         specIdx = ArrayUtils.indexOf(header, "SpecId");
         pepIdx = ArrayUtils.indexOf(header, "Peptide");
-        if (Arrays.stream(header).anyMatch("log10_evalue"::equals)) {
+        if (Arrays.asList(header).contains("log10_evalue")) {
             eScoreIdx = ArrayUtils.indexOf(header, "log10_evalue"); //DDA
         } else {
             eScoreIdx = ArrayUtils.indexOf(header, "hyperscore"); //DIA
@@ -65,37 +65,10 @@ public class pinReader {
 
     public String[] getRow() {return row;}
 
-    public String getPep() {
-        if (Constants.spectraRTPredModel.equals("DIA-NN")) {
-            return percolatorFormatter.DiannPepFormat(row, pepIdx, specIdx);
-        } else { //PredFull
-            return percolatorFormatter.PredfullPepFormat(row, pepIdx, specIdx);
-        }
+    public PeptideFormatter getPep() {
+        String[] periodSplit = row[specIdx].split("\\.");
+        return new PeptideFormatter(row[pepIdx], periodSplit[periodSplit.length - 1].split("_")[0], "pin");
     }
-
-    public String getStrippedPep() {
-        String peptide = percolatorFormatter.DiannPepFormat(row, pepIdx, specIdx).split("\\|")[0];
-        ArrayList<Integer> starts = new ArrayList<>();
-        ArrayList<Integer> ends = new ArrayList<>();
-        ends.add(0);
-        for (int i = 0; i < peptide.length(); i++) {
-            String myChar = peptide.substring(i, i + 1);
-            if (myChar.equals("[")) {
-                starts.add(i);
-            } else if (myChar.equals("]")) {
-                ends.add(i + 1);
-            }
-        }
-        starts.add(peptide.length());
-
-        StringBuilder sb = new StringBuilder();
-        for (int i = 0; i < starts.size(); i++) {
-            sb.append(peptide.substring(ends.get(i), starts.get(i)));
-        }
-        return sb.toString();
-    }
-
-    public String getFullPep() {return percolatorFormatter.percolatorPepFormatFull(row, pepIdx, specIdx);}
 
     public int getTD() {return Math.max(0, Integer.parseInt(row[labelIdx]));}
 
@@ -119,19 +92,10 @@ public class pinReader {
         }
     }
 
-//    public HashSet<String> getAllPep() throws IOException {
-//        HashSet<String> peps = new HashSet<String>();
-//        while (next()) {
-//            peps.add(getPep().split("\\|")[0]);
-//        }
-//        reset();
-//        return peps;
-//    }
-
     public String[] createPDeep3List() throws IOException {
         ArrayList<String> peps = new ArrayList<String>();
         while (next()) {
-            String[] pepSplit = getPep().split("\\|");
+            String[] pepSplit = getPep().baseCharge.split("\\|");
             peps.add("." + "\t" + "." + "\t" + pepSplit[0] + "\t" + pepSplit[1] + "\t" + pepSplit[2]);
         }
         return peps.toArray(new String[0]);
@@ -140,7 +104,7 @@ public class pinReader {
     public String[] createDeepMSPeptideList() throws IOException {
         ArrayList<String> peps = new ArrayList<String>();
         while (next()) {
-            peps.add(getStrippedPep());
+            peps.add(getPep().stripped);
         }
         return peps.toArray(new String[0]);
     }
@@ -149,18 +113,8 @@ public class pinReader {
         ArrayList<String> peps = new ArrayList<String>();
         //TreeMap<Integer, Integer> modMap = new TreeMap<>(); //sorted for future use
         while (next()) {
-            String[] pepSplit = getPep().split("\\|");
-            peps.add(pepSplit[0] + "\t" + pepSplit[1]);
-        }
-        return peps.toArray(new String[0]);
-    }
-
-    public String[] createDiannListFull() throws IOException {
-        ArrayList<String> peps = new ArrayList<String>();
-        //TreeMap<Integer, Integer> modMap = new TreeMap<>(); //sorted for future use
-        while (next()) {
-            String[] pepSplit = getFullPep().split("\\|");
-            peps.add(pepSplit[0] + "\t" + pepSplit[1]);
+            PeptideFormatter pf = getPep();
+            peps.add(pf.diann + "\t" + pf.charge);
         }
         return peps.toArray(new String[0]);
     }
@@ -168,65 +122,18 @@ public class pinReader {
     public String[] createPredFullList() throws IOException {
         ArrayList<String> peps = new ArrayList<String>();
         while (next()) {
-            //first is peptide, then missed masses
-            String pep = row[pepIdx];
-            pep = pep.substring(2, pep.length() - 2);
-
-            //n term acetylation
-            if (pep.charAt(0) == 'n') {
-                pep = pep.replace("n", "");
-            }
-            pep = pep.replace("c","");
-
-            //replace oxidized M
-            pep = pep.replace("M[15.9949]", "M(O)");
-
-
-            //find locations of PTMs
-            ArrayList<Integer> starts = new ArrayList<>();
-            ArrayList<Integer> ends = new ArrayList<>();
-            for (int i = 0; i < pep.length(); i++) {
-                if (pep.charAt(i) == '[') {
-                    starts.add(i);
-                } else if (pep.charAt(i) == ']') {
-                    ends.add(i);
-                }
-            }
-
-            for (int i = starts.size() - 1; i > -1; i--) {
-                pep = pep.substring(0, starts.get(i)) + pep.substring(ends.get(i) + 1);
-            }
-
-            //charge
-            String[] charges = row[specIdx].split("_");
-            String chargeStr = charges[charges.length - 2];
-            int charge = Integer.parseInt(chargeStr.substring(chargeStr.length() - 1));
-
-            peps.add(pep + "\t" + charge + "\t" + Constants.FragmentationType + "\t" + Constants.NCE);
+            PeptideFormatter pf = getPep();
+            peps.add(pf.predfull + "\t" + pf.charge + "\t" + Constants.FragmentationType + "\t" + Constants.NCE);
         }
         return peps.toArray(new String[0]);
     }
 
-    public String[] createPredFullListFull() throws IOException {
+    public String[] createFull() throws IOException {
         ArrayList<String> peps = new ArrayList<String>();
+        //TreeMap<Integer, Integer> modMap = new TreeMap<>(); //sorted for future use
         while (next()) {
-//            //first is peptide, then missed masses
-//            String pep = row[pepIdx];
-//            pep = pep.substring(2, pep.length() - 2);
-//
-//            //n term acetylation
-//            if (pep.charAt(0) == 'n') {
-//                pep = pep.replace("n", "");
-//            }
-//            pep = pep.replace("c","");
-//
-//            //charge
-//            String[] charges = row[specIdx].split("_");
-//            String chargeStr = charges[charges.length - 2];
-//            int charge = Integer.parseInt(chargeStr.substring(chargeStr.length() - 1));
-//
-//            peps.add(pep + "\t" + charge);
-            peps.add(getPep());
+            PeptideFormatter pf = getPep();
+            peps.add(pf.base + "\t" + pf.charge);
         }
         return peps.toArray(new String[0]);
     }

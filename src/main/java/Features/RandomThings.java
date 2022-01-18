@@ -4,6 +4,7 @@ import umich.ms.fileio.exceptions.FileParsingException;
 
 import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;
+import java.util.Arrays;
 import java.util.concurrent.ExecutionException;
 
 public class RandomThings {
@@ -13,9 +14,8 @@ public class RandomThings {
     }
 
     public static void main(String[] args) throws IOException, FileParsingException, NoSuchMethodException, IllegalAccessException, InvocationTargetException, InterruptedException, ExecutionException {
-        String a = "asd";
-        a = a.replace("a", "z");
-        System.out.println(a);
+        String a = "asd;";
+        System.out.println(Arrays.toString(a.split(";")));
         //        ExecutorService executorService = Executors.newFixedThreadPool(Constants.numThreads);
 //        List<Future> futureList = new ArrayList<>(Constants.numThreads);
 //

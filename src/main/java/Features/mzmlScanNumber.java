@@ -94,14 +94,17 @@ public class mzmlScanNumber {
     public float[] getExpMZs() { return expMZs; }
     public float[] getExpIntensities() { return expIntensities; }
 
-    public void setPeptideObject(String name, int rank, int targetORdecoy, String escore,
+    public void setPeptideObject(PeptideFormatter name, int rank, int targetORdecoy, String escore,
                                  HashMap<String, PredictionEntry> allPreds) throws Exception {
 
         if (rank != peptideObjects.size() + 1) { //need to add entries in order
             throw new AssertionError("must add next rank");
         }
         try { //TODO: if predfull, add PTM masses to mz
-            PredictionEntry predictionEntry = allPreds.get(name);
+            PredictionEntry predictionEntry = allPreds.get(name.baseCharge);
+//            PredictionEntry predictionEntry = allPreds.get(new PeptideFormatter(
+//                    new PeptideFormatter(name.base, name.charge, "base").
+//                            predfull, name.charge, "predfull").baseCharge);
             float[] predMZs = predictionEntry.mzs;
             float[] predIntensities = predictionEntry.intensities;
             float predRT = predictionEntry.RT;
@@ -109,10 +112,10 @@ public class mzmlScanNumber {
 
             peptideObj newPepObj;
             if (predMZs.length > 1) {
-                newPepObj = new peptideObj(this, name, rank, targetORdecoy, escore, predMZs,
+                newPepObj = new peptideObj(this, name.baseCharge, rank, targetORdecoy, escore, predMZs,
                         predIntensities, predRT, predIM);
             } else { //only 1 frag to match
-                newPepObj = new peptideObj(this, name, rank, targetORdecoy, escore, zeroFloatArray,
+                newPepObj = new peptideObj(this, name.baseCharge, rank, targetORdecoy, escore, zeroFloatArray,
                         zeroFloatArray, predRT, predIM);
             }
             peptideObjects.add(rank - 1, newPepObj);
@@ -128,13 +131,11 @@ public class mzmlScanNumber {
         } catch (Exception e) {
             //when peptide isn't in predictions, like U peptides.
             //Set to arbitrary 0 vectors so nothing matches, similarity 0
-            String nameCheck = name;
-            nameCheck.replace("UniMod", "");
-            if (nameCheck.contains("U")) {
-                peptideObjects.add(rank - 1, new peptideObj(this, name, rank, targetORdecoy, escore,
+            if (name.baseCharge.contains("U")) {
+                peptideObjects.add(rank - 1, new peptideObj(this, name.baseCharge, rank, targetORdecoy, escore,
                         zeroFloatArray, zeroFloatArray, 0.0f, null));
             } else {
-                System.out.println("Prediction missing in file for " + name);
+                System.out.println("Prediction missing in file for " + name.baseCharge);
                 e.printStackTrace();
                 System.exit(-1);
             }

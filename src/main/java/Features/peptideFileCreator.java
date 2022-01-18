@@ -72,8 +72,8 @@ public class peptideFileCreator {
                 //TODO: prosit case
 //                    case "prosit":
 //                        hitsToAdd = pin.createPrositList(34);
-                case "DiannFull":
-                    hitsToAdd = pin.createDiannListFull();
+                case "createFull":
+                    hitsToAdd = pin.createFull();
                     break;
                 case "PredFull":
                     if (Constants.FragmentationType == null || Constants.NCE == null) {
@@ -83,9 +83,6 @@ public class peptideFileCreator {
                         System.exit(-1);
                     }
                     hitsToAdd = pin.createPredFullList();
-                    break;
-                case "PredFullFull":
-                    hitsToAdd = pin.createPredFullListFull();
                     break;
             }
             pin.close();
@@ -132,9 +129,6 @@ public class peptideFileCreator {
                     System.out.println("Writing DIA-NN input file");
                     myWriter.write("peptide" + "\t" + "charge\n");
                     break;
-                case "DiannFull":
-                    myWriter.write("peptide" + "\t" + "charge\n");
-                    break;
                 case "PredFull":
                     myWriter.write("Peptide" + "\t" + "Charge" + "\t" + "Type" + "\t" + "NCE\n");
                     break;
@@ -157,9 +151,9 @@ public class peptideFileCreator {
     }
 
     public static void main(String[] args) throws IOException {
-        createPeptideFile("C:/Users/kevin/Downloads/" +
-                        "20190627_QX0_AnBr_SA_BPP_DDA_M01_01.pin",
-                "C:/Users/kevin/Downloads/proteomics/spectraRT1.tsv",
+        createPeptideFile("C:/Users/kevin/Downloads/Bo_Wen_Percolator_issue/" +
+                        "47937_1_EXP_Hela_IMAC_96F13R_DDA_F04.pin",
+                "C:/Users/kevin/Downloads/Bo_Wen_Percolator_issue/spectraRT.tsv",
                 "Diann", "pin");
     }
 }

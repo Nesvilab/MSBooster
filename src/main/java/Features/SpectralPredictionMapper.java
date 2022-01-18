@@ -22,6 +22,10 @@ public interface SpectralPredictionMapper {
         if (extension.equals("bin")) {
             return new DiannSpeclibReader(file);
         } else if (extension.equals("mgf")) {
+            //if PredFull, use PredFullSpeclibReader class
+            if (Constants.spectraRTPredModel.equals("PredFull")) {
+                return new PredFullSpeclibReader(file, false, executorService);
+            }
             return new mgfFileReader(file, false, executorService);
         } else if (extension.equals("msp")) {
             return new MspReader(file);

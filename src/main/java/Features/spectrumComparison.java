@@ -11,7 +11,7 @@ import java.util.LinkedHashSet;
 import java.util.stream.IntStream;
 
 import static Features.floatUtils.floatToDouble;
-//TODO: also square root intensities?
+//TODO: also square root intensities? Squaring intensities may help for single cell data
 public class spectrumComparison {
     float[] predMZs;
     float[] predIntensities;
@@ -23,20 +23,20 @@ public class spectrumComparison {
     private static ArrayList<Float> tmpInts = new ArrayList<Float>();
     private static PearsonsCorrelation pc = new PearsonsCorrelation();
 
-    public spectrumComparison(float[] eMZs, float[] eIntensities,
-                              float[] pMZs, float[] pIntensities) {
-        int[] sortedIndices = IntStream.range(0, pMZs.length)
-                .boxed().sorted((k, j) -> Float.compare(pMZs[k], pMZs[j]))
-                .mapToInt(ele -> ele).toArray();
-        predMZs = new float[pMZs.length];
-        predIntensities = new float[pIntensities.length];
-        for (int i = 0; i < sortedIndices.length; i++) {
-            predMZs[i] = pMZs[sortedIndices[i]];
-            predIntensities[i] = pIntensities[sortedIndices[i]];
-        }
-
-        matchedIntensities = this.getMatchedIntensities(eMZs, eIntensities);
-    }
+//    public spectrumComparison(float[] eMZs, float[] eIntensities,
+//                              float[] pMZs, float[] pIntensities) {
+//        int[] sortedIndices = IntStream.range(0, pMZs.length)
+//                .boxed().sorted((k, j) -> Float.compare(pMZs[k], pMZs[j]))
+//                .mapToInt(ele -> ele).toArray();
+//        predMZs = new float[pMZs.length];
+//        predIntensities = new float[pIntensities.length];
+//        for (int i = 0; i < sortedIndices.length; i++) {
+//            predMZs[i] = pMZs[sortedIndices[i]];
+//            predIntensities[i] = pIntensities[sortedIndices[i]];
+//        }
+//
+//        matchedIntensities = this.getMatchedIntensities(eMZs, eIntensities);
+//    }
 
     public spectrumComparison(float[] eMZs, float[] eIntensities,
                               float[] pMZs, float[] pIntensities,
@@ -51,7 +51,7 @@ public class spectrumComparison {
             predIntensities[i] = pIntensities[sortedIndices[i]];
         }
         if (filterBase) {
-            this.filterIntensitiesByValue(Constants.percentBasePeak);
+            this.filterIntensitiesByPercentage(Constants.percentBasePeak);
         }
 
         if (filterTop) {
@@ -251,9 +251,9 @@ public class spectrumComparison {
         }
     }
 
-    public void filterIntensitiesByPercentage(double percentage) { //should be < 1
-        if (percentage > 1) {
-            System.out.println("percentBasePeak must be <= 1 but is set to " + Constants.percentBasePeak +
+    public void filterIntensitiesByPercentage(double percentage) { //should be < 100
+        if (percentage > 100) {
+            System.out.println("percentBasePeak must be <= 100 but is set to " + Constants.percentBasePeak +
                     ". Filtering will return all peaks.");
         } else {
             //get max intensity
@@ -265,7 +265,7 @@ public class spectrumComparison {
             }
 
             //make cutoff by percentage
-            double cutoff = maxIntensity * percentage;
+            double cutoff = maxIntensity * percentage / 100d;
             filterIntensitiesByValue(cutoff);
         }
     }
@@ -452,7 +452,7 @@ public class spectrumComparison {
     }
 
     public double pearsonCorr() {
-        if (Arrays.stream(floatToDouble(matchedIntensities)).sum() == 0) {
+        if (Arrays.stream(floatToDouble(matchedIntensities)).sum() == 0 || matchedIntensities.length == 1) {
             return -1; //minimum pearson correlation
         } else {
             //uses Apache

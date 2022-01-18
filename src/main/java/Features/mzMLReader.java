@@ -231,20 +231,20 @@ public class mzMLReader {
     }
 
     //can consider method for setting single pepxml entry
-    public void setPepxmlEntries(pepXMLReader xmlReader, int rank, SpectralPredictionMapper spm) throws AssertionError, Exception {
-        String[] peptides = xmlReader.getXMLpeptides();
-        int[] tdArray = xmlReader.getTargetOrDecoy();
-        int[] scanNums = xmlReader.getScanNumbers();
-        String[] escore = xmlReader.getEScore();
-
-        int iterations = scanNums.length;
-
-        for (int i = 0; i < iterations; i++) {
-            String pep = peptides[i];
-            scanNumberObjects.get(scanNums[i]).setPeptideObject(pep, rank, tdArray[i], escore[i],
-                    spm.getPreds());
-        }
-    }
+//    public void setPepxmlEntries(pepXMLReader xmlReader, int rank, SpectralPredictionMapper spm) throws AssertionError, Exception {
+//        String[] peptides = xmlReader.getXMLpeptides();
+//        int[] tdArray = xmlReader.getTargetOrDecoy();
+//        int[] scanNums = xmlReader.getScanNumbers();
+//        String[] escore = xmlReader.getEScore();
+//
+//        int iterations = scanNums.length;
+//
+//        for (int i = 0; i < iterations; i++) {
+//            String pep = peptides[i];
+//            scanNumberObjects.get(scanNums[i]).setPeptideObject(pep, rank, tdArray[i], escore[i],
+//                    spm.getPreds());
+//        }
+//    }
 
     public void setPinEntries(pinReader pin, SpectralPredictionMapper spm) throws AssertionError, Exception {
         //TODO: multithread?

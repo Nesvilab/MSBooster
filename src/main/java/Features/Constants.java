@@ -71,7 +71,7 @@ public class Constants {
     public static Integer topFragments = 12;
     public static Boolean removeRankPeaks = true; //whether to remove peaks from higher ranks
     public static Boolean useBasePeak = true;
-    public static Double percentBasePeak = 0.01;
+    public static Double percentBasePeak = 1d;
 
     public static final Integer fineTuneSize = 100; //for generating a finetune file for pDeep3
 
@@ -112,8 +112,7 @@ public class Constants {
     //should include parameter to calculate correlation and then choose
     //default auto, everything, or all? Or a combination I figure out empirically
     public static String features = "brayCurtis,pearsonCorr,dotProduct," +
-            "deltaRTLOESS,deltaRTLOESSnormalized,RTprobabilityUnifPrior," +
-            "detectProtSpearmanDiff";
+            "deltaRTLOESS,deltaRTLOESSnormalized,RTprobabilityUnifPrior";
     //public static String features = "auto";
 
     //don't currently support weighted similarity features
@@ -165,14 +164,14 @@ public class Constants {
     //Handling PTMs
 
     //TODO: better handling of PTMs, all in one location. Might need to import unimod mass file
-    public static Double oxidationMass = 15.9949;
-    public static Double carbamidomethylationMass = 57.0215;
+    public static final Double oxidationMass = 15.9949;
+    public static final Double carbamidomethylationMass = 57.0215;
     private static HashMap<Double, Integer> makeModAAToUnimod() {
         HashMap<Double, Integer> map = new HashMap<>();
         map.put(carbamidomethylationMass, 4);
         map.put(oxidationMass, 35);
         map.put(42.0106, 1);
-        map.put(79.96633, 21);
+        map.put(79.9663, 21);
         map.put(114.042927, 121);
         return map;
     }
@@ -184,7 +183,7 @@ public class Constants {
         }
         return map;
     }
-    public static final HashMap<String, Double> AAmassToUnimod = makeUnimodtoModAA();
+    public static final HashMap<String, Double> unimodtoModAAmass = makeUnimodtoModAA();
 
     //methods
     public void updatePaths() {

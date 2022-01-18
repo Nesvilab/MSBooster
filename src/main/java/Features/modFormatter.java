@@ -1,7 +1,7 @@
 package Features;
 
 import java.util.HashMap;
-
+//TODO: delete later, as only pepxml uses. pDeep3 can use new PeptideFormatter
 public class modFormatter {
     int[] pos;
     double[] mass;

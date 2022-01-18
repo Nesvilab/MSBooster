@@ -15,6 +15,15 @@ public class DiannSpeclibReader implements SpectralPredictionMapper{
     final ArrayList<String> filenames;
     HashMap<String, PredictionEntry> allPreds = new HashMap<>();
 
+    //convert int flag to fragment ion type
+    private static HashMap<Integer, String> makeFlagTOion() {
+        HashMap<Integer, String> map = new HashMap<>();
+        map.put(0, "b");
+        map.put(1, "y");
+        return map;
+    }
+    HashMap<Integer, String> flagTOion = makeFlagTOion();
+
     //https://stackoverflow.com/questions/46163114/get-bit-values-from-byte-array
     //https://www.geeksforgeeks.org/bitwise-operators-in-java/
     public DiannSpeclibReader(String binFile) throws FileNotFoundException {
@@ -55,7 +64,7 @@ public class DiannSpeclibReader implements SpectralPredictionMapper{
 
                 while ((len = is.read(buffer1)) != -1) {
                     line = TSVReader.readLine().split("\t");
-                    MassCalculator mc = new MassCalculator(line[0], line[1]);
+                    MassCalculator mc = new MassCalculator(new PeptideFormatter(line[0], line[1], "diann").base, line[1]);
 
                     //get data for precursor
                     int numFrags = ByteBuffer.wrap(buffer1, 0, 4).order(ByteOrder.LITTLE_ENDIAN).getInt();
@@ -82,7 +91,7 @@ public class DiannSpeclibReader implements SpectralPredictionMapper{
                         int charge = bits(fragInt, 30, 2) + 1; //start from end
 
                         //get fragment m/z
-                        float fragMZ = mc.calcMass(fragNum, flag, charge);
+                        float fragMZ = mc.calcMass(fragNum, flagTOion.get(flag), charge);
 
                         //add to arrays
                         mzs[i] = fragMZ;
@@ -114,39 +123,21 @@ public class DiannSpeclibReader implements SpectralPredictionMapper{
                 //repeat this process with full peptides
                 textFile = bFile.substring(0, splitDot - 1) + "_full.tsv";
                 TSVReader = new BufferedReader(new FileReader(textFile));
-                line = TSVReader.readLine().split("\t");
                 String l;
 
                 while ((l = TSVReader.readLine()) != null) {
                     line = l.split("\t");
-                    if (! allPreds.containsKey(line[0] + "|" + line[1])) {
-                        //find base peptide with recognized unimod
-                        String basePep = line[0];
+                    //check if diann to base results in same base peptide
+                    PeptideFormatter pf = new PeptideFormatter(
+                            new PeptideFormatter(line[0], line[1], "base").diann, line[1], "diann");
 
-                        //find locations of PTMs
-                        ArrayList<Integer> starts = new ArrayList<>();
-                        ArrayList<Integer> ends = new ArrayList<>();
-                        for (int i = 0; i < basePep.length(); i++) {
-                            if (basePep.charAt(i) == '[') {
-                                starts.add(i);
-                            } else if (basePep.charAt(i) == ']') {
-                                ends.add(i);
-                            }
-                        }
-
-                        //removing if unknown
-                        for (int i = starts.size() - 1; i > -1; i--) {
-                            if (basePep.charAt(starts.get(i) + 1) != 'U') {
-                                basePep = basePep.substring(0, starts.get(i)) + basePep.substring(ends.get(i) + 1);
-                            }
-                        }
-
+                    if (! pf.base.equals(line[0])) {
                         //get predictionEntry
-                        PredictionEntry tmp = allPreds.get(basePep + "|" + line[1]);
+                        PredictionEntry tmp = allPreds.get(pf.baseCharge);
                         MassCalculator mc = new MassCalculator(line[0], line[1]);
                         float[] newMZs = new float[tmp.mzs.length];
                         for (int i = 0; i < newMZs.length; i++) {
-                            newMZs[i] = mc.calcMass(tmp.fragNums[i], tmp.flags[i], tmp.charges[i]);
+                            newMZs[i] = mc.calcMass(tmp.fragNums[i], flagTOion.get(tmp.flags[i]), tmp.charges[i]);
                         }
 
                         //add to hashmap

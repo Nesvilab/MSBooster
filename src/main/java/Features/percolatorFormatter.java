@@ -21,171 +21,6 @@ import static Features.Constants.camelToUnderscore;
 
 public class percolatorFormatter {
 
-    public static String DiannPepFormat(String[] columns, int pepIdx, int specIDidx) {
-        //first is peptide, then missed masses
-        String pep = columns[pepIdx];
-        pep = pep.substring(2, pep.length() - 2);
-
-        //n term acetylation
-        if (pep.charAt(0) == 'n') {
-            pep = pep.replace("n", "");
-        }
-        pep = pep.replace("c","");
-
-        //find locations of PTMs
-        ArrayList<Integer> starts = new ArrayList<>();
-        ArrayList<Integer> ends = new ArrayList<>();
-        for (int i = 0; i < pep.length(); i++) {
-            if (pep.charAt(i) == '[') {
-                starts.add(i);
-            } else if (pep.charAt(i) == ']') {
-                ends.add(i);
-            }
-        }
-
-        for (int i = starts.size() - 1; i > -1; i--) {
-            double reportedMass = Double.parseDouble(pep.substring(starts.get(i) + 1, ends.get(i)));
-            boolean foundReplacement = false;
-            for (double PTMmass : Constants.modAAmassToUnimod.keySet()) {
-                if (Math.abs(PTMmass - reportedMass) < 0.01) {
-                    pep = pep.substring(0, starts.get(i) + 1) + "UniMod:" + Constants.modAAmassToUnimod.get(PTMmass) +
-                            pep.substring(ends.get(i), pep.length());
-                    foundReplacement = true;
-                    break;
-                }
-            }
-            if (! foundReplacement) {
-                //DIANN won't predict this anyway
-                pep = pep.substring(0, starts.get(i)) + pep.substring(ends.get(i) + 1);
-            }
-        }
-
-        //charge
-        String[] charges = columns[specIDidx].split("_");
-        String chargeStr = charges[charges.length - 2];
-        int charge = Integer.parseInt(chargeStr.substring(chargeStr.length() - 1));
-
-        return pep + "|" + charge;
-    }
-
-    public static String PredfullPepFormat(String[] columns, int pepIdx, int specIDidx) {
-        //first is peptide, then missed masses
-        String pep = columns[pepIdx];
-        pep = pep.substring(2, pep.length() - 2);
-
-        //n term acetylation
-        if (pep.charAt(0) == 'n') {
-            pep = pep.replace("n", "");
-        }
-        pep = pep.replace("c","");
-
-        //find locations of PTMs
-        ArrayList<Integer> starts = new ArrayList<>();
-        ArrayList<Integer> ends = new ArrayList<>();
-        for (int i = 0; i < pep.length(); i++) {
-            if (pep.charAt(i) == '[') {
-                starts.add(i);
-            } else if (pep.charAt(i) == ']') {
-                ends.add(i);
-            }
-        }
-
-        //PredFull only supports oxM and assumes C is carbamidomethylated. Below, we format it this way, but also keep on other PTM masses so m/z values for fragments can be adjusted
-        for (int i = starts.size() - 1; i > -1; i--) {
-            double reportedMass = Double.parseDouble(pep.substring(starts.get(i) + 1, ends.get(i)));
-            if (starts.get(i) - 1 > -1) { //no changes to nterm mod
-                if (pep.charAt(starts.get(i) - 1) == 'C') {
-                    if (Math.abs(Constants.carbamidomethylationMass - reportedMass) < 0.01) { //assumed c+57
-                        pep = pep.substring(0, starts.get(i)) + pep.substring(ends.get(i) + 1);
-                    } else { //any other mass on C
-                        pep = pep.substring(0, starts.get(i) + 1) + (reportedMass - Constants.carbamidomethylationMass) + pep.substring(ends.get(i));
-                    }
-                    continue;
-                }
-
-                if (Math.abs(Constants.oxidationMass - reportedMass) < 0.01) {
-                    if (pep.charAt(starts.get(i) - 1) == 'M') {
-                        pep = pep.substring(0, starts.get(i)) + "(O)" + pep.substring(ends.get(i) + 1);
-                    }
-                }
-            }
-
-
-//            } else {
-//                pep = pep.substring(0, starts.get(i)) + pep.substring(ends.get(i) + 1); //TODO: why excluding masses?
-//            }
-        }
-
-        //charge
-        String[] charges = columns[specIDidx].split("_");
-        String chargeStr = charges[charges.length - 2];
-        int charge = Integer.parseInt(chargeStr.substring(chargeStr.length() - 1));
-
-        return pep + "|" + charge;
-    }
-
-    public static String getStrippedPep(String peptide) {
-        ArrayList<Integer> starts = new ArrayList<>();
-        ArrayList<Integer> ends = new ArrayList<>();
-        ends.add(0);
-        for (int i = 0; i < peptide.length(); i++) {
-            String myChar = peptide.substring(i, i + 1);
-            if (myChar.equals("[")) {
-                starts.add(i);
-            } else if (myChar.equals("]")) {
-                ends.add(i + 1);
-            }
-        }
-        starts.add(peptide.length());
-
-        StringBuilder sb = new StringBuilder();
-        for (int i = 0; i < starts.size(); i++) {
-            sb.append(peptide.substring(ends.get(i), starts.get(i)));
-        }
-        return sb.toString();
-    }
-
-    public static String percolatorPepFormatFull(String[] columns, int pepIdx, int specIDidx) {
-        //first is peptide, then missed masses
-        String pep = columns[pepIdx];
-        pep = pep.substring(2, pep.length() - 2);
-
-        //n term acetylation
-        if (pep.charAt(0) == 'n') {
-            pep = pep.replace("n", "");
-        }
-        pep = pep.replace("c","");
-
-        //find locations of PTMs
-        ArrayList<Integer> starts = new ArrayList<>();
-        ArrayList<Integer> ends = new ArrayList<>();
-        for (int i = 0; i < pep.length(); i++) {
-            if (pep.charAt(i) == '[') {
-                starts.add(i);
-            } else if (pep.charAt(i) == ']') {
-                ends.add(i);
-            }
-        }
-
-        for (int i = starts.size() - 1; i > -1; i--) {
-            double reportedMass = Double.parseDouble(pep.substring(starts.get(i) + 1, ends.get(i)));
-            for (double PTMmass : Constants.modAAmassToUnimod.keySet()) {
-                if (Math.abs(PTMmass - reportedMass) < 0.01) {
-                    pep = pep.substring(0, starts.get(i) + 1) + "UniMod:" + Constants.modAAmassToUnimod.get(PTMmass) +
-                            pep.substring(ends.get(i), pep.length());
-                    break;
-                }
-            }
-        }
-
-        //charge
-        String[] charges = columns[specIDidx].split("_");
-        String chargeStr = charges[charges.length - 2];
-        int charge = Integer.parseInt(chargeStr.substring(chargeStr.length() - 1));
-
-        return pep + "|" + charge;
-    }
-
     //set mgf or detectFile as null if not applicable
     //baseNames is the part before mzml or pin extensions
     public static void editPin(String pinDirectory, String mzmlDirectory, String mgf, String detectFile,
@@ -242,7 +77,8 @@ public class percolatorFormatter {
             dm = new detectMap(detectFile);
             HashMap<String, PredictionEntry> allPreds = predictedSpectra.getPreds();
             for (Map.Entry<String, PredictionEntry> e : allPreds.entrySet()) {
-                e.getValue().setDetectability(dm.getDetectability(getStrippedPep(e.getKey())));
+                e.getValue().setDetectability(dm.getDetectability(
+                        new PeptideFormatter(e.getKey().split("\\|")[0], e.getKey().split("\\|")[1], "pin").stripped));
             }
         }
 
@@ -259,7 +95,7 @@ public class percolatorFormatter {
 
                 //add to counter
                 while (pin.next()) {
-                    String pep = pin.getPep().split("\\|")[0];
+                    String pep = pin.getPep().base;
                     if (pepCounter.containsKey(pep)) {
                         pepCounter.put(pep, pepCounter.get(pep) + 1);
                     } else {
@@ -374,18 +210,8 @@ public class percolatorFormatter {
                 writer.writeHeaders(newHeader);
 
                 //Special preparations dependent on features we require
+                System.out.println("Setting pin entries");
                 if (needsMGF) {
-                    if (Constants.spectraRTPredModel.equals("PredFull")) {
-                        //need to update predictions with modified peptides
-                        while (pin.next()) {
-                            String peptide = pin.getPep();
-                            if (peptide.contains("[")) {
-                                //need to figure out all possible fragment masses
-                            }
-                        }
-                        pin.reset();
-                    }
-
                     mzml.setPinEntries(pin, predictedSpectra);
                 }
                 if (featuresList.contains("deltaRTLOESS") || featuresList.contains("deltaRTLOESSnormalized")) {
@@ -478,11 +304,11 @@ public class percolatorFormatter {
                 //System.out.println("Getting predictions for each row");
                 //int totalPSMs = 0;
                 SpearmansCorrelation sc = new SpearmansCorrelation();
-
+                System.out.println("Calculating features");
                 while (pin.next()) {
                     //totalPSMs += 1;
                     //peptide name
-                    String pep = pin.getPep();
+                    String pep = pin.getPep().baseCharge;
 
                     //trying filtering out low detectability
 //                    if (featuresList.contains("detectability")) {

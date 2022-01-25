@@ -122,23 +122,16 @@ public class PredFullSpeclibReader extends mgfFileReader{
                 }
             }
             if (numFragments < newMZs.size()) {
-                if (newMZs.size() - numFragments <= numFragments) { //remove min
-                    for (int i = 0; i < newMZs.size() - numFragments; i++) {
-                        int index = newIntensities.indexOf(Collections.min(newIntensities));
-                        newMZs.remove(index);
-                        newIntensities.remove(index);
-                    }
-                } else { //keep max
-                    ArrayList<Float> newnewMZs = new ArrayList<>();
-                    ArrayList<Float> newnewIntensities = new ArrayList<>();
-                    for (int i = 0; i < numFragments; i++) {
-                        int index = newIntensities.indexOf(Collections.max(newIntensities));
-                        newnewMZs.add(newMZs.remove(index));
-                        newnewIntensities.add(newIntensities.remove(index));
-                    }
-                    newMZs = newnewMZs;
-                    newIntensities = newnewIntensities;
+                ArrayList<Float> newnewMZs = new ArrayList<>();
+                ArrayList<Float> newnewIntensities = new ArrayList<>();
+                for (int i = 0; i < numFragments; i++) {
+                    int index = newIntensities.indexOf(Collections.max(newIntensities));
+                    newnewMZs.add(newMZs.get(index));
+                    newnewIntensities.add(newIntensities.get(index));
+                    newIntensities.set(index, -1f);
                 }
+                newMZs = newnewMZs;
+                newIntensities = newnewIntensities;
             }
 
             //annotate ion

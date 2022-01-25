@@ -77,23 +77,17 @@ public class spectrumComparison {
 
             int numFragments = Math.min(tmpMZs.size(), Constants.topFragments);
             if (numFragments < tmpMZs.size()) {
-                if (tmpMZs.size() - numFragments <= numFragments) { //remove min
-                    for (int i = 0; i < tmpMZs.size() - numFragments; i++) {
-                        int index = tmpInts.indexOf(Collections.min(tmpInts));
-                        tmpMZs.remove(index);
-                        tmpInts.remove(index);
-                    }
-                } else { //keep max
-                    ArrayList<Float> tmptmpMZs = new ArrayList<>();
-                    ArrayList<Float> tmptmpIntensities = new ArrayList<>();
-                    for (int i = 0; i < numFragments; i++) {
-                        int index = tmpInts.indexOf(Collections.max(tmpInts));
-                        tmptmpMZs.add(tmpMZs.remove(index));
-                        tmptmpIntensities.add(tmpInts.remove(index));
-                    }
-                    tmpMZs = tmptmpMZs;
-                    tmpInts = tmptmpIntensities;
+                ArrayList<Float> tmptmpMZs = new ArrayList<>(numFragments);
+                ArrayList<Float> tmptmpIntensities = new ArrayList<>(numFragments);
+
+                for (int i = 0; i < numFragments; i++) {
+                    int index = tmpInts.indexOf(Collections.max(tmpInts));
+                    tmptmpMZs.add(tmpMZs.get(index));
+                    tmptmpIntensities.add(tmpInts.get(index));
+                    tmpInts.set(index, -1f);
                 }
+                tmpMZs = tmptmpMZs;
+                tmpInts = tmptmpIntensities;
             }
 
             predIntensities = new float[tmpInts.size()];

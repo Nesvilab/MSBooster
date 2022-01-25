@@ -132,6 +132,7 @@ public class FastaReader {
             }
         } catch (IOException e) {
             e.printStackTrace();
+            System.exit(1);
         }
     }
 

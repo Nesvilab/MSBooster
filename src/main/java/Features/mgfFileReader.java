@@ -382,6 +382,7 @@ public class mgfFileReader implements SpectralPredictionMapper{
                                         }
                                     } catch (FileParsingException fileParsingException) {
                                         fileParsingException.printStackTrace();
+                                        System.exit(1);
                                     }
 
                                     //reset for next peptide/PSM
@@ -469,6 +470,7 @@ public class mgfFileReader implements SpectralPredictionMapper{
                             }
                         } catch (FileParsingException fileParsingException) {
                             fileParsingException.printStackTrace();
+                            System.exit(1);
                         }
 
                         //reset for next peptide/PSM

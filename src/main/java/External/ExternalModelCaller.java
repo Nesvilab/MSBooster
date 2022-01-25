@@ -51,6 +51,7 @@ public class ExternalModelCaller {
 
                 } catch (IOException | InterruptedException e) {
                     e.printStackTrace();
+                    System.exit(1);
                 }
                 break;
             case "DeepMSPeptide":
@@ -75,6 +76,7 @@ public class ExternalModelCaller {
                     System.out.println("Done generating DeepMSPeptide predictions");
                 } catch (IOException e) {
                     e.printStackTrace();
+                    System.exit(1);
                 }
                 break;
         }

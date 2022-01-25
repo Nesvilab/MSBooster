@@ -151,6 +151,7 @@ public class DiannSpeclibReader implements SpectralPredictionMapper{
                 }
             } catch (IOException e) {
                 e.printStackTrace();
+                System.exit(1);
             }
         }
     }

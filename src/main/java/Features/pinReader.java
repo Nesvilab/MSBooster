@@ -8,6 +8,7 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
 
+//TODO: which of these tools allows O abd U amino acids?
 public class pinReader {
     String name; //used for resetting
     BufferedReader in;
@@ -124,6 +125,15 @@ public class pinReader {
         while (next()) {
             PeptideFormatter pf = getPep();
             peps.add(pf.predfull + "\t" + pf.charge + "\t" + Constants.FragmentationType + "\t" + Constants.NCE);
+        }
+        return peps.toArray(new String[0]);
+    }
+
+    public String[] createPrositList() throws IOException {
+        ArrayList<String> peps = new ArrayList<String>();
+        while (next()) {
+            PeptideFormatter pf = getPep();
+            peps.add(pf.prosit + "," + Constants.NCE + "," + pf.charge);
         }
         return peps.toArray(new String[0]);
     }

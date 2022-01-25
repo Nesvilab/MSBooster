@@ -75,11 +75,25 @@ public class spectrumComparison {
                 tmpMZs.add(i);
             }
 
-            //go through and remove minimum one at a time
-            while (tmpInts.size() > Constants.topFragments) {
-                int index = tmpInts.indexOf(Collections.min(tmpInts));
-                tmpInts.remove(index);
-                tmpMZs.remove(index);
+            int numFragments = Math.min(tmpMZs.size(), Constants.topFragments);
+            if (numFragments < tmpMZs.size()) {
+                if (tmpMZs.size() - numFragments <= numFragments) { //remove min
+                    for (int i = 0; i < tmpMZs.size() - numFragments; i++) {
+                        int index = tmpInts.indexOf(Collections.min(tmpInts));
+                        tmpMZs.remove(index);
+                        tmpInts.remove(index);
+                    }
+                } else { //keep max
+                    ArrayList<Float> tmptmpMZs = new ArrayList<>();
+                    ArrayList<Float> tmptmpIntensities = new ArrayList<>();
+                    for (int i = 0; i < numFragments; i++) {
+                        int index = tmpInts.indexOf(Collections.max(tmpInts));
+                        tmptmpMZs.add(tmpMZs.remove(index));
+                        tmptmpIntensities.add(tmpInts.remove(index));
+                    }
+                    tmpMZs = tmptmpMZs;
+                    tmpInts = tmptmpIntensities;
+                }
             }
 
             predIntensities = new float[tmpInts.size()];
@@ -91,6 +105,47 @@ public class spectrumComparison {
             for (int i = 0; i < tmpInts.size(); i++) {
                 predMZs[i] = tmpMZs.get(i);
             }
+        }
+    }
+
+    public void filterIntensitiesByValue(double min) {
+        tmpMZs.clear();
+        tmpInts.clear();
+
+        for (int i = 0; i < predIntensities.length; i++) {
+            float intensity = predIntensities[i];
+
+            if (intensity >= min) {
+                tmpInts.add(intensity);
+                tmpMZs.add(predMZs[i]);
+            }
+        }
+
+        predMZs = new float[tmpMZs.size()];
+        predIntensities = new float[tmpInts.size()];
+
+        for (int i = 0; i < tmpInts.size(); i++) {
+            predIntensities[i] = tmpInts.get(i);
+            predMZs[i] = tmpMZs.get(i);
+        }
+    }
+
+    public void filterIntensitiesByPercentage(double percentage) { //should be < 100
+        if (percentage > 100) {
+            System.out.println("percentBasePeak must be <= 100 but is set to " + Constants.percentBasePeak +
+                    ". Filtering will return all peaks.");
+        } else {
+            //get max intensity
+            float maxIntensity = 0f;
+            for (float f : predIntensities) {
+                if (f > maxIntensity) {
+                    maxIntensity = f;
+                }
+            }
+
+            //make cutoff by percentage
+            double cutoff = maxIntensity * percentage / 100d;
+            filterIntensitiesByValue(cutoff);
         }
     }
 
@@ -227,47 +282,6 @@ public class spectrumComparison {
     public void unitNormalize() { //only use after filtering
         unitNormPredIntensities = subNormalize(predIntensities);
         unitNormMatchedIntensities = subNormalize(matchedIntensities);
-    }
-
-    public void filterIntensitiesByValue(double min) {
-        tmpMZs.clear();
-        tmpInts.clear();
-
-        for (int i = 0; i < predIntensities.length; i++) {
-            float intensity = predIntensities[i];
-
-            if (intensity >= min) {
-                tmpInts.add(intensity);
-                tmpMZs.add(predMZs[i]);
-            }
-        }
-
-        predMZs = new float[tmpMZs.size()];
-        predIntensities = new float[tmpInts.size()];
-
-        for (int i = 0; i < tmpInts.size(); i++) {
-            predIntensities[i] = tmpInts.get(i);
-            predMZs[i] = tmpMZs.get(i);
-        }
-    }
-
-    public void filterIntensitiesByPercentage(double percentage) { //should be < 100
-        if (percentage > 100) {
-            System.out.println("percentBasePeak must be <= 100 but is set to " + Constants.percentBasePeak +
-                    ". Filtering will return all peaks.");
-        } else {
-            //get max intensity
-            float maxIntensity = 0f;
-            for (float f : predIntensities) {
-                if (f > maxIntensity) {
-                    maxIntensity = f;
-                }
-            }
-
-            //make cutoff by percentage
-            double cutoff = maxIntensity * percentage / 100d;
-            filterIntensitiesByValue(cutoff);
-        }
     }
 
 //    public double[] rankIntensities(double[] vector) { //need to adapt for unitNorm vectors too

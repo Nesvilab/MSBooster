@@ -42,10 +42,11 @@ public class peptideFileCreator {
             i++;
         }
 
-        createPeptideFile(infileArray, outfile, modelFormat, psmFormat);
+        createPeptideFile(infileArray, outfile, modelFormat);
     }
 
-    public static void createPeptideFile(File[] x, String outfile, String modelFormat, String psmFormat)
+    //TODO: remove psmFormat
+    public static void createPeptideFile(File[] x, String outfile, String modelFormat)
             throws IOException { //pepXML or pin
         //diff versions based on submitting File[] or pinReader
         long startTime = System.nanoTime();
@@ -69,9 +70,15 @@ public class peptideFileCreator {
                 case "Diann":
                     hitsToAdd = pin.createDiannList();
                     break;
-                //TODO: prosit case
-//                    case "prosit":
-//                        hitsToAdd = pin.createPrositList(34);
+                case "Prosit":
+                    if (Constants.FragmentationType == null || Constants.NCE == null) {
+                        System.out.println("Missing information for Prosit file generation. " +
+                                "Please provide FragmentationType (HCD or CID) and NCE (normalized collision energy) in " +
+                                "parameter file via --paramsList or as arguments on command line.");
+                        System.exit(-1);
+                    }
+                    hitsToAdd = pin.createPrositList();
+                    break;
                 case "createFull":
                     hitsToAdd = pin.createFull();
                     break;
@@ -96,14 +103,9 @@ public class peptideFileCreator {
 
         //write to file
         try {
+            //TODO: outfile name with prediction model in name
             FileWriter myWriter = new FileWriter(outfile);
             switch (modelFormat) {
-                case "prosit":
-                    System.out.println("Writing prosit input file");
-                    myWriter.write("modified_sequence" + "," + "collision_energy" + "," + "precursor_charge\n");
-                    //instances of null being added because no n-acetyl
-                    hSetHits.remove(null);
-                    break;
                 case "pDeep2":
                     System.out.println("Writing pDeep2 input file");
                     myWriter.write("peptide" + "\t" + "modification" + "\t" + "charge\n");
@@ -132,6 +134,9 @@ public class peptideFileCreator {
                 case "PredFull":
                     myWriter.write("Peptide" + "\t" + "Charge" + "\t" + "Type" + "\t" + "NCE\n");
                     break;
+                case "Prosit":
+                    myWriter.write("modified_sequence,collision_energy,precursor_charge\n");
+                    break;
             }
             for (String hSetHit : hSetHits) {
                 myWriter.write(hSetHit + "\n");
@@ -146,14 +151,14 @@ public class peptideFileCreator {
         } catch (IOException e) {
             System.out.println("An error occurred");
             e.printStackTrace();
+            System.exit(1);
             //return null;
         }
     }
 
     public static void main(String[] args) throws IOException {
-        createPeptideFile("C:/Users/kevin/Downloads/Bo_Wen_Percolator_issue/" +
-                        "47937_1_EXP_Hela_IMAC_96F13R_DDA_F04.pin",
-                "C:/Users/kevin/Downloads/Bo_Wen_Percolator_issue/spectraRT.tsv",
+        createPeptideFile("C:/Users/kevin/Downloads/20190627_QX0_AnBr_SA_BPP_DDA_M01_01.pin",
+                "C:/Users/kevin/Downloads/20190627_QX0_AnBr_SA_BPP_DDA_M01_01_length63.tsv",
                 "Diann", "pin");
     }
 }

@@ -26,6 +26,7 @@ public interface SpectralPredictionMapper {
             if (Constants.spectraRTPredModel.equals("PredFull")) {
                 return new PredFullSpeclibReader(file, false, executorService);
             }
+            //check if this works with pDeep
             return new mgfFileReader(file, false, executorService);
         } else if (extension.equals("msp")) {
             return new MspReader(file);

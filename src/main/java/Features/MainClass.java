@@ -271,120 +271,137 @@ public class MainClass {
             }
 
             //check that features are allowed
-            boolean allFeatures = false;
-            boolean autoFeatures = false;
             String[] featuresArray = Constants.features.split(",");
             for (String f : featuresArray) {
                 if (!Constants.allowedFeatures.contains(f.trim())) {
                     throw new IllegalArgumentException(f + " is not an allowed feature. " +
                             "Please choose from the following: " + Constants.allowedFeatures);
                 }
-                if (f.equals("all")) {
-                    allFeatures = true;
-                    featuresArray = new String[Constants.allowedFeatures.size()];
-                    int i = 0;
-                    for (String s : Constants.allowedFeatures) {
-                        featuresArray[i] = s;
-                        i++;
-                    }
-                    break;
-                }
-                if (f.equals("auto")) {
-//                autoFeatures = true;
-//                break;
-                    System.out.println("auto not supported currently");
-                    System.exit(0);
-                }
             }
-            //HashSet<String> featureSet = new HashSet<>(Arrays.asList(featuresArray));
+
             LinkedList<String> featureLL = new LinkedList<>(Arrays.asList(featuresArray));
 
             //use "use" variables to update
-            if (!allFeatures) {
-                int oldSize = featureLL.size();
-                try {
-                    if (Constants.useSpectra) {
-                        Set<String> intersection = new HashSet<String>(featureLL);
-                        intersection.retainAll(Constants.spectraFeatures);
-                        if (intersection.size() == 0) {
-                            featureLL.add("cosineSimilarity");
-                            featureLL.add("spectralContrastAngle");
-                            featureLL.add("euclideanDistance");
-                            featureLL.add("brayCurtis");
-                            featureLL.add("pearsonCorr");
-                            featureLL.add("dotProduct");
-                        }
-                    } else {
-                        featureLL.removeIf(Constants.spectraFeatures::contains);
+            int oldSize = featureLL.size();
+            try {
+                if (Constants.useSpectra) {
+                    Set<String> intersection = new HashSet<>(featureLL);
+                    intersection.retainAll(Constants.spectraFeatures);
+                    if (intersection.size() == 0) {
+                        featureLL.add("brayCurtis");
+                        featureLL.add("pearsonCorr");
+                        featureLL.add("dotProduct");
                     }
-                } catch (Exception ignored) {
+                } else {
+                    featureLL.removeIf(Constants.spectraFeatures::contains);
                 }
-                try {
-                    if (Constants.useRT) {
-                        Set<String> intersection = new HashSet<String>(featureLL);
-                        intersection.retainAll(Constants.rtFeatures);
-                        if (intersection.size() == 0) {
-                            featureLL.add("deltaRTLOESS");
-                            featureLL.add("deltaRTLOESSnormalized");
-                            featureLL.add("RTprobabilityUnifPrior");
-                        }
-                    } else {
-                        featureLL.removeIf(Constants.rtFeatures::contains);
+            } catch (Exception ignored) {}
+            try {
+                if (Constants.useRT) {
+                    Set<String> intersection = new HashSet<>(featureLL);
+                    intersection.retainAll(Constants.rtFeatures);
+                    if (intersection.size() == 0) {
+                        featureLL.add("deltaRTLOESS");
+                        featureLL.add("deltaRTLOESSnormalized");
+                        featureLL.add("RTprobabilityUnifPrior");
                     }
-                } catch (Exception ignored) {
+                } else {
+                    featureLL.removeIf(Constants.rtFeatures::contains);
                 }
-                try {
-                    if (Constants.useDetect) {
-                        Set<String> intersection = new HashSet<String>(featureLL);
-                        intersection.retainAll(Constants.detectFeatures);
-                        if (intersection.size() == 0) {
-                            featureLL.add("detectFractionGreater");
-                            featureLL.add("detectSubtractMissing");
-                        }
-                    } else {
-                        featureLL.removeIf(Constants.detectFeatures::contains);
+            } catch (Exception ignored) {}
+            try {
+                if (Constants.useDetect) {
+                    System.out.println("Detect features not fully tested");
+                    Set<String> intersection = new HashSet<>(featureLL);
+                    intersection.retainAll(Constants.detectFeatures);
+                    if (intersection.size() == 0) {
+                        featureLL.add("detectFractionGreater");
+                        featureLL.add("detectSubtractMissing");
                     }
-                } catch (Exception ignored) {
+                } else {
+                    featureLL.removeIf(Constants.detectFeatures::contains);
                 }
-                try {
-                    if (Constants.useIM) {
-                        Set<String> intersection = new HashSet<String>(featureLL);
-                        intersection.retainAll(Constants.imFeatures);
-                        if (intersection.size() == 0) {
-                            featureLL.add("deltaIMLOESS");
-                            featureLL.add("deltaIMLOESSnormalized");
-                            featureLL.add("IMprobabilityUnifPrior");
-                        }
-                    } else {
-                        for (String feature : Constants.imFeatures) {
-                            featureLL.remove(feature);
+            } catch (Exception ignored) {}
+            try {
+                if (Constants.useIM) {
+                    Set<String> intersection = new HashSet<>(featureLL);
+                    intersection.retainAll(Constants.imFeatures);
+                    if (intersection.size() == 0) {
+                        featureLL.add("deltaIMLOESS");
+                        featureLL.add("deltaIMLOESSnormalized");
+                        featureLL.add("IMprobabilityUnifPrior");
+                    }
+                } else {
+                    for (String feature : Constants.imFeatures) {
+                        featureLL.remove(feature);
+                    }
+                }
+            } catch (Exception ignored) {}
+            try {
+                if (Constants.useMatchedIntensities) {
+                    Set<String> intersection = new HashSet<>(featureLL);
+                    intersection.retainAll(Constants.matchedIntensitiesFeatures);
+                    if (intersection.size() == 0) {
+                        for (String s : intersection) {
+                            featureLL.add(s);
                         }
                     }
-                } catch (Exception ignored) {
-                }
-                //update features representation
-                if (oldSize != featureLL.size()) {
-                    featuresArray = new String[featureLL.size()];
-                    int i = 0;
-                    for (String feature : featureLL) {
-                        featuresArray[i] = feature;
-                        i++;
+                } else {
+                    for (String feature : Constants.matchedIntensitiesFeatures) {
+                        featureLL.remove(feature);
                     }
-                    Constants.features = String.join(",", featuresArray);
                 }
+            } catch (Exception ignored) {}
+            try {
+                if (Constants.usePredIntensities) {
+                    Set<String> intersection = new HashSet<>(featureLL);
+                    intersection.retainAll(Constants.predIntensitiesFeatures);
+                    if (intersection.size() == 0) {
+                        for (String s : intersection) {
+                            featureLL.add(s);
+                        }
+                    }
+                } else {
+                    for (String feature : Constants.predIntensitiesFeatures) {
+                        featureLL.remove(feature);
+                    }
+                }
+            } catch (Exception ignored) {}
+            try {
+                if (Constants.usePeakCounts) {
+                    Set<String> intersection = new HashSet<>(featureLL);
+                    intersection.retainAll(Constants.peakCountsFeatures);
+                    if (intersection.size() == 0) {
+                        for (String s : intersection) {
+                            featureLL.add(s);
+                        }
+                    }
+                } else {
+                    for (String feature : Constants.peakCountsFeatures) {
+                        featureLL.remove(feature);
+                    }
+                }
+            } catch (Exception ignored) {}
+
+            //update features representation
+            if (oldSize != featureLL.size()) {
+                featuresArray = new String[featureLL.size()];
+                int i = 0;
+                for (String feature : featureLL) {
+                    featuresArray[i] = feature;
+                    i++;
+                }
+                Constants.features = String.join(",", featuresArray);
             }
 
             //if detectFractionGreater, need fasta
-            boolean createDetectAllPredFile = false;
-            if (featureLL.contains("detectFractionGreater") || featureLL.contains("detectSubtractMissing") || autoFeatures ||
+            if (featureLL.contains("detectFractionGreater") || featureLL.contains("detectSubtractMissing") ||
                     featureLL.contains("detectProtSpearmanDiff")) {
                 if (Constants.fasta == null) {
                     throw new IllegalArgumentException("Using current combination of features, " +
                             "detectFractionGreater is calculated and needs a fasta provided using " +
                             "--fasta <fasta file location>");
                 }
-                //need to have another boolean that supersedes regular createDetectPredFile
-                createDetectAllPredFile = true;
             }
 
             //create file for spectral and RT prediction
@@ -395,32 +412,25 @@ public class MainClass {
             boolean createDetectPredFile2 = false;
 
             //check which ones we need
-            if (allFeatures || autoFeatures) {
+            featureLL.retainAll(Constants.spectraRTFeatures);
+            if (featureLL.size() > 0) {
                 createSpectraRTPredFile = true;
-                createDetectPredFile = true;
                 createSpectraRTPredFile2 = true;
-                createDetectPredFile2 = true;
-            } else {
-                featureLL.retainAll(Constants.spectraRTFeatures);
-                if (featureLL.size() > 0) {
-                    createSpectraRTPredFile = true;
-                    createSpectraRTPredFile2 = true;
-                }
-
-                featureLL = new LinkedList<>(Arrays.asList(featuresArray));
-                featureLL.retainAll(Constants.detectFeatures);
-                if (featureLL.size() > 0) {
-                    createDetectPredFile = true;
-                    createDetectPredFile2 = true;
-                }
             }
+
+            featureLL = new LinkedList<>(Arrays.asList(featuresArray));
+            featureLL.retainAll(Constants.detectFeatures);
+            if (featureLL.size() > 0) {
+                createDetectPredFile = true;
+                createDetectPredFile2 = true;
+            }
+
             //overriding if intermediate files already made
             if (Constants.spectraRTPredInput != null || Constants.spectraRTPredFile != null) {
                 createSpectraRTPredFile = false;
             }
             if (Constants.detectPredInput != null || Constants.detectPredFile != null) {
                 createDetectPredFile = false;
-                createDetectAllPredFile = false;
             }
 
             c.updatePaths(); //setting null paths
@@ -429,30 +439,34 @@ public class MainClass {
 
             //get matched pin files for mzML files
             PinMzmlMatcher pmMatcher = new PinMzmlMatcher(Constants.mzmlDirectory, Constants.pinPepXMLDirectory);
+            //TODO: switch case
             if (createSpectraRTPredFile) {
                 if (Constants.spectraRTPredModel.equals("DIA-NN")) {
                     if (Constants.DiaNN == null) {
                         throw new IllegalArgumentException("path to DIA-NN executable must be provided");
                     }
                     System.out.println("Generating input file for DIA-NN");
-                    //long startTime = System.nanoTime();
-                    peptideFileCreator.createPeptideFile(pmMatcher.pinFiles, Constants.spectraRTPredInput, "Diann", "pin");
+                    peptideFileCreator.createPeptideFile(pmMatcher.pinFiles, Constants.spectraRTPredInput, "Diann");
                     peptideFileCreator.createPeptideFile(pmMatcher.pinFiles,
                             Constants.spectraRTPredInput.substring(0, Constants.spectraRTPredInput.length() - 4) + "_full.tsv",
-                            "createFull", "pin");
-                    //long endTime = System.nanoTime();
-                    //long duration = (endTime - startTime);
+                            "createFull");
                 } else if (Constants.spectraRTPredModel.equals("pDeep3")) {
                     System.out.println("Generating input file for pDeep3");
-                    peptideFileCreator.createPeptideFile(pmMatcher.pinFiles, Constants.spectraRTPredInput, "pDeep3", "pin");
+                    peptideFileCreator.createPeptideFile(pmMatcher.pinFiles, Constants.spectraRTPredInput, "pDeep3");
                 } else if (Constants.spectraRTPredModel.equals("PredFull")) {
                     System.out.println("Generating input file for PredFull");
-                    peptideFileCreator.createPeptideFile(pmMatcher.pinFiles, Constants.spectraRTPredInput, "PredFull", "pin");
+                    peptideFileCreator.createPeptideFile(pmMatcher.pinFiles, Constants.spectraRTPredInput, "PredFull");
                     peptideFileCreator.createPeptideFile(pmMatcher.pinFiles,
                             Constants.spectraRTPredInput.substring(0, Constants.spectraRTPredInput.length() - 4) + "_full.tsv",
-                            "createFull", "pin");
+                            "createFull");
+                } else if (Constants.spectraRTPredModel.equals("Prosit")) {
+                    System.out.println("Generating input file for Prosit");
+                    peptideFileCreator.createPeptideFile(pmMatcher.pinFiles, Constants.spectraRTPredInput, "Prosit");
+                    peptideFileCreator.createPeptideFile(pmMatcher.pinFiles,
+                            Constants.spectraRTPredInput.substring(0, Constants.spectraRTPredInput.length() - 4) + "_full.tsv",
+                            "createFull");
                 } else {
-                    System.out.println("spectraRTPredModel must be one of DIA-NN or PredFull");
+                    System.out.println("spectraRTPredModel must be one of DIA-NN, Prosit, or PredFull");
                     System.exit(-1);
                 }
 
@@ -474,10 +488,7 @@ public class MainClass {
 
             //generate predictions
             if ((Constants.spectraRTPredFile == null) && (createSpectraRTPredFile2)) {
-                //long startTime = System.nanoTime();
                 ExternalModelCaller.callModel(run, "DIA-NN");
-                //long endTime = System.nanoTime();
-                //long duration = (endTime - startTime);
             }
 
             //create new pin file with features
@@ -531,6 +542,7 @@ public class MainClass {
         } catch (Exception e) {
             System.out.println("could not write final params");
             e.getStackTrace();
+            System.exit(1);
         }
     }
 
@@ -550,6 +562,7 @@ public class MainClass {
         } catch (Exception e) {
             System.out.println("could not write final params");
             e.getStackTrace();
+            System.exit(1);
         }
     }
 }

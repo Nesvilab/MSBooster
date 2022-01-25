@@ -105,6 +105,12 @@ public class Constants {
     public static String FragmentationType = null;
     public static String NCE = null;
     public static Boolean createPredFileOnly = false;
+    public static String ignoredFragmentIonTypes = ""; //split with commas
+
+    //PredFull fragment ion annotation
+    public static Boolean useMatchedIntensities = false;
+    public static Boolean usePredIntensities = false;
+    public static Boolean usePeakCounts = false;
 
     ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -117,13 +123,10 @@ public class Constants {
 
     //don't currently support weighted similarity features
     public static final HashSet<String> allowedFeatures = new HashSet<>(Arrays.asList(
-            "cosineSimilarity", "spectralContrastAngle",
-            "euclideanDistance", "brayCurtis",
-            "pearsonCorr", "dotProduct",
+            "cosineSimilarity", "spectralContrastAngle", "euclideanDistance", "brayCurtis", "pearsonCorr", "dotProduct",
             "deltaRTlinear", "deltaRTbins", "deltaRTLOESS", "RTzscore", "RTprobability", "RTprobabilityUnifPrior", "deltaRTLOESSnormalized",
             "detectFractionGreater", "detectability", "detectSubtractMissing", "detectProtSpearmanDiff",
-            "deltaIMLOESS", "deltaIMLOESSnormalized", "IMprobabilityUnifPrior",
-            "maxConsecutiveFragments"));
+            "deltaIMLOESS", "deltaIMLOESSnormalized", "IMprobabilityUnifPrior", ""));
     public static final HashSet<String> detectFeatures =
             new HashSet<>(Arrays.asList("detectFractionGreater", "detectability", "detectSubtractMissing", "detectProtSpearmanDiff"));
     public static final HashSet<String> spectraRTFeatures = new HashSet<>(Arrays.asList(
@@ -140,7 +143,33 @@ public class Constants {
             "deltaRTLOESSnormalized"));
     public static final HashSet<String> imFeatures =
             new HashSet<>(Arrays.asList("deltaIMLOESS", "deltaIMLOESSnormalized", "IMprobabilityUnifPrior"));
+    //TODO: add to features list
+    public static final HashSet<String> matchedIntensitiesFeatures = makeMatchedIntensitiesFeatures();
+    private static HashSet<String> makeMatchedIntensitiesFeatures() {
+        HashSet<String> set = new HashSet<>();
+        for (String s : MassCalculator.allowedFragmentIonTypes) {
+            set.add(s + "_matched_intensity");
+        }
+        return set;
+    }
+    public static final HashSet<String> predIntensitiesFeatures = makePredIntensitiesFeatures();
+    private static HashSet<String> makePredIntensitiesFeatures() {
+        HashSet<String> set = new HashSet<>();
+        for (String s : MassCalculator.allowedFragmentIonTypes) {
+            set.add(s + "_pred_intensity");
+        }
+        return set;
+    }
+    public static final HashSet<String> peakCountsFeatures = makePeakCountsFeatures();
+    private static HashSet<String> makePeakCountsFeatures() {
+        HashSet<String> set = new HashSet<>();
+        for (String s : MassCalculator.allowedFragmentIonTypes) {
+            set.add(s + "_peak_counts");
+        }
+        return set;
+    }
 
+    //TODO: got lazy with naming, remove this and adjust code
     public static final HashMap<String, String> camelToUnderscore = makeCamelToUnderscore();
     private static HashMap<String, String> makeCamelToUnderscore() {
         HashMap<String, String> map = new HashMap<>();
@@ -184,6 +213,14 @@ public class Constants {
         return map;
     }
     public static final HashMap<String, Double> unimodtoModAAmass = makeUnimodtoModAA();
+    //TODO: support TMT
+    private static HashMap<String, Double> makePrositToModAAmass() {
+        HashMap<String, Double> map = new HashMap<>();
+        map.put("Oxidation", oxidationMass);
+        map.put("Carbamidomethyl", carbamidomethylationMass);
+        return map;
+    }
+    public static final HashMap<String, Double> prositToModAAmass = makePrositToModAAmass();
 
     //methods
     public void updatePaths() {

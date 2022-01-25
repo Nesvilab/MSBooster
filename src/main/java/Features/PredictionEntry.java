@@ -6,6 +6,8 @@ public class PredictionEntry {
     int[] fragNums;
     int[] flags;
     int[] charges;
+    String[] fragmentIonTypes;
+    MassCalculator massCalculator;
     float RT;
     float IM;
     float detectability;
@@ -30,4 +32,8 @@ public class PredictionEntry {
     public void setDetectability(float detectability) {this.detectability = detectability;}
 
     public void setCounter(int counts) {this.counter = counts;}
+
+    public void setFragmentIonTypes(String[] ions) {this.fragmentIonTypes = ions;}
+
+    public void setMassCalculator(MassCalculator mc) {this.massCalculator = mc;}
 }

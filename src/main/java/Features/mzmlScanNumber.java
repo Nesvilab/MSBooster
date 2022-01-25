@@ -109,14 +109,16 @@ public class mzmlScanNumber {
             float[] predIntensities = predictionEntry.intensities;
             float predRT = predictionEntry.RT;
             float predIM = predictionEntry.IM;
+            String[] fragmentIonTypes = predictionEntry.fragmentIonTypes;
+            MassCalculator massCalculator = predictionEntry.massCalculator;
 
             peptideObj newPepObj;
             if (predMZs.length > 1) {
                 newPepObj = new peptideObj(this, name.baseCharge, rank, targetORdecoy, escore, predMZs,
-                        predIntensities, predRT, predIM);
+                        predIntensities, predRT, predIM, fragmentIonTypes, massCalculator);
             } else { //only 1 frag to match
                 newPepObj = new peptideObj(this, name.baseCharge, rank, targetORdecoy, escore, zeroFloatArray,
-                        zeroFloatArray, predRT, predIM);
+                        zeroFloatArray, predRT, predIM, fragmentIonTypes, massCalculator);
             }
             peptideObjects.add(rank - 1, newPepObj);
 
@@ -129,11 +131,12 @@ public class mzmlScanNumber {
                 }
             }
         } catch (Exception e) {
-            //when peptide isn't in predictions, like U peptides.
+            //when peptide isn't in predictions, like unsupported amino acids
             //Set to arbitrary 0 vectors so nothing matches, similarity 0
-            if (name.baseCharge.contains("U")) {
+            if (name.stripped.contains("U") || name.stripped.contains("O") || name.stripped.contains("X") ||
+                    name.stripped.contains("B") || name.stripped.contains("Z") ) {
                 peptideObjects.add(rank - 1, new peptideObj(this, name.baseCharge, rank, targetORdecoy, escore,
-                        zeroFloatArray, zeroFloatArray, 0.0f, null));
+                        zeroFloatArray, zeroFloatArray, 0.0f, null, null, null));
             } else {
                 System.out.println("Prediction missing in file for " + name.baseCharge);
                 e.printStackTrace();

@@ -8,6 +8,7 @@ public class PeptideFormatter {
     String base;
     String diann;
     String predfull;
+    String prosit;
     String stripped;
     String baseCharge;
 
@@ -15,6 +16,16 @@ public class PeptideFormatter {
     ArrayList<Integer> ends = new ArrayList<>();
 
     String charge;
+
+    private void findPTMlocations() {
+        for (int i = 0; i < base.length(); i++) {
+            if (base.charAt(i) == '[') {
+                starts.add(i);
+            } else if (base.charAt(i) == ']') {
+                ends.add(i);
+            }
+        }
+    }
 
     private void pinTObase(String peptide) {
         //remove AA and period at beginning and end
@@ -27,15 +38,7 @@ public class PeptideFormatter {
         peptide = peptide.replace("c","");
 
         base = peptide;
-
-        //find locations of PTMs
-        for (int i = 0; i < base.length(); i++) {
-            if (base.charAt(i) == '[') {
-                starts.add(i);
-            } else if (base.charAt(i) == ']') {
-                ends.add(i);
-            }
-        }
+        findPTMlocations();
     }
 
     private void diannTObase(String peptide) {
@@ -62,30 +65,38 @@ public class PeptideFormatter {
         }
 
         base = peptide;
+        findPTMlocations();
+    }
 
-        //find locations of PTMs
-        for (int i = 0; i < base.length(); i++) {
-            if (base.charAt(i) == '[') {
-                starts.add(i);
-            } else if (base.charAt(i) == ']') {
-                ends.add(i);
-            }
-        }
+    private void prositTObase(String peptide) {
+        //remove (O) and add [57] to C
+        base = peptide.replace("(ox)", "[" + Constants.oxidationMass + "]")
+                .replace("C", "C[" + Constants.carbamidomethylationMass + "]");
+        findPTMlocations();
     }
 
     private void predfullTObase(String peptide) {
         //remove (O) and add [57] to C
         base = peptide.replace("(O)", "[" + Constants.oxidationMass + "]")
                 .replace("C", "C[" + Constants.carbamidomethylationMass + "]");
+        findPTMlocations();
+    }
 
-        //find locations of PTMs
-        for (int i = 0; i < base.length(); i++) {
-            if (base.charAt(i) == '[') {
-                starts.add(i);
-            } else if (base.charAt(i) == ']') {
-                ends.add(i);
+    private void mspTObase(String peptide) {
+        String[] pepSplit = peptide.split("\\|");
+
+        base = pepSplit[0];
+        if (! pepSplit[1].equals("0")) { //mods
+            String[] mods = pepSplit[1].split("/");
+            for (int i = mods.length - 1; i > 0; i--) {
+                String[] modsSplit = mods[i].split(",");
+                int position = Integer.parseInt(modsSplit[0]) + 1;
+                base = base.substring(0, position) + "[" +
+                        Constants.prositToModAAmass.get(modsSplit[2]) + "]" + base.substring(position);
             }
         }
+
+        findPTMlocations();
     }
 
     private void baseTOstripped() {
@@ -147,6 +158,10 @@ public class PeptideFormatter {
         }
     }
 
+    private void predfullTOprosit() {
+        prosit = predfull.replace("M(O)", "M(ox)");
+    }
+
     public PeptideFormatter(String peptide, Object c, String format) {
         charge = (String) c;
 
@@ -155,14 +170,16 @@ public class PeptideFormatter {
             baseTOdiann();
             baseTOstripped();
             baseTOpredfull();
+            predfullTOprosit();
             baseCharge = base + "|" + charge;
         }
 
         if (format.equals("diann")) {
+            diann = peptide;
             diannTObase(peptide);
             baseTOstripped();
             baseTOpredfull();
-            baseTOdiann();
+            predfullTOprosit();
             baseCharge = base + "|" + charge;
         }
 
@@ -181,11 +198,31 @@ public class PeptideFormatter {
             baseTOstripped();
             baseTOpredfull();
             baseTOdiann();
+            predfullTOprosit();
             baseCharge = base + "|" + charge;
         }
 
         if (format.equals("predfull")) {
+            predfull = peptide;
             predfullTObase(peptide);
+            baseTOstripped();
+            baseTOdiann();
+            predfullTOprosit();
+            baseCharge = base + "|" + charge;
+        }
+
+        if (format.equals("msp")) {
+            mspTObase(peptide);
+            baseTOstripped();
+            baseTOpredfull();
+            baseTOdiann();
+            predfullTOprosit();
+            baseCharge = base + "|" + charge;
+        }
+
+        if (format.equals("prosit")) {
+            prosit = peptide;
+            prositTObase(peptide);
             baseTOstripped();
             baseTOpredfull();
             baseTOdiann();

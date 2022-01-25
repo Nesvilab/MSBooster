@@ -20,7 +20,25 @@ public class MassCalculator {
     public ArrayList<Double> modMasses = new ArrayList<Double>();
     public MassCalculator[] internalPeptides;
     public SortedMap<Float, String[]> fragmentIons = new TreeMap<>();
-    private final String[] fragmentIonHierarchy = new String[] {"regular", "precursor", "immonium", "internal", "internal-NL", "regular-NL", "precursor-NL"};
+    private String[] fragmentIonHierarchy;
+    public static final Set<String> allowedFragmentIonTypes = new HashSet<>(Arrays.asList(
+            "z", "c", "y", "a", "x", "b",
+            "precursor", "immonium", "internal", "internal-NL",
+            "z-NL", "c-NL", "y-NL", "a-NL", "x-NL", "b-NL",
+            "precursor-NL"));
+    private void makeFragmentIonHierarchy() { //decided by looking at multiple papers
+        if (Constants.FragmentationType.equals("ETD")) {
+            fragmentIonHierarchy = new String[] {"z", "c", "y", "a", "x", "b",
+                    "precursor", "immonium", "internal", "internal-NL",
+                    "z-NL", "c-NL", "y-NL", "a-NL", "x-NL", "b-NL",
+                    "precursor-NL"};
+        } else { //HCD, CID, or not specified
+            fragmentIonHierarchy = new String[] {"y", "b", "a", "c", "x", "z",
+                    "precursor", "immonium", "internal", "internal-NL",
+                    "y-NL", "b-NL", "a-NL", "c-NL", "x-NL", "z-NL",
+                    "precursor-NL"};
+        }
+    }
 
     //TODO: get immonium ion masses by taking amino acid and subtracting 26.99 Da. This holds for modified AA too (Falick et al 1993)
     //TODO: should we consider related ions, not just immonium?
@@ -373,17 +391,17 @@ public class MassCalculator {
                 for (int iCharge = 1; iCharge < maxCharge + 1; iCharge++) {
                     //regular fragment
                     String ionName = ionType + num + "+" + iCharge;
-                    addToFragmentIons(calcMass(num, ionType, iCharge), new String[] {ionName, "regular"});
+                    addToFragmentIons(calcMass(num, ionType, iCharge), new String[] {ionName, ionType});
 
                     //neutral loss fragments
                     if (! ionType.equals("c")) {
                         for (String nl : neutralLosses) {
                             ionName = ionType + num + "-" + nl + "+" + iCharge;
-                            addToFragmentIons(calcMass(num, ionType, iCharge, nl), new String[]{ionName, "regular-NL"});
+                            addToFragmentIons(calcMass(num, ionType, iCharge, nl), new String[]{ionName, ionType + "-NL"});
                         }
                     } else { //c-NH3 is same as b
                         ionName = ionType + num + "-H2O" + "+" + iCharge;
-                        addToFragmentIons(calcMass(num, ionType, iCharge, "H2O"), new String[]{ionName, "regular-NL"});
+                        addToFragmentIons(calcMass(num, ionType, iCharge, "H2O"), new String[]{ionName, "c-NL"});
                     }
                 }
             }
@@ -428,8 +446,11 @@ public class MassCalculator {
         }
     }
 
-    public String[] annotateMZs(ArrayList<Float> fs) {
+    public String[][] annotateMZs(ArrayList<Float> fs) {
+        makeFragmentIonHierarchy();
+
         String[] annotations = new String[fs.size()];
+        String[] fragmentIonTypes = new String[fs.size()];
         for (int i = 0; i < fs.size(); i++) {
             //for predicted peak, +- Da error tolerance
             float minMZ = fs.get(i) - Constants.DaTolerance;
@@ -458,6 +479,7 @@ public class MassCalculator {
             //not able to find match
             if (consideredFragmentIons.size() == 0) {
                 annotations[i] = "unknown";
+                fragmentIonTypes[i] = "unknown";
                 continue;
             }
 
@@ -475,12 +497,13 @@ public class MassCalculator {
 
                 if (!sb.toString().equals("")) {
                     annotations[i] = sb.toString();
+                    fragmentIonTypes[i] = ionType;
                     break;
                 }
             }
         }
 
-        return annotations;
+        return new String[][] {annotations, fragmentIonTypes};
     }
 
     public static void main(String[] args) {

@@ -41,29 +41,35 @@ public class spectrumComparison {
     public spectrumComparison(float[] eMZs, float[] eIntensities,
                               float[] pMZs, float[] pIntensities,
                               boolean filterTop, boolean filterBase) {
-        int[] sortedIndices = IntStream.range(0, pMZs.length)
-                .boxed().sorted((k, j) -> Float.compare(pMZs[k], pMZs[j]))
+        predMZs = pMZs;
+        predIntensities = pIntensities;
+
+        if (filterBase) {
+            this.filterIntensitiesByPercentage(Constants.percentBasePeak);
+        }
+        if (filterTop) {
+            this.filterTopFragments();
+        }
+
+        int[] sortedIndices = IntStream.range(0, predMZs.length)
+                .boxed().sorted((k, j) -> Float.compare(predMZs[k], predMZs[j]))
                 .mapToInt(ele -> ele).toArray();
-        predMZs = new float[pMZs.length];
-        predIntensities = new float[pIntensities.length];
+        pMZs = predMZs;
+        pIntensities = predIntensities;
+        predMZs = new float[predMZs.length];
+        predIntensities = new float[predIntensities.length];
         for (int i = 0; i < sortedIndices.length; i++) {
             predMZs[i] = pMZs[sortedIndices[i]];
             predIntensities[i] = pIntensities[sortedIndices[i]];
         }
-        if (filterBase) {
-            this.filterIntensitiesByPercentage(Constants.percentBasePeak);
-        }
 
-        if (filterTop) {
-            this.filterTopFragments();
-        }
         matchedIntensities = this.getMatchedIntensities(eMZs, eIntensities);
     }
 
     private void filterTopFragments() {
         //stick with arraylist because finding minimum will be faster than linkedlist due to indexing
         //skip if shorter
-        if (this.predMZs.length > Constants.topFragments) {
+        if (predMZs.length > Constants.topFragments) {
             tmpInts.clear();
             tmpMZs.clear();
 
@@ -75,29 +81,14 @@ public class spectrumComparison {
                 tmpMZs.add(i);
             }
 
-            int numFragments = Math.min(tmpMZs.size(), Constants.topFragments);
-            if (numFragments < tmpMZs.size()) {
-                ArrayList<Float> tmptmpMZs = new ArrayList<>(numFragments);
-                ArrayList<Float> tmptmpIntensities = new ArrayList<>(numFragments);
+            predIntensities = new float[Constants.topFragments];
+            predMZs = new float[Constants.topFragments];
 
-                for (int i = 0; i < numFragments; i++) {
-                    int index = tmpInts.indexOf(Collections.max(tmpInts));
-                    tmptmpMZs.add(tmpMZs.get(index));
-                    tmptmpIntensities.add(tmpInts.get(index));
-                    tmpInts.set(index, -1f);
-                }
-                tmpMZs = tmptmpMZs;
-                tmpInts = tmptmpIntensities;
-            }
-
-            predIntensities = new float[tmpInts.size()];
-            for (int i = 0; i < tmpInts.size(); i++) {
-                predIntensities[i] = tmpInts.get(i);
-            }
-
-            predMZs = new float[tmpInts.size()];
-            for (int i = 0; i < tmpInts.size(); i++) {
-                predMZs[i] = tmpMZs.get(i);
+            for (int i = 0; i < Constants.topFragments; i++) {
+                int index = tmpInts.indexOf(Collections.max(tmpInts));
+                predIntensities[i] = tmpInts.get(index);
+                predMZs[i] = tmpMZs.get(index);
+                tmpInts.set(index, -1f);
             }
         }
     }

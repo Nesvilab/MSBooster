@@ -446,15 +446,15 @@ public class MassCalculator {
         }
     }
 
-    public String[][] annotateMZs(ArrayList<Float> fs) {
+    public String[][] annotateMZs(float[] fs) {
         makeFragmentIonHierarchy();
 
-        String[] annotations = new String[fs.size()];
-        String[] fragmentIonTypes = new String[fs.size()];
-        for (int i = 0; i < fs.size(); i++) {
+        String[] annotations = new String[fs.length];
+        String[] fragmentIonTypes = new String[fs.length];
+        for (int i = 0; i < fs.length; i++) {
             //for predicted peak, +- Da error tolerance
-            float minMZ = fs.get(i) - Constants.DaTolerance;
-            float maxMZ = fs.get(i) + Constants.DaTolerance;
+            float minMZ = fs[i] - Constants.DaTolerance;
+            float maxMZ = fs[i] + Constants.DaTolerance;
 
             ArrayList<String[]> consideredFragmentIons = new ArrayList<>();
             for (Float mz : fragmentIons.keySet()) {

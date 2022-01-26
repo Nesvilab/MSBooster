@@ -5,7 +5,9 @@ import umich.ms.fileio.exceptions.FileParsingException;
 import java.io.BufferedReader;
 import java.io.FileReader;
 import java.io.IOException;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.Set;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 
@@ -25,39 +27,25 @@ public class PredFullSpeclibReader extends mgfFileReader{
         BufferedReader TSVReader = new BufferedReader(new FileReader(fullFile));
         String l;
 
-        while ((l = TSVReader.readLine()) != null) {
-//            //find locations of PTMs
-//            ArrayList<Integer> starts = new ArrayList<>();
-//            ArrayList<Integer> ends = new ArrayList<>();
-//            for (int i = 0; i < l.length(); i++) {
-//                if (l.charAt(i) == '[') {
-//                    starts.add(i);
-//                } else if (l.charAt(i) == ']') {
-//                    ends.add(i);
-//                }
-//            }
-//            boolean newEntryNeeded = false;
-//            for (int i = 0; i < starts.size(); i++) {
-//                Double reportedMass = Double.parseDouble(l.substring(starts.get(i) + 1, ends.get(i)));
-//                if (!(reportedMass.equals(Constants.carbamidomethylationMass) || reportedMass.equals(Constants.oxidationMass))) {
-//                    newEntryNeeded = true;
-//                    break;
-//                }
-//            }
-//
-//            //given that C is assumed to be 57, need to check if no mod on it
-//            if (! newEntryNeeded) {
-//                for (int i = 0; i < l.length(); i++) {
-//                    if (l.charAt(i) == 'C') {
-//                        if (l.charAt(i + 1) != '[') {
-//                            newEntryNeeded = true;
-//                        }
-//                    }
-//                }
-//            }
-//
-//            if (newEntryNeeded) {
+        //filter here so don't need to annotate everything
+        Set<String> ignoredFragmentIonTypes = new HashSet<>();
+        if (! Constants.ignoredFragmentIonTypes.equals("")) {
+            //only filter if not excluding certain fragment ion types
+            //check that this is allowed
+            String[] commaSplit = Constants.ignoredFragmentIonTypes.split(",");
+            for (int i = 0; i < commaSplit.length; i++) {
+                String fragmentIonType = commaSplit[i].trim();
+                if (MassCalculator.allowedFragmentIonTypes.contains(fragmentIonType)) {
+                    ignoredFragmentIonTypes.add(fragmentIonType);
+                } else {
+                    System.out.println(fragmentIonType + " is not a supported fragment ion type to exclude. " +
+                            "Please choose from " + MassCalculator.allowedFragmentIonTypes);
+                    System.exit(-1);
+                }
+            }
+        }
 
+        while ((l = TSVReader.readLine()) != null) {
             //doing fragment annotation for everything, not just modified ones
             //start shifting and annotating
             //first, get unmodified peptide prediction from dictionary
@@ -67,76 +55,16 @@ public class PredFullSpeclibReader extends mgfFileReader{
                     lSplit[1], "predfull");
 
             PredictionEntry pe = allPreds.get(peptideToSearch.baseCharge);
-            float[] mzs = pe.mzs;
-            float[] intensities = pe.intensities;
 
             //for each fragment ion, see if it can be annotated
             MassCalculator mc = new MassCalculator(peptideToSearch.base, peptideToSearch.charge);
             mc.possibleFragmentIons();
 
-            //filter here so don't need to annotate everything
-            double minIntensity = 0f;
-            int numFragments = mzs.length;
-            Set<String> ignoredFragmentIonTypes = new HashSet<>();
-
-            if (Constants.ignoredFragmentIonTypes.equals("")) {
-                if (Constants.useBasePeak) {
-                    for (float i : intensities) {
-                        if (i > minIntensity) {
-                            minIntensity = i;
-                        }
-                    }
-                    minIntensity = minIntensity * Constants.percentBasePeak / 100f;
-                }
-                if (Constants.useTopFragments) {
-                    numFragments = Math.min(numFragments, Constants.topFragments);
-                }
-            } else { //only filter if not excluding certain fragment ion types
-                //check that this is allowed
-                String[] commaSplit = Constants.ignoredFragmentIonTypes.split(",");
-                for (int i = 0; i < commaSplit.length; i++) {
-                    String fragmentIonType = commaSplit[i].trim();
-                    if (MassCalculator.allowedFragmentIonTypes.contains(fragmentIonType)) {
-                        ignoredFragmentIonTypes.add(fragmentIonType);
-                    } else {
-                        System.out.println(fragmentIonType + " is not a supported fragment ion type to exclude. " +
-                                "Please choose from " + MassCalculator.allowedFragmentIonTypes);
-                        System.exit(-1);
-                    }
-                }
-            }
-
-            //for each predicted peak, see if it can be annotated
-            ArrayList<Float> newMZs = new ArrayList<>();
-            ArrayList<Float> newIntensities = new ArrayList<>();
-            ArrayList<Float> finalMZs = new ArrayList<>();
-            ArrayList<Float> finalIntensities = new ArrayList<>();
-
-            for (int i = 0; i < mzs.length; i++) {
-                if (intensities[i] >= minIntensity) {
-                    newIntensities.add(intensities[i]);
-                    newMZs.add(mzs[i]);
-                }
-            }
-            if (numFragments < newMZs.size()) {
-                ArrayList<Float> newnewMZs = new ArrayList<>();
-                ArrayList<Float> newnewIntensities = new ArrayList<>();
-                for (int i = 0; i < numFragments; i++) {
-                    int index = newIntensities.indexOf(Collections.max(newIntensities));
-                    newnewMZs.add(newMZs.get(index));
-                    newnewIntensities.add(newIntensities.get(index));
-                    newIntensities.set(index, -1f);
-                }
-                newMZs = newnewMZs;
-                newIntensities = newnewIntensities;
-            }
-
             //annotate ion
             //any calculated annotated fragment is considered
-            String[][] info = mc.annotateMZs(newMZs);
+            String[][] info = mc.annotateMZs(pe.mzs);
             String[] annotations = info[0];
             String[] fragmentIonTypes = info[1];
-            //System.out.println(Arrays.toString(annotations));
 
             //for annotated fragment ions, shift their predicted peak
             //shift only if including the amino acid
@@ -145,6 +73,8 @@ public class PredFullSpeclibReader extends mgfFileReader{
             //adjust in newMZs
             MassCalculator shiftedMC = new MassCalculator(lSplit[0], lSplit[1]);
             int index = 0;
+            ArrayList<Float> finalMZs = new ArrayList<>();
+            ArrayList<Float> finalIntensities = new ArrayList<>();
             for (int j = 0; j < annotations.length; j++) {
                 //skip fragment ion if of ignored type
                 if (ignoredFragmentIonTypes.contains(fragmentIonTypes[j])) {
@@ -194,7 +124,7 @@ public class PredFullSpeclibReader extends mgfFileReader{
                             }
                             break;
                         case "unknown":
-                            newMZ.add(newMZs.get(index));
+                            newMZ.add(pe.mzs[index]);
                             break;
                         default: //backbone and internal
                             StringBuilder sb = new StringBuilder();
@@ -223,7 +153,7 @@ public class PredFullSpeclibReader extends mgfFileReader{
                 }
                 if (newMZ.size() == 1) { //problem if one possibility is shifted and other isn't
                     finalMZs.add(newMZ.iterator().next());
-                    finalIntensities.add(newIntensities.get(index));
+                    finalIntensities.add(pe.intensities[index]);
                 } else {
                     float totalFloat = 0f;
                     float compareFloat1 = newMZ.iterator().next();
@@ -238,7 +168,7 @@ public class PredFullSpeclibReader extends mgfFileReader{
                     }
                     if (! problem) {
                         finalMZs.add(totalFloat / newMZ.size());
-                        finalIntensities.add(newIntensities.get(index));
+                        finalIntensities.add(pe.intensities[index]);
                     }
                 }
                 index += 1;
@@ -259,7 +189,6 @@ public class PredFullSpeclibReader extends mgfFileReader{
             newPred.setFragmentIonTypes(fragmentIonTypes);
             newPred.setMassCalculator(shiftedMC);
             allPreds.put(lSplit[0] + "|" + lSplit[1], newPred);
-//            }
         }
     }
 }

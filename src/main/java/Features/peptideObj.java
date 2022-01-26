@@ -1,6 +1,5 @@
 package Features;
 
-import java.util.ArrayList;
 import java.util.HashMap;
 
 public class peptideObj {
@@ -82,11 +81,7 @@ public class peptideObj {
         //get intensity for each fragment type
         if (fragmentIonTypes.length != spectralSimObj.predMZs.length) {
             //get prediction entry, mass calculator
-            ArrayList<Float> mzsList = new ArrayList<>();
-            for (float f : spectralSimObj.predMZs) {
-                mzsList.add(f);
-            }
-            fragmentIonTypes = massCalculator.annotateMZs(mzsList)[1];
+            fragmentIonTypes = massCalculator.annotateMZs(spectralSimObj.predMZs)[1];
         }
 
         for (int i = 0; i < fragmentIonTypes.length; i++) {

@@ -5,10 +5,7 @@ import umich.ms.fileio.exceptions.FileParsingException;
 import java.io.BufferedReader;
 import java.io.FileReader;
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.HashSet;
-import java.util.Set;
+import java.util.*;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 
@@ -176,22 +173,23 @@ public class PredFullSpeclibReader extends mgfFileReader{
                     }
 
                     //switch case (MH, immonium, extract letters and numbers)
-                    String ionName = nlSplit[0].split(":")[0];
+                    String[] nlSplitSplit = nlSplit[0].split(":");
+                    String ionName = nlSplitSplit[0];
                     switch (ionName) {
                         case "MH":
                             newMZ.add(shiftedMC.calcMass(shiftedMC.modMasses.size() - 2, "y", charge, nl));
                             break;
-                        case "immonium":
+                        case "immonium": //TODO: why is immonium showing up twice?
                             //need to check if mox of modified and unmodified, and exclude if so
                             //don't know if both mod and unmod m/z will be that intensity, safer to exclude
                             Set<Double> mods = new HashSet<>();
-                            char aa = frag.charAt(frag.length() - 1);
+                            char aa = nlSplitSplit[1].charAt(0);
                             for (int i = 0; i < shiftedMC.peptide.length(); i++) {
                                 if (shiftedMC.peptide.charAt(i) == aa) {
                                     mods.add(shiftedMC.modMasses.get(i + 1));
                                 }
                             }
-                            if (mods.size() == 1) {
+                            for (int i = 0; i < mods.size(); i++) {
                                 newMZ.add((float) (mods.iterator().next() + shiftedMC.AAmap.get(aa)));
                             }
                             break;
@@ -223,10 +221,25 @@ public class PredFullSpeclibReader extends mgfFileReader{
                             break;
                     }
                 }
-
-                if (newMZ.size() == 1) {
+                if (newMZ.size() == 1) { //problem if one possibility is shifted and other isn't
                     finalMZs.add(newMZ.iterator().next());
                     finalIntensities.add(newIntensities.get(index));
+                } else {
+                    float totalFloat = 0f;
+                    float compareFloat1 = newMZ.iterator().next();
+                    totalFloat += compareFloat1;
+                    boolean problem = false;
+                    for (int i = 0; i < newMZ.size() - 1; i++) {
+                        float compareFloat2 = newMZ.iterator().next();
+                        totalFloat += compareFloat2;
+                        if (Math.abs(compareFloat1 - compareFloat2) > 0.1f) {
+                            problem = true;
+                        }
+                    }
+                    if (! problem) {
+                        finalMZs.add(totalFloat / newMZ.size());
+                        finalIntensities.add(newIntensities.get(index));
+                    }
                 }
                 index += 1;
             }

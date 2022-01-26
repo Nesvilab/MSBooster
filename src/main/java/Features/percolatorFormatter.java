@@ -306,7 +306,6 @@ public class percolatorFormatter {
                 //System.out.println("Getting predictions for each row");
                 //int totalPSMs = 0;
 
-                System.out.println("Calculating features");
                 while (pin.next()) {
                     //totalPSMs += 1;
                     //peptide name

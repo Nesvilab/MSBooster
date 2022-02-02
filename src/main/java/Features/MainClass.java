@@ -342,9 +342,7 @@ public class MainClass {
                     Set<String> intersection = new HashSet<>(featureLL);
                     intersection.retainAll(Constants.matchedIntensitiesFeatures);
                     if (intersection.size() == 0) {
-                        for (String s : intersection) {
-                            featureLL.add(s);
-                        }
+                        featureLL.addAll(Constants.matchedIntensitiesFeatures);
                     }
                 } else {
                     for (String feature : Constants.matchedIntensitiesFeatures) {
@@ -357,9 +355,7 @@ public class MainClass {
                     Set<String> intersection = new HashSet<>(featureLL);
                     intersection.retainAll(Constants.predIntensitiesFeatures);
                     if (intersection.size() == 0) {
-                        for (String s : intersection) {
-                            featureLL.add(s);
-                        }
+                        featureLL.addAll(Constants.predIntensitiesFeatures);
                     }
                 } else {
                     for (String feature : Constants.predIntensitiesFeatures) {
@@ -372,9 +368,7 @@ public class MainClass {
                     Set<String> intersection = new HashSet<>(featureLL);
                     intersection.retainAll(Constants.peakCountsFeatures);
                     if (intersection.size() == 0) {
-                        for (String s : intersection) {
-                            featureLL.add(s);
-                        }
+                        featureLL.addAll(Constants.peakCountsFeatures);
                     }
                 } else {
                     for (String feature : Constants.peakCountsFeatures) {

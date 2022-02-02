@@ -117,8 +117,8 @@ public class spectrumComparison {
 
     public void filterIntensitiesByPercentage(double percentage) { //should be < 100
         if (percentage > 100) {
-            System.out.println("percentBasePeak must be <= 100 but is set to " + Constants.percentBasePeak +
-                    ". Filtering will return all peaks.");
+            System.out.println("percentBasePeak must be <= 100 but is set to " + Constants.percentBasePeak);
+            System.exit(-1);
         } else {
             //get max intensity
             float maxIntensity = 0f;

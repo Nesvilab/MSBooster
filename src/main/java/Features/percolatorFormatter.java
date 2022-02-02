@@ -66,7 +66,6 @@ public class percolatorFormatter {
             predictedSpectra = SpectralPredictionMapper.createSpectralPredictionMapper(mgf, executorService);
             needsMGF = true;
         }
-
         //create detectMap to store detectabilities for base sequence peptides
         //store peptide detectabilities in PredictionEntry
         detectMap dm = null;
@@ -623,6 +622,9 @@ public class percolatorFormatter {
                             case "immonium_matched_intensity":
                                 writer.addValue("immonium_matched_intensity", pepObj.matchedIntensities.get("immonium"));
                                 break;
+                            case "unknown_matched_intensity":
+                                writer.addValue("unknown_matched_intensity", pepObj.matchedIntensities.get("unknown"));
+                                break;
                             case "y_pred_intensity":
                                 writer.addValue("y_pred_intensity", pepObj.predIntensities.get("y"));
                                 break;
@@ -674,6 +676,9 @@ public class percolatorFormatter {
                             case "immonium_pred_intensity":
                                 writer.addValue("immonium_pred_intensity", pepObj.predIntensities.get("immonium"));
                                 break;
+                            case "unknown_pred_intensity":
+                                writer.addValue("unknown_pred_intensity", pepObj.predIntensities.get("unknown"));
+                                break;
                             case "y_peak_counts":
                                 writer.addValue("y_peak_counts", pepObj.peakCounts.get("y"));
                                 break;
@@ -724,6 +729,9 @@ public class percolatorFormatter {
                                 break;
                             case "immonium_peak_counts":
                                 writer.addValue("immonium_peak_counts", pepObj.peakCounts.get("immonium"));
+                                break;
+                            case "unknown_peak_counts":
+                                writer.addValue("unknown_peak_counts", pepObj.peakCounts.get("unknown"));
                                 break;
                         }
                     }

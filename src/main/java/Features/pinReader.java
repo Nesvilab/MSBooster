@@ -124,7 +124,11 @@ public class pinReader {
         ArrayList<String> peps = new ArrayList<String>();
         while (next()) {
             PeptideFormatter pf = getPep();
-            peps.add(pf.predfull + "\t" + pf.charge + "\t" + Constants.FragmentationType + "\t" + Constants.NCE);
+            if (! pf.predfull.contains("O") && ! pf.predfull.contains("U") &&
+                    ! pf.predfull.contains("Z") && ! pf.predfull.contains("B") &&
+                    ! pf.predfull.contains("X")) {
+                peps.add(pf.predfull + "\t" + pf.charge + "\t" + Constants.FragmentationType + "\t" + Constants.NCE);
+            }
         }
         return peps.toArray(new String[0]);
     }

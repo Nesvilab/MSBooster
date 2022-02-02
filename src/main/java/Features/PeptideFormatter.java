@@ -106,12 +106,12 @@ public class PeptideFormatter {
         newStarts.add(stripped.length());
 
         ArrayList<Integer> newEnds = new ArrayList<>();
-        newEnds.add(0);
+        newEnds.add(-1);
         newEnds.addAll(ends);
 
         StringBuilder sb = new StringBuilder();
         for (int i = 0; i < newStarts.size(); i++) {
-            sb.append(stripped, newEnds.get(i), newStarts.get(i));
+            sb.append(stripped, newEnds.get(i) + 1, newStarts.get(i));
         }
         stripped = sb.toString();
     }

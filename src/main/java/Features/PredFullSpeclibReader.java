@@ -5,9 +5,7 @@ import umich.ms.fileio.exceptions.FileParsingException;
 import java.io.BufferedReader;
 import java.io.FileReader;
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.HashSet;
-import java.util.Set;
+import java.util.*;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 
@@ -56,6 +54,20 @@ public class PredFullSpeclibReader extends mgfFileReader{
 
             PredictionEntry pe = allPreds.get(peptideToSearch.baseCharge);
 
+            if (pe == null) { //valid reasons to be empty
+                if ((peptideToSearch.stripped.length() > 20)) {
+                    continue;
+                }
+                if (peptideToSearch.stripped.contains("O") || peptideToSearch.stripped.contains("U") ||
+                        peptideToSearch.stripped.contains("Z") || peptideToSearch.stripped.contains("B") ||
+                        peptideToSearch.stripped.contains("X")) {
+                    continue;
+                }
+                if (Integer.parseInt(peptideToSearch.charge) > 6) {
+                    continue;
+                }
+            }
+
             //for each fragment ion, see if it can be annotated
             MassCalculator mc = new MassCalculator(peptideToSearch.base, peptideToSearch.charge);
             mc.possibleFragmentIons();
@@ -75,6 +87,7 @@ public class PredFullSpeclibReader extends mgfFileReader{
             int index = 0;
             ArrayList<Float> finalMZs = new ArrayList<>();
             ArrayList<Float> finalIntensities = new ArrayList<>();
+            ArrayList<String> finalFragmentIonTypes = new ArrayList<>();
             for (int j = 0; j < annotations.length; j++) {
                 //skip fragment ion if of ignored type
                 if (ignoredFragmentIonTypes.contains(fragmentIonTypes[j])) {
@@ -120,7 +133,7 @@ public class PredFullSpeclibReader extends mgfFileReader{
                                 }
                             }
                             for (int i = 0; i < mods.size(); i++) {
-                                newMZ.add((float) (mods.iterator().next() + shiftedMC.AAmap.get(aa)));
+                                newMZ.add((float) (mods.iterator().next() + shiftedMC.AAmap.get(aa) - 26.99));
                             }
                             break;
                         case "unknown":
@@ -154,6 +167,7 @@ public class PredFullSpeclibReader extends mgfFileReader{
                 if (newMZ.size() == 1) { //problem if one possibility is shifted and other isn't
                     finalMZs.add(newMZ.iterator().next());
                     finalIntensities.add(pe.intensities[index]);
+                    finalFragmentIonTypes.add(fragmentIonTypes[index]);
                 } else {
                     float totalFloat = 0f;
                     float compareFloat1 = newMZ.iterator().next();
@@ -164,11 +178,13 @@ public class PredFullSpeclibReader extends mgfFileReader{
                         totalFloat += compareFloat2;
                         if (Math.abs(compareFloat1 - compareFloat2) > 0.1f) {
                             problem = true;
+                            break;
                         }
                     }
                     if (! problem) {
                         finalMZs.add(totalFloat / newMZ.size());
                         finalIntensities.add(pe.intensities[index]);
+                        finalFragmentIonTypes.add(fragmentIonTypes[index]);
                     }
                 }
                 index += 1;
@@ -177,17 +193,18 @@ public class PredFullSpeclibReader extends mgfFileReader{
             //now can assign new PredictionEntry
             PredictionEntry newPred = new PredictionEntry();
             float[] mzArray = new float[finalMZs.size()];
-            float[] intArray = new float[finalIntensities.size()];
-            for (int i = 0; i < mzArray.length; i++) {
+            float[] intArray = new float[finalMZs.size()];
+            String[] fragmentArray = new String[finalMZs.size()];
+            for (int i = 0; i < finalMZs.size(); i++) {
                 mzArray[i] = finalMZs.get(i);
                 intArray[i] = finalIntensities.get(i);
+                fragmentArray[i] = finalFragmentIonTypes.get(i);
             }
             newPred.setMzs(mzArray);
             newPred.setIntensities(intArray);
             newPred.setRT(pe.RT);
             newPred.setIM(pe.IM);
-            newPred.setFragmentIonTypes(fragmentIonTypes);
-            newPred.setMassCalculator(shiftedMC);
+            newPred.setFragmentIonTypes(fragmentArray);
             allPreds.put(lSplit[0] + "|" + lSplit[1], newPred);
         }
     }

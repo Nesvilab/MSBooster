@@ -30,7 +30,7 @@ public class peptideObj {
 
     public peptideObj(mzmlScanNumber scanNumObj, String name, int rank, int targetORdecoy, String escore,
                       float[] predMZs, float[] predIntensities, float predRT, Float predIM,
-                      String[] fragmentIonTypes, MassCalculator massCalculator) {
+                      String[] fragmentIonTypes) {
         this.name = name;
         this.charge = Integer.parseInt(name.split("\\|")[1]);
         this.rank = rank;
@@ -38,12 +38,15 @@ public class peptideObj {
         this.scanNum = scanNumObj.scanNum;
         this.targetORdecoy = targetORdecoy;
         this.escore = escore;
+        //TODO: provide with fragmentIonTypes
         this.spectralSimObj = new spectrumComparison(scanNumObj.getExpMZs(), scanNumObj.getExpIntensities(),
                 predMZs, predIntensities, Constants.useTopFragments, Constants.useBasePeak);
         this.RT = predRT;
         this.IM = predIM;
         if (Constants.useMatchedIntensities || Constants.usePredIntensities || Constants.usePeakCounts) {
-            makeFragmentAnnotationFeatures(fragmentIonTypes, massCalculator);
+            if (fragmentIonTypes != null) {
+                makeFragmentAnnotationFeatures(fragmentIonTypes, predMZs);
+            }
         }
     }
 
@@ -64,7 +67,7 @@ public class peptideObj {
 
     //how to deal with this if ignored fragment ions types, so matchedIntensities and fragmentIonTypes not same length?
     //save masscalculator and annotateMZs
-    private void makeFragmentAnnotationFeatures(String[] fragmentIonTypes, MassCalculator massCalculator) {
+    private void makeFragmentAnnotationFeatures(String[] fragmentIonTypes, float[] predMZs) {
         float totalmatchedIntensity = 0f;
         if (Constants.useMatchedIntensities) {
             for (float f : spectralSimObj.matchedIntensities) {
@@ -73,23 +76,38 @@ public class peptideObj {
         }
         float totalpredIntensity = 0f;
         if (Constants.usePredIntensities) {
-            for (float f : spectralSimObj.matchedIntensities) {
+            for (float f : spectralSimObj.predIntensities) {
                 totalpredIntensity += f;
             }
         }
 
         //get intensity for each fragment type
         if (fragmentIonTypes.length != spectralSimObj.predMZs.length) {
-            //get prediction entry, mass calculator
-            fragmentIonTypes = massCalculator.annotateMZs(spectralSimObj.predMZs)[1];
+            //for mz in spectralSimObj.predMZs, if equal to mz in predMZs, get that index of fragment ion types
+            String[] newFragmentIonTypes = new String[spectralSimObj.predMZs.length];
+            int index = 0;
+            for (float mz : spectralSimObj.predMZs) {
+                for (int i = 0; i < predMZs.length; i++) {
+                    if (predMZs[i] == mz) {
+                        newFragmentIonTypes[index] = fragmentIonTypes[i];
+                        index += 1;
+                        break;
+                    }
+                }
+            }
+            fragmentIonTypes = newFragmentIonTypes;
         }
 
         for (int i = 0; i < fragmentIonTypes.length; i++) {
             String presentType = fragmentIonTypes[i];
             if (Constants.useMatchedIntensities) {
-                matchedIntensities.put(presentType,
-                        matchedIntensities.get(presentType) +
-                                (spectralSimObj.matchedIntensities[i] / totalmatchedIntensity));
+                if (totalmatchedIntensity == 0f) {
+                    matchedIntensities.put(presentType, 0f);
+                } else {
+                    matchedIntensities.put(presentType,
+                            matchedIntensities.get(presentType) +
+                                    (spectralSimObj.matchedIntensities[i] / totalmatchedIntensity));
+                }
             }
             if (Constants.usePredIntensities) {
                 predIntensities.put(presentType,

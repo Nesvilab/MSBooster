@@ -68,7 +68,7 @@ public class Constants {
     //for limiting number of fragments used
     public static Boolean useSpectra = null;
     public static Boolean useTopFragments = true;
-    public static Integer topFragments = 12;
+    public static Integer topFragments = 30;
     public static Boolean removeRankPeaks = true; //whether to remove peaks from higher ranks
     public static Boolean useBasePeak = true;
     public static Double percentBasePeak = 1d;
@@ -108,6 +108,7 @@ public class Constants {
     public static String ignoredFragmentIonTypes = ""; //split with commas
 
     //PredFull fragment ion annotation
+    //TODO: can only use for PredFull
     public static Boolean useMatchedIntensities = false;
     public static Boolean usePredIntensities = false;
     public static Boolean usePeakCounts = false;

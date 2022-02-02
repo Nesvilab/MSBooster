@@ -110,15 +110,14 @@ public class mzmlScanNumber {
             float predRT = predictionEntry.RT;
             float predIM = predictionEntry.IM;
             String[] fragmentIonTypes = predictionEntry.fragmentIonTypes;
-            MassCalculator massCalculator = predictionEntry.massCalculator;
 
             peptideObj newPepObj;
             if (predMZs.length > 1) {
                 newPepObj = new peptideObj(this, name.baseCharge, rank, targetORdecoy, escore, predMZs,
-                        predIntensities, predRT, predIM, fragmentIonTypes, massCalculator);
+                        predIntensities, predRT, predIM, fragmentIonTypes);
             } else { //only 1 frag to match
                 newPepObj = new peptideObj(this, name.baseCharge, rank, targetORdecoy, escore, zeroFloatArray,
-                        zeroFloatArray, predRT, predIM, fragmentIonTypes, massCalculator);
+                        zeroFloatArray, predRT, predIM, fragmentIonTypes);
             }
             peptideObjects.add(rank - 1, newPepObj);
 
@@ -133,10 +132,17 @@ public class mzmlScanNumber {
         } catch (Exception e) {
             //when peptide isn't in predictions, like unsupported amino acids
             //Set to arbitrary 0 vectors so nothing matches, similarity 0
+            //may need to adapt this if using percolator imputation
             if (name.stripped.contains("U") || name.stripped.contains("O") || name.stripped.contains("X") ||
                     name.stripped.contains("B") || name.stripped.contains("Z") ) {
                 peptideObjects.add(rank - 1, new peptideObj(this, name.baseCharge, rank, targetORdecoy, escore,
-                        zeroFloatArray, zeroFloatArray, 0.0f, null, null, null));
+                        zeroFloatArray, zeroFloatArray, 0.0f, null, null));
+            } else if (name.stripped.length() > 25) { //TODO: update this when longer ones are supported
+                peptideObjects.add(rank - 1, new peptideObj(this, name.baseCharge, rank, targetORdecoy, escore,
+                        zeroFloatArray, zeroFloatArray, 0.0f, null, null));
+            } else if (Integer.parseInt(name.charge) > 6) { //TODO: update this for different tools
+                peptideObjects.add(rank - 1, new peptideObj(this, name.baseCharge, rank, targetORdecoy, escore,
+                        zeroFloatArray, zeroFloatArray, 0.0f, null, null));
             } else {
                 System.out.println("Prediction missing in file for " + name.baseCharge);
                 e.printStackTrace();

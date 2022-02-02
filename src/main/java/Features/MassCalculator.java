@@ -25,7 +25,7 @@ public class MassCalculator {
             "z", "c", "y", "a", "x", "b",
             "precursor", "immonium", "internal", "internal-NL",
             "z-NL", "c-NL", "y-NL", "a-NL", "x-NL", "b-NL",
-            "precursor-NL"));
+            "precursor-NL", "unknown"));
     private void makeFragmentIonHierarchy() { //decided by looking at multiple papers
         if (Constants.FragmentationType.equals("ETD")) {
             fragmentIonHierarchy = new String[] {"z", "c", "y", "a", "x", "b",
@@ -451,29 +451,47 @@ public class MassCalculator {
 
         String[] annotations = new String[fs.length];
         String[] fragmentIonTypes = new String[fs.length];
+
+        //convert to arrays to be faster
+        float[] mzArray = new float[fragmentIons.size()];
+        int k = 0;
+        for (float f : fragmentIons.keySet()) {
+            mzArray[k] = f;
+            k += 1;
+        }
+        String[][] ionsArray = new String[fragmentIons.size()][];
+        k = 0;
+        for (String[] s : fragmentIons.values()) {
+            ionsArray[k] = s;
+            k += 1;
+        }
+
+        int q = 0;
         for (int i = 0; i < fs.length; i++) {
             //for predicted peak, +- Da error tolerance
             float minMZ = fs[i] - Constants.DaTolerance;
             float maxMZ = fs[i] + Constants.DaTolerance;
 
             ArrayList<String[]> consideredFragmentIons = new ArrayList<>();
-            for (Float mz : fragmentIons.keySet()) {
+
+            for (int p = q; p < mzArray.length; p++) {
+                float mz = mzArray[p];
+
                 if (mz >= minMZ) {
                     if (mz <= maxMZ) {
-                        String[] ions = fragmentIons.get(mz);
+                        String[] ions = ionsArray[p];
                         String[] IDs = ions[0].split(";");
                         String[] ionTypes = ions[1].split(";");
 
                         for (int j = 0; j < IDs.length; j++) {
-                            consideredFragmentIons.add(new String[] {IDs[j], ionTypes[j]});
+                            consideredFragmentIons.add(new String[]{IDs[j], ionTypes[j]});
                         }
                     } else {
                         break;
                     }
+                } else { //too low to be matched now
+                    q += 1;
                 }
-//                } else { //too low to be matched now
-//                    fragmentIons.remove(mz);
-//                }
             }
 
             //not able to find match
@@ -507,10 +525,10 @@ public class MassCalculator {
     }
 
     public static void main(String[] args) {
-        MassCalculator mc = new MassCalculator("KPKLSCIKL[14.016]", 2);
+        MassCalculator mc = new MassCalculator("RTGSVVRQK", 3);
         mc.possibleFragmentIons();
         for (Float mz : mc.fragmentIons.keySet()) {
-            System.out.println(mz + "\t" + Arrays.toString(mc.fragmentIons.get(mz)));
+            System.out.println(mz + " " + mc.fragmentIons.get(mz)[1]);
         }
     }
 }

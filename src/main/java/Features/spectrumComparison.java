@@ -184,7 +184,7 @@ public class spectrumComparison {
                 matchedNum += 1;
             }
         } else {
-            for (double mz : predMZs) {
+            for (double mz : predMZs) { //TODO: because fragments besides unknown have correct m/z, is this unnecessary?
                 //see if any experimental peaks in vicinity
                 //double fragmentError = ppm * mz;
                 double fragmentMin = mz - Constants.DaTolerance;

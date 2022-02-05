@@ -9,12 +9,12 @@ import java.util.concurrent.ExecutorService;
 
 public interface SpectralPredictionMapper {
 
-    public HashMap<String, PredictionEntry> getPreds() throws IOException;
-    public void clear();
+    HashMap<String, PredictionEntry> getPreds() throws IOException;
+    void clear();
 
-    public float getMaxPredRT();
+    float getMaxPredRT();
 
-    public static SpectralPredictionMapper createSpectralPredictionMapper(String file, ExecutorService executorService) throws IOException, InterruptedException, ExecutionException, FileParsingException {
+    static SpectralPredictionMapper createSpectralPredictionMapper(String file, ExecutorService executorService) throws IOException, InterruptedException, ExecutionException, FileParsingException {
         //detecting file extension
         String[] extensionSplit = file.split("\\.");
         String extension = extensionSplit[extensionSplit.length - 1];

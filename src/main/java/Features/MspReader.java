@@ -136,6 +136,21 @@ public class MspReader implements SpectralPredictionMapper {
                     if (! pf.base.equals(lineSplit2[0])) {
                         //get predictionEntry
                         PredictionEntry tmp = allPreds.get(pf.baseCharge);
+
+                        if (tmp == null) { //valid reasons to be empty
+                            if ((pf.stripped.length() > 20)) {
+                                continue;
+                            }
+                            if (pf.stripped.contains("O") || pf.stripped.contains("U") ||
+                                    pf.stripped.contains("Z") || pf.stripped.contains("B") ||
+                                    pf.stripped.contains("X")) {
+                                continue;
+                            }
+                            if (Integer.parseInt(pf.charge) > 6) {
+                                continue;
+                            }
+                        }
+
                         MassCalculator mc = new MassCalculator(lineSplit2[0], lineSplit2[1]);
                         float[] newMZs = new float[tmp.mzs.length];
                         for (int i = 0; i < newMZs.length; i++) {

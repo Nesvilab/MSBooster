@@ -7,7 +7,6 @@ public class PredictionEntry {
     int[] flags;
     int[] charges;
     String[] fragmentIonTypes;
-    MassCalculator massCalculator;
     float RT;
     float IM;
     float detectability;

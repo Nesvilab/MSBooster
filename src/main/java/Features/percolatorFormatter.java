@@ -57,14 +57,70 @@ public class percolatorFormatter {
 
         //load predicted spectra
         SpectralPredictionMapper predictedSpectra = null;
+        SpectralPredictionMapper predictedSpectra2 = null; //first is prosit/diann, second predfull
 
         //Special preparations dependent on features we require
         //only time this isn't needed is detect
         //could consider an mgf constant
         if (mgf != null) {
-            System.out.println("Loading predicted spectra");
-            predictedSpectra = SpectralPredictionMapper.createSpectralPredictionMapper(mgf, executorService);
             needsMGF = true;
+            String[] mgfSplit = mgf.split(",");
+
+            if (mgfSplit.length == 1) {
+                System.out.println("Loading predicted spectra");
+                predictedSpectra = SpectralPredictionMapper.createSpectralPredictionMapper(mgf, executorService);
+            } else if (mgfSplit.length == 2){ //if fragment from predfull is not y/b, add
+                System.out.println("Loading predicted spectra 1");
+                predictedSpectra = SpectralPredictionMapper.createSpectralPredictionMapper(mgfSplit[0], executorService);
+                System.out.println("Loading predicted spectra 2");
+                predictedSpectra2 = SpectralPredictionMapper.createSpectralPredictionMapper(mgfSplit[1], executorService);
+                System.out.println("Merging spectral libraries");
+
+                for (Map.Entry<String, PredictionEntry> entry : predictedSpectra2.getPreds().entrySet()) {
+                    if (entry.getValue().fragmentIonTypes == null) { //something with base modifications that is never actually queried
+                        predictedSpectra.getPreds().remove(entry.getKey());
+                        continue;
+                    }
+                    PredictionEntry pe = predictedSpectra.getPreds().get(entry.getKey());
+                    if (pe == null) { //missing in prosit/diann
+                        predictedSpectra.getPreds().put(entry.getKey(), entry.getValue());
+                    } else { //add non-y/b ions
+                        ArrayList<Float> mzs = new ArrayList<>();
+                        ArrayList<Float> intensities = new ArrayList<>();
+
+                        //add original peaks
+                        for (float mz : pe.mzs) {
+                            mzs.add(mz);
+                        }
+                        for (float intensity : pe.intensities) {
+                            intensities.add(intensity);
+                        }
+
+                        //add new peaks
+                        PredictionEntry pe2 = entry.getValue();
+                        for (int i = 0; i < pe2.fragmentIonTypes.length; i++) {
+                            if (!pe2.fragmentIonTypes[i].equals("y") &&
+                                    !pe2.fragmentIonTypes[i].equals("b")) {
+                                mzs.add(pe2.mzs[i]);
+                                intensities.add(pe2.intensities[i] / 1000); //TODO: make into model max
+                            }
+                        }
+
+                        //convert back to array
+                        float[] mzArray = new float[mzs.size()];
+                        float[] intArray = new float[intensities.size()];
+                        for (int i = 0; i < mzArray.length; i++) {
+                            mzArray[i] = mzs.get(i);
+                            intArray[i] = intensities.get(i);
+                        }
+
+                        pe.setMzs(mzArray);
+                        pe.setIntensities(intArray);
+                        predictedSpectra.getPreds().put(entry.getKey(), pe);
+                    }
+                }
+                predictedSpectra2 = null; //free up memory
+            }
         }
         //create detectMap to store detectabilities for base sequence peptides
         //store peptide detectabilities in PredictionEntry

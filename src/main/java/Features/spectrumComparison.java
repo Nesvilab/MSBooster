@@ -18,25 +18,12 @@ public class spectrumComparison {
     float[] matchedIntensities;
     float[] unitNormMatchedIntensities;
     float[] unitNormPredIntensities;
+    float[] sum1MatchedIntensities;
+    float[] sum1PredIntensities;
     LinkedHashSet<Integer> matchedIdx = new LinkedHashSet<Integer>();
     private static ArrayList<Float> tmpMZs = new ArrayList<Float>();
     private static ArrayList<Float> tmpInts = new ArrayList<Float>();
     private static PearsonsCorrelation pc = new PearsonsCorrelation();
-
-//    public spectrumComparison(float[] eMZs, float[] eIntensities,
-//                              float[] pMZs, float[] pIntensities) {
-//        int[] sortedIndices = IntStream.range(0, pMZs.length)
-//                .boxed().sorted((k, j) -> Float.compare(pMZs[k], pMZs[j]))
-//                .mapToInt(ele -> ele).toArray();
-//        predMZs = new float[pMZs.length];
-//        predIntensities = new float[pIntensities.length];
-//        for (int i = 0; i < sortedIndices.length; i++) {
-//            predMZs[i] = pMZs[sortedIndices[i]];
-//            predIntensities[i] = pIntensities[sortedIndices[i]];
-//        }
-//
-//        matchedIntensities = this.getMatchedIntensities(eMZs, eIntensities);
-//    }
 
     public spectrumComparison(float[] eMZs, float[] eIntensities,
                               float[] pMZs, float[] pIntensities,
@@ -239,10 +226,10 @@ public class spectrumComparison {
         return weights;
     }
 
-    private static float[] subNormalize(float[] vector) { //change back to private
+    private static float[] unitNormalize(float[] vector) {
         //if size 1
         if (vector.length == 1) {
-            return vector;
+            return new float[]{1};
         }
 
         //if we wish to normalize to unit vector
@@ -264,23 +251,39 @@ public class spectrumComparison {
         return newVector;
     }
 
-    public void unitNormalize() { //only use after filtering
-        unitNormPredIntensities = subNormalize(predIntensities);
-        unitNormMatchedIntensities = subNormalize(matchedIntensities);
+    public void unitNormalizeIntensities() { //only use after filtering
+        unitNormPredIntensities = unitNormalize(predIntensities);
+        unitNormMatchedIntensities = unitNormalize(matchedIntensities);
     }
 
-//    public double[] rankIntensities(double[] vector) { //need to adapt for unitNorm vectors too
-//        double[] ranks = new double[vector.length];
-//
-//        double[] sortedVector = vector;
-//        Arrays.sort(sortedVector);
-//
-//        for (int i = 0; i < sortedVector.length; i++) {
-//            ranks[i] = ArrayUtils.indexOf(sortedVector, vector[i]) + 1;
-//        }
-//
-//        return ranks;
-//    }
+    private static float[] oneNormalize(float[] vector) {
+        //if size 1
+        if (vector.length == 1) {
+            return new float[]{1};
+        }
+
+        //if we wish to normalize to unit vector
+        double total = 0;
+        for (double i : vector) {
+            total += i;
+        }
+
+        float[] newVector = new float[vector.length];
+
+        if (total != 0) { //fixes Bray curtis
+            float t = (float) total;
+            for (int i = 0; i < newVector.length; i++) {
+                newVector[i] = vector[i] / t;
+            }
+        }
+
+        return newVector;
+    }
+
+    public void oneNormalizeIntensities() {
+        sum1MatchedIntensities = oneNormalize(matchedIntensities);
+        sum1PredIntensities = oneNormalize(predIntensities);
+    }
 
     public double cosineSimilarity() {
 
@@ -343,7 +346,7 @@ public class spectrumComparison {
 
     public double euclideanDistance() {
         if (unitNormPredIntensities == null) {
-            this.unitNormalize();
+            this.unitNormalizeIntensities();
         }
 
         //max distance between two points in the positive quadrant with unit vectors is sqrt(2)
@@ -366,7 +369,7 @@ public class spectrumComparison {
 
     public double weightedEuclideanDistance(double[] weights) {
         if (unitNormPredIntensities == null) {
-            this.unitNormalize();
+            this.unitNormalizeIntensities();
         }
 
         float floatSum = 0.0f;
@@ -384,8 +387,8 @@ public class spectrumComparison {
                 newNormMatched[i] = (float) weights[i] * unitNormMatchedIntensities[i];
             }
 
-            newNormPred = subNormalize(newNormPred);
-            newNormMatched = subNormalize(newNormMatched);
+            newNormPred = unitNormalize(newNormPred);
+            newNormMatched = unitNormalize(newNormMatched);
 
             //now just do euclidean distance
             double numSum = 0;
@@ -400,7 +403,7 @@ public class spectrumComparison {
 
     public double brayCurtis() {
         if (unitNormPredIntensities == null) {
-            this.unitNormalize();
+            this.unitNormalizeIntensities();
         }
 
         //check if no matched peaks
@@ -426,7 +429,7 @@ public class spectrumComparison {
 
     public double weightedBrayCurtis(double[] weights) {
         if (unitNormPredIntensities == null) {
-            this.unitNormalize();
+            this.unitNormalizeIntensities();
         }
 
         //check if no matched peaks
@@ -476,7 +479,7 @@ public class spectrumComparison {
 
     public double dotProduct() {
         if (unitNormPredIntensities == null) {
-            this.unitNormalize();
+            this.unitNormalizeIntensities();
         }
 
         boolean nonzero = false;
@@ -526,86 +529,28 @@ public class spectrumComparison {
         }
     }
 
-    //https://stackoverflow.com/questions/4240080/generating-all-permutations-of-a-given-string
-//    private ArrayList<Double> calculateShuffledExpectScore(String similarityMeasure) throws NoSuchMethodException,
-//            IllegalAccessException, InvocationTargetException {
-//
-//        //specifically use filtered version, otherwise permutation will take forever
-//        spectrumComparison filteredSpec = new spectrumComparison(this, true);
-//        double trueSim = filteredSpec.getSimilarity(similarityMeasure);
-//
-//        float[] newPredInts = filteredSpec.predIntensities;
-//        ArrayList<Double> shuffledExpectations = new ArrayList<>();
-//        shuffledExpectations.add(trueSim); //first element in arraylist is the original
-//
-//        //sole purpose of this class is to create permuted expectation scores
-//        class permutation {
-//            permutation(float[] added, float[] remaining) throws NoSuchMethodException, IllegalAccessException,
-//                    InvocationTargetException {
-//                int n = remaining.length;
-//                if (n == 0) {
-//                    //calculate similarity and add to list
-//                    //no longer need to filter, since we want to use matched intensities and unitNorm vectors as they are
-//                    spectrumComparison specAngle = new spectrumComparison(filteredSpec);
-//
-//                    //change predicted intensities to shuffled version
-//                    specAngle.predIntensities = added;
-//                    shuffledExpectations.add(specAngle.getSimilarity(similarityMeasure));
-//                } else {
-//                    for (int i = 0; i < n; i++)
-//                        new permutation(ArrayUtils.addAll(added, new float[]{remaining[i]}),
-//                                ArrayUtils.addAll(Arrays.copyOfRange(remaining, 0, i),
-//                                        Arrays.copyOfRange(remaining, i + 1, n)));
-//                }
-//            }
-//        }
-//        //add shuffled expect scores
-//        new permutation(new float[]{}, newPredInts);
-//        return shuffledExpectations;
-//    }
+    private double spectralEntropy(float[] vector) {
+        double entropy = 0;
+        for (float f : vector) {
+            if (f != 0) { //log(0) problematic
+                entropy += (f * Math.log(f));
+            }
+        }
+        return -1 * entropy;
+    }
 
+    public double unweightedSpectralEntropy() { //from https://www.nature.com/articles/s41592-021-01331-z
+        if (sum1PredIntensities == null) {
+            oneNormalizeIntensities();
+        }
 
+        float[] SabVector = new float[sum1PredIntensities.length];
+        for (int i = 0; i < SabVector.length; i++) {
+            SabVector[i] = (sum1PredIntensities[i] + sum1MatchedIntensities[i]) / 2;
+        }
 
-//    public double[] calculateShuffledExpectScore(String similarityMeasure)
-//            throws NoSuchMethodException, IllegalAccessException, InvocationTargetException {
-//        shufflePredIntensities(); //doesn't run if already created
-//
-//        double[] sims = new double[permutations.size()];
-//        for (int i = 0; i < permutations.size(); i++) {
-//            //new instance of object with shuffled intensities
-//            spectrumComparison tmpInstance = new spectrumComparison(predMZs, permutations.get(i), matchedIntensities);
-//            // calculate similarity
-//            sims[i] = tmpInstance.getSimilarity(similarityMeasure);
-//        }
-//
-//        return sims;
-//        //calculate expect score
-//    }
-
-//    public double calculateShuffledExpectScore(String similarityMeasure, double[] mzFreq)
-//            throws NoSuchMethodException, IllegalAccessException, InvocationTargetException {
-//    }
-
-//    public double getSimilarity(String similarityMeasure, double[] mzFreqs)
-//            throws NoSuchMethodException, InvocationTargetException, IllegalAccessException {
-//        boolean useWeights = (similarityMeasure.startsWith("weight"));
-//        if (useWeights) {
-//            Method method = this.getClass().getMethod(similarityMeasure, double[].class);
-//            double[] weights = this.getWeights(mzFreqs);
-//            return (double) method.invoke(this, weights);
-//        } else {
-//            Method method = this.getClass().getMethod(similarityMeasure);
-//            return (double) method.invoke(this);
-//        }
-//    }
-//
-//    public double getSimilarity(String similarityMeasure)
-//            throws NoSuchMethodException, InvocationTargetException, IllegalAccessException {
-//        assert (!similarityMeasure.startsWith("weight"));
-//
-//        Method method = this.getClass().getMethod(similarityMeasure);
-//        return (double) method.invoke(this);
-//    }
+        return 1 - ( (2 * spectralEntropy(SabVector) - spectralEntropy(sum1MatchedIntensities) - spectralEntropy(sum1PredIntensities)) / Math.log(4));
+    }
 
     public static void main(String[] args) throws FileParsingException, IOException {
     }

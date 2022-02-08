@@ -106,6 +106,7 @@ public class Constants {
     public static String NCE = null;
     public static Boolean createPredFileOnly = false;
     public static String ignoredFragmentIonTypes = ""; //split with commas
+    public static String onlyFragmentIonTypes = ""; //split with commas
 
     //PredFull fragment ion annotation
     //TODO: can only use for PredFull
@@ -124,7 +125,7 @@ public class Constants {
 
     //don't currently support weighted similarity features
     public static final HashSet<String> allowedFeatures = new HashSet<>(Arrays.asList(
-            "cosineSimilarity", "spectralContrastAngle", "euclideanDistance", "brayCurtis", "pearsonCorr", "dotProduct",
+            "cosineSimilarity", "spectralContrastAngle", "euclideanDistance", "brayCurtis", "pearsonCorr", "dotProduct", "unweightedSpectralEntropy",
             "deltaRTlinear", "deltaRTbins", "deltaRTLOESS", "RTzscore", "RTprobability", "RTprobabilityUnifPrior", "deltaRTLOESSnormalized",
             "detectFractionGreater", "detectability", "detectSubtractMissing", "detectProtSpearmanDiff",
             "deltaIMLOESS", "deltaIMLOESSnormalized", "IMprobabilityUnifPrior", ""));
@@ -180,6 +181,7 @@ public class Constants {
         map.put("brayCurtis", "bray_curtis");
         map.put("pearsonCorr", "pearson_corr");
         map.put("dotProduct", "dot_product");
+        map.put("unweightedSpectralEntropy", "unweighted_spectral_entropy");
         map.put("deltaRTLOESS", "delta_RT_loess");
         map.put("deltaRTLOESSnormalized", "delta_RT_loess_normalized");
         map.put("RTprobabilityUnifPrior", "RT_probability_unif_prior");

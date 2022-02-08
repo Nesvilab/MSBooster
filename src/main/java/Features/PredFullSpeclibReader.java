@@ -27,7 +27,25 @@ public class PredFullSpeclibReader extends mgfFileReader{
 
         //filter here so don't need to annotate everything
         Set<String> ignoredFragmentIonTypes = new HashSet<>();
-        if (! Constants.ignoredFragmentIonTypes.equals("")) {
+        Set<String> onlyFragmentIonTypes = new HashSet<>();
+        if (! Constants.onlyFragmentIonTypes.equals("")) {
+            String[] commaSplit = Constants.onlyFragmentIonTypes.split(",");
+            for (int i = 0; i < commaSplit.length; i++) {
+                String fragmentIonType = commaSplit[i].trim();
+                if (MassCalculator.allowedFragmentIonTypes.contains(fragmentIonType)) {
+                    onlyFragmentIonTypes.add(fragmentIonType);
+                } else {
+                    System.out.println(fragmentIonType + " is not a supported fragment ion type to include. " +
+                            "Please choose from " + MassCalculator.allowedFragmentIonTypes);
+                    System.exit(-1);
+                }
+            }
+            for (String fragment : MassCalculator.allowedFragmentIonTypes) {
+                if (! onlyFragmentIonTypes.contains(fragment)) {
+                    ignoredFragmentIonTypes.add(fragment);
+                }
+            }
+        } else if (! Constants.ignoredFragmentIonTypes.equals("")) {
             //only filter if not excluding certain fragment ion types
             //check that this is allowed
             String[] commaSplit = Constants.ignoredFragmentIonTypes.split(",");
@@ -91,6 +109,7 @@ public class PredFullSpeclibReader extends mgfFileReader{
             for (int j = 0; j < annotations.length; j++) {
                 //skip fragment ion if of ignored type
                 if (ignoredFragmentIonTypes.contains(fragmentIonTypes[j])) {
+                    index += 1;
                     continue;
                 }
 

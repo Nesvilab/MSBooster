@@ -616,6 +616,9 @@ public class percolatorFormatter {
                             case "dotProduct":
                                 writer.addValue("dot_product", pepObj.spectralSimObj.dotProduct());
                                 break;
+                            case "unweightedSpectralEntropy":
+                                writer.addValue("unweighted_spectral_entropy", pepObj.spectralSimObj.unweightedSpectralEntropy());
+                                break;
                             case "deltaIMLOESS":
                                 writer.addValue("delta_IM_loess", pepObj.deltaIMLOESS);
                                 break;

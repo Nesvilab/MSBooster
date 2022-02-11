@@ -11,6 +11,7 @@ public class PeptideFormatter {
     String prosit;
     String stripped;
     String baseCharge;
+    String dlib;
 
     ArrayList<Integer> starts = new ArrayList<>();
     ArrayList<Integer> ends = new ArrayList<>();
@@ -162,6 +163,9 @@ public class PeptideFormatter {
         prosit = predfull.replace("M(O)", "M(ox)");
     }
 
+    private void strippedTOdlib() { dlib = stripped.replace("C", "C[" + Constants.carbamidomethylationMass + "]") + "|" + charge;
+    }
+
     public PeptideFormatter(String peptide, Object c, String format) {
         charge = (String) c;
 
@@ -171,6 +175,7 @@ public class PeptideFormatter {
             baseTOstripped();
             baseTOpredfull();
             predfullTOprosit();
+            strippedTOdlib();
             baseCharge = base + "|" + charge;
         }
 

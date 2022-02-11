@@ -8,6 +8,7 @@ import umich.ms.fileio.exceptions.FileParsingException;
 
 import java.io.File;
 import java.io.IOException;
+import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -25,7 +26,7 @@ public class percolatorFormatter {
     //baseNames is the part before mzml or pin extensions
     public static void editPin(String pinDirectory, String mzmlDirectory, String mgf, String detectFile,
                                String[] features, String outfile)
-            throws IOException, InterruptedException, ExecutionException, FileParsingException {
+            throws IOException, InterruptedException, ExecutionException, FileParsingException, SQLException {
 
         PinMzmlMatcher pmMatcher = new PinMzmlMatcher(mzmlDirectory, pinDirectory);
 
@@ -33,7 +34,8 @@ public class percolatorFormatter {
     }
 
     public static void editPin(PinMzmlMatcher pmMatcher, String mgf, String detectFile,
-                               String[] features, String outfile) throws IOException, InterruptedException, ExecutionException, FileParsingException {
+                               String[] features, String outfile)
+            throws IOException, InterruptedException, ExecutionException, FileParsingException, SQLException {
         ExecutorService executorService = Executors.newFixedThreadPool(Constants.numThreads);
 
         //defining num threads, in case using this outside of jar file
@@ -820,31 +822,8 @@ public class percolatorFormatter {
         executorService.shutdown();
     }
 
-    public static void main(String[] args) throws IOException, InterruptedException, ExecutionException, FileParsingException {
-        //CHANGE PPM TO 10 if wide, narrow
-
-        //CHANGE PPM TO 20 if cptac
-//        editPin("C:/Users/kevin/Downloads/proteomics/cptac/2021-2-21/pep1XML1tmp/percToPep/CPTAC_CCRCC_W_JHU_LUMOS_C3L-01665_T.pin",
-//                "C:/Users/kevin/OneDriveUmich/proteomics/mzml/cptac/CPTAC_CCRCC_W_JHU_LUMOS_C3L-01665_T.mzML",
-//                "C:/Users/kevin/Downloads/proteomics/cptac/2021-2-21/pep1XML1tmp/percToPep/spectraRT.predicted.bin",
-//                "C:/Users/kevin/Downloads/proteomics/cptac/2021-2-21/pep1XML1tmp/percToPep/detect_Predictions.txt",
-//                ("RTprobabilityUnifPrior,deltaRTLOESS,deltaRTLOESSnormalized").split(","),
-//                "C:/Users/kevin/Downloads/proteomics/cptac/2021-2-21/pep1XML1tmp/percToPep/test_");
-
-//        editPin("C:/Users/kevin/Downloads/proteomics/narrow/",
-//                "C:/Users/kevin/OneDriveUmich/proteomics/mzml/narrowWindow/23aug2017_hela_serum_timecourse_4mz_narrow_6.mzML",
-//                "C:/Users/kevin/Downloads/proteomics/narrow/spectraRT.predicted.bin",
-//                "C:/Users/kevin/Downloads/proteomics/narrow/detect_Predictions.txt",
-//                (Constants.features).split(","),
-//                "C:/Users/kevin/Downloads/proteomics/narrow/edited_");
-//        editPin("C:/Users/kevin/Downloads/proteomics/wide/",
-//                "C:/Users/kevin/OneDriveUmich/proteomics/mzml/wideWindow/23aug2017_hela_serum_timecourse_pool_wide_001.mzML",
-//                "C:/Users/kevin/Downloads/proteomics/wide/spectraRT.predicted.bin",
-//                "C:/Users/kevin/Downloads/proteomics/wide/detect_Predictions.txt",
-//                ("cosineSimilarity,spectralContrastAngle,euclideanDistance,brayCurtis,pearsonCorr,dotProduct," +
-//                        "deltaRTLOESS,deltaRTLOESSnormalized,RTprobabilityUnifPrior," +
-//                        "detectSubtractMissing").split(","),
-//                "C:/Users/kevin/Downloads/proteomics/wide/edited_");
+    public static void main(String[] args)
+            throws IOException, InterruptedException, ExecutionException, FileParsingException, SQLException {
         editPin("C:/Users/yangkl/Downloads/proteomics/timsTOF/20180819_TIMS2_12-2_AnBr_SA_200ng_HeLa_50cm_120min_100ms_11CT_3_A1_01_2769.pin",
                 "C:/Users/yangkl/OneDriveUmich/proteomics/mzml/" +
                         "20180819_TIMS2_12-2_AnBr_SA_200ng_HeLa_50cm_120min_100ms_11CT_3_A1_01_2769_uncalibrated.mgf",

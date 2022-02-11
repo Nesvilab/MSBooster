@@ -549,7 +549,11 @@ public class MainClass {
             for (Field field : f) {
                 if ((field.getModifiers() & Modifier.FINAL) != Modifier.FINAL) {
                     if (!field.getName().equals("paramsList")) {
-                        System.out.println("\t" + field.getName() + " = " + field.get(c));
+                        if (field.getName().equals("fragmentIonHierarchy")) {
+                            System.out.println("\t" + field.getName() + " = " + Arrays.toString((String[]) field.get(c)));
+                        } else {
+                            System.out.println("\t" + field.getName() + " = " + field.get(c));
+                        }
                     }
                 }
             }

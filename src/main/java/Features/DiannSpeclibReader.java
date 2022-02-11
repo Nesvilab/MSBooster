@@ -5,6 +5,7 @@ import umich.ms.fileio.exceptions.FileParsingException;
 import java.io.*;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
+import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.concurrent.ExecutionException;
@@ -177,7 +178,8 @@ public class DiannSpeclibReader implements SpectralPredictionMapper{
         allPreds.clear();
     }
 
-    public static void main(String[] args) throws IOException, InterruptedException, ExecutionException, FileParsingException {
+    public static void main(String[] args)
+            throws IOException, InterruptedException, ExecutionException, FileParsingException, SQLException {
         ExecutorService executorService = Executors.newFixedThreadPool(11);
         SpectralPredictionMapper.createSpectralPredictionMapper("C:/Users/kevin/Downloads/proteomics/spectraRT1.predicted.bin",
                 executorService);

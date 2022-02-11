@@ -1,5 +1,7 @@
 package Features;
 
+import java.util.stream.IntStream;
+
 public class PredictionEntry {
     float[] mzs;
     float[] intensities;
@@ -13,6 +15,25 @@ public class PredictionEntry {
     int counter;
 
     public PredictionEntry() {}
+
+    public PredictionEntry(float[] mzs, float[] intensities, boolean needToSort) {
+        if (needToSort) {
+            this.mzs = new float[mzs.length];
+            this.intensities = new float[intensities.length];
+
+            int[] sortedIndices = IntStream.range(0, mzs.length)
+                    .boxed().sorted((k, j) -> Float.compare(mzs[k], mzs[j]))
+                    .mapToInt(ele -> ele).toArray();
+
+            for (int i = 0; i < sortedIndices.length; i++) {
+                this.mzs[i] = mzs[sortedIndices[i]];
+                this.intensities[i] = intensities[sortedIndices[i]];
+            }
+        } else {
+            setMzs(mzs);
+            setIntensities(intensities);
+        }
+    }
 
     public void setMzs(float[] mzs) {this.mzs = mzs;}
 

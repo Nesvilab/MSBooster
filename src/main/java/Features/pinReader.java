@@ -71,7 +71,7 @@ public class pinReader {
         return new PeptideFormatter(row[pepIdx], periodSplit[periodSplit.length - 1].split("_")[0], "pin");
     }
 
-    public int getTD() {return Math.max(0, Integer.parseInt(row[labelIdx]));}
+    public int getTD() {return Math.max(0, Integer.parseInt(row[labelIdx]));} //just leave as -1?
 
     public int getScanNum() {return Integer.parseInt(row[scanNumIdx]);}
 

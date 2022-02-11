@@ -229,7 +229,7 @@ public class spectrumComparison {
     private static float[] unitNormalize(float[] vector) {
         //if size 1
         if (vector.length == 1) {
-            return new float[]{1};
+            return vector;
         }
 
         //if we wish to normalize to unit vector
@@ -259,7 +259,7 @@ public class spectrumComparison {
     private static float[] oneNormalize(float[] vector) {
         //if size 1
         if (vector.length == 1) {
-            return new float[]{1};
+            return vector;
         }
 
         //if we wish to normalize to unit vector

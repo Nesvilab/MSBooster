@@ -3,6 +3,7 @@ package Features;
 import umich.ms.fileio.exceptions.FileParsingException;
 
 import java.io.*;
+import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.concurrent.ExecutionException;
@@ -189,7 +190,8 @@ public class MspReader implements SpectralPredictionMapper {
         allPreds.clear();
     }
 
-    public static void main(String[] args) throws IOException, InterruptedException, ExecutionException, FileParsingException {
+    public static void main(String[] args)
+            throws IOException, InterruptedException, ExecutionException, FileParsingException, SQLException {
         //MspReader m = new MspReader("C:/Users/kevin/Downloads/proteomics/newHLA/msfragger3.5rc9/myPrositLib31.msp");
         ExecutorService executorService = Executors.newFixedThreadPool(11);
         SpectralPredictionMapper spm = SpectralPredictionMapper.createSpectralPredictionMapper(

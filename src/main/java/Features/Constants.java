@@ -47,10 +47,7 @@ public class Constants {
     //locations of executables and other models
     public static Integer numThreads = 0;
     public static String DiaNN = null; //C:/DIA-NN/1.7.15beta1/DiaNN.exe
-    public static String spectraRTPredModel = "DIA-NN"; //mgf, bin, msp
-                                                        //pDeep3, DIA-NN, Prosit
-                                                        //DIANN by default
-                                                        //currently don't support changing this
+    public static String spectraRTPredModel = "DIA-NN";
 
     ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
     //miscellaneous inner workings
@@ -68,9 +65,9 @@ public class Constants {
     //for limiting number of fragments used
     public static Boolean useSpectra = null;
     public static Boolean useTopFragments = true;
-    public static Integer topFragments = 30;
+    public static Integer topFragments = 12;
     public static Boolean removeRankPeaks = true; //whether to remove peaks from higher ranks
-    public static Boolean useBasePeak = true;
+    public static Boolean useBasePeak = false;
     public static Double percentBasePeak = 1d;
 
     public static final Integer fineTuneSize = 100; //for generating a finetune file for pDeep3
@@ -102,11 +99,75 @@ public class Constants {
     public static final Float IMIQR = 50f;
 
     //support for PredFull and Prosit
-    public static String FragmentationType = null;
-    public static String NCE = null;
+    public static String FragmentationType = "HCD";
+    public static String NCE = "30";
     public static Boolean createPredFileOnly = false;
     public static String ignoredFragmentIonTypes = ""; //split with commas
     public static String onlyFragmentIonTypes = ""; //split with commas
+    static Set<String> ignoredFragmentIonTypesSet = makeIgnoredFragmentIonTypes();
+    private static Set<String> makeIgnoredFragmentIonTypes() {
+        Set<String> ignoredFragmentIonTypes = new HashSet<>();
+        Set<String> onlyFragmentIonTypes = new HashSet<>();
+        if (! Constants.onlyFragmentIonTypes.equals("")) {
+            String[] commaSplit = Constants.onlyFragmentIonTypes.split(",");
+            for (int i = 0; i < commaSplit.length; i++) {
+                String fragmentIonType = commaSplit[i].trim();
+                if (MassCalculator.allowedFragmentIonTypes.contains(fragmentIonType)) {
+                    onlyFragmentIonTypes.add(fragmentIonType);
+                } else {
+                    System.out.println(fragmentIonType + " is not a supported fragment ion type to include. " +
+                            "Please choose from " + MassCalculator.allowedFragmentIonTypes);
+                    System.exit(-1);
+                }
+            }
+            for (String fragment : MassCalculator.allowedFragmentIonTypes) {
+                if (! onlyFragmentIonTypes.contains(fragment)) {
+                    ignoredFragmentIonTypes.add(fragment);
+                }
+            }
+        } else if (! Constants.ignoredFragmentIonTypes.equals("")) {
+            //only filter if not excluding certain fragment ion types
+            //check that this is allowed
+            String[] commaSplit = Constants.ignoredFragmentIonTypes.split(",");
+            for (int i = 0; i < commaSplit.length; i++) {
+                String fragmentIonType = commaSplit[i].trim();
+                if (MassCalculator.allowedFragmentIonTypes.contains(fragmentIonType)) {
+                    ignoredFragmentIonTypes.add(fragmentIonType);
+                } else {
+                    System.out.println(fragmentIonType + " is not a supported fragment ion type to exclude. " +
+                            "Please choose from " + MassCalculator.allowedFragmentIonTypes);
+                    System.exit(-1);
+                }
+            }
+        }
+        return ignoredFragmentIonTypes;
+    }
+    public static String[] fragmentIonHierarchy = makeFragmentIonHierarchy();
+    private static String[] makeFragmentIonHierarchy() { //decided by looking at multiple papers
+        if (Constants.FragmentationType.equals("ETD")) {
+            return new String[] {"z", "c", "y", "a", "x", "b",
+                    "precursor", "immonium", "internal", "internal-NL",
+                    "z-NL", "c-NL", "y-NL", "a-NL", "x-NL", "b-NL",
+                    "precursor-NL"};
+        } else { //HCD, CID, or not specified
+            return new String[] {"y", "b", "a", "c", "x", "z",
+                    "precursor", "immonium", "internal", "internal-NL",
+                    "y-NL", "b-NL", "a-NL", "c-NL", "x-NL", "z-NL",
+                    "precursor-NL"};
+        }
+    }
+    public static Set<String> lowestFragmentIonType = makeLowestFragmentIonType();
+    private static Set<String> makeLowestFragmentIonType() {
+        int index = 0;
+        for (int i = fragmentIonHierarchy.length - 1; i > -1; i--) {
+            String ion = fragmentIonHierarchy[i];
+            if (! Constants.ignoredFragmentIonTypesSet.contains(ion)) {
+                index = i;
+                break;
+            }
+        }
+        return new HashSet<>(Arrays.asList(fragmentIonHierarchy).subList(0, index + 1));
+    }
 
     //PredFull fragment ion annotation
     //TODO: can only use for PredFull
@@ -119,8 +180,7 @@ public class Constants {
     //use single string sep by comma delimiter
     //should include parameter to calculate correlation and then choose
     //default auto, everything, or all? Or a combination I figure out empirically
-    public static String features = "brayCurtis,pearsonCorr,dotProduct," +
-            "deltaRTLOESS,deltaRTLOESSnormalized,RTprobabilityUnifPrior";
+    public static String features = "brayCurtis,deltaRTLOESS";
     //public static String features = "auto";
 
     //don't currently support weighted similarity features

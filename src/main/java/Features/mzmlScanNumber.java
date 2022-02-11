@@ -88,7 +88,7 @@ public class mzmlScanNumber {
                     expIntensities = ArrayUtils.remove(expIntensities, i);
                 }
             }
-        } catch (Exception e) {
+        } catch (Exception e) { //TODO: percolator imputation
             //when peptide isn't in predictions, like unsupported amino acids
             //Set to arbitrary 0 vectors so nothing matches, similarity 0
             //may need to adapt this if using percolator imputation
@@ -103,9 +103,15 @@ public class mzmlScanNumber {
                 peptideObjects.add(rank - 1, new peptideObj(this, name.baseCharge, rank, targetORdecoy, escore,
                         zeroFloatArray, zeroFloatArray, 0.0f, null, null));
             } else {
-                System.out.println("Prediction missing in file for " + name.baseCharge);
-                e.printStackTrace();
-                System.exit(-1);
+                String[] periodSplit = Constants.spectraRTPredFile.split("\\.");
+                if (periodSplit[periodSplit.length - 1].equals("dlib")) { //won't always include every entry
+                    peptideObjects.add(rank - 1, new peptideObj(this, name.baseCharge, rank, targetORdecoy, escore,
+                            zeroFloatArray, zeroFloatArray, 0.0f, null, null));
+                } else {
+                    System.out.println("Prediction missing in file for " + name.baseCharge);
+                    e.printStackTrace();
+                    System.exit(-1);
+                }
             }
         }
     }

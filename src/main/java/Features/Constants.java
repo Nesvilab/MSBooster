@@ -68,7 +68,8 @@ public class Constants {
     public static Integer topFragments = 12;
     public static Boolean removeRankPeaks = true; //whether to remove peaks from higher ranks
     public static Boolean useBasePeak = false;
-    public static Double percentBasePeak = 1d;
+    public static Float percentBasePeak = 5f;
+    public static Float percentBasePeakExperimental = 5f;
 
     public static final Integer fineTuneSize = 100; //for generating a finetune file for pDeep3
 
@@ -79,7 +80,7 @@ public class Constants {
     public static Float RTescoreCutoff = (float) Math.pow(10, -3.5); //PSMs with e score higher than this won't make it into RT regression modeling
     public static Integer RTbinMultiplier = 1;
     public static Float RTIQR = 50f;
-    public static boolean noRTscores = false;
+    public static boolean noRTscores = false; //TODO: better handling of this
 
     //LOESS
     public static Double bandwidth = 0.05;
@@ -156,7 +157,7 @@ public class Constants {
                     "precursor-NL"};
         }
     }
-    public static Set<String> lowestFragmentIonType = makeLowestFragmentIonType();
+    public static final Set<String> lowestFragmentIonType = makeLowestFragmentIonType();
     private static Set<String> makeLowestFragmentIonType() {
         int index = 0;
         for (int i = fragmentIonHierarchy.length - 1; i > -1; i--) {
@@ -172,7 +173,7 @@ public class Constants {
     //PredFull fragment ion annotation
     //TODO: can only use for PredFull
     public static Boolean useMatchedIntensities = false;
-    public static Boolean usePredIntensities = false;
+    //public static Boolean usePredIntensities = false;
     public static Boolean usePeakCounts = false;
 
     ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -184,11 +185,6 @@ public class Constants {
     //public static String features = "auto";
 
     //don't currently support weighted similarity features
-    public static final HashSet<String> allowedFeatures = new HashSet<>(Arrays.asList(
-            "cosineSimilarity", "spectralContrastAngle", "euclideanDistance", "brayCurtis", "pearsonCorr", "dotProduct", "unweightedSpectralEntropy",
-            "deltaRTlinear", "deltaRTbins", "deltaRTLOESS", "RTzscore", "RTprobability", "RTprobabilityUnifPrior", "deltaRTLOESSnormalized",
-            "detectFractionGreater", "detectability", "detectSubtractMissing", "detectProtSpearmanDiff",
-            "deltaIMLOESS", "deltaIMLOESSnormalized", "IMprobabilityUnifPrior", ""));
     public static final HashSet<String> detectFeatures =
             new HashSet<>(Arrays.asList("detectFractionGreater", "detectability", "detectSubtractMissing", "detectProtSpearmanDiff"));
     public static final HashSet<String> spectraRTFeatures = new HashSet<>(Arrays.asList(
@@ -214,14 +210,6 @@ public class Constants {
         }
         return set;
     }
-    public static final HashSet<String> predIntensitiesFeatures = makePredIntensitiesFeatures();
-    private static HashSet<String> makePredIntensitiesFeatures() {
-        HashSet<String> set = new HashSet<>();
-        for (String s : MassCalculator.allowedFragmentIonTypes) {
-            set.add(s + "_pred_intensity");
-        }
-        return set;
-    }
     public static final HashSet<String> peakCountsFeatures = makePeakCountsFeatures();
     private static HashSet<String> makePeakCountsFeatures() {
         HashSet<String> set = new HashSet<>();
@@ -230,6 +218,17 @@ public class Constants {
         }
         return set;
     }
+    public static final HashSet<String> allowedFeatures = makeAllowedFeatures();
+    private static HashSet<String> makeAllowedFeatures() {
+        HashSet<String> hs = new HashSet<>();
+        hs.add("");
+        hs.addAll(spectraRTFeatures);
+        hs.addAll(imFeatures);
+        hs.addAll(matchedIntensitiesFeatures);
+        hs.addAll(peakCountsFeatures);
+        return hs;
+    }
+
 
     //TODO: got lazy with naming, remove this and adjust code
     public static final HashMap<String, String> camelToUnderscore = makeCamelToUnderscore();
@@ -300,7 +299,11 @@ public class Constants {
             editedPin = "edited";
         }
         if (spectraRTPredInput == null) {
-            spectraRTPredInput = outputDirectory + File.separator + "spectraRT.tsv";
+            if (Constants.spectraRTPredModel.equals("Prosit")) {
+                spectraRTPredInput = outputDirectory + File.separator + "spectraRT.csv";
+            } else {
+                spectraRTPredInput = outputDirectory + File.separator + "spectraRT.tsv";
+            }
         }
         if (detectPredInput == null) {
             detectPredInput = outputDirectory + File.separator + "detect.tsv";

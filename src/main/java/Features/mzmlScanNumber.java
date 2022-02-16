@@ -14,7 +14,7 @@ import static Features.floatUtils.doubleToFloat;
 
 public class mzmlScanNumber {
     final int scanNum;
-    private float[] expMZs; //made private so don't accidentally access it, given that it may change
+    private float[] expMZs;
     private float[] expIntensities;
     float RT;
     int RTbinSize;
@@ -68,15 +68,14 @@ public class mzmlScanNumber {
             float[] predIntensities = predictionEntry.intensities;
             float predRT = predictionEntry.RT;
             float predIM = predictionEntry.IM;
-            String[] fragmentIonTypes = predictionEntry.fragmentIonTypes;
 
             peptideObj newPepObj;
             if (predMZs.length > 1) {
                 newPepObj = new peptideObj(this, name.baseCharge, rank, targetORdecoy, escore, predMZs,
-                        predIntensities, predRT, predIM, fragmentIonTypes);
+                        predIntensities, predRT, predIM);
             } else { //only 1 frag to match
                 newPepObj = new peptideObj(this, name.baseCharge, rank, targetORdecoy, escore, zeroFloatArray,
-                        zeroFloatArray, predRT, predIM, fragmentIonTypes);
+                        zeroFloatArray, predRT, predIM);
             }
             peptideObjects.add(rank - 1, newPepObj);
 
@@ -95,18 +94,18 @@ public class mzmlScanNumber {
             if (name.stripped.contains("U") || name.stripped.contains("O") || name.stripped.contains("X") ||
                     name.stripped.contains("B") || name.stripped.contains("Z") ) {
                 peptideObjects.add(rank - 1, new peptideObj(this, name.baseCharge, rank, targetORdecoy, escore,
-                        zeroFloatArray, zeroFloatArray, 0.0f, null, null));
-            } else if (name.stripped.length() > 20) { //TODO: update this when longer ones are supported
+                        zeroFloatArray, zeroFloatArray, 0.0f, null));
+            } else if (name.stripped.length() > 15) { //TODO: update this when longer ones are supported
                 peptideObjects.add(rank - 1, new peptideObj(this, name.baseCharge, rank, targetORdecoy, escore,
-                        zeroFloatArray, zeroFloatArray, 0.0f, null, null));
+                        zeroFloatArray, zeroFloatArray, 0.0f, null));
             } else if (Integer.parseInt(name.charge) > 6) { //TODO: update this for different tools
                 peptideObjects.add(rank - 1, new peptideObj(this, name.baseCharge, rank, targetORdecoy, escore,
-                        zeroFloatArray, zeroFloatArray, 0.0f, null, null));
+                        zeroFloatArray, zeroFloatArray, 0.0f, null));
             } else {
                 String[] periodSplit = Constants.spectraRTPredFile.split("\\.");
                 if (periodSplit[periodSplit.length - 1].equals("dlib")) { //won't always include every entry
                     peptideObjects.add(rank - 1, new peptideObj(this, name.baseCharge, rank, targetORdecoy, escore,
-                            zeroFloatArray, zeroFloatArray, 0.0f, null, null));
+                            zeroFloatArray, zeroFloatArray, 0.0f, null));
                 } else {
                     System.out.println("Prediction missing in file for " + name.baseCharge);
                     e.printStackTrace();

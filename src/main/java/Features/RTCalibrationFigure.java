@@ -47,7 +47,8 @@ public class RTCalibrationFigure {
             for (int i = 1; i < scanNumObj.peptideObjects.size() + 1; i++) {
                 peptideObj pep = scanNumObj.getPeptideObject(i);
                 //only get best ones
-                if (Float.parseFloat(pep.escore) < Constants.RTescoreCutoff && pep.targetORdecoy == 1) {
+                if (Float.parseFloat(pep.escore) < Constants.RTescoreCutoff && pep.targetORdecoy == 1 &&
+                pep.spectralSimObj.predMZs[0] != 0f) {
                     xData.add(rt);
                     yData.add(pep.RT);
                 } else {

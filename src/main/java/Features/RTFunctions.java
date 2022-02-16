@@ -67,6 +67,9 @@ public class RTFunctions {
             if (pep.targetORdecoy == 0) {
                 continue;
             }
+            if (pep.spectralSimObj.predMZs[0] == 0f) { //what it is set to if no entry
+                continue;
+            }
             float e = Float.parseFloat(pep.escore);
             if (e > Constants.RTescoreCutoff) {
                 continue;

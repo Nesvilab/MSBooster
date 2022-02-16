@@ -181,7 +181,8 @@ public class DiannSpeclibReader implements SpectralPredictionMapper{
     public static void main(String[] args)
             throws IOException, InterruptedException, ExecutionException, FileParsingException, SQLException {
         ExecutorService executorService = Executors.newFixedThreadPool(11);
-        SpectralPredictionMapper.createSpectralPredictionMapper("C:/Users/kevin/Downloads/proteomics/spectraRT1.predicted.bin",
+        SpectralPredictionMapper.createSpectralPredictionMapper("C:/Users/kevin/Downloads/proteomics/" +
+                        "newHLA/msfragger3.5rc9/spectraRT.predicted.bin",
                 executorService);
         executorService.shutdown();
     }

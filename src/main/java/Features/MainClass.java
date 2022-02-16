@@ -10,7 +10,7 @@ import java.util.*;
 //this is what I use in the java jar file
 public class MainClass {
     public static void main(String[] args) throws Exception {
-        System.out.println("MSBooster v1.3");
+        System.out.println("MSBooster v1.1");
         try {
             //accept command line inputs
             HashSet<String> fields = new HashSet<>();
@@ -350,19 +350,19 @@ public class MainClass {
                     }
                 }
             } catch (Exception ignored) {}
-            try {
-                if (Constants.usePredIntensities) {
-                    Set<String> intersection = new HashSet<>(featureLL);
-                    intersection.retainAll(Constants.predIntensitiesFeatures);
-                    if (intersection.size() == 0) {
-                        featureLL.addAll(Constants.predIntensitiesFeatures);
-                    }
-                } else {
-                    for (String feature : Constants.predIntensitiesFeatures) {
-                        featureLL.remove(feature);
-                    }
-                }
-            } catch (Exception ignored) {}
+//            try {
+//                if (Constants.usePredIntensities) {
+//                    Set<String> intersection = new HashSet<>(featureLL);
+//                    intersection.retainAll(Constants.predIntensitiesFeatures);
+//                    if (intersection.size() == 0) {
+//                        featureLL.addAll(Constants.predIntensitiesFeatures);
+//                    }
+//                } else {
+//                    for (String feature : Constants.predIntensitiesFeatures) {
+//                        featureLL.remove(feature);
+//                    }
+//                }
+//            } catch (Exception ignored) {}
             try {
                 if (Constants.usePeakCounts) {
                     Set<String> intersection = new HashSet<>(featureLL);

@@ -80,7 +80,7 @@ public class spectrumComparison {
         }
     }
 
-    public void filterIntensitiesByValue(double min) {
+    public void filterIntensitiesByValue(float min) {
         tmpMZs.clear();
         tmpInts.clear();
 
@@ -102,7 +102,7 @@ public class spectrumComparison {
         }
     }
 
-    public void filterIntensitiesByPercentage(double percentage) { //should be < 100
+    public void filterIntensitiesByPercentage(float percentage) { //should be < 100
         if (percentage > 100) {
             System.out.println("percentBasePeak must be <= 100 but is set to " + Constants.percentBasePeak);
             System.exit(-1);
@@ -116,7 +116,7 @@ public class spectrumComparison {
             }
 
             //make cutoff by percentage
-            double cutoff = maxIntensity * percentage / 100d;
+            float cutoff = maxIntensity * percentage / 100f;
             filterIntensitiesByValue(cutoff);
         }
     }

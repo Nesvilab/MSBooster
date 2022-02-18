@@ -75,7 +75,8 @@ public class percolatorFormatter {
                 predictedSpectra2 = SpectralPredictionMapper.createSpectralPredictionMapper(mgfSplit[1], executorService);
                 System.out.println("Merging spectral libraries");
 
-                for (Map.Entry<String, PredictionEntry> entry : predictedSpectra2.getPreds().entrySet()) {
+                HashMap<String, PredictionEntry> preds2 = predictedSpectra2.getPreds();
+                for (Map.Entry<String, PredictionEntry> entry : preds2.entrySet()) {
                     if (entry.getValue().fragmentIonTypes == null) { //something with base modifications that is never actually queried
                         predictedSpectra.getPreds().remove(entry.getKey());
                         continue;
@@ -118,6 +119,8 @@ public class percolatorFormatter {
                         pe.setMzs(mzArray);
                         pe.setIntensities(intArray);
                         predictedSpectra.getPreds().put(entry.getKey(), pe);
+
+                        preds2.put(entry.getKey(), null);
                     }
                 }
                 predictedSpectra2 = null; //free up memory

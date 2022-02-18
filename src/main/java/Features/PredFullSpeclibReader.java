@@ -26,7 +26,7 @@ public class PredFullSpeclibReader extends mgfFileReader{
         String l;
 
         //filter here so don't need to annotate everything
-
+        Set<String> ignoredFragmentIonTypesSet = Constants.makeIgnoredFragmentIonTypes();
         while ((l = TSVReader.readLine()) != null) {
             //doing fragment annotation for everything, not just modified ones
             //start shifting and annotating
@@ -73,7 +73,7 @@ public class PredFullSpeclibReader extends mgfFileReader{
             ArrayList<String> finalFragmentIonTypes = new ArrayList<>();
             for (int j = 0; j < annotations.length; j++) {
                 //skip fragment ion if of ignored type
-                if (Constants.ignoredFragmentIonTypesSet.contains(fragmentIonTypes[j])) {
+                if (ignoredFragmentIonTypesSet.contains(fragmentIonTypes[j])) {
                     index += 1;
                     continue;
                 }

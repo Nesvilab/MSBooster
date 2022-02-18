@@ -105,8 +105,7 @@ public class Constants {
     public static Boolean createPredFileOnly = false;
     public static String ignoredFragmentIonTypes = ""; //split with commas
     public static String onlyFragmentIonTypes = ""; //split with commas
-    static Set<String> ignoredFragmentIonTypesSet = makeIgnoredFragmentIonTypes();
-    private static Set<String> makeIgnoredFragmentIonTypes() {
+    public static Set<String> makeIgnoredFragmentIonTypes() {
         Set<String> ignoredFragmentIonTypes = new HashSet<>();
         Set<String> onlyFragmentIonTypes = new HashSet<>();
         if (! Constants.onlyFragmentIonTypes.equals("")) {
@@ -159,10 +158,11 @@ public class Constants {
     }
     public static final Set<String> lowestFragmentIonType = makeLowestFragmentIonType();
     private static Set<String> makeLowestFragmentIonType() {
+        Set<String> ignoredFragmentIonTypesSet = makeIgnoredFragmentIonTypes();
         int index = 0;
         for (int i = fragmentIonHierarchy.length - 1; i > -1; i--) {
             String ion = fragmentIonHierarchy[i];
-            if (! Constants.ignoredFragmentIonTypesSet.contains(ion)) {
+            if (! ignoredFragmentIonTypesSet.contains(ion)) {
                 index = i;
                 break;
             }

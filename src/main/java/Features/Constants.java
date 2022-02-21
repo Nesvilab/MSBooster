@@ -182,6 +182,7 @@ public class Constants {
     //should include parameter to calculate correlation and then choose
     //default auto, everything, or all? Or a combination I figure out empirically
     public static String features = "brayCurtis,deltaRTLOESS";
+    public static Boolean useMultipleCorrelatedFeatures = false;
     //public static String features = "auto";
 
     //don't currently support weighted similarity features
@@ -190,11 +191,12 @@ public class Constants {
     public static final HashSet<String> spectraRTFeatures = new HashSet<>(Arrays.asList(
             "cosineSimilarity", "weightedCosineSimilarity", "spectralContrastAngle", "weightedSpectralContrastAngle",
             "euclideanDistance", "weightedEuclideanDistance", "brayCurtis", "weightedBrayCurtis",
-            "pearsonCorr", "weightedPearsonCorr", "dotProduct", "weightedDotProduct",
-            "deltaRTlinear", "deltaRTbins", "deltaRTLOESS", "RTzscore", "RTprobability", "RTprobabilityUnifPrior"));
+            "pearsonCorr", "weightedPearsonCorr", "dotProduct", "weightedDotProduct", "unweightedSpectralEntropy",
+            "deltaRTlinear", "deltaRTbins", "deltaRTLOESS", "RTzscore", "RTprobability", "RTprobabilityUnifPrior",
+            "deltaRTLOESSnormalized"));
     public static final HashSet<String> spectraFeatures = new HashSet<>(Arrays.asList(
             "cosineSimilarity", "weightedCosineSimilarity", "spectralContrastAngle", "weightedSpectralContrastAngle",
-            "euclideanDistance", "weightedEuclideanDistance", "brayCurtis", "weightedBrayCurtis",
+            "euclideanDistance", "weightedEuclideanDistance", "brayCurtis", "weightedBrayCurtis", "unweightedSpectralEntropy",
             "pearsonCorr", "weightedPearsonCorr", "dotProduct", "weightedDotProduct"));
     public static final HashSet<String> rtFeatures = new HashSet<>(Arrays.asList(
             "deltaRTlinear", "deltaRTbins", "deltaRTLOESS", "RTzscore", "RTprobability", "RTprobabilityUnifPrior",

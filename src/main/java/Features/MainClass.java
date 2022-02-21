@@ -271,6 +271,10 @@ public class MainClass {
             }
 
             //check that features are allowed
+            if (Constants.useMultipleCorrelatedFeatures) {
+                Constants.features = "brayCurtis,pearsonCorr,dotProduct,unweightedSpectralEntropy," +
+                        "deltaRTLOESS,deltaRTLOESSnormalized,RTprobabilityUnifPrior";
+            }
             String[] featuresArray = Constants.features.split(",");
             for (String f : featuresArray) {
                 if (!Constants.allowedFeatures.contains(f.trim())) {

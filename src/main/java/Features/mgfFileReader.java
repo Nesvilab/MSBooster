@@ -372,11 +372,8 @@ public class mgfFileReader implements SpectralPredictionMapper{
         Constants.numThreads = 11;
         ExecutorService executorService = Executors.newFixedThreadPool(Constants.numThreads);
         long startTime = System.nanoTime();
-        mgfFileReader mgf = new mgfFileReader("C:/Users/kevin/Downloads/proteomics/newHLA/" +
-                "PredFull.predicted.mgf", false,
+        mgfFileReader mgf = new mgfFileReader("C:/Users/kevin/Downloads/proteomics/File_2.mgf", true,
                 executorService);
-        System.out.println(mgf.allPreds.containsKey("YATCTVPSEH|2+"));
-        System.out.println(mgf.allPreds.containsKey("IDGTM(O)IAIF|1+"));
         long endTime = System.nanoTime();
         long duration = (endTime - startTime);
         System.out.println("loading took " + duration / 1000000 +" milliseconds");

@@ -14,7 +14,6 @@ public class PredFullSpeclibReader extends mgfFileReader{
             throws InterruptedException, ExecutionException, FileParsingException, IOException {
         //initially start with mgf reading
         super(file, createScanNumObjects, executorService);
-
         //also need to add to allPreds the peptides with PTMs not supported by PredFull
         //this requires that mgf file name has same prefix as full input file
         String fullFile = file.substring(0, file.length() - 4) + "_full.tsv";
@@ -54,7 +53,6 @@ public class PredFullSpeclibReader extends mgfFileReader{
 
             //for each fragment ion, see if it can be annotated
             MassCalculator mc = new MassCalculator(peptideToSearch.base, peptideToSearch.charge);
-
             //annotate ion
             //any calculated annotated fragment is considered
             String[][] info = mc.annotateMZs(pe.mzs);

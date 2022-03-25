@@ -24,6 +24,7 @@ public class peptideObj {
     double IMprob;
 
     HashMap<String, Float> matchedIntensities = makeBaseMap();
+    HashMap<String, Float> predIntensities = makeBaseMap();
     HashMap<String, Float> peakCounts = makeBaseMap();
 
     spectrumComparison spectralSimObj;
@@ -41,7 +42,7 @@ public class peptideObj {
                 predMZs, predIntensities, Constants.useTopFragments, Constants.useBasePeak);
         this.RT = predRT;
         this.IM = predIM;
-        if (Constants.useMatchedIntensities || Constants.usePeakCounts) {
+        if (Constants.useMatchedIntensities || Constants.usePeakCounts || Constants.usePredIntensities) {
             makeFragmentAnnotationFeatures();
         }
     }
@@ -95,6 +96,20 @@ public class peptideObj {
             if (Constants.usePeakCounts) {
                 peakCounts.put(presentType,
                         peakCounts.get(presentType) + (1f / totalPeaks));
+            }
+        }
+
+        if (Constants.usePredIntensities) {
+            float totalPredIntensity = 0f;
+            for (float f : spectralSimObj.predIntensities) {
+                totalPredIntensity += f;
+            }
+
+            fragmentIonTypes = mc.annotateMZs(spectralSimObj.predMZs)[1];
+            for (int i = 0; i < fragmentIonTypes.length; i++) {
+                String presentType = fragmentIonTypes[i];
+                predIntensities.put(presentType,
+                        predIntensities.get(presentType) + (spectralSimObj.predIntensities[i] / totalPredIntensity));
             }
         }
     }

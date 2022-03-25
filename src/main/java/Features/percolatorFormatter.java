@@ -688,6 +688,60 @@ public class percolatorFormatter {
                             case "unknown_matched_intensity":
                                 writer.addValue("unknown_matched_intensity", pepObj.matchedIntensities.get("unknown"));
                                 break;
+                            case "y_pred_intensity":
+                                writer.addValue("y_pred_intensity", pepObj.predIntensities.get("y"));
+                                break;
+                            case "b_pred_intensity":
+                                writer.addValue("b_pred_intensity", pepObj.predIntensities.get("b"));
+                                break;
+                            case "a_pred_intensity":
+                                writer.addValue("a_pred_intensity", pepObj.predIntensities.get("a"));
+                                break;
+                            case "x_pred_intensity":
+                                writer.addValue("x_pred_intensity", pepObj.predIntensities.get("x"));
+                                break;
+                            case "c_pred_intensity":
+                                writer.addValue("c_pred_intensity", pepObj.predIntensities.get("c"));
+                                break;
+                            case "z_pred_intensity":
+                                writer.addValue("z_pred_intensity", pepObj.predIntensities.get("z"));
+                                break;
+                            case "y-NL_pred_intensity":
+                                writer.addValue("y-NL_pred_intensity", pepObj.predIntensities.get("y-NL"));
+                                break;
+                            case "b-NL_pred_intensity":
+                                writer.addValue("b-NL_pred_intensity", pepObj.predIntensities.get("b-NL"));
+                                break;
+                            case "a-NL_pred_intensity":
+                                writer.addValue("a-NL_pred_intensity", pepObj.predIntensities.get("a-NL"));
+                                break;
+                            case "x-NL_pred_intensity":
+                                writer.addValue("x-NL_pred_intensity", pepObj.predIntensities.get("x-NL"));
+                                break;
+                            case "c-NL_pred_intensity":
+                                writer.addValue("c-NL_pred_intensity", pepObj.predIntensities.get("c-NL"));
+                                break;
+                            case "z-NL_pred_intensity":
+                                writer.addValue("z-NL_pred_intensity", pepObj.predIntensities.get("z-NL"));
+                                break;
+                            case "precursor_pred_intensity":
+                                writer.addValue("precursor_pred_intensity", pepObj.predIntensities.get("precursor"));
+                                break;
+                            case "precursor-NL_pred_intensity":
+                                writer.addValue("precursor-NL_pred_intensity", pepObj.predIntensities.get("precursor-NL"));
+                                break;
+                            case "internal_pred_intensity":
+                                writer.addValue("internal_pred_intensity", pepObj.predIntensities.get("internal"));
+                                break;
+                            case "internal-NL_pred_intensity":
+                                writer.addValue("internal-NL_pred_intensity", pepObj.predIntensities.get("internal-NL"));
+                                break;
+                            case "immonium_pred_intensity":
+                                writer.addValue("immonium_pred_intensity", pepObj.predIntensities.get("immonium"));
+                                break;
+                            case "unknown_pred_intensity":
+                                writer.addValue("unknown_pred_intensity", pepObj.predIntensities.get("unknown"));
+                                break;
                             case "y_peak_counts":
                                 writer.addValue("y_peak_counts", pepObj.peakCounts.get("y"));
                                 break;

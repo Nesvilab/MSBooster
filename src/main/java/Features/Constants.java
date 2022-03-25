@@ -173,7 +173,7 @@ public class Constants {
     //PredFull fragment ion annotation
     //TODO: can only use for PredFull
     public static Boolean useMatchedIntensities = false;
-    //public static Boolean usePredIntensities = false;
+    public static Boolean usePredIntensities = false;
     public static Boolean usePeakCounts = false;
 
     ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -181,7 +181,7 @@ public class Constants {
     //use single string sep by comma delimiter
     //should include parameter to calculate correlation and then choose
     //default auto, everything, or all? Or a combination I figure out empirically
-    public static String features = "brayCurtis,deltaRTLOESS";
+    public static String features = "unweightedSpectralEntropy,deltaRTLOESS";
     public static Boolean useMultipleCorrelatedFeatures = false;
     //public static String features = "auto";
 
@@ -220,6 +220,14 @@ public class Constants {
         }
         return set;
     }
+    public static final HashSet<String> predIntensitiesFeatures = makePredIntensitiesFeatures();
+    private static HashSet<String> makePredIntensitiesFeatures() {
+        HashSet<String> set = new HashSet<>();
+        for (String s : MassCalculator.allowedFragmentIonTypes) {
+            set.add(s + "_pred_intensity");
+        }
+        return set;
+    }
     public static final HashSet<String> allowedFeatures = makeAllowedFeatures();
     private static HashSet<String> makeAllowedFeatures() {
         HashSet<String> hs = new HashSet<>();
@@ -227,6 +235,7 @@ public class Constants {
         hs.addAll(spectraRTFeatures);
         hs.addAll(imFeatures);
         hs.addAll(matchedIntensitiesFeatures);
+        hs.addAll(predIntensitiesFeatures);
         hs.addAll(peakCountsFeatures);
         return hs;
     }

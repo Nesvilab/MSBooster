@@ -354,19 +354,19 @@ public class MainClass {
                     }
                 }
             } catch (Exception ignored) {}
-//            try {
-//                if (Constants.usePredIntensities) {
-//                    Set<String> intersection = new HashSet<>(featureLL);
-//                    intersection.retainAll(Constants.predIntensitiesFeatures);
-//                    if (intersection.size() == 0) {
-//                        featureLL.addAll(Constants.predIntensitiesFeatures);
-//                    }
-//                } else {
-//                    for (String feature : Constants.predIntensitiesFeatures) {
-//                        featureLL.remove(feature);
-//                    }
-//                }
-//            } catch (Exception ignored) {}
+            try {
+                if (Constants.usePredIntensities) {
+                    Set<String> intersection = new HashSet<>(featureLL);
+                    intersection.retainAll(Constants.predIntensitiesFeatures);
+                    if (intersection.size() == 0) {
+                        featureLL.addAll(Constants.predIntensitiesFeatures);
+                    }
+                } else {
+                    for (String feature : Constants.predIntensitiesFeatures) {
+                        featureLL.remove(feature);
+                    }
+                }
+            } catch (Exception ignored) {}
             try {
                 if (Constants.usePeakCounts) {
                     Set<String> intersection = new HashSet<>(featureLL);
@@ -410,7 +410,6 @@ public class MainClass {
             boolean createDetectPredFile2 = false;
 
             //check which ones we need
-            featureLL.retainAll(Constants.spectraRTFeatures);
             if (featureLL.size() > 0) {
                 createSpectraRTPredFile = true;
                 createSpectraRTPredFile2 = true;
@@ -438,7 +437,7 @@ public class MainClass {
             //get matched pin files for mzML files
             PinMzmlMatcher pmMatcher = new PinMzmlMatcher(Constants.mzmlDirectory, Constants.pinPepXMLDirectory);
             //TODO: switch case
-            if (createSpectraRTPredFile) {
+            if (createSpectraRTPredFile || Constants.createPredFileOnly) {
                 if (Constants.spectraRTPredModel.equals("DIA-NN")) {
                     if (Constants.DiaNN == null) {
                         throw new IllegalArgumentException("path to DIA-NN executable must be provided");

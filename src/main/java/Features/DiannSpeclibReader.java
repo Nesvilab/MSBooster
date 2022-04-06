@@ -8,6 +8,7 @@ import java.nio.ByteOrder;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.Map;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -121,6 +122,7 @@ public class DiannSpeclibReader implements SpectralPredictionMapper{
                 }
                 TSVReader.close();
 
+                //comment the next section out if doing if for TMT alignment
                 //repeat this process with full peptides
                 textFile = bFile.substring(0, splitDot - 1) + "_full.tsv";
                 TSVReader = new BufferedReader(new FileReader(textFile));
@@ -181,9 +183,20 @@ public class DiannSpeclibReader implements SpectralPredictionMapper{
     public static void main(String[] args)
             throws IOException, InterruptedException, ExecutionException, FileParsingException, SQLException {
         ExecutorService executorService = Executors.newFixedThreadPool(11);
-        SpectralPredictionMapper.createSpectralPredictionMapper("C:/Users/kevin/Downloads/proteomics/" +
-                        "newHLA/msfragger3.5rc9/spectraRT.predicted.bin",
+        SpectralPredictionMapper spm = SpectralPredictionMapper.createSpectralPredictionMapper("C:/Users/yangkl/Downloads/proteomics/" +
+                        "TMTvadim/unlabeledPeptides.predicted.bin",
                 executorService);
         executorService.shutdown();
+        HashMap<String, PredictionEntry> preds = spm.getPreds();
+        BufferedWriter writer = new BufferedWriter(new FileWriter("C:/Users/yangkl/Downloads/proteomics/TMTvadim/unlabeledPeptides_iRT.tsv"));
+        writer.write("modified_peptide" + "\t" + "precursor_charge" + "\t" + "irt" + "\n");
+        for (Map.Entry<String, PredictionEntry> entry : preds.entrySet()) {
+            String peptide = entry.getKey();
+            peptide = peptide.replace("|1", "").replace("[57.0215]", "(UniMod:4)").
+                    replace("[15.9949]", "(UniMod:35)").replace("[42.0106]", ".(UniMod:1)");
+            float iRT = entry.getValue().RT;
+            writer.write(peptide + "\t" + "" + "\t" + iRT + "\n");
+        }
+        writer.close();
     }
 }

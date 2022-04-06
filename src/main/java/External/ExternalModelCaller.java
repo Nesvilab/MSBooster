@@ -30,7 +30,8 @@ public class ExternalModelCaller {
                     //print DIA-NN output while running
                     String line = null;
                     while ((line = reader.readLine()) != null) {
-                        System.out.println(line);
+                        System.out.println(line); //wait for the last line to print instead of using waitfor?
+                        //also check if readline gives null at some point
                     }
 
                     Constants.spectraRTPredFile =

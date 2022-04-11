@@ -10,7 +10,7 @@ import java.util.*;
 //this is what I use in the java jar file
 public class MainClass {
     public static void main(String[] args) throws Exception {
-        System.out.println("MSBooster v1.1");
+        System.out.println("MSBooster v1.1.1");
         try {
             //accept command line inputs
             HashSet<String> fields = new HashSet<>();

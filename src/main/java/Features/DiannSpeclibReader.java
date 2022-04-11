@@ -183,20 +183,24 @@ public class DiannSpeclibReader implements SpectralPredictionMapper{
     public static void main(String[] args)
             throws IOException, InterruptedException, ExecutionException, FileParsingException, SQLException {
         ExecutorService executorService = Executors.newFixedThreadPool(11);
-        SpectralPredictionMapper spm = SpectralPredictionMapper.createSpectralPredictionMapper("C:/Users/yangkl/Downloads/proteomics/" +
-                        "TMTvadim/unlabeledPeptides.predicted.bin",
+        SpectralPredictionMapper spm = SpectralPredictionMapper.createSpectralPredictionMapper("C:/Users/kevin/Downloads/proteomics/" +
+                        "spectraRTubiq.predicted.bin",
                 executorService);
         executorService.shutdown();
         HashMap<String, PredictionEntry> preds = spm.getPreds();
-        BufferedWriter writer = new BufferedWriter(new FileWriter("C:/Users/yangkl/Downloads/proteomics/TMTvadim/unlabeledPeptides_iRT.tsv"));
-        writer.write("modified_peptide" + "\t" + "precursor_charge" + "\t" + "irt" + "\n");
-        for (Map.Entry<String, PredictionEntry> entry : preds.entrySet()) {
-            String peptide = entry.getKey();
-            peptide = peptide.replace("|1", "").replace("[57.0215]", "(UniMod:4)").
-                    replace("[15.9949]", "(UniMod:35)").replace("[42.0106]", ".(UniMod:1)");
-            float iRT = entry.getValue().RT;
-            writer.write(peptide + "\t" + "" + "\t" + iRT + "\n");
-        }
-        writer.close();
+        System.out.println(preds.get("PEPTIDEK[114.042927]|2").IM);
+        System.out.println(preds.get("PEPTIDEK|2").IM);
+        System.out.println(preds.get("PEPTIDEK[114.042927]|2").RT);
+        System.out.println(preds.get("PEPTIDEK|2").RT);
+//        BufferedWriter writer = new BufferedWriter(new FileWriter("C:/Users/yangkl/Downloads/proteomics/TMTvadim/unlabeledPeptides_iRT.tsv"));
+//        writer.write("modified_peptide" + "\t" + "precursor_charge" + "\t" + "irt" + "\n");
+//        for (Map.Entry<String, PredictionEntry> entry : preds.entrySet()) {
+//            String peptide = entry.getKey();
+//            peptide = peptide.replace("|1", "").replace("[57.0215]", "(UniMod:4)").
+//                    replace("[15.9949]", "(UniMod:35)").replace("[42.0106]", ".(UniMod:1)");
+//            float iRT = entry.getValue().RT;
+//            writer.write(peptide + "\t" + "" + "\t" + iRT + "\n");
+//        }
+//        writer.close();
     }
 }

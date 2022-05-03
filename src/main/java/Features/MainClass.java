@@ -10,7 +10,7 @@ import java.util.*;
 //this is what I use in the java jar file
 public class MainClass {
     public static void main(String[] args) throws Exception {
-        System.out.println("MSBooster v1.1.1");
+        System.out.println("MSBooster v1.1.4");
         try {
             //accept command line inputs
             HashSet<String> fields = new HashSet<>();
@@ -354,19 +354,19 @@ public class MainClass {
                     }
                 }
             } catch (Exception ignored) {}
-            try {
-                if (Constants.usePredIntensities) {
-                    Set<String> intersection = new HashSet<>(featureLL);
-                    intersection.retainAll(Constants.predIntensitiesFeatures);
-                    if (intersection.size() == 0) {
-                        featureLL.addAll(Constants.predIntensitiesFeatures);
-                    }
-                } else {
-                    for (String feature : Constants.predIntensitiesFeatures) {
-                        featureLL.remove(feature);
-                    }
-                }
-            } catch (Exception ignored) {}
+//            try {
+//                if (Constants.usePredIntensities) {
+//                    Set<String> intersection = new HashSet<>(featureLL);
+//                    intersection.retainAll(Constants.predIntensitiesFeatures);
+//                    if (intersection.size() == 0) {
+//                        featureLL.addAll(Constants.predIntensitiesFeatures);
+//                    }
+//                } else {
+//                    for (String feature : Constants.predIntensitiesFeatures) {
+//                        featureLL.remove(feature);
+//                    }
+//                }
+//            } catch (Exception ignored) {}
             try {
                 if (Constants.usePeakCounts) {
                     Set<String> intersection = new HashSet<>(featureLL);
@@ -378,6 +378,41 @@ public class MainClass {
                     for (String feature : Constants.peakCountsFeatures) {
                         featureLL.remove(feature);
                     }
+                }
+            } catch (Exception ignored) {}
+            try {
+                if (Constants.useIndividualSpectralSimilarities) {
+                    Set<String> intersection = new HashSet<>(featureLL);
+                    intersection.retainAll(Constants.individualSpectralSimilaritiesFeatures);
+                    if (intersection.size() == 0) {
+                        featureLL.addAll(Constants.individualSpectralSimilaritiesFeatures);
+                    }
+                } else {
+                    for (String feature : Constants.individualSpectralSimilaritiesFeatures) {
+                        featureLL.remove(feature);
+                    }
+                }
+            } catch (Exception ignored) {}
+            try {
+                if (Constants.useIntensitiesDifference) {
+                    Set<String> intersection = new HashSet<>(featureLL);
+                    intersection.retainAll(Constants.intensitiesDifferenceFeatures);
+                    if (intersection.size() == 0) {
+                        featureLL.addAll(Constants.intensitiesDifferenceFeatures);
+                    }
+                } else {
+                    for (String feature : Constants.intensitiesDifferenceFeatures) {
+                        featureLL.remove(feature);
+                    }
+                }
+            } catch (Exception ignored) {}
+            try {
+                if (Constants.useIntensityDistributionSimilarity) {
+                    if (! featureLL.contains("intensity_distribution_similarity")) {
+                        featureLL.add("intensity_distribution_similarity");
+                    }
+                } else {
+                    featureLL.remove("intensity_distribution_similarity");
                 }
             } catch (Exception ignored) {}
 

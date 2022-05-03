@@ -23,6 +23,7 @@ public class Constants {
     public static String spectraRTPredFile = null; //use this if predFile already made
     public static String detectPredFile = null;
     public static Boolean deletePreds = true;
+    public static Integer predictionTimeLimit = 120;
 
     //optional file locations and parameters
     //if calculating detectFractionGreater, these are used for FastaReader class
@@ -65,11 +66,11 @@ public class Constants {
     //for limiting number of fragments used
     public static Boolean useSpectra = null;
     public static Boolean useTopFragments = true;
-    public static Integer topFragments = 12;
+    public static Integer topFragments = 20;
     public static Boolean removeRankPeaks = true; //whether to remove peaks from higher ranks
-    public static Boolean useBasePeak = false;
-    public static Float percentBasePeak = 5f;
-    public static Float percentBasePeakExperimental = 5f;
+    public static Boolean useBasePeak = true;
+    public static Float percentBasePeak = 1f;
+    //public static Float percentBasePeakExperimental = 1f;
 
     public static final Integer fineTuneSize = 100; //for generating a finetune file for pDeep3
 
@@ -143,17 +144,15 @@ public class Constants {
         return ignoredFragmentIonTypes;
     }
     public static String[] fragmentIonHierarchy = makeFragmentIonHierarchy();
-    private static String[] makeFragmentIonHierarchy() { //decided by looking at multiple papers
+    private static String[] makeFragmentIonHierarchy() {
         if (Constants.FragmentationType.equals("ETD")) {
             return new String[] {"z", "c", "y", "a", "x", "b",
                     "precursor", "immonium", "internal", "internal-NL",
                     "z-NL", "c-NL", "y-NL", "a-NL", "x-NL", "b-NL",
                     "precursor-NL"};
         } else { //HCD, CID, or not specified
-            return new String[] {"y", "b", "a", "c", "x", "z",
-                    "precursor", "immonium", "internal", "internal-NL",
-                    "y-NL", "b-NL", "a-NL", "c-NL", "x-NL", "z-NL",
-                    "precursor-NL"};
+            return new String[] {"immonium", "y", "b", "a",
+                    "y-NL", "b-NL", "a-NL", "internal", "internal-NL", "unknown"};
         }
     }
     public static final Set<String> lowestFragmentIonType = makeLowestFragmentIonType();
@@ -175,6 +174,9 @@ public class Constants {
     public static Boolean useMatchedIntensities = false;
     public static Boolean usePredIntensities = false;
     public static Boolean usePeakCounts = false;
+    public static Boolean useIndividualSpectralSimilarities = false;
+    public static Boolean useIntensitiesDifference = false;
+    public static Boolean useIntensityDistributionSimilarity = false;
 
     ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -207,7 +209,7 @@ public class Constants {
     public static final HashSet<String> matchedIntensitiesFeatures = makeMatchedIntensitiesFeatures();
     private static HashSet<String> makeMatchedIntensitiesFeatures() {
         HashSet<String> set = new HashSet<>();
-        for (String s : MassCalculator.allowedFragmentIonTypes) {
+        for (String s : Constants.fragmentIonHierarchy) {
             set.add(s + "_matched_intensity");
         }
         return set;
@@ -215,7 +217,7 @@ public class Constants {
     public static final HashSet<String> peakCountsFeatures = makePeakCountsFeatures();
     private static HashSet<String> makePeakCountsFeatures() {
         HashSet<String> set = new HashSet<>();
-        for (String s : MassCalculator.allowedFragmentIonTypes) {
+        for (String s : Constants.fragmentIonHierarchy) {
             set.add(s + "_peak_counts");
         }
         return set;
@@ -223,8 +225,24 @@ public class Constants {
     public static final HashSet<String> predIntensitiesFeatures = makePredIntensitiesFeatures();
     private static HashSet<String> makePredIntensitiesFeatures() {
         HashSet<String> set = new HashSet<>();
-        for (String s : MassCalculator.allowedFragmentIonTypes) {
+        for (String s : Constants.fragmentIonHierarchy) {
             set.add(s + "_pred_intensity");
+        }
+        return set;
+    }
+    public static final HashSet<String> individualSpectralSimilaritiesFeatures = makeIndividualSpectralSimilarities();
+    private static HashSet<String> makeIndividualSpectralSimilarities() {
+        HashSet<String> set = new HashSet<>();
+        for (String s : Constants.fragmentIonHierarchy) {
+            set.add(s + "_spectral_similarity");
+        }
+        return set;
+    }
+    public static final HashSet<String> intensitiesDifferenceFeatures = makeintensitiesDifference();
+    private static HashSet<String> makeintensitiesDifference() {
+        HashSet<String> set = new HashSet<>();
+        for (String s : Constants.fragmentIonHierarchy) {
+            set.add(s + "_intensities_difference");
         }
         return set;
     }
@@ -237,6 +255,9 @@ public class Constants {
         hs.addAll(matchedIntensitiesFeatures);
         hs.addAll(predIntensitiesFeatures);
         hs.addAll(peakCountsFeatures);
+        hs.addAll(individualSpectralSimilaritiesFeatures);
+        hs.addAll(intensitiesDifferenceFeatures);
+        hs.add("intensity_distribution_similarity");
         return hs;
     }
 

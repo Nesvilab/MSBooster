@@ -3,6 +3,7 @@ package Features;
 import com.univocity.parsers.tsv.TsvWriter;
 import com.univocity.parsers.tsv.TsvWriterSettings;
 import org.apache.commons.lang3.ArrayUtils;
+import org.apache.commons.math3.stat.correlation.PearsonsCorrelation;
 import org.apache.commons.math3.stat.correlation.SpearmansCorrelation;
 import umich.ms.fileio.exceptions.FileParsingException;
 
@@ -688,59 +689,59 @@ public class percolatorFormatter {
                             case "unknown_matched_intensity":
                                 writer.addValue("unknown_matched_intensity", pepObj.matchedIntensities.get("unknown"));
                                 break;
-                            case "y_pred_intensity":
-                                writer.addValue("y_pred_intensity", pepObj.predIntensities.get("y"));
+                            case "y_intensities_difference":
+                                writer.addValue("y_intensities_difference", pepObj.intensitiesDifference.get("y"));
                                 break;
-                            case "b_pred_intensity":
-                                writer.addValue("b_pred_intensity", pepObj.predIntensities.get("b"));
+                            case "b_intensities_difference":
+                                writer.addValue("b_intensities_difference", pepObj.intensitiesDifference.get("b"));
                                 break;
-                            case "a_pred_intensity":
-                                writer.addValue("a_pred_intensity", pepObj.predIntensities.get("a"));
+                            case "a_intensities_difference":
+                                writer.addValue("a_intensities_difference", pepObj.intensitiesDifference.get("a"));
                                 break;
-                            case "x_pred_intensity":
-                                writer.addValue("x_pred_intensity", pepObj.predIntensities.get("x"));
+                            case "x_intensities_difference":
+                                writer.addValue("x_intensities_difference", pepObj.intensitiesDifference.get("x"));
                                 break;
-                            case "c_pred_intensity":
-                                writer.addValue("c_pred_intensity", pepObj.predIntensities.get("c"));
+                            case "c_intensities_difference":
+                                writer.addValue("c_intensities_difference", pepObj.intensitiesDifference.get("c"));
                                 break;
-                            case "z_pred_intensity":
-                                writer.addValue("z_pred_intensity", pepObj.predIntensities.get("z"));
+                            case "z_intensities_difference":
+                                writer.addValue("z_intensities_difference", pepObj.intensitiesDifference.get("z"));
                                 break;
-                            case "y-NL_pred_intensity":
-                                writer.addValue("y-NL_pred_intensity", pepObj.predIntensities.get("y-NL"));
+                            case "y-NL_intensities_difference":
+                                writer.addValue("y-NL_intensities_difference", pepObj.intensitiesDifference.get("y-NL"));
                                 break;
-                            case "b-NL_pred_intensity":
-                                writer.addValue("b-NL_pred_intensity", pepObj.predIntensities.get("b-NL"));
+                            case "b-NL_intensities_difference":
+                                writer.addValue("b-NL_intensities_difference", pepObj.intensitiesDifference.get("b-NL"));
                                 break;
-                            case "a-NL_pred_intensity":
-                                writer.addValue("a-NL_pred_intensity", pepObj.predIntensities.get("a-NL"));
+                            case "a-NL_intensities_difference":
+                                writer.addValue("a-NL_intensities_difference", pepObj.intensitiesDifference.get("a-NL"));
                                 break;
-                            case "x-NL_pred_intensity":
-                                writer.addValue("x-NL_pred_intensity", pepObj.predIntensities.get("x-NL"));
+                            case "x-NL_intensities_difference":
+                                writer.addValue("x-NL_intensities_difference", pepObj.intensitiesDifference.get("x-NL"));
                                 break;
-                            case "c-NL_pred_intensity":
-                                writer.addValue("c-NL_pred_intensity", pepObj.predIntensities.get("c-NL"));
+                            case "c-NL_intensities_difference":
+                                writer.addValue("c-NL_intensities_difference", pepObj.intensitiesDifference.get("c-NL"));
                                 break;
-                            case "z-NL_pred_intensity":
-                                writer.addValue("z-NL_pred_intensity", pepObj.predIntensities.get("z-NL"));
+                            case "z-NL_intensities_difference":
+                                writer.addValue("z-NL_intensities_difference", pepObj.intensitiesDifference.get("z-NL"));
                                 break;
-                            case "precursor_pred_intensity":
-                                writer.addValue("precursor_pred_intensity", pepObj.predIntensities.get("precursor"));
+                            case "precursor_intensities_difference":
+                                writer.addValue("precursor_intensities_difference", pepObj.intensitiesDifference.get("precursor"));
                                 break;
-                            case "precursor-NL_pred_intensity":
-                                writer.addValue("precursor-NL_pred_intensity", pepObj.predIntensities.get("precursor-NL"));
+                            case "precursor-NL_intensities_difference":
+                                writer.addValue("precursor-NL_intensities_difference", pepObj.intensitiesDifference.get("precursor-NL"));
                                 break;
-                            case "internal_pred_intensity":
-                                writer.addValue("internal_pred_intensity", pepObj.predIntensities.get("internal"));
+                            case "internal_intensities_difference":
+                                writer.addValue("internal_intensities_difference", pepObj.intensitiesDifference.get("internal"));
                                 break;
-                            case "internal-NL_pred_intensity":
-                                writer.addValue("internal-NL_pred_intensity", pepObj.predIntensities.get("internal-NL"));
+                            case "internal-NL_intensities_difference":
+                                writer.addValue("internal-NL_intensities_difference", pepObj.intensitiesDifference.get("internal-NL"));
                                 break;
-                            case "immonium_pred_intensity":
-                                writer.addValue("immonium_pred_intensity", pepObj.predIntensities.get("immonium"));
+                            case "immonium_intensities_difference":
+                                writer.addValue("immonium_intensities_difference", pepObj.intensitiesDifference.get("immonium"));
                                 break;
-                            case "unknown_pred_intensity":
-                                writer.addValue("unknown_pred_intensity", pepObj.predIntensities.get("unknown"));
+                            case "unknown_intensities_difference":
+                                writer.addValue("unknown_intensities_difference", pepObj.intensitiesDifference.get("unknown"));
                                 break;
                             case "y_peak_counts":
                                 writer.addValue("y_peak_counts", pepObj.peakCounts.get("y"));
@@ -795,6 +796,75 @@ public class percolatorFormatter {
                                 break;
                             case "unknown_peak_counts":
                                 writer.addValue("unknown_peak_counts", pepObj.peakCounts.get("unknown"));
+                                break;
+                            case "y_spectral_similarity":
+                                writer.addValue("y_spectral_similarity", pepObj.individualSpectralSimilarities.get("y"));
+                                break;
+                            case "b_spectral_similarity":
+                                writer.addValue("b_spectral_similarity", pepObj.individualSpectralSimilarities.get("b"));
+                                break;
+                            case "a_spectral_similarity":
+                                writer.addValue("a_spectral_similarity", pepObj.individualSpectralSimilarities.get("a"));
+                                break;
+                            case "x_spectral_similarity":
+                                writer.addValue("x_spectral_similarity", pepObj.individualSpectralSimilarities.get("x"));
+                                break;
+                            case "c_spectral_similarity":
+                                writer.addValue("c_spectral_similarity", pepObj.individualSpectralSimilarities.get("c"));
+                                break;
+                            case "z_spectral_similarity":
+                                writer.addValue("z_spectral_similarity", pepObj.individualSpectralSimilarities.get("z"));
+                                break;
+                            case "y-NL_spectral_similarity":
+                                writer.addValue("y-NL_spectral_similarity", pepObj.individualSpectralSimilarities.get("y-NL"));
+                                break;
+                            case "b-NL_spectral_similarity":
+                                writer.addValue("b-NL_spectral_similarity", pepObj.individualSpectralSimilarities.get("b-NL"));
+                                break;
+                            case "a-NL_spectral_similarity":
+                                writer.addValue("a-NL_spectral_similarity", pepObj.individualSpectralSimilarities.get("a-NL"));
+                                break;
+                            case "x-NL_spectral_similarity":
+                                writer.addValue("x-NL_spectral_similarity", pepObj.individualSpectralSimilarities.get("x-NL"));
+                                break;
+                            case "c-NL_spectral_similarity":
+                                writer.addValue("c-NL_spectral_similarity", pepObj.individualSpectralSimilarities.get("c-NL"));
+                                break;
+                            case "z-NL_spectral_similarity":
+                                writer.addValue("z-NL_spectral_similarity", pepObj.individualSpectralSimilarities.get("z-NL"));
+                                break;
+                            case "precursor_spectral_similarity":
+                                writer.addValue("precursor_spectral_similarity", pepObj.individualSpectralSimilarities.get("precursor"));
+                                break;
+                            case "precursor-NL_spectral_similarity":
+                                writer.addValue("precursor-NL_spectral_similarity", pepObj.individualSpectralSimilarities.get("precursor-NL"));
+                                break;
+                            case "internal_spectral_similarity":
+                                writer.addValue("internal_spectral_similarity", pepObj.individualSpectralSimilarities.get("internal"));
+                                break;
+                            case "internal-NL_spectral_similarity":
+                                writer.addValue("internal-NL_spectral_similarity", pepObj.individualSpectralSimilarities.get("internal-NL"));
+                                break;
+                            case "immonium_spectral_similarity":
+                                writer.addValue("immonium_spectral_similarity", pepObj.individualSpectralSimilarities.get("immonium"));
+                                break;
+                            case "unknown_spectral_similarity":
+                                writer.addValue("unknown_spectral_similarity", pepObj.individualSpectralSimilarities.get("unknown"));
+                                break;
+                            case "intensity_distribution_similarity":
+                                //unknown should be at the end
+                                float[] predIntensities = new float[Constants.fragmentIonHierarchy.length - 1];
+                                float[] expIntensities = new float[Constants.fragmentIonHierarchy.length - 1];
+                                for (int j = 0; j < Constants.fragmentIonHierarchy.length - 1; j++) {
+                                    predIntensities[j] = pepObj.predIntensities.get(Constants.fragmentIonHierarchy[j]);
+                                    expIntensities[j] = pepObj.matchedIntensities.get(Constants.fragmentIonHierarchy[j]);
+                                }
+                                double value = new PearsonsCorrelation().correlation(Features.floatUtils.floatToDouble(predIntensities),
+                                        Features.floatUtils.floatToDouble(expIntensities));
+                                if (Double.isNaN(value)) {
+                                    value = -1;
+                                }
+                                writer.addValue("intensity_distribution_similarity", value);
                                 break;
                         }
                     }

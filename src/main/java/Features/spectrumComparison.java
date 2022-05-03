@@ -53,6 +53,34 @@ public class spectrumComparison {
         matchedIntensities = this.getMatchedIntensities(eMZs, eIntensities);
     }
 
+    public spectrumComparison(float[] eMZs, float[] eIntensities,
+                              float[] pMZs, float[] pIntensities,
+                              boolean filterTop, int topFragments, boolean filterBase) {
+        predMZs = pMZs;
+        predIntensities = pIntensities;
+
+        if (filterBase) {
+            this.filterIntensitiesByPercentage(Constants.percentBasePeak);
+        }
+        if (filterTop) {
+            this.filterTopFragments(topFragments);
+        }
+
+        int[] sortedIndices = IntStream.range(0, predMZs.length)
+                .boxed().sorted((k, j) -> Float.compare(predMZs[k], predMZs[j]))
+                .mapToInt(ele -> ele).toArray();
+        pMZs = predMZs;
+        pIntensities = predIntensities;
+        predMZs = new float[predMZs.length];
+        predIntensities = new float[predIntensities.length];
+        for (int i = 0; i < sortedIndices.length; i++) {
+            predMZs[i] = pMZs[sortedIndices[i]];
+            predIntensities[i] = pIntensities[sortedIndices[i]];
+        }
+
+        matchedIntensities = this.getMatchedIntensities(eMZs, eIntensities);
+    }
+
     private void filterTopFragments() {
         //stick with arraylist because finding minimum will be faster than linkedlist due to indexing
         //skip if shorter
@@ -72,6 +100,33 @@ public class spectrumComparison {
             predMZs = new float[Constants.topFragments];
 
             for (int i = 0; i < Constants.topFragments; i++) {
+                int index = tmpInts.indexOf(Collections.max(tmpInts));
+                predIntensities[i] = tmpInts.get(index);
+                predMZs[i] = tmpMZs.get(index);
+                tmpInts.set(index, -1f);
+            }
+        }
+    }
+
+    private void filterTopFragments(int topFragments) {
+        //stick with arraylist because finding minimum will be faster than linkedlist due to indexing
+        //skip if shorter
+        if (predMZs.length > topFragments) {
+            tmpInts.clear();
+            tmpMZs.clear();
+
+            for (float i : predIntensities) {
+                tmpInts.add(i);
+            }
+
+            for (float i : predMZs) {
+                tmpMZs.add(i);
+            }
+
+            predIntensities = new float[topFragments];
+            predMZs = new float[topFragments];
+
+            for (int i = 0; i < topFragments; i++) {
                 int index = tmpInts.indexOf(Collections.max(tmpInts));
                 predIntensities[i] = tmpInts.get(index);
                 predMZs[i] = tmpMZs.get(index);
@@ -402,6 +457,9 @@ public class spectrumComparison {
     }
 
     public double brayCurtis() {
+        if (predMZs.length < 2) {
+            return 0;
+        }
         if (unitNormPredIntensities == null) {
             this.unitNormalizeIntensities();
         }
@@ -540,6 +598,9 @@ public class spectrumComparison {
     }
 
     public double unweightedSpectralEntropy() { //from https://www.nature.com/articles/s41592-021-01331-z
+        if (predMZs.length < 2) {
+            return 0;
+        }
         if (sum1PredIntensities == null) {
             oneNormalizeIntensities();
         }

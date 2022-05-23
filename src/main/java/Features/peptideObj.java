@@ -25,7 +25,7 @@ public class peptideObj {
     float[] predInts;
 
     HashMap<String, Float> matchedIntensities = makeBaseMap();
-    HashMap<String, Float> intensitiesDifference = makeBaseMap();
+    //HashMap<String, Float> intensitiesDifference = makeBaseMap();
     HashMap<String, Float> predIntensities = makeBaseMap();
     HashMap<String, Float> peakCounts = makeBaseMap();
     HashMap<String, Float> individualSpectralSimilarities = makeBaseMap();
@@ -47,8 +47,9 @@ public class peptideObj {
                 predMZs, predIntensities, Constants.useTopFragments, Constants.useBasePeak);
         this.RT = predRT;
         this.IM = predIM;
-        if (Constants.useMatchedIntensities || Constants.usePeakCounts ||
-                Constants.usePredIntensities || Constants.useIndividualSpectralSimilarities) {
+        if (Constants.useMatchedIntensities || Constants.usePeakCounts || Constants.useIntensitiesDifference ||
+                Constants.usePredIntensities || Constants.useIndividualSpectralSimilarities ||
+                Constants.useIntensityDistributionSimilarity) {
             makeFragmentAnnotationFeatures();
         }
     }
@@ -127,15 +128,10 @@ public class peptideObj {
         for (int i = 0; i < expFragmentIonTypes.length; i++) {
             String presentType = expFragmentIonTypes[i];
             if (fragmentIonHierarchyList.contains(presentType)) {
-                if (Constants.useMatchedIntensities) {
+                if (Constants.useMatchedIntensities || Constants.useIntensityDistributionSimilarity
+                        || Constants.useIntensitiesDifference) {
                     matchedIntensities.put(presentType,
                             matchedIntensities.get(presentType) + (expIntensities[i]));
-                }
-
-                //new feature with matched - pred
-                if (Constants.useIntensitiesDifference) {
-                    intensitiesDifference.put(presentType,
-                            intensitiesDifference.get(presentType) + expIntensities[i]);
                 }
 
                 if (Constants.usePeakCounts) {
@@ -148,13 +144,7 @@ public class peptideObj {
         for (int i = 0; i < predFragmentIonTypes.length; i++) {
             String presentType = predFragmentIonTypes[i];
             if (fragmentIonHierarchyList.contains(presentType)) {
-                //new feature with matched - pred
-                if (Constants.useIntensitiesDifference) {
-                    intensitiesDifference.put(presentType,
-                            intensitiesDifference.get(presentType) - predIntensities1[i]);
-                }
-
-                if (Constants.useIntensityDistributionSimilarity) {
+                if (Constants.useIntensityDistributionSimilarity || Constants.useIntensitiesDifference) {
                     predIntensities.put(presentType,
                             predIntensities.get(presentType) + predIntensities1[i]);
                 }
@@ -199,8 +189,7 @@ public class peptideObj {
                 individualSpectralSimilarities.put(entry.getKey(),
                         (float) new spectrumComparison(expMZs, expIntensities,
                                 subsetPredMZsArray, subsetPredIntsArray,
-                                Constants.useTopFragments, Constants.topFragments / 2,
-                                false).brayCurtis()); //already did base peak intensity filtering
+                                Constants.useTopFragments, false).brayCurtis()); //already did base peak intensity filtering
             }
         }
     }

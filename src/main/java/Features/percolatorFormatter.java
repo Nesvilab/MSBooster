@@ -266,6 +266,7 @@ public class percolatorFormatter {
                     if (camelToUnderscore.containsKey(s)) {
                         newName = camelToUnderscore.get(s);
                     }
+                    //if subdividing features by fragment ion type
                     newNames.add(newName);
                 }
                 newHeader.addAll(pin.pepIdx, newNames); //add features before Peptide
@@ -690,58 +691,76 @@ public class percolatorFormatter {
                                 writer.addValue("unknown_matched_intensity", pepObj.matchedIntensities.get("unknown"));
                                 break;
                             case "y_intensities_difference":
-                                writer.addValue("y_intensities_difference", pepObj.intensitiesDifference.get("y"));
+                                writer.addValue("y_intensities_difference",
+                                        Math.abs(pepObj.matchedIntensities.get("y") - pepObj.predIntensities.get("y")));
                                 break;
                             case "b_intensities_difference":
-                                writer.addValue("b_intensities_difference", pepObj.intensitiesDifference.get("b"));
+                                writer.addValue("b_intensities_difference",
+                                        Math.abs(pepObj.matchedIntensities.get("b") - pepObj.predIntensities.get("b")));
                                 break;
                             case "a_intensities_difference":
-                                writer.addValue("a_intensities_difference", pepObj.intensitiesDifference.get("a"));
+                                writer.addValue("a_intensities_difference",
+                                        Math.abs(pepObj.matchedIntensities.get("a") - pepObj.predIntensities.get("a")));
                                 break;
                             case "x_intensities_difference":
-                                writer.addValue("x_intensities_difference", pepObj.intensitiesDifference.get("x"));
+                                writer.addValue("x_intensities_difference",
+                                        Math.abs(pepObj.matchedIntensities.get("x") - pepObj.predIntensities.get("x")));
                                 break;
                             case "c_intensities_difference":
-                                writer.addValue("c_intensities_difference", pepObj.intensitiesDifference.get("c"));
+                                writer.addValue("c_intensities_difference",
+                                        Math.abs(pepObj.matchedIntensities.get("c") - pepObj.predIntensities.get("c")));
                                 break;
                             case "z_intensities_difference":
-                                writer.addValue("z_intensities_difference", pepObj.intensitiesDifference.get("z"));
+                                writer.addValue("z_intensities_difference",
+                                        Math.abs(pepObj.matchedIntensities.get("z") - pepObj.predIntensities.get("z")));
                                 break;
                             case "y-NL_intensities_difference":
-                                writer.addValue("y-NL_intensities_difference", pepObj.intensitiesDifference.get("y-NL"));
+                                writer.addValue("y-NL_intensities_difference",
+                                        Math.abs(pepObj.matchedIntensities.get("y-NL") - pepObj.predIntensities.get("y-NL")));
                                 break;
                             case "b-NL_intensities_difference":
-                                writer.addValue("b-NL_intensities_difference", pepObj.intensitiesDifference.get("b-NL"));
+                                writer.addValue("b-NL_intensities_difference",
+                                        Math.abs(pepObj.matchedIntensities.get("b-NL") - pepObj.predIntensities.get("b-NL")));
                                 break;
                             case "a-NL_intensities_difference":
-                                writer.addValue("a-NL_intensities_difference", pepObj.intensitiesDifference.get("a-NL"));
+                                writer.addValue("a-NL_intensities_difference",
+                                        Math.abs(pepObj.matchedIntensities.get("a-NL") - pepObj.predIntensities.get("a-NL")));
                                 break;
                             case "x-NL_intensities_difference":
-                                writer.addValue("x-NL_intensities_difference", pepObj.intensitiesDifference.get("x-NL"));
+                                writer.addValue("x-NL_intensities_difference",
+                                        Math.abs(pepObj.matchedIntensities.get("x-NL") - pepObj.predIntensities.get("x-NL")));
                                 break;
                             case "c-NL_intensities_difference":
-                                writer.addValue("c-NL_intensities_difference", pepObj.intensitiesDifference.get("c-NL"));
+                                writer.addValue("c-NL_intensities_difference",
+                                        Math.abs(pepObj.matchedIntensities.get("c-NL") - pepObj.predIntensities.get("c-NL")));
                                 break;
                             case "z-NL_intensities_difference":
-                                writer.addValue("z-NL_intensities_difference", pepObj.intensitiesDifference.get("z-NL"));
+                                writer.addValue("z-NL_intensities_difference",
+                                        Math.abs(pepObj.matchedIntensities.get("z-NL") - pepObj.predIntensities.get("z-NL")));
                                 break;
                             case "precursor_intensities_difference":
-                                writer.addValue("precursor_intensities_difference", pepObj.intensitiesDifference.get("precursor"));
+                                writer.addValue("precursor_intensities_difference",
+                                        Math.abs(pepObj.matchedIntensities.get("precursor") - pepObj.predIntensities.get("precursor")));
                                 break;
                             case "precursor-NL_intensities_difference":
-                                writer.addValue("precursor-NL_intensities_difference", pepObj.intensitiesDifference.get("precursor-NL"));
+                                writer.addValue("precursor-NL_intensities_difference",
+                                        Math.abs(pepObj.matchedIntensities.get("precursor-NL") - pepObj.predIntensities.get("precursor-NL")));
                                 break;
                             case "internal_intensities_difference":
-                                writer.addValue("internal_intensities_difference", pepObj.intensitiesDifference.get("internal"));
+                                writer.addValue("internal_intensities_difference",
+                                        Math.abs(pepObj.matchedIntensities.get("internal") - pepObj.predIntensities.get("internal")));
                                 break;
                             case "internal-NL_intensities_difference":
-                                writer.addValue("internal-NL_intensities_difference", pepObj.intensitiesDifference.get("internal-NL"));
+                                writer.addValue("internal-NL_intensities_difference",
+                                        Math.abs(pepObj.matchedIntensities.get("internal-NL") - pepObj.predIntensities.get("internal-NL")));
                                 break;
                             case "immonium_intensities_difference":
-                                writer.addValue("immonium_intensities_difference", pepObj.intensitiesDifference.get("immonium"));
+                                writer.addValue("immonium_intensities_difference",
+                                        Math.abs(pepObj.matchedIntensities.get("immonium") - pepObj.predIntensities.get("immonium")));
                                 break;
                             case "unknown_intensities_difference":
-                                writer.addValue("unknown_intensities_difference", pepObj.intensitiesDifference.get("unknown"));
+                                writer.addValue("unknown_intensities_difference",
+                                        Math.abs(pepObj.matchedIntensities.get("unknown") - pepObj.predIntensities.get("unknown")));
                                 break;
                             case "y_peak_counts":
                                 writer.addValue("y_peak_counts", pepObj.peakCounts.get("y"));

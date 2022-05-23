@@ -341,7 +341,9 @@ public class spectrumComparison {
     }
 
     public double cosineSimilarity() {
-
+        if (predMZs.length < 2) {
+            return 0;
+        }
         //numerator
         double num = 0;
         for (int i = 0; i < predMZs.length; i++) {
@@ -366,7 +368,9 @@ public class spectrumComparison {
 
     //https://stats.stackexchange.com/questions/384419/weighted-cosine-similarity
     public double weightedCosineSimilarity(double[] weights) {
-
+        if (predMZs.length < 2) {
+            return 0;
+        }
         //numerator
         double num = 0;
         for (int i = 0; i < predMZs.length; i++) {
@@ -390,16 +394,25 @@ public class spectrumComparison {
     }
 
     public double spectralContrastAngle() {
+        if (predMZs.length < 2) {
+            return 0;
+        }
         double cosSim = this.cosineSimilarity();
         return 1 - (2 * Math.acos(cosSim) / Math.PI);
     }
 
     public double weightedSpectralContrastAngle(double[] weights) {
+        if (predMZs.length < 2) {
+            return 0;
+        }
         double cosSim = this.weightedCosineSimilarity(weights);
         return 1 - (2 * Math.acos(cosSim) / Math.PI);
     }
 
     public double euclideanDistance() {
+        if (predMZs.length < 2) {
+            return 0;
+        }
         if (unitNormPredIntensities == null) {
             this.unitNormalizeIntensities();
         }
@@ -423,6 +436,9 @@ public class spectrumComparison {
     }
 
     public double weightedEuclideanDistance(double[] weights) {
+        if (predMZs.length < 2) {
+            return 0;
+        }
         if (unitNormPredIntensities == null) {
             this.unitNormalizeIntensities();
         }
@@ -486,6 +502,9 @@ public class spectrumComparison {
     }
 
     public double weightedBrayCurtis(double[] weights) {
+        if (predMZs.length < 2) {
+            return 0;
+        }
         if (unitNormPredIntensities == null) {
             this.unitNormalizeIntensities();
         }
@@ -512,6 +531,9 @@ public class spectrumComparison {
     }
 
     public double pearsonCorr() {
+        if (predMZs.length < 2) {
+            return 0;
+        }
         if (Arrays.stream(floatToDouble(matchedIntensities)).sum() == 0 || matchedIntensities.length == 1) {
             return -1; //minimum pearson correlation
         } else {
@@ -521,6 +543,9 @@ public class spectrumComparison {
     }
 
     public double weightedPearsonCorr(double[] weights) {
+        if (predMZs.length < 2) {
+            return 0;
+        }
         if (Arrays.stream(floatToDouble(matchedIntensities)).sum() == 0) {
             return -1; //minimum pearson correlation
         } else {
@@ -536,6 +561,9 @@ public class spectrumComparison {
     }
 
     public double dotProduct() {
+        if (predMZs.length < 2) {
+            return 0;
+        }
         if (unitNormPredIntensities == null) {
             this.unitNormalizeIntensities();
         }
@@ -560,6 +588,9 @@ public class spectrumComparison {
     }
 
     public double weightedDotProduct(double[] weights) {
+        if (predMZs.length < 2) {
+            return 0;
+        }
         float floatSum = 0.0f;
         for (float f : matchedIntensities){
             floatSum += f;

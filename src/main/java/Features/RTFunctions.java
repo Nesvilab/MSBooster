@@ -64,9 +64,7 @@ public class RTFunctions {
                     continue;
                 }
             peptideObj pep = scanNumObj.getPeptideObject(1);
-            if (pep.targetORdecoy == 0) {
-                continue;
-            }
+
             if (pep.spectralSimObj.predMZs[0] == 0f) { //what it is set to if no entry
                 continue;
             }

@@ -29,27 +29,40 @@ public class ExternalModelCaller {
 
                     //print DIA-NN output while running
                     String line = null;
+                    boolean printedFinished = false;
 
-                    //limit time
-                    long start = System.currentTimeMillis();
-                    long end = start + Constants.predictionTimeLimit * 60 * 1000; //stop after 2 hours
-
-                    while ((! (line = reader.readLine()).contains("Finished")) &&
-                            System.currentTimeMillis() < end) {
-                        if (line.equals("")) {
-                            System.out.println("null");
-                        } else {
-                            System.out.println(line);
-                        } //wait for the last line to print instead of using waitfor?
-                        //also check if readline gives null at some point
+                    while ((line = reader.readLine()) != null) {
+                        System.out.println(line);
+                        if (line.contains("Finished")) {
+                            printedFinished = true;
+                        }
                     }
-                    System.out.println(line);
+//                    //limit time
+//                    long start = System.currentTimeMillis();
+//                    long end = start + Constants.predictionTimeLimit * 60 * 1000; //stop after 2 hours
+//
+//                    while ((! (line = reader.readLine()).contains("Finished")) &&
+//                            System.currentTimeMillis() < end) {
+//                        if (line.equals("")) {
+//                            System.out.println("null");
+//                        } else {
+//                            System.out.println(line);
+//                        } //wait for the last line to print instead of using waitfor?
+//                        //also check if readline gives null at some point
+//                    }
+//                    System.out.println(line);
 
                     Constants.spectraRTPredFile =
                             Constants.spectraRTPredInput.substring(0, Constants.spectraRTPredInput.length() - 4) +
                             ".predicted.bin";
                     int DIANNtermination = process.waitFor();
 
+                    if (! printedFinished) {
+                        System.out.println("DIA-NN did not print 'Finished', and therefore did not " +
+                                "finish predictions successfully. Rerunning from the MSBooster step" +
+                                "may resolve the issue. Exiting");
+                        System.exit(-1);
+                    }
                     if (DIANNtermination != 0) {
                         System.out.println("Abnormal DIANN termination: " + DIANNtermination);
                     }

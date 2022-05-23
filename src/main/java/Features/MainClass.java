@@ -286,7 +286,6 @@ public class MainClass {
             LinkedList<String> featureLL = new LinkedList<>(Arrays.asList(featuresArray));
 
             //use "use" variables to update
-            int oldSize = featureLL.size();
             try {
                 if (Constants.useSpectra) {
                     Set<String> intersection = new HashSet<>(featureLL);
@@ -417,15 +416,13 @@ public class MainClass {
             } catch (Exception ignored) {}
 
             //update features representation
-            if (oldSize != featureLL.size()) {
-                featuresArray = new String[featureLL.size()];
-                int i = 0;
-                for (String feature : featureLL) {
-                    featuresArray[i] = feature;
-                    i++;
-                }
-                Constants.features = String.join(",", featuresArray);
+            featuresArray = new String[featureLL.size()];
+            int i = 0;
+            for (String feature : featureLL) {
+                featuresArray[i] = feature;
+                i++;
             }
+            Constants.features = String.join(",", featuresArray);
 
             //if detectFractionGreater, need fasta
             if (featureLL.contains("detectFractionGreater") || featureLL.contains("detectSubtractMissing") ||

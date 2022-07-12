@@ -44,7 +44,29 @@ public class peptideObj {
         this.predMZs = predMZs;
         this.predInts = predIntensities;
         this.spectralSimObj = new spectrumComparison(scanNumObj.getExpMZs(), scanNumObj.getExpIntensities(),
-                predMZs, predIntensities, Constants.useTopFragments, Constants.useBasePeak);
+                predMZs, predIntensities, Constants.useTopFragments, Constants.useBasePeak); //calculate similarity with subset of fragments
+        this.RT = predRT;
+        this.IM = predIM;
+        if (Constants.useMatchedIntensities || Constants.usePeakCounts || Constants.useIntensitiesDifference ||
+                Constants.usePredIntensities || Constants.useIndividualSpectralSimilarities ||
+                Constants.useIntensityDistributionSimilarity) {
+            makeFragmentAnnotationFeatures();
+        }
+    }
+
+    public peptideObj(mzmlScanNumber scanNumObj, String name, int rank, int targetORdecoy, String escore,
+                      float[] predMZs, float[] predIntensities, float predRT, Float predIM, String[] fragmentIonTypes) {
+        this.name = name;
+        this.charge = Integer.parseInt(name.split("\\|")[1]);
+        this.rank = rank;
+        this.scanNumObj = scanNumObj;
+        this.scanNum = scanNumObj.scanNum;
+        this.targetORdecoy = targetORdecoy;
+        this.escore = escore;
+        this.predMZs = predMZs;
+        this.predInts = predIntensities;
+        this.spectralSimObj = new spectrumComparison(scanNumObj.getExpMZs(), scanNumObj.getExpIntensities(),
+                predMZs, predIntensities, Constants.useTopFragments, Constants.useBasePeak, fragmentIonTypes); //calculate similarity with subset of fragments
         this.RT = predRT;
         this.IM = predIM;
         if (Constants.useMatchedIntensities || Constants.usePeakCounts || Constants.useIntensitiesDifference ||

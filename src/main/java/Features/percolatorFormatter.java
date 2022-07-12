@@ -76,52 +76,104 @@ public class percolatorFormatter {
                 predictedSpectra2 = SpectralPredictionMapper.createSpectralPredictionMapper(mgfSplit[1], executorService);
                 System.out.println("Merging spectral libraries");
 
-                HashMap<String, PredictionEntry> preds2 = predictedSpectra2.getPreds();
-                for (Map.Entry<String, PredictionEntry> entry : preds2.entrySet()) {
-                    if (entry.getValue().fragmentIonTypes == null) { //something with base modifications that is never actually queried
-                        predictedSpectra.getPreds().remove(entry.getKey());
-                        continue;
-                    }
-                    PredictionEntry pe = predictedSpectra.getPreds().get(entry.getKey());
+                //get all possible keys from both preds1 and preds2
+                Set<String> totalKeyset = new HashSet<String>();
+                totalKeyset.addAll(predictedSpectra.getPreds().keySet());
+                totalKeyset.addAll(predictedSpectra2.getPreds().keySet());
+                float maxIntensity = 1f; //may need to change for new models
+                for (String key : totalKeyset) {
+//                    if (entry.getValue().fragmentIonTypes == null) { //something with base modifications that is never actually queried
+//                        predictedSpectra.getPreds().remove(entry.getKey());
+//                        //continue; //DIA-NN may still have the prediction
+//                    }
+                    PredictionEntry pe = predictedSpectra.getPreds().get(key);
                     if (pe == null) { //missing in prosit/diann
-                        predictedSpectra.getPreds().put(entry.getKey(), entry.getValue());
+                        predictedSpectra.getPreds().put(key, predictedSpectra2.getPreds().get(key));
                     } else { //add non-y/b ions
                         ArrayList<Float> mzs = new ArrayList<>();
                         ArrayList<Float> intensities = new ArrayList<>();
+                        ArrayList<String> fragTypes = new ArrayList<>();
 
-                        //add original peaks
-                        for (float mz : pe.mzs) {
-                            mzs.add(mz);
-                        }
-                        for (float intensity : pe.intensities) {
-                            intensities.add(intensity);
-                        }
+                        if (Constants.replaceYBintensities) {
+                            float maxIntensityMZ = Float.NaN;
 
-                        float maxIntensity = Collections.max(intensities);
+                            //add original peaks
+                            for(int i = 0; i < pe.mzs.length; i++) {
+                                float mz = pe.mzs[i];
+                                float intensity = pe.intensities[i];
+                                int flag = pe.flags[i];
 
-                        //add new peaks
-                        PredictionEntry pe2 = entry.getValue();
-                        for (int i = 0; i < pe2.fragmentIonTypes.length; i++) {
-                            if (!pe2.fragmentIonTypes[i].equals("y") &&
-                                    !pe2.fragmentIonTypes[i].equals("b")) {
-                                mzs.add(pe2.mzs[i]);
-                                intensities.add(pe2.intensities[i] * maxIntensity / 1000); //putting intensities on same scale
+                                if (intensity == maxIntensity) {
+                                    maxIntensityMZ = mz;
+                                }
+
+                                mzs.add(mz);
+                                intensities.add(intensity);
+                                if (flag == 0) {
+                                    fragTypes.add("b");
+                                } else {
+                                    fragTypes.add("y");
+                                }
                             }
+
+                            float minMZ = maxIntensityMZ - Constants.DaTolerance;
+                            float maxMZ = maxIntensityMZ + Constants.DaTolerance;
+
+                            //add new peaks
+                            //Scale so that max intensity fragment of diann has same intensity as matched fragment in predfull
+                            //TODO: multiply pe2 intensity by (diann max intensity / predfull intensity of matching fragment)
+                            PredictionEntry pe2 = predictedSpectra2.getPreds().get(key);
+                            //if null, convert to base format
+
+                            if ((!Objects.isNull(pe2)) && (!Objects.isNull(pe2.fragmentIonTypes))) {
+                                float matchedFragInt = -1f;
+                                for (int i = 0; i < pe2.mzs.length; i++) {
+                                    float potentialMZ = pe2.mzs[i];
+                                    float potentialInt = pe2.intensities[i];
+                                    if ((potentialMZ >= minMZ) & (potentialMZ <= maxMZ) & (potentialInt > matchedFragInt)) {
+                                        matchedFragInt = potentialInt;
+                                    }
+                                }
+                                if (matchedFragInt == -1f) { //didn't find matching fragment. Just ignore
+                                    matchedFragInt = 1000;
+                                }
+
+                                for (int i = 0; i < pe2.fragmentIonTypes.length; i++) {
+                                    if (!pe2.fragmentIonTypes[i].equals("y") &&
+                                            !pe2.fragmentIonTypes[i].equals("b")) {
+                                        mzs.add(pe2.mzs[i]);
+                                        intensities.add(pe2.intensities[i] * maxIntensity / matchedFragInt); //putting intensities on same scale
+                                        fragTypes.add(pe2.fragmentIonTypes[i]);
+                                    }
+                                }
+                            }
+
+                            //convert back to array
+                            float[] mzArray = new float[mzs.size()];
+                            float[] intArray = new float[intensities.size()];
+                            String[] typeArray = new String[fragTypes.size()];
+                            for (int i = 0; i < mzArray.length; i++) {
+                                mzArray[i] = mzs.get(i);
+                                intArray[i] = intensities.get(i);
+                                typeArray[i] = fragTypes.get(i);
+                            }
+
+                            pe.setMzs(mzArray);
+                            pe.setIntensities(intArray);
+                            pe.setFragmentIonTypes(typeArray);
+                            predictedSpectra.getPreds().put(key, pe);
+                        } else { //retain predfull intensities, just add RT from other model
+                            //but if predfull has missing entry, use other model instead
+                            PredictionEntry pe2 = predictedSpectra2.getPreds().get(key);
+                            if (!Objects.isNull(pe2)) {
+                                pe.setMzs(pe2.mzs);
+                                pe.setIntensities(pe2.intensities);
+                                pe.setFragmentIonTypes(pe2.fragmentIonTypes);
+                            }
+                            predictedSpectra.getPreds().put(key, pe);
                         }
 
-                        //convert back to array
-                        float[] mzArray = new float[mzs.size()];
-                        float[] intArray = new float[intensities.size()];
-                        for (int i = 0; i < mzArray.length; i++) {
-                            mzArray[i] = mzs.get(i);
-                            intArray[i] = intensities.get(i);
-                        }
-
-                        pe.setMzs(mzArray);
-                        pe.setIntensities(intArray);
-                        predictedSpectra.getPreds().put(entry.getKey(), pe);
-
-                        preds2.put(entry.getKey(), null);
+                        predictedSpectra2.getPreds().put(key, null);
                     }
                 }
                 predictedSpectra2 = null; //free up memory
@@ -266,8 +318,19 @@ public class percolatorFormatter {
                     if (camelToUnderscore.containsKey(s)) {
                         newName = camelToUnderscore.get(s);
                     }
-                    //if subdividing features by fragment ion type
-                    newNames.add(newName);
+                    //add columns for spectral features divided by fragment ion type
+                    if (Constants.spectraFeatures.contains(s)) {
+                        if (! Constants.divideFragments.equals("")) {
+                            String[] divisions = Constants.divideFragments.split(";");
+                            for (String div : divisions) {
+                                newNames.add(newName + "_" + div);
+                            }
+                        } else {
+                            newNames.add(newName);
+                        }
+                    } else {
+                            newNames.add(newName);
+                        }
                 }
                 newHeader.addAll(pin.pepIdx, newNames); //add features before Peptide
                 newHeader.remove("detectability");
@@ -367,6 +430,7 @@ public class percolatorFormatter {
                 //System.out.println("Getting predictions for each row");
                 //int totalPSMs = 0;
 
+                featuresList.remove("detectability");
                 while (pin.next()) {
                     //totalPSMs += 1;
                     //peptide name
@@ -398,7 +462,7 @@ public class percolatorFormatter {
                     }
 
                     //switch case
-                    for (String feature : features) {
+                    for (String feature : featuresList) {
                         switch (feature) {
                             case "detectFractionGreater":
                                 float d = predictedSpectra.getPreds().get(pep).detectability;
@@ -605,25 +669,89 @@ public class percolatorFormatter {
                                 }
                                 break;
                             case "brayCurtis":
-                                writer.addValue("bray_curtis", pepObj.spectralSimObj.brayCurtis());
+                                if (pepObj.spectralSimObj.spectrumComparisons.size() == 0) {
+                                    writer.addValue("bray_curtis", pepObj.spectralSimObj.brayCurtis());
+                                } else {
+                                    String[] dividedFragments = Constants.divideFragments.split(";");
+                                    for (int j = 0; j < dividedFragments.length; j++) {
+                                        writer.addValue("bray_curtis_" + dividedFragments[j],
+                                                pepObj.spectralSimObj.spectrumComparisons.get(j).brayCurtis());
+                                    }
+                                }
                                 break;
                             case "cosineSimilarity":
-                                writer.addValue("cosine_similarity", pepObj.spectralSimObj.cosineSimilarity());
+                                if (pepObj.spectralSimObj.spectrumComparisons.size() == 0) {
+                                    writer.addValue("cosine_similarity", pepObj.spectralSimObj.cosineSimilarity());
+                                } else {
+                                    String[] dividedFragments = Constants.divideFragments.split(";");
+                                    for (int j = 0; j < dividedFragments.length; j++) {
+                                        writer.addValue("cosine_similarity_" + dividedFragments[j],
+                                                pepObj.spectralSimObj.spectrumComparisons.get(j).cosineSimilarity());
+                                    }
+                                }
                                 break;
                             case "spectralContrastAngle":
-                                writer.addValue("spectral_contrast_angle", pepObj.spectralSimObj.spectralContrastAngle());
+                                if (pepObj.spectralSimObj.spectrumComparisons.size() == 0) {
+                                    writer.addValue("spectra_contrast_angle", pepObj.spectralSimObj.spectralContrastAngle());
+                                } else {
+                                    String[] dividedFragments = Constants.divideFragments.split(";");
+                                    for (int j = 0; j < dividedFragments.length; j++) {
+                                        writer.addValue("spectra_contrast_angle_" + dividedFragments[j],
+                                                pepObj.spectralSimObj.spectrumComparisons.get(j).spectralContrastAngle());
+                                    }
+                                }
                                 break;
                             case "euclideanDistance":
-                                writer.addValue("euclidean_distance", pepObj.spectralSimObj.euclideanDistance());
+                                if (pepObj.spectralSimObj.spectrumComparisons.size() == 0) {
+                                    writer.addValue("euclidean_distance", pepObj.spectralSimObj.euclideanDistance());
+                                } else {
+                                    String[] dividedFragments = Constants.divideFragments.split(";");
+                                    for (int j = 0; j < dividedFragments.length; j++) {
+                                        writer.addValue("euclidean_distance_" + dividedFragments[j],
+                                                pepObj.spectralSimObj.spectrumComparisons.get(j).euclideanDistance());
+                                    }
+                                }
                                 break;
                             case "pearsonCorr":
-                                writer.addValue("pearson_corr", pepObj.spectralSimObj.pearsonCorr());
+                                if (pepObj.spectralSimObj.spectrumComparisons.size() == 0) {
+                                    writer.addValue("pearson_corr", pepObj.spectralSimObj.pearsonCorr());
+                                } else {
+                                    String[] dividedFragments = Constants.divideFragments.split(";");
+                                    for (int j = 0; j < dividedFragments.length; j++) {
+                                        writer.addValue("pearson_corr_" + dividedFragments[j],
+                                                pepObj.spectralSimObj.spectrumComparisons.get(j).pearsonCorr());
+                                    }
+                                }
                                 break;
                             case "dotProduct":
-                                writer.addValue("dot_product", pepObj.spectralSimObj.dotProduct());
+                                if (pepObj.spectralSimObj.spectrumComparisons.size() == 0) {
+                                    writer.addValue("dot_product", pepObj.spectralSimObj.dotProduct());
+                                } else {
+                                    String[] dividedFragments = Constants.divideFragments.split(";");
+                                    for (int j = 0; j < dividedFragments.length; j++) {
+                                        writer.addValue("dot_product_" + dividedFragments[j],
+                                                pepObj.spectralSimObj.spectrumComparisons.get(j).dotProduct());
+                                    }
+                                }
                                 break;
                             case "unweightedSpectralEntropy":
-                                writer.addValue("unweighted_spectral_entropy", pepObj.spectralSimObj.unweightedSpectralEntropy());
+                                if (Constants.divideFragments.equals("")) {
+                                    writer.addValue("unweighted_spectral_entropy", pepObj.spectralSimObj.unweightedSpectralEntropy());
+                                } else if ((pepObj.spectralSimObj.spectrumComparisons.size() > 0) & (predictedSpectra.getPreds().containsKey(pepObj.name))){
+                                    String[] dividedFragments = Constants.divideFragments.split(";");
+                                    for (int j = 0; j < dividedFragments.length; j++) {
+                                        writer.addValue("unweighted_spectral_entropy_" + dividedFragments[j],
+                                                pepObj.spectralSimObj.spectrumComparisons.get(j).unweightedSpectralEntropy());
+                                    }
+                                } else if (pepObj.spectralSimObj.spectrumComparisons.size() == 0) {
+                                    String[] dividedFragments = Constants.divideFragments.split(";");
+                                    for (int j = 0; j < dividedFragments.length; j++) {
+                                        writer.addValue("unweighted_spectral_entropy_" + dividedFragments[j], 0);
+                                    }
+                                } else {
+                                    System.out.println("Something wrong with feature calculation");
+                                    System.exit(-1);
+                                }
                                 break;
                             case "deltaIMLOESS":
                                 writer.addValue("delta_IM_loess", pepObj.deltaIMLOESS);

@@ -4,10 +4,7 @@ import org.apache.commons.math3.stat.correlation.PearsonsCorrelation;
 import umich.ms.fileio.exceptions.FileParsingException;
 
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.LinkedHashSet;
+import java.util.*;
 import java.util.stream.IntStream;
 
 import static Features.floatUtils.floatToDouble;
@@ -24,6 +21,7 @@ public class spectrumComparison {
     private static ArrayList<Float> tmpMZs = new ArrayList<Float>();
     private static ArrayList<Float> tmpInts = new ArrayList<Float>();
     private static PearsonsCorrelation pc = new PearsonsCorrelation();
+    public ArrayList<spectrumComparison> spectrumComparisons = new ArrayList<>();
 
     public spectrumComparison(float[] eMZs, float[] eIntensities,
                               float[] pMZs, float[] pIntensities,
@@ -31,6 +29,9 @@ public class spectrumComparison {
         predMZs = pMZs;
         predIntensities = pIntensities;
 
+//        if (Constants.sqrtPredIntensities) {
+//            this.squareRootPredIntensities();
+//        }
         if (filterBase) {
             this.filterIntensitiesByPercentage(Constants.percentBasePeak);
         }
@@ -55,31 +56,107 @@ public class spectrumComparison {
 
     public spectrumComparison(float[] eMZs, float[] eIntensities,
                               float[] pMZs, float[] pIntensities,
-                              boolean filterTop, int topFragments, boolean filterBase) {
+                              boolean filterTop, boolean filterBase, String[] fragmentIonTypes) {
         predMZs = pMZs;
         predIntensities = pIntensities;
 
-        if (filterBase) {
-            this.filterIntensitiesByPercentage(Constants.percentBasePeak);
-        }
-        if (filterTop) {
-            this.filterTopFragments(topFragments);
-        }
+        if (Constants.divideFragments.equals("")) {
+//            if (Constants.sqrtPredIntensities) {
+//                this.squareRootPredIntensities();
+//            }
+            if (filterBase) {
+                this.filterIntensitiesByPercentage(Constants.percentBasePeak);
+            }
+            if (filterTop) {
+                this.filterTopFragments(); //set higher in these cases, then use another top peaks when making fragment ion subsets
+            }
 
-        int[] sortedIndices = IntStream.range(0, predMZs.length)
-                .boxed().sorted((k, j) -> Float.compare(predMZs[k], predMZs[j]))
-                .mapToInt(ele -> ele).toArray();
-        pMZs = predMZs;
-        pIntensities = predIntensities;
-        predMZs = new float[predMZs.length];
-        predIntensities = new float[predIntensities.length];
-        for (int i = 0; i < sortedIndices.length; i++) {
-            predMZs[i] = pMZs[sortedIndices[i]];
-            predIntensities[i] = pIntensities[sortedIndices[i]];
-        }
+            int[] sortedIndices = IntStream.range(0, predMZs.length)
+                    .boxed().sorted((k, j) -> Float.compare(predMZs[k], predMZs[j]))
+                    .mapToInt(ele -> ele).toArray();
+            pMZs = predMZs;
+            pIntensities = predIntensities;
+            //String[] fIonTypes = fragmentIonTypes;
 
-        matchedIntensities = this.getMatchedIntensities(eMZs, eIntensities);
+            predMZs = new float[predMZs.length];
+            predIntensities = new float[predIntensities.length];
+            //fragmentIonTypes = new String[fragmentIonTypes.length];
+            for (int i = 0; i < sortedIndices.length; i++) {
+                predMZs[i] = pMZs[sortedIndices[i]];
+                predIntensities[i] = pIntensities[sortedIndices[i]];
+                //fragmentIonTypes[i] = fIonTypes[sortedIndices[i]];
+            }
+
+            matchedIntensities = this.getMatchedIntensities(eMZs, eIntensities);
+        } else {
+            String[] fragmentsSplit = Constants.divideFragments.split(";");
+
+            //get fragments that match the allowed
+            for (String fragments : fragmentsSplit) {
+                String[] allowedTypes = fragments.split("_");
+                HashSet<String> allowedTypesSet = new HashSet<String>(Arrays.asList(allowedTypes));
+                ArrayList<Integer> acceptedIdx = new ArrayList<>();
+
+                for (int i = 0; i < fragmentIonTypes.length; i++) {
+                    String ion = fragmentIonTypes[i];
+                    if (allowedTypesSet.contains(ion)) {
+                        acceptedIdx.add(i);
+                    }
+                }
+                float[] mzs = new float[acceptedIdx.size()];
+                float[] ints = new float[acceptedIdx.size()];
+                for (int i = 0; i < acceptedIdx.size(); i++) {
+                    mzs[i] = predMZs[acceptedIdx.get(i)];
+                    ints[i] = predIntensities[acceptedIdx.get(i)];
+                }
+
+                //change between ppm and Da tolerance when matching.
+                // Not the most accurate, as it assumes when using PredFull + another tool, PredFull is not used for it y/b predictions
+                if (! Constants.spectraRTPredModel.equals("PredFull")) {
+                    allowedTypesSet.remove("y");
+                    allowedTypesSet.remove("b");
+                    if (allowedTypesSet.size() != 0) { //other types only provided by PredFull are being used
+                        Constants.matchWithDaltons = true;
+                    } else {
+                        Constants.matchWithDaltons = false;
+
+                    }
+                }
+
+                //create new spectrumComparison obj and add to list
+                spectrumComparisons.add(new spectrumComparison(eMZs, eIntensities,
+                        mzs, ints, Constants.useTopFragments, Constants.useBasePeak));
+            }
+        }
     }
+
+//    public spectrumComparison(float[] eMZs, float[] eIntensities,
+//                              float[] pMZs, float[] pIntensities,
+//                              boolean filterTop, int topFragments, boolean filterBase) {
+//        predMZs = pMZs;
+//        predIntensities = pIntensities;
+//
+//        if (filterBase) {
+//            this.filterIntensitiesByPercentage(Constants.percentBasePeak);
+//        }
+//        if (filterTop) {
+//            this.filterTopFragments(topFragments);
+//        }
+//
+//        int[] sortedIndices = IntStream.range(0, predMZs.length)
+//                .boxed().sorted((k, j) -> Float.compare(predMZs[k], predMZs[j]))
+//                .mapToInt(ele -> ele).toArray();
+//        pMZs = predMZs;
+//        pIntensities = predIntensities;
+//        predMZs = new float[predMZs.length];
+//        predIntensities = new float[predIntensities.length];
+//        for (int i = 0; i < sortedIndices.length; i++) {
+//            predMZs[i] = pMZs[sortedIndices[i]];
+//            predIntensities[i] = pIntensities[sortedIndices[i]];
+//        }
+//
+//        matchedIntensities = this.getMatchedIntensities(eMZs, eIntensities);
+//    }
 
     private void filterTopFragments() {
         //stick with arraylist because finding minimum will be faster than linkedlist due to indexing
@@ -91,7 +168,6 @@ public class spectrumComparison {
             for (float i : predIntensities) {
                 tmpInts.add(i);
             }
-
             for (float i : predMZs) {
                 tmpMZs.add(i);
             }
@@ -103,34 +179,7 @@ public class spectrumComparison {
                 int index = tmpInts.indexOf(Collections.max(tmpInts));
                 predIntensities[i] = tmpInts.get(index);
                 predMZs[i] = tmpMZs.get(index);
-                tmpInts.set(index, -1f);
-            }
-        }
-    }
-
-    private void filterTopFragments(int topFragments) {
-        //stick with arraylist because finding minimum will be faster than linkedlist due to indexing
-        //skip if shorter
-        if (predMZs.length > topFragments) {
-            tmpInts.clear();
-            tmpMZs.clear();
-
-            for (float i : predIntensities) {
-                tmpInts.add(i);
-            }
-
-            for (float i : predMZs) {
-                tmpMZs.add(i);
-            }
-
-            predIntensities = new float[topFragments];
-            predMZs = new float[topFragments];
-
-            for (int i = 0; i < topFragments; i++) {
-                int index = tmpInts.indexOf(Collections.max(tmpInts));
-                predIntensities[i] = tmpInts.get(index);
-                predMZs[i] = tmpMZs.get(index);
-                tmpInts.set(index, -1f);
+                tmpInts.set(index, -1f); //no longer highest intensity peak
             }
         }
     }
@@ -173,6 +222,12 @@ public class spectrumComparison {
             //make cutoff by percentage
             float cutoff = maxIntensity * percentage / 100f;
             filterIntensitiesByValue(cutoff);
+        }
+    }
+
+    private void squareRootPredIntensities() {
+        for (int i = 0; i < predIntensities.length; i++) {
+            predIntensities[i] = (float) Math.sqrt(predIntensities[i]);
         }
     }
 
@@ -340,6 +395,10 @@ public class spectrumComparison {
         sum1PredIntensities = oneNormalize(predIntensities);
     }
 
+    //if constants.dividefragments split is 2 or more,
+    //create a new spectrumComparison object for each split
+    //and calculate metric for both.
+    //If percolatorFormatter gets multiple values back, then write them separately
     public double cosineSimilarity() {
         if (predMZs.length < 2) {
             return 0;

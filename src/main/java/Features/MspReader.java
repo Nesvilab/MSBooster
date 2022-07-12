@@ -82,23 +82,34 @@ public class MspReader implements SpectralPredictionMapper {
                         line = msp.readLine();
                         lineSplit = line.split("\t");
                         float tmpInt = Float.parseFloat(lineSplit[1]);
-                        if (! (tmpInt == 0f)) {
-                            mzsList.add(Float.parseFloat(lineSplit[0]));
-                            intsList.add(tmpInt);
+                        if (tmpInt == 0f) {
+                            continue;
                         }
                         String fragment = lineSplit[2].substring(1, lineSplit[2].length() - 1).split("/")[0];
                         String[] chargeSplit = fragment.split("\\^");
-                        if (chargeSplit.length == 1) {
-                            chargesList.add(1);
-                        } else {
-                            chargesList.add(Integer.parseInt(chargeSplit[1]));
+
+                        //add fragment
+                        int fragCharge = 1;
+                        if (chargeSplit.length != 1) {
+                            fragCharge = Integer.parseInt(chargeSplit[1]);
                         }
+                        if (fragCharge > Constants.maxPredictedFragmentCharge) {
+                            continue;
+                        }
+                        int fragNum = Integer.parseInt(chargeSplit[0].substring(1));
+                        if (fragNum < Constants.minPredictedFragmentNum) {
+                            continue;
+                        }
+
+                        mzsList.add(Float.parseFloat(lineSplit[0]));
+                        intsList.add(tmpInt);
+                        chargesList.add(fragCharge);
                         if (fragment.charAt(0) == 'y') {
                             flagsList.add(1);
                         } else {
                             flagsList.add(0);
                         }
-                        fragNumsList.add(Integer.parseInt(chargeSplit[0].substring(1)));
+                        fragNumsList.add(fragNum);
                     }
 
                     float[] mzs = new float[mzsList.size()];
@@ -162,6 +173,7 @@ public class MspReader implements SpectralPredictionMapper {
                         PredictionEntry newPred = new PredictionEntry();
                         newPred.setMzs(newMZs);
                         newPred.setIntensities(tmp.intensities);
+                        newPred.setFlags(tmp.flags);
                         newPred.setRT(tmp.RT);
                         newPred.setIM(0f);
                         allPreds.put(mc.fullPeptide, newPred);

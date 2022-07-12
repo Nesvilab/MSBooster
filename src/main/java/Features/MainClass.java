@@ -255,6 +255,14 @@ public class MainClass {
                 }
             }
 
+            if (Constants.divideFragments.equals("1")) { //standard setting of yb vs others
+                Constants.divideFragments = "y_b;immonium_a_y-NL_b-NL_a-NL_internal_internal-NL_unknown";
+                Constants.topFragments = 12;
+            } else if (Constants.divideFragments.equals("2")) {
+                Constants.divideFragments = "y;b;immonium;a;y-NL;b-NL;a-NL;internal;internal-NL;unknown";
+                Constants.topFragments = 6;
+            }
+
             //defining num threads
             Runtime run = Runtime.getRuntime();
             if (Constants.numThreads <= 0) {
@@ -458,6 +466,9 @@ public class MainClass {
             if (Constants.spectraRTPredInput != null || Constants.spectraRTPredFile != null) {
                 createSpectraRTPredFile = false;
             }
+            if ((Constants.spectraRTPredModel.contains("DIA-NN")) && !(Constants.spectraRTPredModel.equals("DIA-NN"))) {
+                createSpectraRTPredFile = true;
+            }
             if (Constants.detectPredInput != null || Constants.detectPredFile != null) {
                 createDetectPredFile = false;
             }
@@ -494,6 +505,18 @@ public class MainClass {
                     peptideFileCreator.createPeptideFile(pmMatcher.pinFiles,
                             Constants.spectraRTPredInput.substring(0, Constants.spectraRTPredInput.length() - 4) + "_full.tsv",
                             "createFull");
+                } else if (Constants.spectraRTPredModel.equals("Prosit")) {
+                    System.out.println("Generating input file for Prosit");
+                    peptideFileCreator.createPeptideFile(pmMatcher.pinFiles, Constants.spectraRTPredInput, "Prosit");
+                    peptideFileCreator.createPeptideFile(pmMatcher.pinFiles,
+                            Constants.spectraRTPredInput.substring(0, Constants.spectraRTPredInput.length() - 4) + "_full.tsv",
+                            "createFull");
+                } else if (Constants.spectraRTPredModel.equals("DIA-NN,PredFull")) {
+                    if (Constants.DiaNN == null) {
+                        throw new IllegalArgumentException("path to DIA-NN executable must be provided");
+                    }
+                    System.out.println("Generating input file for DIA-NN");
+                    peptideFileCreator.createPeptideFile(pmMatcher.pinFiles, Constants.spectraRTPredInput, "Diann");
                 } else {
                     System.out.println("spectraRTPredModel must be one of DIA-NN, Prosit, or PredFull");
                     System.exit(-1);
@@ -523,7 +546,7 @@ public class MainClass {
             //create new pin file with features
             System.out.println("Generating edited pin with following features: " + Arrays.toString(featuresArray));
             long start = System.nanoTime();
-            if (Constants.spectraRTPredModel.equals("PredFull")) {
+            if (Constants.spectraRTPredModel.contains("PredFull")) {
                 Constants.matchWithDaltons = true; //they report predictions in bins
             }
             percolatorFormatter.editPin(pmMatcher, Constants.spectraRTPredFile, Constants.detectPredFile, featuresArray, Constants.editedPin);

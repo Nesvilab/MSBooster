@@ -27,7 +27,7 @@ public interface SpectralPredictionMapper {
                 return new DiannSpeclibReader(file);
             case "mgf":
                 //if PredFull, use PredFullSpeclibReader class
-                if (Constants.spectraRTPredModel.equals("PredFull")) {
+                if (Constants.spectraRTPredModel.contains("PredFull")) {
                     return new PredFullSpeclibReader(file, false, executorService);
                 }
                 //check if this works with pDeep

@@ -20,7 +20,9 @@ public class ExternalModelCaller {
                             "--predict",
                             "--threads",
                             String.valueOf(Constants.numThreads),
-                            "--strip-unknown-mods");
+                            "--strip-unknown-mods",
+                            "--mod",
+                            "TMT,229.1629");
                     System.out.println(String.join(" ", builder.command()));
                     builder.redirectErrorStream(true);
                     Process process = builder.start();
@@ -59,7 +61,7 @@ public class ExternalModelCaller {
 
                     if (! printedFinished) {
                         System.out.println("DIA-NN did not print 'Finished', and therefore did not " +
-                                "finish predictions successfully. Rerunning from the MSBooster step" +
+                                "finish predictions successfully. Rerunning from the MSBooster step " +
                                 "may resolve the issue. Exiting");
                         System.exit(-1);
                     }

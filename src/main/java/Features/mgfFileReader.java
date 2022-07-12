@@ -14,7 +14,8 @@ public class mgfFileReader implements SpectralPredictionMapper{
     //mgfFileReader can handle both single files and entire directories
 
     ArrayList<String> filenames = new ArrayList<>();
-    ConcurrentHashMap<String, PredictionEntry> allPreds = new ConcurrentHashMap<>();
+    private ConcurrentHashMap<String, PredictionEntry> allPreds = new ConcurrentHashMap<>();
+    HashMap<String, PredictionEntry> allPredsHashMap = new HashMap<>();
     public ConcurrentHashMap<Integer, mzmlScanNumber> scanNumberObjects = new ConcurrentHashMap<>();
     private List<Future> futureList = new ArrayList<>(Constants.numThreads);
 
@@ -246,7 +247,7 @@ public class mgfFileReader implements SpectralPredictionMapper{
                                         newPred.setIM(IM);
                                         //convert title to base format
                                         String basePep = sb.toString();
-                                        if (Constants.spectraRTPredModel.equals("PredFull")) {
+                                        if (Constants.spectraRTPredModel.contains("PredFull")) {
                                             String[] basePepSplit = basePep.split("\\|");
                                             basePep = new PeptideFormatter(basePepSplit[0],
                                                     basePepSplit[1], "predfull").baseCharge;
@@ -323,7 +324,7 @@ public class mgfFileReader implements SpectralPredictionMapper{
                             if (mzArray.length != 0) {
                                 //convert title to base format
                                 String basePep = sb.toString();
-                                if (Constants.spectraRTPredModel.equals("PredFull")) {
+                                if (Constants.spectraRTPredModel.contains("PredFull")) {
                                     String[] basePepSplit = basePep.split("\\|");
                                     basePep = new PeptideFormatter(basePepSplit[0],
                                             basePepSplit[1], "predfull").baseCharge;
@@ -349,7 +350,11 @@ public class mgfFileReader implements SpectralPredictionMapper{
     }
 
     public HashMap<String, PredictionEntry> getPreds() {
-        return new HashMap<>(allPreds);
+        if (allPredsHashMap.size() == 0) {
+            allPredsHashMap = new HashMap<>(allPreds);
+            allPreds = null; //no longer need concurrency
+        }
+        return allPredsHashMap;
     }
 
     public float getMaxPredRT() {

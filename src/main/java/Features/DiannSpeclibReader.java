@@ -7,6 +7,7 @@ import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.sql.SQLException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.ExecutionException;
@@ -78,6 +79,7 @@ public class DiannSpeclibReader implements SpectralPredictionMapper{
                     float[] intensities = new float[numFrags];
                     int[] fragNums = new int[numFrags];
                     int[] flags = new int[numFrags];
+                    String[] fragmentIonTypes = new String[numFrags];
                     int[] charges = new int[numFrags];
 
                     //load fragment info
@@ -93,13 +95,15 @@ public class DiannSpeclibReader implements SpectralPredictionMapper{
                         int charge = bits(fragInt, 30, 2) + 1; //start from end
 
                         //get fragment m/z
-                        float fragMZ = mc.calcMass(fragNum, flagTOion.get(flag), charge);
+                        String ionType = flagTOion.get(flag);
+                        float fragMZ = mc.calcMass(fragNum, ionType, charge);
 
                         //add to arrays
                         mzs[i] = fragMZ;
                         intensities[i] = intensity;
                         fragNums[i] = fragNum;
                         flags[i] = flag;
+                        fragmentIonTypes[i] = ionType;
                         charges[i] = charge;
                     }
 
@@ -112,6 +116,7 @@ public class DiannSpeclibReader implements SpectralPredictionMapper{
                     newPred.setCharges(charges);
                     newPred.setRT(iRT);
                     newPred.setIM(IM);
+                    newPred.setFragmentIonTypes(fragmentIonTypes);
                     allPreds.put(mc.fullPeptide, newPred);
                 }
                 is.close();
@@ -149,6 +154,9 @@ public class DiannSpeclibReader implements SpectralPredictionMapper{
                         newPred.setIntensities(tmp.intensities);
                         newPred.setRT(tmp.RT);
                         newPred.setIM(tmp.IM);
+                        newPred.setFragmentIonTypes(tmp.fragmentIonTypes);
+                        newPred.setFragNums(tmp.fragNums);
+                        newPred.setFlags(tmp.flags);
                         allPreds.put(mc.fullPeptide, newPred);
                     }
                 }
@@ -183,24 +191,24 @@ public class DiannSpeclibReader implements SpectralPredictionMapper{
     public static void main(String[] args)
             throws IOException, InterruptedException, ExecutionException, FileParsingException, SQLException {
         ExecutorService executorService = Executors.newFixedThreadPool(11);
-        SpectralPredictionMapper spm = SpectralPredictionMapper.createSpectralPredictionMapper("C:/Users/kevin/Downloads/proteomics/" +
-                        "spectraRTubiq.predicted.bin",
+        SpectralPredictionMapper spm = SpectralPredictionMapper.createSpectralPredictionMapper("C:/Users/kevin/OneDriveUmich/" +
+                        "spectraRT.predicted.bin",
                 executorService);
         executorService.shutdown();
         HashMap<String, PredictionEntry> preds = spm.getPreds();
-        System.out.println(preds.get("PEPTIDEK[114.042927]|2").IM);
-        System.out.println(preds.get("PEPTIDEK|2").IM);
-        System.out.println(preds.get("PEPTIDEK[114.042927]|2").RT);
-        System.out.println(preds.get("PEPTIDEK|2").RT);
-//        BufferedWriter writer = new BufferedWriter(new FileWriter("C:/Users/yangkl/Downloads/proteomics/TMTvadim/unlabeledPeptides_iRT.tsv"));
-//        writer.write("modified_peptide" + "\t" + "precursor_charge" + "\t" + "irt" + "\n");
-//        for (Map.Entry<String, PredictionEntry> entry : preds.entrySet()) {
-//            String peptide = entry.getKey();
-//            peptide = peptide.replace("|1", "").replace("[57.0215]", "(UniMod:4)").
-//                    replace("[15.9949]", "(UniMod:35)").replace("[42.0106]", ".(UniMod:1)");
-//            float iRT = entry.getValue().RT;
-//            writer.write(peptide + "\t" + "" + "\t" + iRT + "\n");
-//        }
-//        writer.close();
+//        System.out.println(preds.get("PEPTIDEK[114.042927]|2").IM);
+//        System.out.println(preds.get("PEPTIDEK|2").IM);
+//        System.out.println(preds.get("PEPTIDEK[114.042927]|2").RT);
+//        System.out.println(preds.get("PEPTIDEK|2").RT);
+        BufferedWriter writer = new BufferedWriter(new FileWriter("C:/Users/kevin/OneDriveUmich/test_iRT.tsv"));
+        writer.write("modified_peptide" + "\t" + "precursor_charge" + "\t" + "irt" + "\n");
+        for (Map.Entry<String, PredictionEntry> entry : preds.entrySet()) {
+            String peptide = entry.getKey();
+            peptide = peptide.substring(0, peptide.length() - 2).replace("[57.0215]", "(UniMod:4)").
+                    replace("[15.9949]", "(UniMod:35)").replace("[42.0106]", ".(UniMod:1)");
+            float iRT = entry.getValue().RT;
+            writer.write(peptide + "\t" + "2" + "\t" + iRT + "\n");
+        }
+        writer.close();
     }
 }

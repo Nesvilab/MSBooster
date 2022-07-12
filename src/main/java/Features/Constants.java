@@ -49,6 +49,7 @@ public class Constants {
     public static Integer numThreads = 0;
     public static String DiaNN = null; //C:/DIA-NN/1.7.15beta1/DiaNN.exe
     public static String spectraRTPredModel = "DIA-NN";
+    public static Boolean replaceYBintensities = true;
 
     ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
     //miscellaneous inner workings
@@ -70,6 +71,7 @@ public class Constants {
     public static Boolean removeRankPeaks = true; //whether to remove peaks from higher ranks
     public static Boolean useBasePeak = true;
     public static Float percentBasePeak = 1f;
+    //public static Boolean sqrtPredIntensities = false;
     //public static Float percentBasePeakExperimental = 1f;
 
     public static final Integer fineTuneSize = 100; //for generating a finetune file for pDeep3
@@ -103,6 +105,8 @@ public class Constants {
     //support for PredFull and Prosit
     public static String FragmentationType = "HCD";
     public static String NCE = "30";
+    public static Integer maxPredictedFragmentCharge = 100;
+    public static Integer minPredictedFragmentNum = 0;
     public static Boolean createPredFileOnly = false;
     public static String ignoredFragmentIonTypes = ""; //split with commas
     public static String onlyFragmentIonTypes = ""; //split with commas
@@ -168,6 +172,7 @@ public class Constants {
         }
         return new HashSet<>(Arrays.asList(fragmentIonHierarchy).subList(0, index + 1));
     }
+    public static String divideFragments = "";
 
     //PredFull fragment ion annotation
     //TODO: can only use for PredFull
@@ -296,6 +301,7 @@ public class Constants {
         map.put(42.0106, 1);
         map.put(79.9663, 21);
         map.put(114.042927, 121);
+        map.put(229.1629, 737);
         return map;
     }
     public static final HashMap<Double, Integer> modAAmassToUnimod = makeModAAToUnimod();
@@ -331,7 +337,7 @@ public class Constants {
             editedPin = "edited";
         }
         if (spectraRTPredInput == null) {
-            if (Constants.spectraRTPredModel.equals("Prosit")) {
+            if (Constants.spectraRTPredModel.contains("Prosit")) {
                 spectraRTPredInput = outputDirectory + File.separator + "spectraRT.csv";
             } else {
                 spectraRTPredInput = outputDirectory + File.separator + "spectraRT.tsv";

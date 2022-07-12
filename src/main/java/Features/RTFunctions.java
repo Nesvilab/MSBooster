@@ -55,14 +55,17 @@ public class RTFunctions {
         for (int scanNum : new TreeSet<Integer>(mzml.scanNumberObjects.keySet())) {
             mzmlScanNumber scanNumObj = mzml.getScanNumObject(scanNum);
             float rt = scanNumObj.RT; //experimental RT for this scan
+            if (Float.isNaN(rt)) {
+                continue;
+            }
 
             //add RT until you reach decoy
             //when doing good regression, decoys don't appear, so once decoy appears, expectation score is already too low
 
             //for (int i = 1; i < scanNumObj.peptideObjects.size() + 1; i++) { //changed so only looking at rank 1
-                if (scanNumObj.peptideObjects.size() == 0) {
-                    continue;
-                }
+            if (scanNumObj.peptideObjects.size() == 0) {
+                continue;
+            }
             peptideObj pep = scanNumObj.getPeptideObject(1);
 
             if (pep.spectralSimObj.predMZs[0] == 0f) { //what it is set to if no entry

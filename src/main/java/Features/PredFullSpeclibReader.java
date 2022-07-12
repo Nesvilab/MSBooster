@@ -14,6 +14,7 @@ public class PredFullSpeclibReader extends mgfFileReader{
             throws InterruptedException, ExecutionException, FileParsingException, IOException {
         //initially start with mgf reading
         super(file, createScanNumObjects, executorService);
+        System.out.println("Shifting peaks for PredFull predictions");
         //also need to add to allPreds the peptides with PTMs not supported by PredFull
         //this requires that mgf file name has same prefix as full input file
         String fullFile = file.substring(0, file.length() - 4) + "_full.tsv";
@@ -26,6 +27,7 @@ public class PredFullSpeclibReader extends mgfFileReader{
 
         //filter here so don't need to annotate everything
         Set<String> ignoredFragmentIonTypesSet = Constants.makeIgnoredFragmentIonTypes();
+        this.getPreds();
         while ((l = TSVReader.readLine()) != null) {
             //doing fragment annotation for everything, not just modified ones
             //start shifting and annotating
@@ -35,7 +37,7 @@ public class PredFullSpeclibReader extends mgfFileReader{
                     new PeptideFormatter(lSplit[0], lSplit[1], "base").predfull,
                     lSplit[1], "predfull");
 
-            PredictionEntry pe = allPreds.get(peptideToSearch.baseCharge);
+            PredictionEntry pe = this.allPredsHashMap.get(peptideToSearch.baseCharge);
 
             if (pe == null) { //valid reasons to be empty
                 if ((peptideToSearch.stripped.length() > 20)) {
@@ -50,7 +52,6 @@ public class PredFullSpeclibReader extends mgfFileReader{
                     continue;
                 }
             }
-
             //for each fragment ion, see if it can be annotated
             MassCalculator mc = new MassCalculator(peptideToSearch.base, peptideToSearch.charge);
             //annotate ion
@@ -187,7 +188,7 @@ public class PredFullSpeclibReader extends mgfFileReader{
             newPred.setRT(pe.RT);
             newPred.setIM(pe.IM);
             newPred.setFragmentIonTypes(fragmentArray);
-            allPreds.put(lSplit[0] + "|" + lSplit[1], newPred);
+            this.allPredsHashMap.put(lSplit[0] + "|" + lSplit[1], newPred);
         }
     }
 }

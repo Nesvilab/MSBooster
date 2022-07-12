@@ -332,13 +332,8 @@ public class MassCalculator {
 
     //in case masses overlap
     private void addToFragmentIons(Float mass, String[] info) {
-        if (! fragmentIons.containsKey(mass)) {
-            fragmentIons.put(mass, info);
-        } else { //found an overlap
-            fragmentIons.put(mass,
-                    new String[] {fragmentIons.get(mass)[0] + ";" + info[0],
-                            fragmentIons.get(mass)[1] + ";" + info[1]});
-        }
+        fragmentIons.merge(mass, info, (a, b) -> new String[]{a[0] + ";" + b[0],
+                a[1] + ";" + b[1]});
     }
 
     //currently up to charge 2

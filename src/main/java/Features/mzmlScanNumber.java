@@ -9,6 +9,7 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
+import java.util.Objects;
 
 import static Features.floatUtils.doubleToFloat;
 
@@ -62,8 +63,8 @@ public class mzmlScanNumber {
         if (rank != peptideObjects.size() + 1) { //need to add entries in order
             throw new AssertionError("must add next rank");
         }
+        PredictionEntry predictionEntry = allPreds.get(name.baseCharge);
         try {
-            PredictionEntry predictionEntry = allPreds.get(name.baseCharge);
             float[] predMZs = predictionEntry.mzs;
             float[] predIntensities = predictionEntry.intensities;
             float predRT = predictionEntry.RT;
@@ -71,8 +72,13 @@ public class mzmlScanNumber {
 
             peptideObj newPepObj;
             if (predMZs.length > 1) {
-                newPepObj = new peptideObj(this, name.baseCharge, rank, targetORdecoy, escore, predMZs,
-                        predIntensities, predRT, predIM);
+                if (Constants.divideFragments.equals("")) {
+                    newPepObj = new peptideObj(this, name.baseCharge, rank, targetORdecoy, escore, predMZs,
+                            predIntensities, predRT, predIM);
+                } else {
+                    newPepObj = new peptideObj(this, name.baseCharge, rank, targetORdecoy, escore, predMZs,
+                            predIntensities, predRT, predIM, predictionEntry.fragmentIonTypes);
+                }
             } else { //only 1 frag to match
                 newPepObj = new peptideObj(this, name.baseCharge, rank, targetORdecoy, escore, zeroFloatArray,
                         zeroFloatArray, predRT, predIM);
@@ -88,24 +94,31 @@ public class mzmlScanNumber {
                 }
             }
         } catch (Exception e) { //TODO: percolator imputation
+            float predRT = 0f;
+            float predIM = 0f;
+            if (predictionEntry != null) {
+                predRT = predictionEntry.RT; //best option?
+                predIM = predictionEntry.IM; //best option?
+            }
+
             //when peptide isn't in predictions, like unsupported amino acids
             //Set to arbitrary 0 vectors so nothing matches, similarity 0
             //may need to adapt this if using percolator imputation
             if (name.stripped.contains("U") || name.stripped.contains("O") || name.stripped.contains("X") ||
                     name.stripped.contains("B") || name.stripped.contains("Z") ) {
                 peptideObjects.add(rank - 1, new peptideObj(this, name.baseCharge, rank, targetORdecoy, escore,
-                        zeroFloatArray, zeroFloatArray, 0.0f, null));
+                        zeroFloatArray, zeroFloatArray, predRT, predIM));
             } else if (name.stripped.length() > 15) { //TODO: update this when longer ones are supported
                 peptideObjects.add(rank - 1, new peptideObj(this, name.baseCharge, rank, targetORdecoy, escore,
-                        zeroFloatArray, zeroFloatArray, 0.0f, null));
+                        zeroFloatArray, zeroFloatArray, predRT, predIM));
             } else if (Integer.parseInt(name.charge) > 6) { //TODO: update this for different tools
                 peptideObjects.add(rank - 1, new peptideObj(this, name.baseCharge, rank, targetORdecoy, escore,
-                        zeroFloatArray, zeroFloatArray, 0.0f, null));
+                        zeroFloatArray, zeroFloatArray, predRT, predIM));
             } else {
                 String[] periodSplit = Constants.spectraRTPredFile.split("\\.");
                 if (periodSplit[periodSplit.length - 1].equals("dlib")) { //won't always include every entry
                     peptideObjects.add(rank - 1, new peptideObj(this, name.baseCharge, rank, targetORdecoy, escore,
-                            zeroFloatArray, zeroFloatArray, 0.0f, null));
+                            zeroFloatArray, zeroFloatArray, predRT, predIM));
                 } else {
                     System.out.println("Prediction missing in file for " + name.baseCharge);
                     e.printStackTrace();

@@ -43,8 +43,8 @@ public class PeptideFormatter {
     }
 
     private void diannTObase(String peptide) {
-
         peptide = peptide.replace("UniMod:","");
+        peptide = peptide.replace("[TMT]","[737]");
         //convert unimod to mass
         ArrayList<Integer> newStarts = new ArrayList<>();
         ArrayList<Integer> newEnds = new ArrayList<>();
@@ -127,8 +127,15 @@ public class PeptideFormatter {
                 Double PTMmass = entry.getKey();
 
                 if (Math.abs(PTMmass - reportedMass) < 0.01) {
-                    diann = diann.substring(0, starts.get(i) + 1) + "UniMod:" + Constants.modAAmassToUnimod.get(PTMmass) +
-                            diann.substring(ends.get(i));
+                    if (PTMmass == 229.1629) {
+                        diann = diann.substring(0, starts.get(i) + 1) + "TMT" +
+                                diann.substring(ends.get(i));
+                    } else {
+                        diann = diann.substring(0, starts.get(i) + 1) + "UniMod:" + Constants.modAAmassToUnimod.get(PTMmass) +
+                                diann.substring(ends.get(i));
+                    }
+//                    diann = diann.substring(0, starts.get(i) + 1) + "UniMod:" + Constants.modAAmassToUnimod.get(PTMmass) +
+//                                diann.substring(ends.get(i));
                     foundReplacement = true;
                     break;
                 }

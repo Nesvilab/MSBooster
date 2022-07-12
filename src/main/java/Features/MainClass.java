@@ -10,7 +10,7 @@ import java.util.*;
 //this is what I use in the java jar file
 public class MainClass {
     public static void main(String[] args) throws Exception {
-        System.out.println("MSBooster v1.1.4");
+        System.out.println("MSBooster v1.1.5");
         try {
             //accept command line inputs
             HashSet<String> fields = new HashSet<>();
@@ -505,9 +505,9 @@ public class MainClass {
                     peptideFileCreator.createPeptideFile(pmMatcher.pinFiles,
                             Constants.spectraRTPredInput.substring(0, Constants.spectraRTPredInput.length() - 4) + "_full.tsv",
                             "createFull");
-                } else if (Constants.spectraRTPredModel.equals("Prosit")) {
-                    System.out.println("Generating input file for Prosit");
-                    peptideFileCreator.createPeptideFile(pmMatcher.pinFiles, Constants.spectraRTPredInput, "Prosit");
+                } else if (Constants.spectraRTPredModel.equals("PrositTMT")) {
+                    System.out.println("Generating input file for PrositTMT");
+                    peptideFileCreator.createPeptideFile(pmMatcher.pinFiles, Constants.spectraRTPredInput, "PrositTMT");
                     peptideFileCreator.createPeptideFile(pmMatcher.pinFiles,
                             Constants.spectraRTPredInput.substring(0, Constants.spectraRTPredInput.length() - 4) + "_full.tsv",
                             "createFull");

@@ -1,6 +1,7 @@
 package Features;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Map;
 
 //lots of different ways to format peptide string
@@ -12,6 +13,7 @@ public class PeptideFormatter {
     String stripped;
     String baseCharge;
     String dlib;
+    String mods = "";
 
     ArrayList<Integer> starts = new ArrayList<>();
     ArrayList<Integer> ends = new ArrayList<>();
@@ -100,6 +102,27 @@ public class PeptideFormatter {
         findPTMlocations();
     }
 
+    private void pdeep3TObase(String peptide) {
+        //add PTMs to peptide sequence
+        String[] pepSplit = peptide.split("\\|");
+        String newPeptide = pepSplit[0];
+        String[] mods = pepSplit[1].split(";");
+        if (mods[0].equals("")) {
+            base = newPeptide;
+        } else {
+            for (int i = mods.length - 1; i > -1; i--) {
+                String mod = mods[i];
+                String[] commaSplit = mod.split(",");
+                int position = Integer.parseInt(commaSplit[0]);
+                String PTMtype = commaSplit[1].split("\\[")[0];
+                newPeptide = newPeptide.substring(0, position) + "[" + Constants.PDeepToAAmass.get(PTMtype) + "]" +
+                        newPeptide.substring(position);
+            }
+            base = newPeptide;
+            findPTMlocations();
+        }
+    }
+
     private void baseTOstripped() {
         stripped = base;
 
@@ -173,6 +196,41 @@ public class PeptideFormatter {
     private void strippedTOdlib() { dlib = stripped.replace("C", "C[" + Constants.carbamidomethylationMass + "]") + "|" + charge;
     }
 
+    private void baseToMods() {
+        baseTOstripped();
+
+        int numMods = starts.size();
+        ArrayList<Integer> newEnds = new ArrayList<>();
+        newEnds.add(0);
+        newEnds.addAll(ends);
+        ArrayList<Integer> positions = new ArrayList<>();
+        positions.add(0);
+
+        for (int i = 0; i < numMods; i++) {
+            String modMass = base.substring(starts.get(i) + 1, ends.get(i));
+            String modName = Constants.aamassToPDeep.get(modMass);
+
+            Integer position = starts.get(i) - newEnds.get(i) + positions.get(i);
+            if (i > 0) {
+                position -= 1;
+            }
+            positions.add(position);
+            String aa;
+            if (position == 0) {
+                aa = "ProteinN-term";
+            } else {
+                aa = stripped.substring(position - 1, position);
+            }
+
+            String modinfo = position + "," + modName + "[" + aa + "]" + ";";
+
+            mods = mods + modinfo;
+        }
+        if (! mods.equals("")) {
+            mods = mods.substring(0, mods.length() - 1);
+        }
+    }
+
     public PeptideFormatter(String peptide, Object c, String format) {
         charge = (String) c;
 
@@ -183,6 +241,7 @@ public class PeptideFormatter {
             baseTOpredfull();
             predfullTOprosit();
             strippedTOdlib();
+            baseToMods();
             baseCharge = base + "|" + charge;
         }
 
@@ -238,6 +297,12 @@ public class PeptideFormatter {
             baseTOstripped();
             baseTOpredfull();
             baseTOdiann();
+            baseCharge = base + "|" + charge;
+        }
+
+        if (format.equals("pdeep3")) {
+            pdeep3TObase(peptide);
+            baseTOstripped();
             baseCharge = base + "|" + charge;
         }
     }

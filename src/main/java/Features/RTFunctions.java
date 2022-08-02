@@ -91,6 +91,7 @@ public class RTFunctions {
             //}
         }
         if (expRTs.size() == 0) { //no more e score threshold
+            System.out.println("Not enough high quality PSMs for RT regression. Removing escore cutoff");
             Constants.RTescoreCutoff = Float.MAX_VALUE;
             added = 0;
             for (int scanNum : new TreeSet<Integer>(mzml.scanNumberObjects.keySet())) {
@@ -102,9 +103,7 @@ public class RTFunctions {
 
                 for (int i = 1; i < scanNumObj.peptideObjects.size() + 1; i++) {
                     peptideObj pep = scanNumObj.getPeptideObject(i);
-                    if (pep.targetORdecoy == 0) {
-                        break;
-                    }
+
                     float e = Float.parseFloat(pep.escore);
                     expRTs.add(rt);
                     predRTs.add(pep.RT);

@@ -299,9 +299,7 @@ public class MainClass {
                     Set<String> intersection = new HashSet<>(featureLL);
                     intersection.retainAll(Constants.spectraFeatures);
                     if (intersection.size() == 0) {
-                        featureLL.add("brayCurtis");
-                        featureLL.add("pearsonCorr");
-                        featureLL.add("dotProduct");
+                        featureLL.add("unweightedSpectralEntropy");
                     }
                 } else {
                     featureLL.removeIf(Constants.spectraFeatures::contains);
@@ -313,8 +311,6 @@ public class MainClass {
                     intersection.retainAll(Constants.rtFeatures);
                     if (intersection.size() == 0) {
                         featureLL.add("deltaRTLOESS");
-                        featureLL.add("deltaRTLOESSnormalized");
-                        featureLL.add("RTprobabilityUnifPrior");
                     }
                 } else {
                     featureLL.removeIf(Constants.rtFeatures::contains);
@@ -490,6 +486,9 @@ public class MainClass {
                     peptideFileCreator.createPeptideFile(pmMatcher.pinFiles,
                             Constants.spectraRTPredInput.substring(0, Constants.spectraRTPredInput.length() - 4) + "_full.tsv",
                             "createFull");
+                } else if (Constants.spectraRTPredModel.equals("pDeep2")) {
+                    System.out.println("Generating input file for pDeep2");
+                    peptideFileCreator.createPeptideFile(pmMatcher.pinFiles, Constants.spectraRTPredInput, "pDeep2");
                 } else if (Constants.spectraRTPredModel.equals("pDeep3")) {
                     System.out.println("Generating input file for pDeep3");
                     peptideFileCreator.createPeptideFile(pmMatcher.pinFiles, Constants.spectraRTPredInput, "pDeep3");

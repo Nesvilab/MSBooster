@@ -580,6 +580,7 @@ public class mzMLReader {
 
                     for (peptideObj pep : msn.peptideObjects) {
                         pep.deltaRTLOESS = Math.abs(LOESSRT - pep.RT);
+                        pep.calibratedRT = LOESSRT;
                     }
                 }
             }));

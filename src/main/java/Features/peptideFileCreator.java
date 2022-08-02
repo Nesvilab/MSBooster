@@ -58,6 +58,9 @@ public class peptideFileCreator {
             pinReader pin = new pinReader(fileName);
             String[] hitsToAdd = new String[0];
             switch (modelFormat) {
+                case "pDeep2":
+                    hitsToAdd = pin.createPDeep2List();
+                    break;
                 case "pDeep3":
                     hitsToAdd = pin.createPDeep3List();
                     break;
@@ -71,13 +74,22 @@ public class peptideFileCreator {
                     hitsToAdd = pin.createDiannList();
                     break;
                 case "Prosit":
+                    if (Constants.NCE == null) {
+                        System.out.println("Missing information for Prosit file generation. " +
+                                "Please provide NCE (normalized collision energy) in " +
+                                "parameter file via --paramsList or as arguments on command line.");
+                        System.exit(-1);
+                    }
+                    hitsToAdd = pin.createPrositList();
+                    break;
+                case "PrositTMT":
                     if (Constants.FragmentationType == null || Constants.NCE == null) {
                         System.out.println("Missing information for Prosit file generation. " +
                                 "Please provide FragmentationType (HCD or CID) and NCE (normalized collision energy) in " +
                                 "parameter file via --paramsList or as arguments on command line.");
                         System.exit(-1);
                     }
-                    hitsToAdd = pin.createPrositList();
+                    hitsToAdd = pin.createPrositTMTList();
                     break;
                 case "createFull":
                     hitsToAdd = pin.createFull();
@@ -132,10 +144,16 @@ public class peptideFileCreator {
                     myWriter.write("peptide" + "\t" + "charge\n");
                     break;
                 case "PredFull":
+                    System.out.println("Writing PredFull input file");
                     myWriter.write("Peptide" + "\t" + "Charge" + "\t" + "Type" + "\t" + "NCE\n");
                     break;
                 case "Prosit":
+                    System.out.println("Writing Prosit input file");
                     myWriter.write("modified_sequence,collision_energy,precursor_charge\n");
+                    break;
+                case "PrositTMT":
+                    System.out.println("Writing Prosit TMT input file");
+                    myWriter.write("modified_sequence,collision_energy,precursor_charge,fragmentation\n");
                     break;
             }
             for (String hSetHit : hSetHits) {

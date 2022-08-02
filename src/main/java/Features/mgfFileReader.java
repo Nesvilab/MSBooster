@@ -251,6 +251,9 @@ public class mgfFileReader implements SpectralPredictionMapper{
                                             String[] basePepSplit = basePep.split("\\|");
                                             basePep = new PeptideFormatter(basePepSplit[0],
                                                     basePepSplit[1], "predfull").baseCharge;
+                                        } else if (Constants.spectraRTPredModel.contains("pDeep")) {
+                                            basePep = new PeptideFormatter(basePep,
+                                                    basePep.split("\\|")[2], "pdeep3").baseCharge;
                                         }
                                         allPreds.put(basePep, newPred);
                                         sb.setLength(0);
@@ -274,6 +277,7 @@ public class mgfFileReader implements SpectralPredictionMapper{
                                         start += line.length() + 1;
 
                                         line = returnString('\n', finalData, start);
+                                        line = line.split(" ")[0]; //for pdeep2 predictions, included space and fragment ion type
                                         intensities.add(Float.parseFloat(line.split("\t")[0]));
                                     }
                                     start += line.length() + 1;
@@ -292,6 +296,7 @@ public class mgfFileReader implements SpectralPredictionMapper{
                                     start += line.length() + 1;
 
                                     line = returnString('\n', finalData, start);
+                                    line = line.split(" ")[0]; //for pdeep2 predictions, included space and fragment ion type
                                     intensities.add(Float.parseFloat(line.split("\t")[0]));
                                     start += line.length() + 1;
                                     break;
@@ -328,6 +333,9 @@ public class mgfFileReader implements SpectralPredictionMapper{
                                     String[] basePepSplit = basePep.split("\\|");
                                     basePep = new PeptideFormatter(basePepSplit[0],
                                             basePepSplit[1], "predfull").baseCharge;
+                                } else if (Constants.spectraRTPredModel.contains("pDeep")) {
+                                    basePep = new PeptideFormatter(basePep,
+                                            basePep.split("\\|")[2], "pdeep3").baseCharge;
                                 }
                                 allPreds.put(basePep, newPred);
                             }

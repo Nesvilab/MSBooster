@@ -668,6 +668,12 @@ public class percolatorFormatter {
                                     writer.addValue("RT_probability_unif_prior", prob);
                                 }
                                 break;
+                            case "calibratedRT":
+                                writer.addValue("calibrated_RT", pepObj.calibratedRT);
+                                break;
+                            case "predictedRT":
+                                writer.addValue("predicted_RT", pepObj.RT);
+                                break;
                             case "brayCurtis":
                                 if (pepObj.spectralSimObj.spectrumComparisons.size() == 0) {
                                     writer.addValue("bray_curtis", pepObj.spectralSimObj.brayCurtis());
@@ -752,6 +758,16 @@ public class percolatorFormatter {
                                     System.out.println("Something wrong with feature calculation");
                                     System.exit(-1);
                                 }
+                                break;
+                            case "numMatchedFragments":
+                                float[] matchedIntensities = pepObj.spectralSimObj.matchedIntensities;
+                                int v = matchedIntensities.length;
+                                for (float f : matchedIntensities) {
+                                    if (f == 0) {
+                                        v -= 1;
+                                    }
+                                }
+                                writer.addValue("num_matched_fragments", v);
                                 break;
                             case "deltaIMLOESS":
                                 writer.addValue("delta_IM_loess", pepObj.deltaIMLOESS);

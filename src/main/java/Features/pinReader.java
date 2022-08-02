@@ -40,6 +40,8 @@ public class pinReader {
         } else {
             eScoreIdx = ArrayUtils.indexOf(header, "hyperscore"); //DIA
             calcEvalue = true;
+            Constants.RTescoreCutoff = (float) Math.pow(10, Constants.RTescoreCutoff);
+            Constants.IMescoreCutoff = (float) Math.pow(10, Constants.IMescoreCutoff);
         }
     }
 
@@ -93,11 +95,20 @@ public class pinReader {
         }
     }
 
+    public String[] createPDeep2List() throws IOException {
+        ArrayList<String> peps = new ArrayList<String>();
+        while (next()) {
+            PeptideFormatter pf = getPep();
+            peps.add(pf.stripped + "\t" + pf.mods + "\t" + pf.charge);
+        }
+        return peps.toArray(new String[0]);
+    }
+
     public String[] createPDeep3List() throws IOException {
         ArrayList<String> peps = new ArrayList<String>();
         while (next()) {
-            String[] pepSplit = getPep().baseCharge.split("\\|");
-            peps.add("." + "\t" + "." + "\t" + pepSplit[0] + "\t" + pepSplit[1] + "\t" + pepSplit[2]);
+            PeptideFormatter pf = getPep();
+            peps.add("." + "\t" + "." + "\t" + pf.stripped + "\t" + pf.mods + "\t" + pf.charge);
         }
         return peps.toArray(new String[0]);
     }
@@ -138,6 +149,15 @@ public class pinReader {
         while (next()) {
             PeptideFormatter pf = getPep();
             peps.add(pf.prosit + "," + Constants.NCE + "," + pf.charge);
+        }
+        return peps.toArray(new String[0]);
+    }
+
+    public String[] createPrositTMTList() throws IOException {
+        ArrayList<String> peps = new ArrayList<String>();
+        while (next()) {
+            PeptideFormatter pf = getPep();
+            peps.add(pf.prosit + "," + Constants.NCE + "," + pf.charge + "," + Constants.FragmentationType);
         }
         return peps.toArray(new String[0]);
     }

@@ -696,11 +696,20 @@ public class spectrumComparison {
         }
 
         float[] SabVector = new float[sum1PredIntensities.length];
-        for (int i = 0; i < SabVector.length; i++) {
-            SabVector[i] = (sum1PredIntensities[i] + sum1MatchedIntensities[i]) / 2;
+        float matchedSum = 0f;
+        for (float j : sum1MatchedIntensities) {
+            matchedSum += j;
         }
 
-        return 1 - ( (2 * spectralEntropy(SabVector) - spectralEntropy(sum1MatchedIntensities) - spectralEntropy(sum1PredIntensities)) / Math.log(4));
+        if (matchedSum == 0f) {
+            SabVector = sum1PredIntensities;
+        } else {
+            for (int i = 0; i < SabVector.length; i++) {
+                SabVector[i] = (sum1PredIntensities[i] + sum1MatchedIntensities[i]) / 2;
+            }
+        }
+
+        return 1 - ( ((2 * spectralEntropy(SabVector)) - spectralEntropy(sum1MatchedIntensities) - spectralEntropy(sum1PredIntensities)) / Math.log(4));
     }
 
     public static void main(String[] args) throws FileParsingException, IOException {

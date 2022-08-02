@@ -17,6 +17,7 @@ public class peptideObj {
     double RTprob;
     double deltaRTLOESS;
     double deltaRTLOESSnormalized;
+    double calibratedRT;
     double deltaIMLOESS;
     double deltaIMLOESSnormalized;
     Float IM;

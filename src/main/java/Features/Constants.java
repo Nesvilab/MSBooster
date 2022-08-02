@@ -22,7 +22,7 @@ public class Constants {
     public static String detectPredInput = null;
     public static String spectraRTPredFile = null; //use this if predFile already made
     public static String detectPredFile = null;
-    public static Boolean deletePreds = true;
+    public static Boolean deletePreds = false;
     public static Integer predictionTimeLimit = 120;
 
     //optional file locations and parameters
@@ -80,7 +80,7 @@ public class Constants {
     public static Boolean useRT = null;
     public static Integer RTregressionSize = 5000;
     public static Double uniformPriorPercentile = 10d;
-    public static Float RTescoreCutoff = (float) Math.pow(10, -3.5); //PSMs with e score higher than this won't make it into RT regression modeling
+    public static Float RTescoreCutoff = -3.5f; //PSMs with e score higher than this won't make it into RT regression modeling
     public static Integer RTbinMultiplier = 1;
     public static Float RTIQR = 50f;
     public static boolean noRTscores = false; //TODO: better handling of this
@@ -98,7 +98,7 @@ public class Constants {
     //ion mobility
     public static Boolean useIM = null;
     public static Integer IMregressionSize = 5000;
-    public static Float IMescoreCutoff = (float) Math.pow(10, -3.5);
+    public static Float IMescoreCutoff = -3.5f;
     public static Integer IMbinMultiplier = 100;
     public static final Float IMIQR = 50f;
 
@@ -200,14 +200,14 @@ public class Constants {
             "euclideanDistance", "weightedEuclideanDistance", "brayCurtis", "weightedBrayCurtis",
             "pearsonCorr", "weightedPearsonCorr", "dotProduct", "weightedDotProduct", "unweightedSpectralEntropy",
             "deltaRTlinear", "deltaRTbins", "deltaRTLOESS", "RTzscore", "RTprobability", "RTprobabilityUnifPrior",
-            "deltaRTLOESSnormalized"));
+            "deltaRTLOESSnormalized", "calibratedRT", "predictedRT", "numMatchedFragments"));
     public static final HashSet<String> spectraFeatures = new HashSet<>(Arrays.asList(
             "cosineSimilarity", "weightedCosineSimilarity", "spectralContrastAngle", "weightedSpectralContrastAngle",
             "euclideanDistance", "weightedEuclideanDistance", "brayCurtis", "weightedBrayCurtis", "unweightedSpectralEntropy",
-            "pearsonCorr", "weightedPearsonCorr", "dotProduct", "weightedDotProduct"));
+            "pearsonCorr", "weightedPearsonCorr", "dotProduct", "weightedDotProduct", "numMatchedFragments"));
     public static final HashSet<String> rtFeatures = new HashSet<>(Arrays.asList(
             "deltaRTlinear", "deltaRTbins", "deltaRTLOESS", "RTzscore", "RTprobability", "RTprobabilityUnifPrior",
-            "deltaRTLOESSnormalized"));
+            "deltaRTLOESSnormalized", "calibratedRT", "predictedRT"));
     public static final HashSet<String> imFeatures =
             new HashSet<>(Arrays.asList("deltaIMLOESS", "deltaIMLOESSnormalized", "IMprobabilityUnifPrior"));
     //TODO: add to features list
@@ -278,9 +278,12 @@ public class Constants {
         map.put("pearsonCorr", "pearson_corr");
         map.put("dotProduct", "dot_product");
         map.put("unweightedSpectralEntropy", "unweighted_spectral_entropy");
+        map.put("numMatchedFragments", "num_matched_fragments");
         map.put("deltaRTLOESS", "delta_RT_loess");
         map.put("deltaRTLOESSnormalized", "delta_RT_loess_normalized");
         map.put("RTprobabilityUnifPrior", "RT_probability_unif_prior");
+        map.put("calibratedRT", "calibrated_RT");
+        map.put("predictedRT", "predicted_RT");
         map.put("deltaIMLOESS", "delta_IM_loess");
         map.put("deltaIMLOESSnormalized", "delta_IM_loess_normalized");
         map.put("IMprobabilityUnifPrior", "IM_probability_unif_prior");
@@ -294,14 +297,18 @@ public class Constants {
     //TODO: better handling of PTMs, all in one location. Might need to import unimod mass file
     public static final Double oxidationMass = 15.9949;
     public static final Double carbamidomethylationMass = 57.0215;
+    public static final Double acetylationMass = 42.0106;
+    public static final Double phosphorylationMass = 79.9663;
+    public static final Double glyglyMass = 114.042927;
+    public static final Double tmtMass = 229.1629;
     private static HashMap<Double, Integer> makeModAAToUnimod() {
         HashMap<Double, Integer> map = new HashMap<>();
         map.put(carbamidomethylationMass, 4);
         map.put(oxidationMass, 35);
-        map.put(42.0106, 1);
-        map.put(79.9663, 21);
-        map.put(114.042927, 121);
-        map.put(229.1629, 737);
+        map.put(acetylationMass, 1);
+        map.put(phosphorylationMass, 21);
+        map.put(glyglyMass, 121);
+        map.put(tmtMass, 737);
         return map;
     }
     public static final HashMap<Double, Integer> modAAmassToUnimod = makeModAAToUnimod();
@@ -321,6 +328,24 @@ public class Constants {
         return map;
     }
     public static final HashMap<String, Double> prositToModAAmass = makePrositToModAAmass();
+    private static HashMap<String, String> makeModAAmassToPDeep() {
+        HashMap<String, String> map = new HashMap<>();
+        map.put(String.valueOf(oxidationMass), "Oxidation");
+        map.put(String.valueOf(carbamidomethylationMass), "Carbamidomethyl");
+        map.put(String.valueOf(acetylationMass), "Acetyl");
+        map.put(String.valueOf(phosphorylationMass), "Phospho");
+        return map;
+    }
+    public static final HashMap<String, String> aamassToPDeep = makeModAAmassToPDeep();
+    private static HashMap<String, String> makePDeepToModAAmass() {
+        HashMap<String, String> map = new HashMap<>();
+        map.put("Oxidation", String.valueOf(oxidationMass));
+        map.put("Carbamidomethyl", String.valueOf(carbamidomethylationMass));
+        map.put("Acetyl", String.valueOf(acetylationMass));
+        map.put("Phospho", String.valueOf(phosphorylationMass));
+        return map;
+    }
+    public static final HashMap<String, String> PDeepToAAmass = makePDeepToModAAmass();
 
     //methods
     public void updatePaths() {

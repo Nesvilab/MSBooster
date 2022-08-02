@@ -1,0 +1,7 @@
+DiaNN = C:\DIA-NN\1.8\DiaNN.exe
+numThreads = 11
+renamePin = 1
+deletePreds = false
+mzmlDirectory = 
+pinPepXMLDirectory = 
+spectraRTPredModel = DIA-NN

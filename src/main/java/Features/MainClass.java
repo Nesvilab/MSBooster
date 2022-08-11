@@ -516,8 +516,15 @@ public class MainClass {
                     }
                     System.out.println("Generating input file for DIA-NN");
                     peptideFileCreator.createPeptideFile(pmMatcher.pinFiles, Constants.spectraRTPredInput, "Diann");
+                    //does this need createfull?
+                } else if (Constants.spectraRTPredModel.equals("alphapeptdeep")) {
+                    System.out.println("Generating input file for alphapeptdeep");
+                    peptideFileCreator.createPeptideFile(pmMatcher.pinFiles, Constants.spectraRTPredInput, "alphapeptdeep");
+                    peptideFileCreator.createPeptideFile(pmMatcher.pinFiles,
+                            Constants.spectraRTPredInput.substring(0, Constants.spectraRTPredInput.length() - 4) + "_full.tsv",
+                            "createFull");
                 } else {
-                    System.out.println("spectraRTPredModel must be one of DIA-NN, Prosit, or PredFull");
+                    System.out.println("spectraRTPredModel must be one of DIA-NN, Prosit, PredFull, pDeep, or alphapeptdeep");
                     System.exit(-1);
                 }
 

@@ -95,13 +95,55 @@ public class peptideFileCreator {
                     hitsToAdd = pin.createFull();
                     break;
                 case "PredFull":
-                    if (Constants.FragmentationType == null || Constants.NCE == null) {
-                        System.out.println("Missing information for PredFull file generation. " +
-                                "Please provide FragmentationType (HCD or ETD) and NCE (normalized collision energy) in " +
-                                "parameter file via --paramsList or as arguments on command line.");
-                        System.exit(-1);
+                    if (Constants.FragmentationType.equals("")) {
+                        System.out.println("Missing fragmentation type for PredFull file generation. " +
+                                "You can provide FragmentationType (HCD or ETD) in the " +
+                                "parameter file via --paramsList or as arguments on command line. " +
+                                "For now, setting as HCD");
+                        Constants.FragmentationType = "HCD";
+                    }
+                    if (Constants.NCE.equals("")) {
+                        System.out.println("Missing normalized collision energy NCE for PredFull file generation. " +
+                                "You can provide an integer in the " +
+                                "parameter file via --paramsList or as arguments on command line. " +
+                                "For now, setting as 30");
+                        Constants.NCE = "30";
                     }
                     hitsToAdd = pin.createPredFullList();
+                    break;
+                case "alphapeptdeep":
+                    if (Constants.instrument.equals("")) {
+                        System.out.println("Missing instrument for alphapeptdeep file generation. " +
+                                "You can provide an instrument in the " +
+                                "parameter file via --paramsList or as arguments on command line. " +
+                                "For now, setting as QE. " +
+                                "The following instruments are allowed, along with the model mode that " +
+                                "alphapeptdeep converts them to (user input: alphapeptdeep mode):\n" +
+                                "    Lumos: Lumos\n" +
+                                "    QE: QE\n" +
+                                "    timsTOF: timsTOF\n" +
+                                "    SciexTOF: SciexTOF\n" +
+                                "    Fusion: Lumos\n" +
+                                "    Eclipse: Lumos\n" +
+                                "    Velos: Lumos\n" +
+                                "    Elite: Lumos\n" +
+                                "    OrbitrapTribrid: Lumos\n" +
+                                "    ThermoTribrid: Lumos\n" +
+                                "    QE+: QE\n" +
+                                "    QEHF: QE\n" +
+                                "    QEHFX: QE\n" +
+                                "    Exploris: QE\n" +
+                                "    Exploris480: QE");
+                        Constants.instrument = "QE";
+                    }
+                    if (Constants.NCE.equals("")) {
+                        System.out.println("Missing normalized collision energy NCE for alphapeptdeep file generation. " +
+                                "You can provide an integer " +
+                                "parameter file via --paramsList or as arguments on command line. " +
+                                "For now, setting as 30");
+                        Constants.NCE = "30";
+                    }
+                    hitsToAdd = pin.createAlphapeptdeepList();
                     break;
             }
             pin.close();
@@ -154,6 +196,10 @@ public class peptideFileCreator {
                 case "PrositTMT":
                     System.out.println("Writing Prosit TMT input file");
                     myWriter.write("modified_sequence,collision_energy,precursor_charge,fragmentation\n");
+                    break;
+                case "alphapeptdeep":
+                    System.out.println("Writing alphapeptdeep input file");
+                    myWriter.write("sequence,mods,mod_sites,charge,nce,instrument\n");
                     break;
             }
             for (String hSetHit : hSetHits) {

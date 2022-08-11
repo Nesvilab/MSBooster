@@ -103,8 +103,9 @@ public class Constants {
     public static final Float IMIQR = 50f;
 
     //support for PredFull and Prosit
-    public static String FragmentationType = "HCD";
-    public static String NCE = "30";
+    public static String FragmentationType = "";
+    public static String NCE = "";
+    public static String instrument = "";
     public static Integer maxPredictedFragmentCharge = 100;
     public static Integer minPredictedFragmentNum = 0;
     public static Boolean createPredFileOnly = false;
@@ -362,7 +363,8 @@ public class Constants {
             editedPin = "edited";
         }
         if (spectraRTPredInput == null) {
-            if (Constants.spectraRTPredModel.contains("Prosit")) {
+            if (Constants.spectraRTPredModel.contains("Prosit") ||
+                    Constants.spectraRTPredModel.contains("alphapeptdeep")) {
                 spectraRTPredInput = outputDirectory + File.separator + "spectraRT.csv";
             } else {
                 spectraRTPredInput = outputDirectory + File.separator + "spectraRT.tsv";

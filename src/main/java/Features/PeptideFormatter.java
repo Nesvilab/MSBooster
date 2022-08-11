@@ -14,6 +14,8 @@ public class PeptideFormatter {
     String baseCharge;
     String dlib;
     String mods = "";
+    String alphapeptdeepMods = "";
+    String modPositions = "";
 
     ArrayList<Integer> starts = new ArrayList<>();
     ArrayList<Integer> ends = new ArrayList<>();
@@ -102,7 +104,7 @@ public class PeptideFormatter {
         findPTMlocations();
     }
 
-    private void pdeep3TObase(String peptide) {
+    private void pdeep3TObase(String peptide) { //need to make robust for mods not accepted
         //add PTMs to peptide sequence
         String[] pepSplit = peptide.split("\\|");
         String newPeptide = pepSplit[0];
@@ -210,7 +212,7 @@ public class PeptideFormatter {
             String modMass = base.substring(starts.get(i) + 1, ends.get(i));
             String modName = Constants.aamassToPDeep.get(modMass);
 
-            Integer position = starts.get(i) - newEnds.get(i) + positions.get(i);
+            int position = starts.get(i) - newEnds.get(i) + positions.get(i);
             if (i > 0) {
                 position -= 1;
             }
@@ -223,11 +225,19 @@ public class PeptideFormatter {
             }
 
             String modinfo = position + "," + modName + "[" + aa + "]" + ";";
+            if (aa.equals("ProteinN-term")) {
+                aa = "Protein N-term";
+            }
+            String alphapeptdeepModinfo = modName + "@" + aa + ";";
 
             mods = mods + modinfo;
+            alphapeptdeepMods = alphapeptdeepMods + alphapeptdeepModinfo;
+            modPositions = modPositions + position + ";";
         }
         if (! mods.equals("")) {
             mods = mods.substring(0, mods.length() - 1);
+            alphapeptdeepMods = alphapeptdeepMods.substring(0, alphapeptdeepMods.length() - 1);
+            modPositions = modPositions.substring(0, modPositions.length() - 1);
         }
     }
 

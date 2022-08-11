@@ -162,6 +162,16 @@ public class pinReader {
         return peps.toArray(new String[0]);
     }
 
+    public String[] createAlphapeptdeepList() throws IOException {
+        ArrayList<String> peps = new ArrayList<String>();
+        while (next()) {
+            PeptideFormatter pf = getPep();
+            peps.add(pf.stripped + "," + pf.alphapeptdeepMods + "," + pf.modPositions + "," + pf.charge + "," +
+                    Constants.NCE + "," + Constants.instrument);
+        }
+        return peps.toArray(new String[0]);
+    }
+
     public String[] createFull() throws IOException {
         ArrayList<String> peps = new ArrayList<String>();
         //TreeMap<Integer, Integer> modMap = new TreeMap<>(); //sorted for future use

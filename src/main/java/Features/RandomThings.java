@@ -14,10 +14,7 @@ public class RandomThings {
     }
 
     public static void main(String[] args) {
-        HashMap<String, String[]> a = new HashMap<>();
-        //a.put("a", new String[1]);
-        String[] b = a.get("a");
-        System.out.println(b != null);
+        System.out.println("Working Directory = " + System.getProperty("user.dir"));
     }
 }
 

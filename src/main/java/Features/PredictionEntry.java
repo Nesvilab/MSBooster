@@ -1,5 +1,6 @@
 package Features;
 
+import java.util.Arrays;
 import java.util.stream.IntStream;
 
 public class PredictionEntry {
@@ -53,5 +54,15 @@ public class PredictionEntry {
 
     public void setCounter(int counts) {this.counter = counts;}
 
-    public void setFragmentIonTypes(String[] ions) {this.fragmentIonTypes = ions;}
+    public void setFragmentIonTypes(String[] ions) { //save time with this
+//        System.out.println(Constants.ionTOflag);
+//        System.out.println(Arrays.toString(ions));
+//        System.out.println(Constants.ionTOflag.get(ions[0]));
+
+        this.fragmentIonTypes = ions;
+//        this.flags = new int[ions.length];
+//        for (int i = 0; i < ions.length; i++) {
+//            this.flags[i] = Constants.ionTOflag.get(ions[i]);
+//        }
+    }
 }

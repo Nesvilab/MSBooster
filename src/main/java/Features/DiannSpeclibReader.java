@@ -18,15 +18,6 @@ public class DiannSpeclibReader implements SpectralPredictionMapper{
     final ArrayList<String> filenames;
     HashMap<String, PredictionEntry> allPreds = new HashMap<>();
 
-    //convert int flag to fragment ion type
-    private static HashMap<Integer, String> makeFlagTOion() {
-        HashMap<Integer, String> map = new HashMap<>();
-        map.put(0, "b");
-        map.put(1, "y");
-        return map;
-    }
-    HashMap<Integer, String> flagTOion = makeFlagTOion();
-
     //https://stackoverflow.com/questions/46163114/get-bit-values-from-byte-array
     //https://www.geeksforgeeks.org/bitwise-operators-in-java/
     public DiannSpeclibReader(String binFile) throws FileNotFoundException {
@@ -95,7 +86,7 @@ public class DiannSpeclibReader implements SpectralPredictionMapper{
                         int charge = bits(fragInt, 30, 2) + 1; //start from end
 
                         //get fragment m/z
-                        String ionType = flagTOion.get(flag);
+                        String ionType = Constants.flagTOion.get(flag);
                         float fragMZ = mc.calcMass(fragNum, ionType, charge);
 
                         //add to arrays
@@ -145,7 +136,7 @@ public class DiannSpeclibReader implements SpectralPredictionMapper{
                         MassCalculator mc = new MassCalculator(line[0], line[1]);
                         float[] newMZs = new float[tmp.mzs.length];
                         for (int i = 0; i < newMZs.length; i++) {
-                            newMZs[i] = mc.calcMass(tmp.fragNums[i], flagTOion.get(tmp.flags[i]), tmp.charges[i]);
+                            newMZs[i] = mc.calcMass(tmp.fragNums[i], Constants.flagTOion.get(tmp.flags[i]), tmp.charges[i]);
                         }
 
                         //add to hashmap
@@ -192,7 +183,7 @@ public class DiannSpeclibReader implements SpectralPredictionMapper{
             throws IOException, InterruptedException, ExecutionException, FileParsingException, SQLException {
         ExecutorService executorService = Executors.newFixedThreadPool(11);
         SpectralPredictionMapper spm = SpectralPredictionMapper.createSpectralPredictionMapper("C:/Users/yangkl/OneDriveUmich/proteomics/" +
-                        "RTalignTMT/spectraRT.predicted.bin",
+                        "RTalignTMT/spectraRT.predicted.bin", "",
                 executorService);
         executorService.shutdown();
     }

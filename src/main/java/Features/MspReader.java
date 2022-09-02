@@ -5,6 +5,7 @@ import umich.ms.fileio.exceptions.FileParsingException;
 import java.io.*;
 import java.sql.SQLException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
@@ -153,6 +154,9 @@ public class MspReader implements SpectralPredictionMapper {
                             if ((pf.stripped.length() > 20)) {
                                 continue;
                             }
+                            if ((pf.stripped.length() < 7)) {
+                                continue;
+                            }
                             if (pf.stripped.contains("O") || pf.stripped.contains("U") ||
                                     pf.stripped.contains("Z") || pf.stripped.contains("B") ||
                                     pf.stripped.contains("X")) {
@@ -207,7 +211,7 @@ public class MspReader implements SpectralPredictionMapper {
         //MspReader m = new MspReader("C:/Users/kevin/Downloads/proteomics/newHLA/msfragger3.5rc9/myPrositLib31.msp");
         ExecutorService executorService = Executors.newFixedThreadPool(11);
         SpectralPredictionMapper spm = SpectralPredictionMapper.createSpectralPredictionMapper(
-                "C:/Users/kevin/Downloads/proteomics/newHLA/msfragger3.5rc9/myPrositLib31.msp", executorService);
+                "C:/Users/kevin/Downloads/proteomics/newHLA/msfragger3.5rc9/myPrositLib31.msp", "", executorService);
         executorService.shutdown();
     }
 }

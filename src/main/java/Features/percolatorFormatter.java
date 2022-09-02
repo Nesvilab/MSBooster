@@ -68,12 +68,14 @@ public class percolatorFormatter {
 
             if (mgfSplit.length == 1) {
                 System.out.println("Loading predicted spectra");
-                predictedSpectra = SpectralPredictionMapper.createSpectralPredictionMapper(mgf, executorService);
+                predictedSpectra = SpectralPredictionMapper.createSpectralPredictionMapper(mgf, Constants.spectraRTPredModel, executorService);
             } else if (mgfSplit.length == 2){ //if fragment from predfull is not y/b, add. Prosit/diann is first, predfull second
+                String[] modelSplit = Constants.spectraRTPredModel.split(",");
+
                 System.out.println("Loading predicted spectra 1");
-                predictedSpectra = SpectralPredictionMapper.createSpectralPredictionMapper(mgfSplit[0], executorService);
+                predictedSpectra = SpectralPredictionMapper.createSpectralPredictionMapper(mgfSplit[0], modelSplit[0], executorService);
                 System.out.println("Loading predicted spectra 2");
-                predictedSpectra2 = SpectralPredictionMapper.createSpectralPredictionMapper(mgfSplit[1], executorService);
+                predictedSpectra2 = SpectralPredictionMapper.createSpectralPredictionMapper(mgfSplit[1], modelSplit[1], executorService);
                 System.out.println("Merging spectral libraries");
 
                 //get all possible keys from both preds1 and preds2
@@ -779,6 +781,12 @@ public class percolatorFormatter {
                                 float prob = StatMethods.probabilityWithUniformPrior(unifPriorSizeIM[pepObj.charge - 1], unifProbIM[pepObj.charge - 1],
                                         pepObj.scanNumObj.IMbinSize, (float) pepObj.IMprob);
                                 writer.addValue("IM_probability_unif_prior", prob);
+                                break;
+                            case "predictedIM":
+                                writer.addValue("predicted_IM", pepObj.IM);
+                                break;
+                            case "ionmobility":
+                                writer.addValue("ionmobility", pepObj.scanNumObj.IM);
                                 break;
                             case "y_matched_intensity":
                                 writer.addValue("y_matched_intensity", pepObj.matchedIntensities.get("y"));

@@ -53,6 +53,22 @@ public class Constants {
 
     ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
     //miscellaneous inner workings
+    //convert int flag to fragment ion type
+    private static HashMap<Integer, String> makeFlagTOion() {
+        HashMap<Integer, String> map = new HashMap<>();
+        map.put(0, "b");
+        map.put(1, "y");
+        return map;
+    }
+    public static HashMap<Integer, String> flagTOion = makeFlagTOion();
+
+    private static HashMap<String, Integer> makeIonToFlag() {
+        HashMap<String, Integer> map = new HashMap<>();
+        map.put("b", 0);
+        map.put("y", 1);
+        return map;
+    }
+    public static HashMap<String, Integer> ionTOflag = makeIonToFlag();
 
     //these two constants are for weighted spectral similarity features, not currently supported
     public static final Integer binwidth = 1;
@@ -210,7 +226,8 @@ public class Constants {
             "deltaRTlinear", "deltaRTbins", "deltaRTLOESS", "RTzscore", "RTprobability", "RTprobabilityUnifPrior",
             "deltaRTLOESSnormalized", "calibratedRT", "predictedRT"));
     public static final HashSet<String> imFeatures =
-            new HashSet<>(Arrays.asList("deltaIMLOESS", "deltaIMLOESSnormalized", "IMprobabilityUnifPrior"));
+            new HashSet<>(Arrays.asList("deltaIMLOESS", "deltaIMLOESSnormalized", "IMprobabilityUnifPrior", "predictedIM",
+                    "ionmobility"));
     //TODO: add to features list
     public static final HashSet<String> matchedIntensitiesFeatures = makeMatchedIntensitiesFeatures();
     private static HashSet<String> makeMatchedIntensitiesFeatures() {
@@ -288,65 +305,12 @@ public class Constants {
         map.put("deltaIMLOESS", "delta_IM_loess");
         map.put("deltaIMLOESSnormalized", "delta_IM_loess_normalized");
         map.put("IMprobabilityUnifPrior", "IM_probability_unif_prior");
+        map.put("predictedIM", "predicted_IM");
         map.put("detectProtSpearmanDiff", "detect_prot_spearman_diff");
         map.put("detectSubtractMissing", "detect_subtract_missing");
         return map;
     }
     ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-    //Handling PTMs
-
-    //TODO: better handling of PTMs, all in one location. Might need to import unimod mass file
-    public static final Double oxidationMass = 15.9949;
-    public static final Double carbamidomethylationMass = 57.0215;
-    public static final Double acetylationMass = 42.0106;
-    public static final Double phosphorylationMass = 79.9663;
-    public static final Double glyglyMass = 114.042927;
-    public static final Double tmtMass = 229.1629;
-    private static HashMap<Double, Integer> makeModAAToUnimod() {
-        HashMap<Double, Integer> map = new HashMap<>();
-        map.put(carbamidomethylationMass, 4);
-        map.put(oxidationMass, 35);
-        map.put(acetylationMass, 1);
-        map.put(phosphorylationMass, 21);
-        map.put(glyglyMass, 121);
-        map.put(tmtMass, 737);
-        return map;
-    }
-    public static final HashMap<Double, Integer> modAAmassToUnimod = makeModAAToUnimod();
-    private static HashMap<String, Double> makeUnimodtoModAA() {
-        HashMap<String, Double> map = new HashMap<>();
-        for (Map.Entry<Double, Integer> entry : modAAmassToUnimod.entrySet()) {
-            map.put(String.valueOf(entry.getValue()), entry.getKey());
-        }
-        return map;
-    }
-    public static final HashMap<String, Double> unimodtoModAAmass = makeUnimodtoModAA();
-    //TODO: support TMT
-    private static HashMap<String, Double> makePrositToModAAmass() {
-        HashMap<String, Double> map = new HashMap<>();
-        map.put("Oxidation", oxidationMass);
-        map.put("Carbamidomethyl", carbamidomethylationMass);
-        return map;
-    }
-    public static final HashMap<String, Double> prositToModAAmass = makePrositToModAAmass();
-    private static HashMap<String, String> makeModAAmassToPDeep() {
-        HashMap<String, String> map = new HashMap<>();
-        map.put(String.valueOf(oxidationMass), "Oxidation");
-        map.put(String.valueOf(carbamidomethylationMass), "Carbamidomethyl");
-        map.put(String.valueOf(acetylationMass), "Acetyl");
-        map.put(String.valueOf(phosphorylationMass), "Phospho");
-        return map;
-    }
-    public static final HashMap<String, String> aamassToPDeep = makeModAAmassToPDeep();
-    private static HashMap<String, String> makePDeepToModAAmass() {
-        HashMap<String, String> map = new HashMap<>();
-        map.put("Oxidation", String.valueOf(oxidationMass));
-        map.put("Carbamidomethyl", String.valueOf(carbamidomethylationMass));
-        map.put("Acetyl", String.valueOf(acetylationMass));
-        map.put("Phospho", String.valueOf(phosphorylationMass));
-        return map;
-    }
-    public static final HashMap<String, String> PDeepToAAmass = makePDeepToModAAmass();
 
     //methods
     public void updatePaths() {

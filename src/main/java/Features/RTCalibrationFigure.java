@@ -92,7 +92,7 @@ public class RTCalibrationFigure {
                 "AG20210507_SR_HLA_A0201_W632_2IPs_Fxn01.pin");
         SpectralPredictionMapper predictedSpectra = SpectralPredictionMapper.createSpectralPredictionMapper(
                 "C:/Users/yangkl/Downloads/proteomics/hla/" +
-                "spectraRT.predicted.bin", executorService);
+                "spectraRT.predicted.bin", "", executorService);
         Constants.numThreads = 11;
 
 //        mzMLReader mzml = new mzMLReader(new mgfFileReader("C:/Users/yangkl/OneDriveUmich/proteomics/mzml/" +

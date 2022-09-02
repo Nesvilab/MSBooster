@@ -45,7 +45,7 @@ public class DlibReader implements SpectralPredictionMapper{
                     String charge = resultSet.getString("PrecursorCharge");
                     String name = resultSet.getString("PeptideSeq"); //all C is +57
                     name = name.replace("C",
-                            "C[" + Constants.carbamidomethylationMass + "]");
+                            "C[" + PTMhandler.carbamidomethylationMass + "]");
                     name = name + "|" + charge;
                     float RT = resultSet.getFloat("RTInSeconds");
                     float[] mzs = extractMassArray(resultSet.getBytes("MassArray"),
@@ -117,7 +117,7 @@ public class DlibReader implements SpectralPredictionMapper{
                         }
                     }
                     targetPeptide = targetPeptide.replace("C",
-                            "C[" + Constants.carbamidomethylationMass + "]");
+                            "C[" + PTMhandler.carbamidomethylationMass + "]");
                     targetPeptide += "|" + pfDecoy.charge;
 
                     if (allPreds.containsKey(targetPeptide)) {

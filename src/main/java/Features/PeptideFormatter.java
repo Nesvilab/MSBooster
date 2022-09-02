@@ -62,7 +62,7 @@ public class PeptideFormatter {
         for (int i = newStarts.size() - 1; i > -1; i--) {
             try {
                 peptide = peptide.substring(0, newStarts.get(i) + 1) +
-                        Constants.unimodtoModAAmass.get(peptide.substring(newStarts.get(i) + 1, newEnds.get(i))) +
+                        PTMhandler.unimodtoModAAmass.get(peptide.substring(newStarts.get(i) + 1, newEnds.get(i))) +
                         peptide.substring(newEnds.get(i));
             } catch (Exception ignored) {
 
@@ -75,15 +75,15 @@ public class PeptideFormatter {
 
     private void prositTObase(String peptide) {
         //remove (O) and add [57] to C
-        base = peptide.replace("(ox)", "[" + Constants.oxidationMass + "]")
-                .replace("C", "C[" + Constants.carbamidomethylationMass + "]");
+        base = peptide.replace("(ox)", "[" + PTMhandler.oxidationMass + "]")
+                .replace("C", "C[" + PTMhandler.carbamidomethylationMass + "]");
         findPTMlocations();
     }
 
     private void predfullTObase(String peptide) {
         //remove (O) and add [57] to C
-        base = peptide.replace("(O)", "[" + Constants.oxidationMass + "]")
-                .replace("C", "C[" + Constants.carbamidomethylationMass + "]");
+        base = peptide.replace("(O)", "[" + PTMhandler.oxidationMass + "]")
+                .replace("C", "C[" + PTMhandler.carbamidomethylationMass + "]");
         findPTMlocations();
     }
 
@@ -97,7 +97,7 @@ public class PeptideFormatter {
                 String[] modsSplit = mods[i].split(",");
                 int position = Integer.parseInt(modsSplit[0]) + 1;
                 base = base.substring(0, position) + "[" +
-                        Constants.prositToModAAmass.get(modsSplit[2]) + "]" + base.substring(position);
+                        PTMhandler.prositToModAAmass.get(modsSplit[2]) + "]" + base.substring(position);
             }
         }
 
@@ -117,7 +117,7 @@ public class PeptideFormatter {
                 String[] commaSplit = mod.split(",");
                 int position = Integer.parseInt(commaSplit[0]);
                 String PTMtype = commaSplit[1].split("\\[")[0];
-                newPeptide = newPeptide.substring(0, position) + "[" + Constants.PDeepToAAmass.get(PTMtype) + "]" +
+                newPeptide = newPeptide.substring(0, position) + "[" + PTMhandler.PdeepToAAmass.get(PTMtype) + "]" +
                         newPeptide.substring(position);
             }
             base = newPeptide;
@@ -148,7 +148,7 @@ public class PeptideFormatter {
         for (int i = starts.size() - 1; i > -1; i--) {
             double reportedMass = Double.parseDouble(diann.substring(starts.get(i) + 1, ends.get(i)));
             boolean foundReplacement = false;
-            for (Map.Entry<Double, Integer> entry : Constants.modAAmassToUnimod.entrySet()) {
+            for (Map.Entry<Double, Integer> entry : PTMhandler.modAAmassToUnimod.entrySet()) {
                 Double PTMmass = entry.getKey();
 
                 if (Math.abs(PTMmass - reportedMass) < 0.01) {
@@ -156,10 +156,10 @@ public class PeptideFormatter {
                         diann = diann.substring(0, starts.get(i) + 1) + "TMT" +
                                 diann.substring(ends.get(i));
                     } else {
-                        diann = diann.substring(0, starts.get(i) + 1) + "UniMod:" + Constants.modAAmassToUnimod.get(PTMmass) +
+                        diann = diann.substring(0, starts.get(i) + 1) + "UniMod:" + PTMhandler.modAAmassToUnimod.get(PTMmass) +
                                 diann.substring(ends.get(i));
                     }
-//                    diann = diann.substring(0, starts.get(i) + 1) + "UniMod:" + Constants.modAAmassToUnimod.get(PTMmass) +
+//                    diann = diann.substring(0, starts.get(i) + 1) + "UniMod:" + PTMhandler.modAAmassToUnimod.get(PTMmass) +
 //                                diann.substring(ends.get(i));
                     foundReplacement = true;
                     break;
@@ -179,7 +179,7 @@ public class PeptideFormatter {
         for (int i = starts.size() - 1; i > -1; i--) {
             double reportedMass = Double.parseDouble(predfull.substring(starts.get(i) + 1, ends.get(i)));
             if (starts.get(i) - 1 > -1) { //no changes to nterm mod
-                if (Math.abs(Constants.oxidationMass - reportedMass) < 0.01 &&
+                if (Math.abs(PTMhandler.oxidationMass - reportedMass) < 0.01 &&
                         predfull.charAt(starts.get(i) - 1) == 'M') {
                     predfull = predfull.substring(0, starts.get(i)) + "(O)" + predfull.substring(ends.get(i) + 1);
                 } else { //mod unsupported, remove for now. Or C carbamidomethylation
@@ -195,7 +195,7 @@ public class PeptideFormatter {
         prosit = predfull.replace("M(O)", "M(ox)");
     }
 
-    private void strippedTOdlib() { dlib = stripped.replace("C", "C[" + Constants.carbamidomethylationMass + "]") + "|" + charge;
+    private void strippedTOdlib() { dlib = stripped.replace("C", "C[" + PTMhandler.carbamidomethylationMass + "]") + "|" + charge;
     }
 
     private void baseToMods() {
@@ -210,7 +210,19 @@ public class PeptideFormatter {
 
         for (int i = 0; i < numMods; i++) {
             String modMass = base.substring(starts.get(i) + 1, ends.get(i));
-            String modName = Constants.aamassToPDeep.get(modMass);
+            double doubleModMass = Double.parseDouble(modMass);
+            String modName = PTMhandler.aamassToAlphapeptdeep.get(modMass);
+            if (modName == null) {
+                doubleModMass -= 0.0001;
+                modName = PTMhandler.aamassToAlphapeptdeep.get(String.format("%.4f", doubleModMass));
+            }
+            if (modName == null) {
+                doubleModMass += 0.0002;
+                modName = PTMhandler.aamassToAlphapeptdeep.get(String.format("%.4f", doubleModMass));
+            }
+            if (modName == null) {
+                //TODO: make robust
+            }
 
             int position = starts.get(i) - newEnds.get(i) + positions.get(i);
             if (i > 0) {
@@ -227,6 +239,20 @@ public class PeptideFormatter {
             String modinfo = position + "," + modName + "[" + aa + "]" + ";";
             if (aa.equals("ProteinN-term")) {
                 aa = "Protein N-term";
+            }
+
+            //check that the ptmName@aa is accepted by alphapeptdeep
+            ArrayList<String> ptmSubstitutes = PTMhandler.sameMass.get(String.format("%.4f", doubleModMass));
+            while (! PTMhandler.alphapeptdeepModNames.contains(modName + "@" + aa)) {
+                if (ptmSubstitutes == null) { //just until the search is right
+                    break;
+                }
+                if (ptmSubstitutes.size() == 1) {
+                    System.out.println("This PTM is not supported with mass " + doubleModMass);
+                }
+                ptmSubstitutes.remove(modName);
+                modName = ptmSubstitutes.get(0);
+                PTMhandler.aamassToAlphapeptdeep.put(String.format("%.4f", doubleModMass), modName);
             }
             String alphapeptdeepModinfo = modName + "@" + aa + ";";
 

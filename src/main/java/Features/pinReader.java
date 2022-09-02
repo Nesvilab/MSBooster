@@ -162,12 +162,12 @@ public class pinReader {
         return peps.toArray(new String[0]);
     }
 
-    public String[] createAlphapeptdeepList() throws IOException {
+    public String[] createAlphapeptdeepList() throws IOException { //use this to convert between names when reading in predictions
         ArrayList<String> peps = new ArrayList<String>();
         while (next()) {
             PeptideFormatter pf = getPep();
             peps.add(pf.stripped + "," + pf.alphapeptdeepMods + "," + pf.modPositions + "," + pf.charge + "," +
-                    Constants.NCE + "," + Constants.instrument);
+                    Constants.NCE + "," + Constants.instrument + "," + pf.base);
         }
         return peps.toArray(new String[0]);
     }

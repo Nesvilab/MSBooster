@@ -111,6 +111,9 @@ public class mzmlScanNumber {
             } else if (name.stripped.length() > 15) { //TODO: update this when longer ones are supported
                 peptideObjects.add(rank - 1, new peptideObj(this, name.baseCharge, rank, targetORdecoy, escore,
                         zeroFloatArray, zeroFloatArray, predRT, predIM));
+            } else if (name.stripped.length() < 7) { //TODO: update this when shorter ones are supported
+                peptideObjects.add(rank - 1, new peptideObj(this, name.baseCharge, rank, targetORdecoy, escore,
+                        zeroFloatArray, zeroFloatArray, predRT, predIM));
             } else if (Integer.parseInt(name.charge) > 6) { //TODO: update this for different tools
                 peptideObjects.add(rank - 1, new peptideObj(this, name.baseCharge, rank, targetORdecoy, escore,
                         zeroFloatArray, zeroFloatArray, predRT, predIM));

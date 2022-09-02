@@ -16,7 +16,7 @@ public interface SpectralPredictionMapper {
     float getMaxPredRT();
 
     //TODO: multithread all of these
-    static SpectralPredictionMapper createSpectralPredictionMapper(String file, ExecutorService executorService)
+    static SpectralPredictionMapper createSpectralPredictionMapper(String file, String model, ExecutorService executorService)
             throws IOException, InterruptedException, ExecutionException, FileParsingException, SQLException {
         //detecting file extension
         String[] extensionSplit = file.split("\\.");
@@ -26,12 +26,11 @@ public interface SpectralPredictionMapper {
             case "bin":
                 return new DiannSpeclibReader(file);
             case "mgf":
-                //if PredFull, use PredFullSpeclibReader class
-                if (Constants.spectraRTPredModel.contains("PredFull")) {
+                if (model.equals("PredFull")) { //if PredFull, use PredFullSpeclibReader class
                     return new PredFullSpeclibReader(file, false, executorService);
+                } else { //for pdeep and alphapeptdeep
+                    return new mgfFileReader(file, false, executorService);
                 }
-                //check if this works with pDeep
-                return new mgfFileReader(file, false, executorService);
             case "msp":
                 return new MspReader(file);
             case "dlib":

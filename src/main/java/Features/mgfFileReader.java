@@ -172,6 +172,7 @@ public class mgfFileReader implements SpectralPredictionMapper{
                         String charge;
                         ArrayList<Float> intensities = new ArrayList<>(12000);
                         ArrayList<Float> mzs = new ArrayList<>(12000);
+                        ArrayList<String> fragmentIonTypes = new ArrayList<>(12000);
                         int start = finalChunks[finalI];
                         int end = finalChunks[finalI + 1];
                         String line = "";
@@ -237,6 +238,10 @@ public class mgfFileReader implements SpectralPredictionMapper{
                                     for (int h = 0; h < intensities.size(); h++) {
                                         intArray[h] = intensities.get(h);
                                     }
+                                    String[] fragmentArray = new String[fragmentIonTypes.size()];
+                                    for (int h = 0; h < fragmentIonTypes.size(); h++) {
+                                        fragmentArray[h] = fragmentIonTypes.get(h);
+                                    }
                                     if (createScanNumObjects) { //act as mzml
                                         scanNumberObjects.put(scanNum, new mzmlScanNumber(scanNum, mzArray, intArray, RT, IM));
                                     } else { //act as predictions
@@ -245,6 +250,7 @@ public class mgfFileReader implements SpectralPredictionMapper{
                                         newPred.setIntensities(intArray);
                                         newPred.setRT(RT);
                                         newPred.setIM(IM);
+                                        newPred.setFragmentIonTypes(fragmentArray);
                                         //convert title to base format
                                         String basePep = sb.toString();
                                         if (Constants.spectraRTPredModel.contains("PredFull")) {
@@ -262,6 +268,7 @@ public class mgfFileReader implements SpectralPredictionMapper{
                                     //reset for next peptide/PSM
                                     mzs.clear();
                                     intensities.clear();
+                                    fragmentIonTypes.clear();
                                     break;
                                 case 'B': // BEGIN IONS
                                     start += 11;
@@ -277,8 +284,11 @@ public class mgfFileReader implements SpectralPredictionMapper{
                                         start += line.length() + 1;
 
                                         line = returnString('\n', finalData, start);
-                                        line = line.split(" ")[0]; //for pdeep2 predictions, included space and fragment ion type
-                                        intensities.add(Float.parseFloat(line.split("\t")[0]));
+                                        String[] lineSplit = line.split(" "); //for pdeep2 predictions, included space and fragment ion type
+                                        intensities.add(Float.parseFloat(lineSplit[0]));
+                                        if (lineSplit.length != 1) {
+                                            fragmentIonTypes.add(lineSplit[1]);
+                                        }
                                     }
                                     start += line.length() + 1;
                                     break;
@@ -296,8 +306,11 @@ public class mgfFileReader implements SpectralPredictionMapper{
                                     start += line.length() + 1;
 
                                     line = returnString('\n', finalData, start);
-                                    line = line.split(" ")[0]; //for pdeep2 predictions, included space and fragment ion type
-                                    intensities.add(Float.parseFloat(line.split("\t")[0]));
+                                    String[] lineSplit = line.split(" "); //for pdeep2 predictions, included space and fragment ion type
+                                    intensities.add(Float.parseFloat(lineSplit[0]));
+                                    if (lineSplit.length != 1) {
+                                        fragmentIonTypes.add(lineSplit[1]);
+                                    }
                                     start += line.length() + 1;
                                     break;
                                 default: //USERNAME
@@ -316,6 +329,10 @@ public class mgfFileReader implements SpectralPredictionMapper{
                         for (int h = 0; h < intensities.size(); h++) {
                             intArray[h] = intensities.get(h);
                         }
+                        String[] fragmentArray = new String[fragmentIonTypes.size()];
+                        for (int h = 0; h < fragmentIonTypes.size(); h++) {
+                            fragmentArray[h] = fragmentIonTypes.get(h);
+                        }
                         if (createScanNumObjects) { //act as mzml
                             if (! scanNumberObjects.containsKey(scanNum)) {
                                 scanNumberObjects.put(scanNum, new mzmlScanNumber(scanNum, mzArray, intArray, RT, IM));
@@ -326,6 +343,7 @@ public class mgfFileReader implements SpectralPredictionMapper{
                             newPred.setIntensities(intArray);
                             newPred.setRT(RT);
                             newPred.setIM(IM);
+                            newPred.setFragmentIonTypes(fragmentArray);
                             if (mzArray.length != 0) {
                                 //convert title to base format
                                 String basePep = sb.toString();
@@ -344,6 +362,7 @@ public class mgfFileReader implements SpectralPredictionMapper{
                         //reset for next peptide/PSM
                         mzs.clear();
                         intensities.clear();
+                        fragmentIonTypes.clear();
                     }));
                 }
                 for (Future future : futureList) {
@@ -385,8 +404,8 @@ public class mgfFileReader implements SpectralPredictionMapper{
         Constants.numThreads = 11;
         ExecutorService executorService = Executors.newFixedThreadPool(Constants.numThreads);
         long startTime = System.nanoTime();
-        mgfFileReader mgf = new mgfFileReader("C:/Users/kevin/Downloads/proteomics/File_2.mgf", true,
-                executorService);
+        mgfFileReader mgf = new mgfFileReader("C:/Users/kevin/Downloads/proteomics/hla2/spectraRT.mgf",
+                true, executorService);
         long endTime = System.nanoTime();
         long duration = (endTime - startTime);
         System.out.println("loading took " + duration / 1000000 +" milliseconds");

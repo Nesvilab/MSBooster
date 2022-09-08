@@ -261,6 +261,9 @@ public class MainClass {
             } else if (Constants.divideFragments.equals("2")) {
                 Constants.divideFragments = "y;b;immonium;a;y-NL;b-NL;a-NL;internal;internal-NL;unknown";
                 Constants.topFragments = 6;
+            } else if (Constants.divideFragments.equals("3")) { //standard setting of yb vs others
+                Constants.divideFragments = "y_b_y-NL_b-NL;immonium_a_a-NL_internal_internal-NL_unknown";
+                Constants.topFragments = 12;
             }
 
             //defining num threads

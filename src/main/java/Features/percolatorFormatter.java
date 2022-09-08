@@ -82,7 +82,17 @@ public class percolatorFormatter {
                 Set<String> totalKeyset = new HashSet<String>();
                 totalKeyset.addAll(predictedSpectra.getPreds().keySet());
                 totalKeyset.addAll(predictedSpectra2.getPreds().keySet());
-                float maxIntensity = 1f; //may need to change for new models
+                float maxIntensity = Constants.modelMaxIntensity.get(modelSplit[0]);
+
+                //check what fragment ion types have been predicted by model 1
+                HashSet<String> model1FragmentIonTypes = new HashSet<>();
+                for (PredictionEntry pe : predictedSpectra.getPreds().values()) {
+                    if (pe.fragmentIonTypes == null) {
+                        pe.setFragmentIonTypes();
+                    }
+                    model1FragmentIonTypes.addAll(Arrays.asList(pe.fragmentIonTypes));
+                }
+
                 for (String key : totalKeyset) {
 //                    if (entry.getValue().fragmentIonTypes == null) { //something with base modifications that is never actually queried
 //                        predictedSpectra.getPreds().remove(entry.getKey());
@@ -103,7 +113,7 @@ public class percolatorFormatter {
                             for(int i = 0; i < pe.mzs.length; i++) {
                                 float mz = pe.mzs[i];
                                 float intensity = pe.intensities[i];
-                                int flag = pe.flags[i];
+                                String fragType = pe.fragmentIonTypes[i];
 
                                 if (intensity == maxIntensity) {
                                     maxIntensityMZ = mz;
@@ -111,11 +121,7 @@ public class percolatorFormatter {
 
                                 mzs.add(mz);
                                 intensities.add(intensity);
-                                if (flag == 0) {
-                                    fragTypes.add("b");
-                                } else {
-                                    fragTypes.add("y");
-                                }
+                                fragTypes.add(fragType);
                             }
 
                             float minMZ = maxIntensityMZ - Constants.DaTolerance;
@@ -128,7 +134,7 @@ public class percolatorFormatter {
                             //if null, convert to base format
 
                             if ((!Objects.isNull(pe2)) && (!Objects.isNull(pe2.fragmentIonTypes))) {
-                                float matchedFragInt = -1f;
+                                float matchedFragInt = Constants.modelMaxIntensity.get(modelSplit[1]);
                                 for (int i = 0; i < pe2.mzs.length; i++) {
                                     float potentialMZ = pe2.mzs[i];
                                     float potentialInt = pe2.intensities[i];
@@ -136,13 +142,9 @@ public class percolatorFormatter {
                                         matchedFragInt = potentialInt;
                                     }
                                 }
-                                if (matchedFragInt == -1f) { //didn't find matching fragment. Just ignore
-                                    matchedFragInt = 1000;
-                                }
 
                                 for (int i = 0; i < pe2.fragmentIonTypes.length; i++) {
-                                    if (!pe2.fragmentIonTypes[i].equals("y") &&
-                                            !pe2.fragmentIonTypes[i].equals("b")) {
+                                    if (!model1FragmentIonTypes.contains(pe2.fragmentIonTypes[i])) {
                                         mzs.add(pe2.mzs[i]);
                                         intensities.add(pe2.intensities[i] * maxIntensity / matchedFragInt); //putting intensities on same scale
                                         fragTypes.add(pe2.fragmentIonTypes[i]);
@@ -322,7 +324,7 @@ public class percolatorFormatter {
                     }
                     //add columns for spectral features divided by fragment ion type
                     if (Constants.spectraFeatures.contains(s)) {
-                        if (! Constants.divideFragments.equals("")) {
+                        if (! Constants.divideFragments.equals("0")) {
                             String[] divisions = Constants.divideFragments.split(";");
                             for (String div : divisions) {
                                 newNames.add(newName + "_" + div);
@@ -743,7 +745,7 @@ public class percolatorFormatter {
                                 }
                                 break;
                             case "unweightedSpectralEntropy":
-                                if (Constants.divideFragments.equals("")) {
+                                if (Constants.divideFragments.equals("0")) {
                                     writer.addValue("unweighted_spectral_entropy", pepObj.spectralSimObj.unweightedSpectralEntropy());
                                 } else if ((pepObj.spectralSimObj.spectrumComparisons.size() > 0) & (predictedSpectra.getPreds().containsKey(pepObj.name))){
                                     String[] dividedFragments = Constants.divideFragments.split(";");

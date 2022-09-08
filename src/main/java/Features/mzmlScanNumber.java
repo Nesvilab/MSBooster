@@ -72,7 +72,7 @@ public class mzmlScanNumber {
 
             peptideObj newPepObj;
             if (predMZs.length > 1) {
-                if (Constants.divideFragments.equals("")) {
+                if (Constants.divideFragments.equals("0")) {
                     newPepObj = new peptideObj(this, name.baseCharge, rank, targetORdecoy, escore, predMZs,
                             predIntensities, predRT, predIM);
                 } else {

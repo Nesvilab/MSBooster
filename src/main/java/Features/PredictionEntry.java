@@ -42,7 +42,20 @@ public class PredictionEntry {
 
     public void setFragNums(int[] fragNums) {this.fragNums = fragNums;}
 
-    public void setFlags(int[] flags) {this.flags = flags;}
+    public void setFlags(int[] flags) { //save time with this
+        this.flags = flags;
+        this.fragmentIonTypes = new String[flags.length];
+        for (int i = 0; i < flags.length; i++) {
+            this.fragmentIonTypes[i] = Constants.flagTOion.get(flags[i]);
+        }
+    }
+
+    public void setFlags() { //save time with this
+        this.flags = new int[fragmentIonTypes.length];
+        for (int i = 0; i < fragmentIonTypes.length; i++) {
+            this.flags[i] = Constants.ionTOflag.get(fragmentIonTypes[i]);
+        }
+    }
 
     public void setCharges(int[] charges) {this.charges = charges;}
 
@@ -54,15 +67,12 @@ public class PredictionEntry {
 
     public void setCounter(int counts) {this.counter = counts;}
 
-    public void setFragmentIonTypes(String[] ions) { //save time with this
-//        System.out.println(Constants.ionTOflag);
-//        System.out.println(Arrays.toString(ions));
-//        System.out.println(Constants.ionTOflag.get(ions[0]));
+    public void setFragmentIonTypes(String[] ions) { this.fragmentIonTypes = ions; }
 
-        this.fragmentIonTypes = ions;
-//        this.flags = new int[ions.length];
-//        for (int i = 0; i < ions.length; i++) {
-//            this.flags[i] = Constants.ionTOflag.get(ions[i]);
-//        }
+    public void setFragmentIonTypes() {
+        this.fragmentIonTypes = new String[flags.length];
+        for (int i = 0; i < flags.length; i++) {
+            this.fragmentIonTypes[i] = Constants.flagTOion.get(flags[i]);
+        }
     }
 }

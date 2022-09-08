@@ -70,7 +70,7 @@ public class DiannSpeclibReader implements SpectralPredictionMapper{
                     float[] intensities = new float[numFrags];
                     int[] fragNums = new int[numFrags];
                     int[] flags = new int[numFrags];
-                    String[] fragmentIonTypes = new String[numFrags];
+                    //String[] fragmentIonTypes = new String[numFrags];
                     int[] charges = new int[numFrags];
 
                     //load fragment info
@@ -94,7 +94,7 @@ public class DiannSpeclibReader implements SpectralPredictionMapper{
                         intensities[i] = intensity;
                         fragNums[i] = fragNum;
                         flags[i] = flag;
-                        fragmentIonTypes[i] = ionType;
+                        //fragmentIonTypes[i] = ionType;
                         charges[i] = charge;
                     }
 
@@ -107,7 +107,7 @@ public class DiannSpeclibReader implements SpectralPredictionMapper{
                     newPred.setCharges(charges);
                     newPred.setRT(iRT);
                     newPred.setIM(IM);
-                    newPred.setFragmentIonTypes(fragmentIonTypes);
+                    newPred.setFragmentIonTypes();
                     allPreds.put(mc.fullPeptide, newPred);
                 }
                 is.close();

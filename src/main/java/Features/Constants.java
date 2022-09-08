@@ -58,6 +58,8 @@ public class Constants {
         HashMap<Integer, String> map = new HashMap<>();
         map.put(0, "b");
         map.put(1, "y");
+        map.put(2, "b-NL");
+        map.put(3, "y-NL");
         return map;
     }
     public static HashMap<Integer, String> flagTOion = makeFlagTOion();
@@ -66,9 +68,21 @@ public class Constants {
         HashMap<String, Integer> map = new HashMap<>();
         map.put("b", 0);
         map.put("y", 1);
+        map.put("b-NL", 2);
+        map.put("y-NL", 3);
         return map;
     }
     public static HashMap<String, Integer> ionTOflag = makeIonToFlag();
+
+    private static HashMap<String, Integer> makeModelMaxIntensity() {
+        HashMap<String, Integer> map = new HashMap<>();
+        map.put("DIA-NN", 60000);
+        map.put("Prosit", 1);
+        map.put("alphapeptdeep", 1);
+        map.put("PredFull", 1000);
+        return map;
+    }
+    public static HashMap<String, Integer> modelMaxIntensity = makeModelMaxIntensity();
 
     //these two constants are for weighted spectral similarity features, not currently supported
     public static final Integer binwidth = 1;
@@ -167,10 +181,8 @@ public class Constants {
     public static String[] fragmentIonHierarchy = makeFragmentIonHierarchy();
     private static String[] makeFragmentIonHierarchy() {
         if (Constants.FragmentationType.equals("ETD")) {
-            return new String[] {"z", "c", "y", "a", "x", "b",
-                    "precursor", "immonium", "internal", "internal-NL",
-                    "z-NL", "c-NL", "y-NL", "a-NL", "x-NL", "b-NL",
-                    "precursor-NL"};
+            return new String[] {"immonium", "z", "c",
+                    "z-NL", "c-NL", "internal", "internal-NL", "unknown"};
         } else { //HCD, CID, or not specified
             return new String[] {"immonium", "y", "b", "a",
                     "y-NL", "b-NL", "a-NL", "internal", "internal-NL", "unknown"};
@@ -189,7 +201,7 @@ public class Constants {
         }
         return new HashSet<>(Arrays.asList(fragmentIonHierarchy).subList(0, index + 1));
     }
-    public static String divideFragments = "";
+    public static String divideFragments = "0";
 
     //PredFull fragment ion annotation
     //TODO: can only use for PredFull

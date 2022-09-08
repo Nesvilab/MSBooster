@@ -133,7 +133,7 @@ public class PTMhandler {
             String ptmName = lineSplit[0].split("@")[0];
             String mass = String.format("%.4f", Math.round(Double.parseDouble(lineSplit[5]) * 10000.0) / 10000.0);
             map.put(mass, ptmName);
-            alphapeptdeepModNames.add(lineSplit[0]);
+            alphapeptdeepModNames.add(lineSplit[0].split("\\^")[0]);
             ArrayList<String> stringList = sameMass.get(mass);
             if (stringList == null) {
                 stringList = new ArrayList<>();

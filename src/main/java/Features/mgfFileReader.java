@@ -251,6 +251,7 @@ public class mgfFileReader implements SpectralPredictionMapper{
                                         newPred.setRT(RT);
                                         newPred.setIM(IM);
                                         newPred.setFragmentIonTypes(fragmentArray);
+                                        newPred.setFlags();
                                         //convert title to base format
                                         String basePep = sb.toString();
                                         if (Constants.spectraRTPredModel.contains("PredFull")) {
@@ -344,6 +345,7 @@ public class mgfFileReader implements SpectralPredictionMapper{
                             newPred.setRT(RT);
                             newPred.setIM(IM);
                             newPred.setFragmentIonTypes(fragmentArray);
+                            newPred.setFlags();
                             if (mzArray.length != 0) {
                                 //convert title to base format
                                 String basePep = sb.toString();

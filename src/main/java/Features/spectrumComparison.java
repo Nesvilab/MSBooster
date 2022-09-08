@@ -60,7 +60,7 @@ public class spectrumComparison {
         predMZs = pMZs;
         predIntensities = pIntensities;
 
-        if (Constants.divideFragments.equals("")) {
+        if (Constants.divideFragments.equals("0")) {
 //            if (Constants.sqrtPredIntensities) {
 //                this.squareRootPredIntensities();
 //            }

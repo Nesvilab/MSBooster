@@ -70,6 +70,8 @@ public class Constants {
         map.put("y", 1);
         map.put("b-NL", 2);
         map.put("y-NL", 3);
+        map.put("c", 4);
+        map.put("z", 5);
         return map;
     }
     public static HashMap<String, Integer> ionTOflag = makeIonToFlag();
@@ -134,7 +136,7 @@ public class Constants {
 
     //support for PredFull and Prosit
     public static String FragmentationType = "";
-    public static String NCE = "";
+    public static String NCE = "30";
     public static String instrument = "";
     public static Integer maxPredictedFragmentCharge = 100;
     public static Integer minPredictedFragmentNum = 0;

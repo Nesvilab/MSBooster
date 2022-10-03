@@ -4,10 +4,7 @@ import umich.ms.fileio.exceptions.FileParsingException;
 
 import java.io.*;
 import java.nio.charset.StandardCharsets;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.List;
+import java.util.*;
 import java.util.concurrent.*;
 
 public class mgfFileReader implements SpectralPredictionMapper{
@@ -49,6 +46,9 @@ public class mgfFileReader implements SpectralPredictionMapper{
     public mgfFileReader(String file, boolean createScanNumObjects, ExecutorService executorService)
             throws IOException, FileParsingException, ExecutionException, InterruptedException {
         try {
+            //load allowed fragment ion types
+            Set<String> ignoredFragmentIonTypesSet = Constants.makeIgnoredFragmentIonTypes();
+
             //add name
             filenames.add(file);
 
@@ -281,14 +281,21 @@ public class mgfFileReader implements SpectralPredictionMapper{
                                         IM = Float.parseFloat(line);
                                     } else {
                                         line = returnString(new char[]{' ', '\t'}, finalData, start);
-                                        mzs.add(Float.parseFloat(line));
+                                        float newMZ = Float.parseFloat(line);
+
                                         start += line.length() + 1;
 
                                         line = returnString('\n', finalData, start);
                                         String[] lineSplit = line.split(" "); //for pdeep2 predictions, included space and fragment ion type
-                                        intensities.add(Float.parseFloat(lineSplit[0]));
                                         if (lineSplit.length != 1) {
-                                            fragmentIonTypes.add(lineSplit[1]);
+                                            if (! ignoredFragmentIonTypesSet.contains(lineSplit[1])) {
+                                                fragmentIonTypes.add(lineSplit[1]);
+                                                mzs.add(newMZ);
+                                                intensities.add(Float.parseFloat(lineSplit[0]));
+                                            }
+                                        } else {
+                                            mzs.add(newMZ);
+                                            intensities.add(Float.parseFloat(lineSplit[0]));
                                         }
                                     }
                                     start += line.length() + 1;
@@ -303,14 +310,21 @@ public class mgfFileReader implements SpectralPredictionMapper{
                                 case '9':
                                 case '0':
                                     line = returnString(new char[]{' ', '\t'}, finalData, start);
-                                    mzs.add(Float.parseFloat(line));
+                                    float newMZ = Float.parseFloat(line);
+
                                     start += line.length() + 1;
 
                                     line = returnString('\n', finalData, start);
                                     String[] lineSplit = line.split(" "); //for pdeep2 predictions, included space and fragment ion type
-                                    intensities.add(Float.parseFloat(lineSplit[0]));
                                     if (lineSplit.length != 1) {
-                                        fragmentIonTypes.add(lineSplit[1]);
+                                        if (! ignoredFragmentIonTypesSet.contains(lineSplit[1])) {
+                                            fragmentIonTypes.add(lineSplit[1]);
+                                            mzs.add(newMZ);
+                                            intensities.add(Float.parseFloat(lineSplit[0]));
+                                        }
+                                    } else {
+                                        mzs.add(newMZ);
+                                        intensities.add(Float.parseFloat(lineSplit[0]));
                                     }
                                     start += line.length() + 1;
                                     break;

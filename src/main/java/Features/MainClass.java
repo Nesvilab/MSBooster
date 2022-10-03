@@ -10,7 +10,7 @@ import java.util.*;
 //this is what I use in the java jar file
 public class MainClass {
     public static void main(String[] args) throws Exception {
-        System.out.println("MSBooster v1.1.5");
+        System.out.println("MSBooster v1.1.6");
         try {
             //accept command line inputs
             HashSet<String> fields = new HashSet<>();
@@ -264,6 +264,8 @@ public class MainClass {
             } else if (Constants.divideFragments.equals("3")) { //standard setting of yb vs others
                 Constants.divideFragments = "y_b_y-NL_b-NL;immonium_a_a-NL_internal_internal-NL_unknown";
                 Constants.topFragments = 12;
+            } else if (Constants.divideFragments.equals("0") && Constants.spectraRTPredModel.equals("DIA-NN")) {
+                Constants.topFragments = 12; //may update in future
             }
 
             //defining num threads
@@ -571,10 +573,6 @@ public class MainClass {
                 predFile.delete();
                 predFile = new File(Constants.outputDirectory + File.separator + "spectraRT.predicted.bin");
                 predFile.delete();
-//                predFile = new File(Constants.outputDirectory + File.separator + "detect.tsv");
-//                predFile.delete();
-//                predFile = new File(Constants.outputDirectory + File.separator + "detect_Predictions.txt");
-//                predFile.delete();
             }
 
             long end = System.nanoTime();
@@ -610,16 +608,18 @@ public class MainClass {
     static private void printParamsPS() {
         try {
             System.out.println("Final parameters used for feature annotation:");
-            Constants c = new Constants();
+            //Constants c = new Constants();
 
             Field[] f = Constants.class.getFields();
             for (Field field : f) {
                 if ((field.getModifiers() & Modifier.FINAL) != Modifier.FINAL) {
                     if (!field.getName().equals("paramsList")) {
                         if (field.getName().equals("fragmentIonHierarchy")) {
-                            System.out.println("\t" + field.getName() + " = " + Arrays.toString((String[]) field.get(c)));
+                            //System.out.println("\t" + field.getName() + " = " + Arrays.toString((String[]) field.get(c)));
+                            System.out.println("\t" + field.getName() + " = " + Arrays.toString((String[]) field.get(Constants.class)));
                         } else {
-                            System.out.println("\t" + field.getName() + " = " + field.get(c));
+                            //System.out.println("\t" + field.getName() + " = " + field.get(c));
+                            System.out.println("\t" + field.getName() + " = " + field.get(Constants.class));
                         }
                     }
                 }

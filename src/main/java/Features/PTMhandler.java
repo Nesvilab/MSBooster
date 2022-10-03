@@ -113,6 +113,7 @@ public class PTMhandler {
 
     /////////////////////////////////////////////////////ALPHAPEPTDEEP////////////////////////////////////////////////////
     public static HashSet<String> alphapeptdeepModNames = new HashSet<String>();
+    public static HashMap<String, String> writeOutAlphapeptdeepModNames = new HashMap<>();
     public static HashMap<String, ArrayList<String>> sameMass = new HashMap<>();
 
     private static HashMap<String, String> makeModAAmassToAlphapeptdeep() throws IOException {
@@ -134,6 +135,7 @@ public class PTMhandler {
             String mass = String.format("%.4f", Math.round(Double.parseDouble(lineSplit[5]) * 10000.0) / 10000.0);
             map.put(mass, ptmName);
             alphapeptdeepModNames.add(lineSplit[0].split("\\^")[0]);
+            writeOutAlphapeptdeepModNames.put(lineSplit[0].split("\\^")[0], lineSplit[0]);
             ArrayList<String> stringList = sameMass.get(mass);
             if (stringList == null) {
                 stringList = new ArrayList<>();

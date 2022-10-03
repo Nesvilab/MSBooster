@@ -254,7 +254,7 @@ public class PeptideFormatter {
                 modName = ptmSubstitutes.get(0);
                 PTMhandler.aamassToAlphapeptdeep.put(String.format("%.4f", doubleModMass), modName);
             }
-            String alphapeptdeepModinfo = modName + "@" + aa + ";";
+            String alphapeptdeepModinfo = PTMhandler.writeOutAlphapeptdeepModNames.get(modName + "@" + aa) + ";";
 
             mods = mods + modinfo;
             alphapeptdeepMods = alphapeptdeepMods + alphapeptdeepModinfo;

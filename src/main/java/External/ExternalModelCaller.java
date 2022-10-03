@@ -22,7 +22,9 @@ public class ExternalModelCaller {
                             String.valueOf(Constants.numThreads),
                             "--strip-unknown-mods",
                             "--mod",
-                            "TMT,229.1629");
+                            "TMT,229.1629",
+                            "--predict-n-frag",
+                            "100");
                     System.out.println(String.join(" ", builder.command()));
                     builder.redirectErrorStream(true);
                     Process process = builder.start();
@@ -59,14 +61,14 @@ public class ExternalModelCaller {
                             ".predicted.bin";
                     int DIANNtermination = process.waitFor();
 
+                    if (DIANNtermination != 0) {
+                        System.out.println("Abnormal DIANN termination: " + DIANNtermination);
+                    }
                     if (! printedFinished) {
                         System.out.println("DIA-NN did not print 'Finished', and therefore did not " +
                                 "finish predictions successfully. Rerunning from the MSBooster step " +
                                 "may resolve the issue. Exiting");
                         System.exit(-1);
-                    }
-                    if (DIANNtermination != 0) {
-                        System.out.println("Abnormal DIANN termination: " + DIANNtermination);
                     }
                     File predFile = new File(Constants.spectraRTPredFile);
                     if (Files.isReadable(predFile.toPath())) {

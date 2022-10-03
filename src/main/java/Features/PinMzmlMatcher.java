@@ -35,7 +35,7 @@ public class PinMzmlMatcher {
             if (f.isFile()) {
                 if (directory.substring(directory.length() - 4).toLowerCase().equals("mzml")) {
                     mzmlFileMap.put(f.getName().substring(0, f.getName().length() - 5), f);
-                } else if (directory.substring(directory.length() - 16).toLowerCase().equals("uncalibrated.mzml")) {
+                } else if (directory.substring(directory.length() - 17).toLowerCase().equals("uncalibrated.mzml")) {
                     mzmlFileMap.put(f.getName().substring(0, f.getName().length() - 18), f);
                 } else if (directory.substring(directory.length() - 16).toLowerCase().equals("uncalibrated.mgf")) {
                     mzmlFileMap.put(f.getName().substring(0, f.getName().length() - 17), f);

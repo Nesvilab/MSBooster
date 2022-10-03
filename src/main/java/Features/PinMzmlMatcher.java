@@ -45,12 +45,20 @@ public class PinMzmlMatcher {
             } else { //directory
                 Collection<File> mzmlFilesCollection = listFiles(f, new String[]{"mzML"}, false);
                 for (File file : mzmlFilesCollection) {
-                    mzmlFileMap.put(file.getName().substring(0, file.getName().length() - 5), file);
+                    if (file.getName().contains("_uncalibrated.mzML")) {
+                        mzmlFileMap.put(file.getName().substring(0, file.getName().length() - 18), file);
+                    } else {
+                        mzmlFileMap.put(file.getName().substring(0, file.getName().length() - 5), file);
+                    }
                 }
 
                 mzmlFilesCollection = listFiles(f, new String[]{"mzml"}, false);
                 for (File file : mzmlFilesCollection) {
-                    mzmlFileMap.put(file.getName().substring(0, file.getName().length() - 5), file);
+                    if (file.getName().contains("_uncalibrated.mzml")) {
+                        mzmlFileMap.put(file.getName().substring(0, file.getName().length() - 18), file);
+                    } else {
+                        mzmlFileMap.put(file.getName().substring(0, file.getName().length() - 5), file);
+                    }
                 }
 
                 mzmlFilesCollection = listFiles(f, new String[]{"mgf"}, false);
@@ -60,7 +68,7 @@ public class PinMzmlMatcher {
                     if (mgfName.contains("_uncalibrated.mgf")) {
                         mgfName = mgfName.substring(0, mgfName.length() - 17);
                     } else {
-                        continue;
+                        mgfName = mgfName.substring(0, mgfName.length() - 4);
                     }
                     if (! mzmlFileMap.containsKey(mgfName)) { //only want mzml
                         mzmlFileMap.put(mgfName, file);

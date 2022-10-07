@@ -61,7 +61,7 @@ public class mzMLReader {
         scans.setDataSource(source);
         // Set number of threads for multi-threaded parsing.
         // null means use as many cores as reported by Runtime.getRuntime().availableProcessors()
-        source.setNumThreadsForParsing(null); // this is actually the default
+        source.setNumThreadsForParsing(Constants.numThreads); // this is actually the default
         // load the meta-data about the whole run, with forced parsing of MS1 spectra
         // as we have enabled auto-loading, then if we ever invoke IScan#fetchSpectrum()
         // on an MS2 spectrum, for which the spectrum has not been parsed, it will be

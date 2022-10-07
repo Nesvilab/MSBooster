@@ -208,7 +208,14 @@ public class mzMLReader {
             }
 
             mzmlScanNumber msn = new mzmlScanNumber(scan);
-            scanNumberObjects.put(scan.getNum(), msn);
+            try {
+                String scanNum = scans.getMapNum2scan().get(scan.getNum()).toString().split("scan=")[1];
+                scanNum = scanNum.substring(0, scanNum.length() - 1);
+                scanNumberObjects.put(Integer.valueOf(scanNum), msn);
+            } catch (Exception e) {
+                System.out.println("Warning: could not parse scans.getMapNum2scan(); using scan.getNum() instead");
+                scanNumberObjects.put(scan.getNum(), msn);
+            }
             scan = scans.getNextScanAtMsLevel(scan.getNum(), 2);
         }
 

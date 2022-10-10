@@ -121,102 +121,90 @@ public class mzMLReader {
     //getting fragment frequency distribution
     //final output might be edited to optionally add something to multiply at the end
     //this might be useful since the mz intensities are on a different scale
-    public double[] getMzFreq() {
-        if (mzFreqs != null) {
-            return this.mzFreqs;
-        } else {
-            int scanLimit = scans.getScanCount();
-            int scanNum = 0;
-            HashMap<Integer, int[]> mzCounts = new HashMap<>();
-
-            while (scanNum < scanLimit) {
-                try {
-                    IScan ms2Scan = scans.getNextScanAtMsLevel(scanNum, 2);
-
-                    //increase count by 1
-                    double[] mzs = ms2Scan.fetchSpectrum().getMZs();
-                    for (double mz : mzs) {
-                        int binIndex = (int) Math.floor(mz / Constants.binwidth);
-
-                        int[] value = mzCounts.get(binIndex);
-                        if (value == null) {
-                            mzCounts.put(binIndex, new int[]{1});
-                        } else {
-                            value[0]++;
-                        }
-                    }
-
-                    //increase scan number
-                    scanNum = ms2Scan.getNum();
-                } catch (Exception e) {
-                    break;
-                }
-            }
-
-            //find max binIndex
-            int maxKey = Collections.max(mzCounts.keySet());
-
-            //create list
-            int[] countsList = new int[maxKey];
-            for (Map.Entry<Integer, int[]> entry : mzCounts.entrySet()) {
-                int binIndex = entry.getKey();
-                int counts = entry.getValue()[0];
-
-                countsList[binIndex - 1] = counts;
-            }
-
-            //sliding window average
-            double[] averagedCountsList = new double[maxKey];
-            for (int i = 0; i < maxKey; i++) {
-                double newLeft = Math.max(0, i - Constants.mzFreqWindow);
-                double newRight = Math.min(maxKey, i + Constants.mzFreqWindow + 1);
-                double sum = 0;
-
-                for (int j = (int) newLeft; j < newRight; j++) {
-                    sum += countsList[j];
-                }
-                double avg = sum / (newRight - newLeft);
-                if (avg > 0) {
-                    averagedCountsList[i] = 1 / avg;
-                } else {
-                    averagedCountsList[i] = 0; //fragment never detected, just ignore
-                }
-            }
-            this.mzFreqs = averagedCountsList;
-            return averagedCountsList;
-        }
-    }
+//    public double[] getMzFreq() {
+//        if (mzFreqs != null) {
+//            return this.mzFreqs;
+//        } else {
+//            int scanLimit = scans.getScanCount();
+//            int scanNum = 0;
+//            HashMap<Integer, int[]> mzCounts = new HashMap<>();
+//
+//            while (scanNum < scanLimit) {
+//                try {
+//                    IScan ms2Scan = scans.getNextScanAtMsLevel(scanNum, 2);
+//
+//                    //increase count by 1
+//                    double[] mzs = ms2Scan.fetchSpectrum().getMZs();
+//                    for (double mz : mzs) {
+//                        int binIndex = (int) Math.floor(mz / Constants.binwidth);
+//
+//                        int[] value = mzCounts.get(binIndex);
+//                        if (value == null) {
+//                            mzCounts.put(binIndex, new int[]{1});
+//                        } else {
+//                            value[0]++;
+//                        }
+//                    }
+//
+//                    //increase scan number
+//                    scanNum = ms2Scan.getNum();
+//                } catch (Exception e) {
+//                    break;
+//                }
+//            }
+//
+//            //find max binIndex
+//            int maxKey = Collections.max(mzCounts.keySet());
+//
+//            //create list
+//            int[] countsList = new int[maxKey];
+//            for (Map.Entry<Integer, int[]> entry : mzCounts.entrySet()) {
+//                int binIndex = entry.getKey();
+//                int counts = entry.getValue()[0];
+//
+//                countsList[binIndex - 1] = counts;
+//            }
+//
+//            //sliding window average
+//            double[] averagedCountsList = new double[maxKey];
+//            for (int i = 0; i < maxKey; i++) {
+//                double newLeft = Math.max(0, i - Constants.mzFreqWindow);
+//                double newRight = Math.min(maxKey, i + Constants.mzFreqWindow + 1);
+//                double sum = 0;
+//
+//                for (int j = (int) newLeft; j < newRight; j++) {
+//                    sum += countsList[j];
+//                }
+//                double avg = sum / (newRight - newLeft);
+//                if (avg > 0) {
+//                    averagedCountsList[i] = 1 / avg;
+//                } else {
+//                    averagedCountsList[i] = 0; //fragment never detected, just ignore
+//                }
+//            }
+//            this.mzFreqs = averagedCountsList;
+//            return averagedCountsList;
+//        }
+//    }
 
     public void createScanNumObjects() throws FileParsingException, ExecutionException, InterruptedException {
-        //long startTime = System.nanoTime();
-
-        //get all scan nums
-        IScan scan = scans.getNextScanAtMsLevel(-1, 2);
-
         //for checking resolution
         boolean hasFTMS = false;
         boolean hasITMS = false;
 
-        while (! (scan == null)) {
+        //get all scan nums
+        for (IScan scan : scans.getMapNum2scan().values()) {
             if (scan.getFilterString() != null) {
-                if (!hasFTMS && scan.getFilterString().contains("FTMS")) {
+                if (scan.getFilterString().contains("FTMS")) {
                     hasFTMS = true;
                 }
-                if (!hasITMS && scan.getFilterString().contains("ITMS")) {
+                if (scan.getFilterString().contains("ITMS")) {
                     hasITMS = true;
                 }
             }
 
             mzmlScanNumber msn = new mzmlScanNumber(scan);
-            try {
-                String scanNum = scans.getMapNum2scan().get(scan.getNum()).toString().split("scan=")[1];
-                scanNum = scanNum.substring(0, scanNum.length() - 1);
-                scanNumberObjects.put(Integer.valueOf(scanNum), msn);
-            } catch (Exception e) {
-                System.out.println("Warning: could not parse scans.getMapNum2scan(); using scan.getNum() instead");
-                scanNumberObjects.put(scan.getNum(), msn);
-            }
-            scan = scans.getNextScanAtMsLevel(scan.getNum(), 2);
+            scanNumberObjects.put(scan.getScanNumFromId(), msn);
         }
 
         //what happens with resolution

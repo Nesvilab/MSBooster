@@ -236,6 +236,12 @@ public class MainClass {
             Constants c = new Constants();
             for (Map.Entry<String, String> entry : params.entrySet()) {
                 String key = entry.getKey();
+                if (key.charAt(0) == '#') { //comment
+                    continue;
+                }
+                if (key.charAt(0) == '/') { //comment
+                    continue;
+                }
                 if (!fields.contains(key)) {
                     throw new Exception(entry.getKey() + " is not a valid parameter");
                 } else {

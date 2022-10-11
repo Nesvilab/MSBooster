@@ -27,7 +27,7 @@ public class mzmlScanNumber {
     public static float[] zeroFloatArray = new float[]{0};
 
     public mzmlScanNumber(IScan scan) throws FileParsingException {
-        this.scanNum = scan.getScanNumFromId();
+        this.scanNum = scan.getNum();
         ISpectrum spectrum = scan.fetchSpectrum();
         this.expMZs = doubleToFloat(spectrum.getMZs());
         if (expMZs.length == 0) {

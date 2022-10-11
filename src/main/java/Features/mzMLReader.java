@@ -204,7 +204,7 @@ public class mzMLReader {
             }
 
             mzmlScanNumber msn = new mzmlScanNumber(scan);
-            scanNumberObjects.put(scan.getScanNumFromId(), msn);
+            scanNumberObjects.put(scan.getNum(), msn);
         }
 
         //what happens with resolution

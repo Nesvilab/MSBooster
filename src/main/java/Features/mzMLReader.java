@@ -1,13 +1,14 @@
 package Features;
 
 import kotlin.jvm.functions.Function1;
-import smile.stat.distribution.KernelDensity;
 import umich.ms.datatypes.LCMSDataSubset;
 import umich.ms.datatypes.scan.IScan;
 import umich.ms.datatypes.scan.StorageStrategy;
 import umich.ms.datatypes.scancollection.impl.ScanCollectionDefault;
 import umich.ms.fileio.exceptions.FileParsingException;
 import umich.ms.fileio.filetypes.mzml.MZMLFile;
+import umontreal.ssj.gof.KernelDensity;
+import umontreal.ssj.probdist.EmpiricalDist;
 
 import java.io.IOException;
 import java.nio.file.Path;
@@ -486,7 +487,7 @@ public class mzMLReader {
 
     public void setKernelDensities(ExecutorService executorService, String mode) throws ExecutionException, InterruptedException {
         if (mode.equals("RT")) {
-            KernelDensity[] kernelDensities = RTFunctions.generateEmpiricalDist(RTbins);
+            EmpiricalDist[] kernelDensities = RTFunctions.generateEmpiricalDist(RTbins);
 
             //long startTime = System.nanoTime();
             futureList.clear();
@@ -512,7 +513,7 @@ public class mzMLReader {
             //long duration = (endTime - startTime);
             //System.out.println("Calculating RT probabilities took " + duration / 1000000 + " milliseconds");
         } else if (mode.equals("IM")) {
-            KernelDensity[][] kernelDensities = new KernelDensity[IMFunctions.numCharges][];
+            EmpiricalDist[][] kernelDensities = new EmpiricalDist[IMFunctions.numCharges][];
             for (int c = 0; c < IMFunctions.numCharges; c++) {
                 kernelDensities[c] = RTFunctions.generateEmpiricalDist(IMbins[c]);
             }

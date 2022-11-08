@@ -4,7 +4,10 @@ import com.github.sanity.pav.PairAdjacentViolators;
 import com.github.sanity.pav.Point;
 import kotlin.jvm.functions.Function1;
 import org.apache.commons.math3.analysis.interpolation.LoessInterpolator;
-import smile.stat.distribution.KernelDensity;
+import umontreal.ssj.gof.KernelDensity;
+import umontreal.ssj.probdist.EmpiricalDist;
+import umontreal.ssj.probdist.NormalDist;
+import umontreal.ssj.randvar.KernelDensityGen;
 
 import java.util.*;
 import java.util.stream.IntStream;
@@ -273,13 +276,17 @@ public class StatMethods {
         return binStats;
     }
 
-    public static double probability(float exp, float pred, KernelDensity[] bins) {
+    public static double probability(float exp, float pred, EmpiricalDist[] bins) {
         //get right bin to search
-        KernelDensity kd = bins[Math.round(exp)];
-
+        EmpiricalDist ed = bins[Math.round(exp)];
         //check probability at point
         try {
-            return kd.p(pred);
+            double p = KernelDensity.computeDensity(ed, new NormalDist(),
+                    KernelDensityGen.getBaseBandwidth(ed), new double[]{pred})[0];
+            if (Double.isNaN(p)) {
+                p = 0;
+            }
+            return p;
         } catch (Exception e) { //nothing in bin
             return 0;
         }

@@ -1,6 +1,9 @@
 package Features;
 
-import smile.stat.distribution.KernelDensity;
+
+
+import umontreal.ssj.gof.KernelDensity;
+import umontreal.ssj.probdist.EmpiricalDist;
 
 import java.io.IOException;
 import java.util.*;
@@ -245,21 +248,35 @@ public class RTFunctions {
         return predRTround;
     }
 
-    private static KernelDensity generateEmpiricalDist(ArrayList<Float> bin) { //could also use umontreal version
+    private static EmpiricalDist generateEmpiricalDist(ArrayList<Float> bin) { //could also use umontreal version
         int binSize = bin.size();
+
         if (binSize > 1) {
-            return new KernelDensity(floatUtils.floatToDouble(bin));
+            //check that this is sorted
+            float maxFloat = bin.get(0);
+            boolean needToSort = false;
+            for (float f : bin) {
+                if (f >= maxFloat) {
+                    maxFloat = f;
+                } else {
+                    needToSort = true;
+                    break;
+                }
+            }
+            if (needToSort) {
+                Collections.sort(bin);
+            }
+            return new EmpiricalDist(floatUtils.floatToDouble(bin));
         } else if (binSize == 1) {
-            bin.add(bin.get(0)); //just add another entry to make it work
-            return new KernelDensity(floatUtils.floatToDouble(bin));
+            return new EmpiricalDist(new double[]{(double) bin.get(0), (double) bin.get(0)});
         } else {
             return null; //empty bin never accessed
         }
         //get probability at point with KernelDensity.p();
     }
 
-    public static KernelDensity[] generateEmpiricalDist(ArrayList<Float>[] bins) {
-        KernelDensity[] empDists = new KernelDensity[bins.length];
+    public static EmpiricalDist[] generateEmpiricalDist(ArrayList<Float>[] bins) {
+        EmpiricalDist[] empDists = new EmpiricalDist[bins.length];
 
         int i = 0;
         for (ArrayList<Float> bin : bins) {

@@ -116,7 +116,7 @@ public class peptideFileCreator {
                         System.out.println("Missing instrument for alphapeptdeep file generation. " +
                                 "You can provide an instrument in the " +
                                 "parameter file via --paramsList or as arguments on command line. " +
-                                "For now, setting as QE. " +
+                                "For now, setting as Lumos. " +
                                 "The following instruments are allowed, along with the model mode that " +
                                 "alphapeptdeep converts them to (user input: alphapeptdeep mode):\n" +
                                 "    Lumos: Lumos\n" +
@@ -134,7 +134,7 @@ public class peptideFileCreator {
                                 "    QEHFX: QE\n" +
                                 "    Exploris: QE\n" +
                                 "    Exploris480: QE");
-                        Constants.instrument = "QE";
+                        Constants.instrument = "Lumos";
                     }
                     if (Constants.NCE.equals("")) {
                         System.out.println("Missing normalized collision energy NCE for alphapeptdeep file generation. " +

@@ -49,10 +49,11 @@ public class mzMLReader {
         Path path = Paths.get(filename);
         pathStr = path.toString();
         MZMLFile source = new MZMLFile(pathStr);
+        source.setExcludeEmptyScans(true);
 
         scans = new ScanCollectionDefault(true); //combined this with line 52
         // Softly reference spectral data, make it reclaimable by GC
-        scans.setDefaultStorageStrategy(StorageStrategy.SOFT);
+        scans.setDefaultStorageStrategy(StorageStrategy.STRONG);
         // Set it to automatically re-parse spectra from the file if spectra were not
         // yet parsed or were reclaimed to make auto-loading work you'll need to use
         // IScan#fetchSpectrum() method instead of IScan#getSpectrum()

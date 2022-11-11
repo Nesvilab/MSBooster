@@ -30,9 +30,9 @@ public class mzmlScanNumber {
         this.scanNum = scan.getNum();
         ISpectrum spectrum = scan.fetchSpectrum();
         this.expMZs = doubleToFloat(spectrum.getMZs());
-        if (expMZs.length == 0) {
-            System.out.println("scan with scan number " + scanNum + " is empty");
-        }
+//        if (expMZs.length == 0) {
+//            System.out.println("scan with scan number " + scanNum + " is empty");
+//        }
         this.expIntensities = doubleToFloat(spectrum.getIntensities());
         this.RT = scan.getRt().floatValue();
         if (Constants.useIM) {

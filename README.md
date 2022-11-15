@@ -17,7 +17,11 @@ MSBooster allows users to add deep learning-based features to .pin files before 
 ### Instructions
 •	If using MSBooster in FragPipe, follow the instructions from the download link above. In this example, we use FragPipe-jre-18.0.zip. Extract it from the zip file and place the FragPipe-fre-18.0 folder in the “software” folder
 
+![Alt text](README_imgs/Picture1.png?raw=true)
+
 •	If running standalone MSBooster, the instructions above to download FragPipe must still be followed. While standalone MSBooster does not need FragPipe, it requires the DIA-NN prediction tool in this tutorial which can be found at fragpipe/tools/diann/1.8.1/win/DiaNN.exe
+
+![Alt text](README_imgs/Picture2.png?raw=true)
  
 ### Typical install time
 •	FragPipe: Less than 2 minutes
@@ -30,16 +34,28 @@ MSBooster allows users to add deep learning-based features to .pin files before 
 •	If running in FragPipe, MSBooster is already available and loaded
 
 •	In the Workflow tab, select the Default workflow and click “Load workflow”
+
+![Alt text](README_imgs/Picture3.png?raw=true)
  
 •	Load the two mzML files under the Workflow tab using “Add files”
+
+![Alt text](README_imgs/Picture4.png?raw=true)
  
 •	Pin files from the MSFragger search are already available in this demo folder, so uncheck “Run MSFragger” in the MSFragger tab
+
+![Alt text](README_imgs/Picture5.png?raw=true)
  
 •	Although not used by MSBooster, FragPipe requires a fasta file. It is provided in the “software” folder (2022-03-18-decoys-reviewed-contam-UP000005640.fas)
+
+![Alt text](README_imgs/Picture6.png?raw=true)
  
 •	In the Validation tab, uncheck all boxes except for “Run Validation Tools” and “Run MSBooster”. To uncheck other tools such as ProteinProphet, “Run Validation Tools” may need to be unchecked and checked again to allow interaction with other checkboxes. “Predict RT” and “Predict spectra” are also checked by default, but either one can be turned off. “Use correlated features” is unchecked by default, but is demonstrated in the manuscript and you can also test it
+
+![Alt text](README_imgs/Picture7.png?raw=true)
  
 •	In the Run tab, set “Output dir” to the location of your demo folder (contains mzml, pin, pepxml files; fragger.params). Then click “RUN”
+
+![Alt text](README_imgs/Picture8.png?raw=true)
  
 •	On a normal desktop (Intel(R) Core(TM) i7-8700 CPU @ 3.20GHz   3.19 GHz, 32.0 GB), MSBooster in FragPipe took 0.3 minutes to annotate the 2 pin files provided
 
@@ -51,6 +67,8 @@ MSBooster allows users to add deep learning-based features to .pin files before 
 •	Navigate to the folder of this demo with the “cd” command
 
 •	Optional: open “msbooster_params_template.txt”. There are various parameters to change, such as file locations
+
+![Alt text](README_imgs/Picture9.png?raw=true)
  
 •	Enter “java -jar MSBooster-1.1.6-jar-with-dependencies.jar --paramsList msbooster_params_template.txt”
 

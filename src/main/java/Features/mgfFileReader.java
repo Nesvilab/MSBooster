@@ -43,7 +43,7 @@ public class mgfFileReader implements SpectralPredictionMapper{
     }
 
     //this version for uncalibrated mgf acting as mzml
-    public mgfFileReader(String file, boolean createScanNumObjects, ExecutorService executorService)
+    public mgfFileReader(String file, boolean createScanNumObjects, ExecutorService executorService, String model)
             throws IOException, FileParsingException, ExecutionException, InterruptedException {
         try {
             //load allowed fragment ion types
@@ -254,11 +254,11 @@ public class mgfFileReader implements SpectralPredictionMapper{
                                         newPred.setFlags();
                                         //convert title to base format
                                         String basePep = sb.toString();
-                                        if (Constants.spectraRTPredModel.contains("PredFull")) {
+                                        if (model.equals("PredFull")) {
                                             String[] basePepSplit = basePep.split("\\|");
                                             basePep = new PeptideFormatter(basePepSplit[0],
                                                     basePepSplit[1], "predfull").baseCharge;
-                                        } else if (Constants.spectraRTPredModel.contains("pDeep")) {
+                                        } else if (model.contains("pDeep")) {
                                             basePep = new PeptideFormatter(basePep,
                                                     basePep.split("\\|")[2], "pdeep3").baseCharge;
                                         }
@@ -363,11 +363,11 @@ public class mgfFileReader implements SpectralPredictionMapper{
                             if (mzArray.length != 0) {
                                 //convert title to base format
                                 String basePep = sb.toString();
-                                if (Constants.spectraRTPredModel.contains("PredFull")) {
+                                if (model.equals("PredFull")) {
                                     String[] basePepSplit = basePep.split("\\|");
                                     basePep = new PeptideFormatter(basePepSplit[0],
                                             basePepSplit[1], "predfull").baseCharge;
-                                } else if (Constants.spectraRTPredModel.contains("pDeep")) {
+                                } else if (model.contains("pDeep")) {
                                     basePep = new PeptideFormatter(basePep,
                                             basePep.split("\\|")[2], "pdeep3").baseCharge;
                                 }
@@ -417,14 +417,14 @@ public class mgfFileReader implements SpectralPredictionMapper{
     }
 
     public static void main(String[] args) throws IOException, FileParsingException, ExecutionException, InterruptedException {
-        Constants.numThreads = 11;
-        ExecutorService executorService = Executors.newFixedThreadPool(Constants.numThreads);
-        long startTime = System.nanoTime();
-        mgfFileReader mgf = new mgfFileReader("C:/Users/kevin/Downloads/proteomics/hla2/spectraRT.mgf",
-                true, executorService);
-        long endTime = System.nanoTime();
-        long duration = (endTime - startTime);
-        System.out.println("loading took " + duration / 1000000 +" milliseconds");
-        executorService.shutdown();
+//        Constants.numThreads = 11;
+//        ExecutorService executorService = Executors.newFixedThreadPool(Constants.numThreads);
+//        long startTime = System.nanoTime();
+//        mgfFileReader mgf = new mgfFileReader("C:/Users/kevin/Downloads/proteomics/hla2/spectraRT.mgf",
+//                true, executorService);
+//        long endTime = System.nanoTime();
+//        long duration = (endTime - startTime);
+//        System.out.println("loading took " + duration / 1000000 +" milliseconds");
+//        executorService.shutdown();
     }
 }

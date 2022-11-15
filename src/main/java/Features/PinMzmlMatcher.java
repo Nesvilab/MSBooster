@@ -18,11 +18,15 @@ public class PinMzmlMatcher {
         ArrayList<String> pinFileList = new ArrayList<>();
         for (String directory : allPinDirectories) {
             if (directory.substring(directory.length() - 3).toLowerCase().equals("pin")) { //single file
-                pinFileList.add(directory);
+                if (! directory.contains("_" + Constants.editedPin)) {
+                    pinFileList.add(directory);
+                }
             } else { //directory, but not recursive
                 Collection<File> pinFilesCollection = listFiles(new File(directory), new String[]{"pin"}, false);
                 for (File file : pinFilesCollection) {
-                    pinFileList.add(file.getCanonicalPath());
+                    if (! file.getCanonicalPath().contains("_" + Constants.editedPin)) {
+                        pinFileList.add(file.getCanonicalPath());
+                    }
                 }
             }
         }

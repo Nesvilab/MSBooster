@@ -13,7 +13,7 @@ public class PredFullSpeclibReader extends mgfFileReader{
     public PredFullSpeclibReader(String file, boolean createScanNumObjects, ExecutorService executorService)
             throws InterruptedException, ExecutionException, FileParsingException, IOException {
         //initially start with mgf reading
-        super(file, createScanNumObjects, executorService);
+        super(file, createScanNumObjects, executorService, "PredFull");
         System.out.println("Shifting peaks for PredFull predictions");
         //also need to add to allPreds the peptides with PTMs not supported by PredFull
         //this requires that mgf file name has same prefix as full input file

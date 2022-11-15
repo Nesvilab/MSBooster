@@ -300,7 +300,7 @@ public class percolatorFormatter {
                 mzMLReader mzml;
                 if (mzmlFiles[i].getName().substring( mzmlFiles[i].getName().length() - 3).toLowerCase().equals("mgf")) {
                     //mzml = new mzMLReader(new mgfFileReader(mzmlFiles[i].getCanonicalPath()));
-                    mzml = new mzMLReader(new mgfFileReader(mzmlFiles[i].getCanonicalPath(), true, executorService));
+                    mzml = new mzMLReader(new mgfFileReader(mzmlFiles[i].getCanonicalPath(), true, executorService, ""));
                     //endTime = System.nanoTime();
                     //duration = (endTime - startTime);
                     //System.out.println("mgf loading took " + duration / 1000000 +" milliseconds");

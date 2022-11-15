@@ -337,7 +337,7 @@ public class Constants {
                 outputDirectory = newFile.getAbsoluteFile().getParent();
             }
         }
-        if (editedPin == null || renamePin == 0) { //if 0, replace at end
+        if (editedPin == null) { //if 0, replace at end
             editedPin = "edited";
         }
         if (spectraRTPredInput == null) {

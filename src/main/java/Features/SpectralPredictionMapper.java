@@ -29,7 +29,7 @@ public interface SpectralPredictionMapper {
                 if (model.equals("PredFull")) { //if PredFull, use PredFullSpeclibReader class
                     return new PredFullSpeclibReader(file, false, executorService);
                 } else { //for pdeep and alphapeptdeep
-                    return new mgfFileReader(file, false, executorService);
+                    return new mgfFileReader(file, false, executorService, model);
                 }
             case "msp":
                 return new MspReader(file);

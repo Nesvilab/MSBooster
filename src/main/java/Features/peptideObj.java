@@ -24,6 +24,7 @@ public class peptideObj {
     double IMprob;
     float[] predMZs;
     float[] predInts;
+    String[] fragmentIonTypes;
 
     HashMap<String, Float> matchedIntensities = makeBaseMap();
     //HashMap<String, Float> intensitiesDifference = makeBaseMap();
@@ -66,6 +67,7 @@ public class peptideObj {
         this.escore = escore;
         this.predMZs = predMZs;
         this.predInts = predIntensities;
+        this.fragmentIonTypes = fragmentIonTypes;
         this.spectralSimObj = new spectrumComparison(scanNumObj.getExpMZs(), scanNumObj.getExpIntensities(),
                 predMZs, predIntensities, Constants.useTopFragments, Constants.useBasePeak, fragmentIonTypes); //calculate similarity with subset of fragments
         this.RT = predRT;
@@ -107,7 +109,7 @@ public class peptideObj {
                 expTotalIntensity += f;
             }
         }
-        float totalPeaks = expIntensitiesList.size();
+
         float[] expIntensities = new float[expIntensitiesList.size()];
         float[] expMZs = new float[expMZsList.size()];
         for (int i = 0; i < expIntensities.length; i++) {
@@ -118,34 +120,38 @@ public class peptideObj {
         //pred
         ArrayList<Float> predIntensitiesList = new ArrayList<>();
         ArrayList<Float> predMZsList = new ArrayList<>();
-//        maxInt = 0f;
-//        for (float f : predInts) {
-//            if (f > maxInt) {
-//                maxInt = f;
-//            }
-//        }
-//        minInt = maxInt / 100f * Constants.percentBasePeak;
-        minInt = 10f * Constants.percentBasePeak; //change if we use anything besides predfull
+        ArrayList<String> predTypesList = new ArrayList<>();
+        maxInt = 0f;
+        for (float f : predInts) {
+            if (f > maxInt) {
+                maxInt = f;
+            }
+        }
+        minInt = maxInt / 100f * Constants.percentBasePeak;
+
         float predTotalIntensity = 0f;
         for (int i = 0; i < predInts.length; i++) {
             float f = predInts[i];
             if (f > minInt) {
                 predIntensitiesList.add(f);
                 predMZsList.add(predMZs[i]);
+                predTypesList.add(fragmentIonTypes[i]);
                 predTotalIntensity += f;
             }
         }
 
         float[] predIntensities1 = new float[predIntensitiesList.size()];
         float[] predMZs1 = new float[predMZsList.size()];
+        String[] predTypes1 = new String[predTypesList.size()];
         for (int i = 0; i < predIntensities1.length; i++) {
             predIntensities1[i] = predIntensitiesList.get(i) / predTotalIntensity;
             predMZs1[i] = predMZsList.get(i);
+            predTypes1[i] = predTypesList.get(i);
         }
 
         MassCalculator mc = new MassCalculator(name.split("\\|")[0], charge);
         String[] expFragmentIonTypes = mc.annotateMZs(expMZs)[1];
-        String[] predFragmentIonTypes = mc.annotateMZs(predMZs1)[1];
+        String[] predFragmentIonTypes = predTypes1;
 
         List<String> fragmentIonHierarchyList = Arrays.asList(Constants.fragmentIonHierarchy);
         for (int i = 0; i < expFragmentIonTypes.length; i++) {
@@ -159,7 +165,7 @@ public class peptideObj {
 
                 if (Constants.usePeakCounts) {
                     peakCounts.put(presentType,
-                            peakCounts.get(presentType) + (1f / totalPeaks));
+                            peakCounts.get(presentType) + (1f / expIntensities.length));
                 }
             }
         }
@@ -173,21 +179,6 @@ public class peptideObj {
                 }
             }
         }
-        //intensitiesDifference.replaceAll((k, v) -> Math.abs(v));
-
-//        if (Constants.usePredIntensities) {
-//            float totalPredIntensity = 0f;
-//            for (float f : spectralSimObj.predIntensities) {
-//                totalPredIntensity += f;
-//            }
-//
-//            fragmentIonTypes = mc.annotateMZs(spectralSimObj.predMZs)[1];
-//            for (int i = 0; i < fragmentIonTypes.length; i++) {
-//                String presentType = fragmentIonTypes[i];
-//                predIntensities.put(presentType,
-//                        predIntensities.get(presentType) + (spectralSimObj.predIntensities[i] / totalPredIntensity));
-//            }
-//        }
 
         if (Constants.useIndividualSpectralSimilarities) {
             for (Map.Entry<String, Float> entry : individualSpectralSimilarities.entrySet()) {
@@ -212,7 +203,7 @@ public class peptideObj {
                 individualSpectralSimilarities.put(entry.getKey(),
                         (float) new spectrumComparison(expMZs, expIntensities,
                                 subsetPredMZsArray, subsetPredIntsArray,
-                                Constants.useTopFragments, false).brayCurtis()); //already did base peak intensity filtering
+                                Constants.useTopFragments, false).unweightedSpectralEntropy()); //already did base peak intensity filtering
             }
         }
     }

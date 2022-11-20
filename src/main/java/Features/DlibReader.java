@@ -267,7 +267,7 @@ public class DlibReader implements SpectralPredictionMapper{
     }
 
     public static void main(String[] args) throws SQLException, IOException {
-        DlibReader dlibReader = new DlibReader("C:/Users/kevin/Downloads/proteomics/" +
-                "uniprot_yeast_25jan2019.fasta.z2_nce33.dlib");
+        DlibReader dlibReader = new DlibReader("C:/Users/yangkl/Downloads/proteomics/" +
+                "escherichia_coli_k12_prosit_generated_library.dlib");
     }
 }

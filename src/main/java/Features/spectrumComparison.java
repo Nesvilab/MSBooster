@@ -112,16 +112,16 @@ public class spectrumComparison {
 
                 //change between ppm and Da tolerance when matching.
                 // Not the most accurate, as it assumes when using PredFull + another tool, PredFull is not used for it y/b predictions
-                if (! Constants.spectraRTPredModel.equals("PredFull")) {
-                    allowedTypesSet.remove("y");
-                    allowedTypesSet.remove("b");
-                    if (allowedTypesSet.size() != 0) { //other types only provided by PredFull are being used
-                        Constants.matchWithDaltons = true;
-                    } else {
-                        Constants.matchWithDaltons = false;
-
-                    }
-                }
+//                if (! Constants.spectraRTPredModel.equals("PredFull")) {
+//                    allowedTypesSet.remove("y");
+//                    allowedTypesSet.remove("b");
+//                    if (allowedTypesSet.size() != 0) { //other types only provided by PredFull are being used
+//                        Constants.matchWithDaltons = true;
+//                    } else {
+//                        Constants.matchWithDaltons = false;
+//
+//                    }
+//                }
 
                 //create new spectrumComparison obj and add to list
                 spectrumComparisons.add(new spectrumComparison(eMZs, eIntensities,

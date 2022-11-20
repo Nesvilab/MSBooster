@@ -21,7 +21,7 @@ public class MassCalculator {
     public MassCalculator[] internalPeptides;
     public SortedMap<Float, String[]> fragmentIons = new TreeMap<>();
     public static final Set<String> allowedFragmentIonTypes = new HashSet<>(Arrays.asList(
-            "z", "c", "y", "a", "x", "b",
+            "z", "c", "y", "a", "x", "b", "zdot", "cdot",
             "precursor", "immonium", "internal", "internal-NL",
             "z-NL", "c-NL", "y-NL", "a-NL", "x-NL", "b-NL",
             "precursor-NL", "unknown"));
@@ -168,6 +168,12 @@ public class MassCalculator {
                     mass += modMasses.get(0);
                 }
                 break;
+            case "zdot":
+                mass = calcMass(num, "z", charge) - H;
+                break;
+            case "cdot":
+                mass = calcMass(num, "c", charge) - H;
+                break;
         }
 
         //calculate m/z using charge
@@ -178,8 +184,6 @@ public class MassCalculator {
     //num2 is the a/b ion that is formed from that
     //assume charge 1 only
     public float calcMass(int num1, int num2, String flag) {
-        float mass = 0f;
-
         MassCalculator newY = internalPeptides[num1 - 3];
         if (newY == null) {
             newY = makeInternalPeptide(num1);
@@ -198,76 +202,7 @@ public class MassCalculator {
     }
 
     public float calcMass(int num, String flag, int charge, String neutralLoss) {
-        float mass = 0f;
-
-        switch(flag) {
-            case "b":
-                mass += modMasses.get(0);
-                for (int i = 0; i < num; i++) {
-                    mass += AAmap.get(this.peptide.charAt(i)); //sum amino acid masses
-                    mass += modMasses.get(i + 1); //sum mods
-                }
-                if (num == this.peptide.length()) { //add c term mod
-                    mass += modMasses.get(num + 1);
-                }
-                break;
-            case "y":
-                mass = H2O;
-                mass += modMasses.get(this.peptide.length() + 1);
-                for (int i = this.peptide.length() - num; i < this.peptide.length(); i++) {
-                    mass += AAmap.get(this.peptide.charAt(i)); //sum amino acid masses
-                    mass += modMasses.get(i + 1); //sum mods
-                }
-                if (num == this.peptide.length()) { //add n term mod
-                    mass += modMasses.get(0);
-                }
-                break;
-            case "a":
-                mass -= C;
-                mass -= O;
-                mass += modMasses.get(0);
-                for (int i = 0; i < num; i++) {
-                    mass += AAmap.get(this.peptide.charAt(i)); //sum amino acid masses
-                    mass += modMasses.get(i + 1); //sum mods
-                }
-                if (num == this.peptide.length()) { //add c term mod
-                    mass += modMasses.get(num + 1);
-                }
-                break;
-            case "x":
-                mass = 2 * O + C; //+H2O - H2 + CO
-                mass += modMasses.get(this.peptide.length() + 1);
-                for (int i = this.peptide.length() - num; i < this.peptide.length(); i++) {
-                    mass += AAmap.get(this.peptide.charAt(i)); //sum amino acid masses
-                    mass += modMasses.get(i + 1); //sum mods
-                }
-                if (num == this.peptide.length()) { //add n term mod
-                    mass += modMasses.get(0);
-                }
-                break;
-            case "c":
-                mass = NH3;
-                mass += modMasses.get(0);
-                for (int i = 0; i < num; i++) {
-                    mass += AAmap.get(this.peptide.charAt(i)); //sum amino acid masses
-                    mass += modMasses.get(i + 1); //sum mods
-                }
-                if (num == this.peptide.length()) { //add c term mod
-                    mass += modMasses.get(num + 1);
-                }
-                break;
-            case "z":
-                mass = O - N;
-                mass += modMasses.get(this.peptide.length() + 1);
-                for (int i = this.peptide.length() - num; i < this.peptide.length(); i++) {
-                    mass += AAmap.get(this.peptide.charAt(i)); //sum amino acid masses
-                    mass += modMasses.get(i + 1); //sum mods
-                }
-                if (num == this.peptide.length()) { //add n term mod
-                    mass += modMasses.get(0);
-                }
-                break;
-        }
+        float mass = calcMass(num, flag, charge);
 
         //subtract neutral loss
         switch (neutralLoss) {
@@ -284,23 +219,20 @@ public class MassCalculator {
     }
 
     public float calcMass(int num1, int num2, String flag, String neutralLoss) {
-        float mass = 0f;
+        float mass = calcMass(num1, num2, flag);
 
-        MassCalculator newY = internalPeptides[num1 - 3];
-        if (newY == null) {
-            newY = makeInternalPeptide(num1);
+        //subtract neutral loss
+        switch (neutralLoss) {
+            case "NH3":
+                mass -= NH3;
+                break;
+            case "H2O":
+                mass -= H2O;
+                break;
         }
 
-        switch (flag) {
-            case "by":
-                return newY.calcMass(num2, "b", 1, neutralLoss);
-            case "ay":
-                return newY.calcMass(num2, "a", 1, neutralLoss);
-            default:
-                System.out.println(flag + " is not supported. Choose ay or by");
-                System.exit(-1);
-        }
-        return 0;
+        //calculate m/z using charge
+        return (mass + (float) charge * proton) / (float) charge;
     }
 
     private MassCalculator() {}
@@ -358,10 +290,10 @@ public class MassCalculator {
         }
 
         //calculate all abcxyz ions
-        String ions = "abcxyz";
+        String[] ions = new String[]{"a", "b", "c", "x", "y", "z", "zdot", "cdot"};
         int maxCharge = charge; //max fragment ion charge?
-        for (int i = 0; i < ions.length(); i++) {
-            String ionType = ions.substring(i, i + 1);
+        for (int i = 0; i < ions.length; i++) {
+            String ionType = ions[i];
             for (int num = 1; num < this.peptide.length(); num++) {
                 for (int iCharge = 1; iCharge < maxCharge + 1; iCharge++) {
                     //regular fragment

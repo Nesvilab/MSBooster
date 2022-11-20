@@ -181,17 +181,22 @@ public class Constants {
         return ignoredFragmentIonTypes;
     }
     public static String[] fragmentIonHierarchy = makeFragmentIonHierarchy();
-    private static String[] makeFragmentIonHierarchy() {
-        if (Constants.FragmentationType.equals("ETD")) {
-            return new String[] {"immonium", "z", "c",
-                    "z-NL", "c-NL", "internal", "internal-NL", "unknown"};
-        } else { //HCD, CID, or not specified
+    public static String[] makeFragmentIonHierarchy() {
+        if (Constants.FragmentationType.equals("HCD")) {
+            return new String[] {"immonium", "y", "b", "a",
+                    "y-NL", "b-NL", "a-NL", "internal", "internal-NL", "unknown"};
+        } else if (Constants.FragmentationType.equals("ETD")) {
+            return new String[] {"zdot", "c", "z", "y", "unknown"};
+        } else if (Constants.FragmentationType.equals("ETHCD")) {
+            return new String[] {"immonium", "y", "b", "a", "zdot", "c", "z", "cdot",
+                    "y-NL", "b-NL", "a-NL", "internal", "internal-NL", "unknown"};
+        } else { //everything else, like CID
             return new String[] {"immonium", "y", "b", "a",
                     "y-NL", "b-NL", "a-NL", "internal", "internal-NL", "unknown"};
         }
     }
-    public static final Set<String> lowestFragmentIonType = makeLowestFragmentIonType();
-    private static Set<String> makeLowestFragmentIonType() {
+    public static Set<String> lowestFragmentIonType = makeLowestFragmentIonType();
+    public static Set<String> makeLowestFragmentIonType() {
         Set<String> ignoredFragmentIonTypesSet = makeIgnoredFragmentIonTypes();
         int index = 0;
         for (int i = fragmentIonHierarchy.length - 1; i > -1; i--) {
@@ -243,48 +248,48 @@ public class Constants {
             new HashSet<>(Arrays.asList("deltaIMLOESS", "deltaIMLOESSnormalized", "IMprobabilityUnifPrior", "predictedIM",
                     "ionmobility"));
     //TODO: add to features list
-    public static final HashSet<String> matchedIntensitiesFeatures = makeMatchedIntensitiesFeatures();
-    private static HashSet<String> makeMatchedIntensitiesFeatures() {
+    public static HashSet<String> matchedIntensitiesFeatures = null;
+    public static HashSet<String> makeMatchedIntensitiesFeatures() {
         HashSet<String> set = new HashSet<>();
         for (String s : Constants.fragmentIonHierarchy) {
             set.add(s + "_matched_intensity");
         }
         return set;
     }
-    public static final HashSet<String> peakCountsFeatures = makePeakCountsFeatures();
-    private static HashSet<String> makePeakCountsFeatures() {
+    public static HashSet<String> peakCountsFeatures = null;
+    public static HashSet<String> makePeakCountsFeatures() {
         HashSet<String> set = new HashSet<>();
         for (String s : Constants.fragmentIonHierarchy) {
             set.add(s + "_peak_counts");
         }
         return set;
     }
-    public static final HashSet<String> predIntensitiesFeatures = makePredIntensitiesFeatures();
-    private static HashSet<String> makePredIntensitiesFeatures() {
+    public static HashSet<String> predIntensitiesFeatures = null;
+    public static HashSet<String> makePredIntensitiesFeatures() {
         HashSet<String> set = new HashSet<>();
         for (String s : Constants.fragmentIonHierarchy) {
             set.add(s + "_pred_intensity");
         }
         return set;
     }
-    public static final HashSet<String> individualSpectralSimilaritiesFeatures = makeIndividualSpectralSimilarities();
-    private static HashSet<String> makeIndividualSpectralSimilarities() {
+    public static HashSet<String> individualSpectralSimilaritiesFeatures = null;
+    public static HashSet<String> makeIndividualSpectralSimilarities() {
         HashSet<String> set = new HashSet<>();
         for (String s : Constants.fragmentIonHierarchy) {
             set.add(s + "_spectral_similarity");
         }
         return set;
     }
-    public static final HashSet<String> intensitiesDifferenceFeatures = makeintensitiesDifference();
-    private static HashSet<String> makeintensitiesDifference() {
+    public static HashSet<String> intensitiesDifferenceFeatures = null;
+    public static HashSet<String> makeintensitiesDifference() {
         HashSet<String> set = new HashSet<>();
         for (String s : Constants.fragmentIonHierarchy) {
             set.add(s + "_intensities_difference");
         }
         return set;
     }
-    public static final HashSet<String> allowedFeatures = makeAllowedFeatures();
-    private static HashSet<String> makeAllowedFeatures() {
+    public static HashSet<String> allowedFeatures = null;
+    public static HashSet<String> makeAllowedFeatures() {
         HashSet<String> hs = new HashSet<>();
         hs.add("");
         hs.addAll(spectraRTFeatures);

@@ -123,6 +123,11 @@ public class PredFullSpeclibReader extends mgfFileReader{
                             newMZ.add(pe.mzs[index]);
                             break;
                         default: //backbone and internal
+                            if (ionName.contains("dot")) {
+                                newMZ.add(shiftedMC.calcMass(Integer.parseInt(ionName.substring(ionName.length() - 1)),
+                                        ionName.substring(0, ionName.length() - 1), charge));
+                                break;
+                            }
                             StringBuilder sb = new StringBuilder();
                             ArrayList<Integer> letterPositions = new ArrayList<>();
                             ArrayList<Integer> numbers = new ArrayList<>();

@@ -261,6 +261,16 @@ public class MainClass {
                 }
             }
 
+            //update fragment ion types based on fragmentation type
+            //update Constants to be null initially
+            Constants.fragmentIonHierarchy = Constants.makeFragmentIonHierarchy();
+            Constants.lowestFragmentIonType = Constants.makeLowestFragmentIonType();
+            Constants.matchedIntensitiesFeatures = Constants.makeMatchedIntensitiesFeatures();
+            Constants.peakCountsFeatures = Constants.makePeakCountsFeatures();
+            Constants.predIntensitiesFeatures = Constants.makePredIntensitiesFeatures();
+            Constants.individualSpectralSimilaritiesFeatures = Constants.makeIndividualSpectralSimilarities();
+            Constants.intensitiesDifferenceFeatures = Constants.makeintensitiesDifference();
+
             if (Constants.divideFragments.equals("1")) { //standard setting of yb vs others
                 Constants.divideFragments = "y_b;immonium_a_y-NL_b-NL_a-NL_internal_internal-NL_unknown";
                 Constants.topFragments = 12;
@@ -269,6 +279,9 @@ public class MainClass {
                 Constants.topFragments = 6;
             } else if (Constants.divideFragments.equals("3")) { //standard setting of yb vs others
                 Constants.divideFragments = "y_b_y-NL_b-NL;immonium_a_a-NL_internal_internal-NL_unknown";
+                Constants.topFragments = 12;
+            } else if  (Constants.divideFragments.equals("4"))  { //etd
+                Constants.divideFragments = "c_z;zdot_y_unknown";
                 Constants.topFragments = 12;
             } else if (Constants.divideFragments.equals("0") && Constants.spectraRTPredModel.equals("DIA-NN")) {
                 Constants.topFragments = 12; //may update in future
@@ -294,6 +307,8 @@ public class MainClass {
                 Constants.features = "brayCurtis,pearsonCorr,dotProduct,unweightedSpectralEntropy," +
                         "deltaRTLOESS,deltaRTLOESSnormalized,RTprobabilityUnifPrior";
             }
+
+            Constants.allowedFeatures = Constants.makeAllowedFeatures();
             String[] featuresArray = Constants.features.split(",");
             for (String f : featuresArray) {
                 if (!Constants.allowedFeatures.contains(f.trim())) {

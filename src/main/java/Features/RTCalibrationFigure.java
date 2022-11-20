@@ -85,7 +85,7 @@ public class RTCalibrationFigure {
     }
 
     public static void main(String[] args) throws Exception {
-        ExecutorService executorService = Executors.newFixedThreadPool(Constants.numThreads);
+        ExecutorService executorService = Executors.newFixedThreadPool(11);
         mzMLReader mzml = new mzMLReader("C:/Users/yangkl/Downloads/proteomics/hla/" +
                 "AG20210507_SR_HLA_A0201_W632_2IPs_Fxn01.mzml");
         pinReader pin = new pinReader("C:/Users/yangkl/Downloads/proteomics/hla/" +

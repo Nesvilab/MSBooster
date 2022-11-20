@@ -810,6 +810,12 @@ public class percolatorFormatter {
                             case "z_matched_intensity":
                                 writer.addValue("z_matched_intensity", pepObj.matchedIntensities.get("z"));
                                 break;
+                            case "cdot_matched_intensity":
+                                writer.addValue("cdot_matched_intensity", pepObj.matchedIntensities.get("cdot"));
+                                break;
+                            case "zdot_matched_intensity":
+                                writer.addValue("zdot_matched_intensity", pepObj.matchedIntensities.get("zdot"));
+                                break;
                             case "y-NL_matched_intensity":
                                 writer.addValue("y-NL_matched_intensity", pepObj.matchedIntensities.get("y-NL"));
                                 break;
@@ -869,6 +875,14 @@ public class percolatorFormatter {
                             case "z_intensities_difference":
                                 writer.addValue("z_intensities_difference",
                                         Math.abs(pepObj.matchedIntensities.get("z") - pepObj.predIntensities.get("z")));
+                                break;
+                            case "cdot_intensities_difference":
+                                writer.addValue("cdot_intensities_difference",
+                                        Math.abs(pepObj.matchedIntensities.get("cdot") - pepObj.predIntensities.get("cdot")));
+                                break;
+                            case "zdot_intensities_difference":
+                                writer.addValue("zdot_intensities_difference",
+                                        Math.abs(pepObj.matchedIntensities.get("zdot") - pepObj.predIntensities.get("zdot")));
                                 break;
                             case "y-NL_intensities_difference":
                                 writer.addValue("y-NL_intensities_difference",
@@ -936,6 +950,12 @@ public class percolatorFormatter {
                             case "z_peak_counts":
                                 writer.addValue("z_peak_counts", pepObj.peakCounts.get("z"));
                                 break;
+                            case "cdot_peak_counts":
+                                writer.addValue("cdot_peak_counts", pepObj.peakCounts.get("cdot"));
+                                break;
+                            case "zdot_peak_counts":
+                                writer.addValue("zdot_peak_counts", pepObj.peakCounts.get("zdot"));
+                                break;
                             case "y-NL_peak_counts":
                                 writer.addValue("y-NL_peak_counts", pepObj.peakCounts.get("y-NL"));
                                 break;
@@ -989,6 +1009,12 @@ public class percolatorFormatter {
                                 break;
                             case "z_spectral_similarity":
                                 writer.addValue("z_spectral_similarity", pepObj.individualSpectralSimilarities.get("z"));
+                                break;
+                            case "cdot_spectral_similarity":
+                                writer.addValue("cdot_spectral_similarity", pepObj.individualSpectralSimilarities.get("cdot"));
+                                break;
+                            case "zdot_spectral_similarity":
+                                writer.addValue("zdot_spectral_similarity", pepObj.individualSpectralSimilarities.get("zdot"));
                                 break;
                             case "y-NL_spectral_similarity":
                                 writer.addValue("y-NL_spectral_similarity", pepObj.individualSpectralSimilarities.get("y-NL"));

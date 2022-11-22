@@ -70,14 +70,28 @@ public class percolatorFormatter {
 
             if (mgfSplit.length == 1) {
                 System.out.println("Loading predicted spectra");
-                predictedSpectra = SpectralPredictionMapper.createSpectralPredictionMapper(mgf, Constants.spectraRTPredModel, executorService);
-            } else if (mgfSplit.length == 2){ //if fragment from predfull is not y/b, add. Prosit/diann is first, predfull second
+                if (Constants.spectraRTPredModel.equals("PredFull")) {
+                    predictedSpectra = SpectralPredictionMapper.createSpectralPredictionMapper(
+                            mgfSplit[1], pinFiles, executorService);
+                } else {
+                    predictedSpectra = SpectralPredictionMapper.createSpectralPredictionMapper(
+                            mgf, Constants.spectraRTPredModel, executorService);
+                }
+            } else if (mgfSplit.length == 2){ //if fragment from predfull is not y/b, add.
+                                              //Prosit/diann is first, predfull second
                 String[] modelSplit = Constants.spectraRTPredModel.split(",");
 
                 System.out.println("Loading predicted spectra 1");
-                predictedSpectra = SpectralPredictionMapper.createSpectralPredictionMapper(mgfSplit[0], modelSplit[0], executorService);
+                predictedSpectra = SpectralPredictionMapper.createSpectralPredictionMapper(
+                        mgfSplit[0], modelSplit[0], executorService);
                 System.out.println("Loading predicted spectra 2");
-                predictedSpectra2 = SpectralPredictionMapper.createSpectralPredictionMapper(mgfSplit[1], modelSplit[1], executorService);
+                if (modelSplit[1].equals("PredFull")) {
+                    predictedSpectra2 = SpectralPredictionMapper.createSpectralPredictionMapper(
+                            mgfSplit[1], pinFiles, executorService);
+                } else {
+                    predictedSpectra2 = SpectralPredictionMapper.createSpectralPredictionMapper(
+                            mgfSplit[1], modelSplit[1], executorService);
+                }
                 System.out.println("Merging spectral libraries");
 
                 //get all possible keys from both preds1 and preds2
@@ -1101,10 +1115,8 @@ public class percolatorFormatter {
                 "C:/Users/yangkl/OneDriveUmich/proteomics/mzml/" +
                         "20180819_TIMS2_12-2_AnBr_SA_200ng_HeLa_50cm_120min_100ms_11CT_3_A1_01_2769_uncalibrated.mgf",
                 "C:/Users/yangkl/Downloads/proteomics/timsTOF/DIANN.predicted.bin",
-                "C:/Users/yangkl/Downloads/proteomics/timsTOF/detect_Predictions.txt",
-                ("deltaIMLOESS,deltaIMLOESSnormalized,IMprobabilityUnifPrior").split(","),
-                "C:/Users/kevin/Downloads/proteomics/timsTOF/edited_");
-
-
+                "",
+                ("unweightedSpectralEntropy").split(","),
+                "C:/Users/yangkl/Downloads/proteomics/timsTOF/edited_");
     }
 }

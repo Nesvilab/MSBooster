@@ -3,6 +3,7 @@ package Features;
 import umich.ms.fileio.exceptions.FileParsingException;
 
 import java.io.BufferedReader;
+import java.io.File;
 import java.io.FileReader;
 import java.io.IOException;
 import java.util.*;
@@ -10,10 +11,25 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 
 public class PredFullSpeclibReader extends mgfFileReader{
-    public PredFullSpeclibReader(String file, boolean createScanNumObjects, ExecutorService executorService)
+    HashSet<String> peptides = new HashSet<>();
+
+    public PredFullSpeclibReader(String file, boolean createScanNumObjects, File[] pinFiles,
+                                 ExecutorService executorService)
             throws InterruptedException, ExecutionException, FileParsingException, IOException {
         //initially start with mgf reading
         super(file, createScanNumObjects, executorService, "PredFull");
+
+        //read in peptides from pinFiles
+        for (File pinFile : pinFiles) {
+            pinReader pin = new pinReader(pinFile.getCanonicalPath());
+
+            //add to counter
+            while (pin.next()) {
+                peptides.add(pin.getPep().baseCharge);
+            }
+            pin.close();
+        }
+
         System.out.println("Shifting peaks for PredFull predictions");
         //also need to add to allPreds the peptides with PTMs not supported by PredFull
         //this requires that mgf file name has same prefix as full input file
@@ -33,8 +49,14 @@ public class PredFullSpeclibReader extends mgfFileReader{
             //start shifting and annotating
             //first, get unmodified peptide prediction from dictionary
             String[] lSplit = l.split("\t");
-            PeptideFormatter peptideToSearch = new PeptideFormatter(
-                    new PeptideFormatter(lSplit[0], lSplit[1], "base").predfull,
+
+            //see if this peptide is in this dataset. If not, don't process it
+            PeptideFormatter formattedPeptide = new PeptideFormatter(lSplit[0], lSplit[1], "base");
+            if ((peptides.size() != 0) & (!peptides.contains(formattedPeptide.baseCharge))) {
+                continue;
+            }
+
+            PeptideFormatter peptideToSearch = new PeptideFormatter(formattedPeptide.predfull,
                     lSplit[1], "predfull");
 
             PredictionEntry pe = this.allPredsHashMap.get(peptideToSearch.baseCharge);

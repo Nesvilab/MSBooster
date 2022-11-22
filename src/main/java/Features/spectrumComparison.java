@@ -369,7 +369,7 @@ public class spectrumComparison {
     private static float[] oneNormalize(float[] vector) {
         //if size 1
         if (vector.length == 1) {
-            return vector;
+            return new float[]{1};
         }
 
         //if we wish to normalize to unit vector
@@ -696,13 +696,15 @@ public class spectrumComparison {
         }
 
         float[] SabVector = new float[sum1PredIntensities.length];
-        float matchedSum = 0f;
+        int numFrags = 0;
         for (float j : sum1MatchedIntensities) {
-            matchedSum += j;
+            if (j != 0) {
+                numFrags += 1;
+            }
         }
 
-        if (matchedSum == 0f) {
-            SabVector = sum1PredIntensities;
+        if (numFrags < 2) {
+            return 0;
         } else {
             for (int i = 0; i < SabVector.length; i++) {
                 SabVector[i] = (sum1PredIntensities[i] + sum1MatchedIntensities[i]) / 2;

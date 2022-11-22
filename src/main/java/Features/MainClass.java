@@ -283,6 +283,9 @@ public class MainClass {
             } else if  (Constants.divideFragments.equals("4"))  { //etd
                 Constants.divideFragments = "c_z;zdot_y_unknown";
                 Constants.topFragments = 12;
+            } else if  (Constants.divideFragments.equals("5"))  { //ethcd
+                Constants.divideFragments = "b_y_c_z;immonium_a_cdot_zdot_y-NL_b-NL_a-NL_internal_internal-NL_unknown";
+                Constants.topFragments = 12;
             } else if (Constants.divideFragments.equals("0") && Constants.spectraRTPredModel.equals("DIA-NN")) {
                 Constants.topFragments = 12; //may update in future
             }

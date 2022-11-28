@@ -169,10 +169,10 @@ public class MassCalculator {
                 }
                 break;
             case "zdot":
-                mass = calcMass(num, "z", charge) - H;
+                mass = calcMass(num, "z", 1) - proton - H;
                 break;
             case "cdot":
-                mass = calcMass(num, "c", charge) - H;
+                mass = calcMass(num, "c", 1) - proton - H;
                 break;
         }
 
@@ -202,7 +202,7 @@ public class MassCalculator {
     }
 
     public float calcMass(int num, String flag, int charge, String neutralLoss) {
-        float mass = calcMass(num, flag, charge);
+        float mass = calcMass(num, flag, 1) - proton;
 
         //subtract neutral loss
         switch (neutralLoss) {
@@ -232,7 +232,7 @@ public class MassCalculator {
         }
 
         //calculate m/z using charge
-        return (mass + (float) charge * proton) / (float) charge;
+        return mass;
     }
 
     private MassCalculator() {}
@@ -443,7 +443,13 @@ public class MassCalculator {
     }
 
     public static void main(String[] args) {
-        MassCalculator mc = new MassCalculator("YPKQIK", 2);
-        System.out.println(mc.mass);
+        Constants.lowestFragmentIonType = new HashSet<String>();
+        Constants.lowestFragmentIonType.add("internal");
+        MassCalculator mc = new MassCalculator("NADPQAVTM[15.9949]", 1);
+        mc.possibleFragmentIons();
+        for (Map.Entry<Float, String[]> entry : mc.fragmentIons.entrySet()) {
+            System.out.println(entry.getKey());
+            System.out.println(Arrays.toString(entry.getValue()));
+        }
     }
 }

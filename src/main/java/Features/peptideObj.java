@@ -26,11 +26,20 @@ public class peptideObj {
     float[] predInts;
     String[] fragmentIonTypes;
 
-    HashMap<String, Float> matchedIntensities = makeBaseMap();
-    //HashMap<String, Float> intensitiesDifference = makeBaseMap();
-    HashMap<String, Float> predIntensities = makeBaseMap();
-    HashMap<String, Float> peakCounts = makeBaseMap();
-    HashMap<String, Float> individualSpectralSimilarities = makeBaseMap();
+    final HashMap<String, Float> baseMap = makeBaseMap();
+    private HashMap<String, Float> makeBaseMap() {
+        HashMap<String, Float> map = new HashMap<>();
+        for (String s : Constants.fragmentIonHierarchy) {
+            map.put(s, 0f);
+        }
+        return map;
+    }
+
+    HashMap<String, Float> matchedIntensities = baseMap;
+    //HashMap<String, Float> intensitiesDifference = baseMap;
+    HashMap<String, Float> predIntensities = baseMap;
+    HashMap<String, Float> peakCounts = baseMap;
+    HashMap<String, Float> individualSpectralSimilarities = baseMap;
 
     spectrumComparison spectralSimObj;
 
@@ -77,14 +86,6 @@ public class peptideObj {
                 Constants.useIntensityDistributionSimilarity) {
             makeFragmentAnnotationFeatures();
         }
-    }
-
-    private HashMap<String, Float> makeBaseMap() {
-        HashMap<String, Float> map = new HashMap<>();
-        for (String s : Constants.fragmentIonHierarchy) {
-            map.put(s, 0f);
-        }
-        return map;
     }
 
     //how to deal with this if ignored fragment ions types, so matchedIntensities and fragmentIonTypes not same length?

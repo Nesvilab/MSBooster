@@ -197,11 +197,15 @@ public class mzMLReader {
         //get all scan nums
         for (IScan scan : scans.getMapNum2scan().values()) {
             if (scan.getFilterString() != null) {
-                if (scan.getFilterString().contains("FTMS")) {
-                    hasFTMS = true;
+                if (!hasFTMS) {
+                    if (scan.getFilterString().contains("FTMS")) {
+                        hasFTMS = true;
+                    }
                 }
-                if (scan.getFilterString().contains("ITMS")) {
-                    hasITMS = true;
+                if (!hasITMS) {
+                    if (scan.getFilterString().contains("ITMS")) {
+                        hasITMS = true;
+                    }
                 }
             }
 

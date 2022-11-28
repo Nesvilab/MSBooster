@@ -1,7 +1,5 @@
 package Features;
 
-
-
 import umontreal.ssj.gof.KernelDensity;
 import umontreal.ssj.probdist.EmpiricalDist;
 

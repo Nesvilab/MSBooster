@@ -291,9 +291,10 @@ public class MainClass {
             }
 
             //defining num threads
-            Runtime run = Runtime.getRuntime();
             if (Constants.numThreads <= 0) {
+                Runtime run = Runtime.getRuntime();
                 Constants.numThreads = run.availableProcessors();
+                run.exit(0);
             } //otherwise use user-defined
             System.out.println("Using " + Constants.numThreads + " threads");
 
@@ -575,7 +576,7 @@ public class MainClass {
 
             //generate predictions
             if ((Constants.spectraRTPredFile == null) && (createSpectraRTPredFile2)) {
-                ExternalModelCaller.callModel(run, "DIA-NN");
+                ExternalModelCaller.callModel("DIA-NN");
             }
 
             //create new pin file with features

@@ -4,15 +4,17 @@ import Features.Constants;
 
 import java.io.*;
 import java.nio.file.Files;
+import java.util.concurrent.TimeUnit;
 
 public class ExternalModelCaller {
     //TODO: can we make the repeated parts more concise?
-    public static void callModel(Runtime run, String model) {
+    public static void callModel(String model) {
         long startTime = System.nanoTime();
         switch (model) {
             case "DIA-NN":
                 try {
                     //DIA-NN command
+//                    TimeUnit.SECONDS.sleep(10);
                     System.out.println("Generating DIA-NN predictions");
                     ProcessBuilder builder = new ProcessBuilder(Constants.DiaNN,
                             "--lib",
@@ -33,13 +35,13 @@ public class ExternalModelCaller {
 
                     //print DIA-NN output while running
                     String line = null;
-                    boolean printedFinished = false;
+//                    boolean printedFinished = false;
 
                     while ((line = reader.readLine()) != null) {
                         System.out.println(line);
-                        if (line.contains("Finished")) {
-                            printedFinished = true;
-                        }
+//                        if (line.contains("Finished")) {
+//                            printedFinished = true;
+//                        }
                     }
 //                    //limit time
 //                    long start = System.currentTimeMillis();
@@ -61,15 +63,28 @@ public class ExternalModelCaller {
                             ".predicted.bin";
                     int DIANNtermination = process.waitFor();
 
-                    if (DIANNtermination != 0) {
-                        System.out.println("Abnormal DIANN termination: " + DIANNtermination);
-                    }
-                    if (! printedFinished) {
-                        System.out.println("DIA-NN did not print 'Finished', and therefore did not " +
-                                "finish predictions successfully. Rerunning from the MSBooster step " +
-                                "may resolve the issue. Exiting");
+                    if (DIANNtermination == -1073741515) {
+                        System.out.println("Microsoft Visual C++ Redistributable is missing. Please download at " +
+                                "https://learn.microsoft.com/en-us/cpp/windows/latest-supported-vc-redist");
                         System.exit(-1);
                     }
+                    if (DIANNtermination == 137) {
+                        System.out.println("Out of memory during DIA-NN prediction. " +
+                                "Please allocate more memory.");
+                        System.exit(-1);
+                    }
+                    if (DIANNtermination != 0) {
+                        System.out.println("Abnormal DIANN termination: " + DIANNtermination + ", please run the " +
+                                "following command from the command line for more information\n" +
+                                String.join(" ", builder.command()));
+                        System.exit(-1);
+                    }
+//                    if (! printedFinished) {
+//                        System.out.println("DIA-NN did not print 'Finished', and therefore did not " +
+//                                "finish predictions successfully. Rerunning from the MSBooster step " +
+//                                "may resolve the issue. Exiting");
+//                        System.exit(-1);
+//                    }
                     File predFile = new File(Constants.spectraRTPredFile);
                     if (Files.isReadable(predFile.toPath())) {
                         System.out.println("Done generating DIA-NN predictions");

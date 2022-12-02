@@ -588,7 +588,7 @@ public class MainClass {
             percolatorFormatter.editPin(pmMatcher, Constants.spectraRTPredFile, Constants.detectPredFile, featuresArray, Constants.editedPin);
 
             //print parameters to ps
-            printParamsPS();
+            //printParamsPS();
 
             //delete pred files
             if (Constants.deletePreds) {

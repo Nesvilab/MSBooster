@@ -32,15 +32,17 @@ public class PinMzmlMatcher {
         }
 
         //look for corresponding mzml files
+        //can maybe allow uncalibrated.pin to look for uncalibrated.mzml
         String[] allMzmlDirectories = mzmlDirectory.split(" ");
         HashMap<String, File> mzmlFileMap = new HashMap<>();
         for (String directory : allMzmlDirectories) {
             File f = new File(directory);
             if (f.isFile()) {
-                if (directory.substring(directory.length() - 4).toLowerCase().equals("mzml")) {
-                    mzmlFileMap.put(f.getName().substring(0, f.getName().length() - 5), f);
-                } else if (directory.substring(directory.length() - 17).toLowerCase().equals("uncalibrated.mzml")) {
+                if (directory.substring(directory.length() - 17).toLowerCase().equals("uncalibrated.mzml")) {
                     mzmlFileMap.put(f.getName().substring(0, f.getName().length() - 18), f);
+                    mzmlFileMap.put(f.getName().substring(0, f.getName().length() - 5), f);
+                } else if (directory.substring(directory.length() - 4).toLowerCase().equals("mzml")) {
+                    mzmlFileMap.put(f.getName().substring(0, f.getName().length() - 5), f);
                 } else if (directory.substring(directory.length() - 16).toLowerCase().equals("uncalibrated.mgf")) {
                     mzmlFileMap.put(f.getName().substring(0, f.getName().length() - 17), f);
                 } else if (directory.substring(directory.length() - 3).toLowerCase().equals("mgf")) {
@@ -51,18 +53,16 @@ public class PinMzmlMatcher {
                 for (File file : mzmlFilesCollection) {
                     if (file.getName().contains("_uncalibrated.mzML")) {
                         mzmlFileMap.put(file.getName().substring(0, file.getName().length() - 18), file);
-                    } else {
-                        mzmlFileMap.put(file.getName().substring(0, file.getName().length() - 5), file);
                     }
+                    mzmlFileMap.put(file.getName().substring(0, file.getName().length() - 5), file);
                 }
 
                 mzmlFilesCollection = listFiles(f, new String[]{"mzml"}, false);
                 for (File file : mzmlFilesCollection) {
                     if (file.getName().contains("_uncalibrated.mzml")) {
                         mzmlFileMap.put(file.getName().substring(0, file.getName().length() - 18), file);
-                    } else {
-                        mzmlFileMap.put(file.getName().substring(0, file.getName().length() - 5), file);
                     }
+                    mzmlFileMap.put(file.getName().substring(0, file.getName().length() - 5), file);
                 }
 
                 mzmlFilesCollection = listFiles(f, new String[]{"mgf"}, false);
@@ -71,9 +71,8 @@ public class PinMzmlMatcher {
                     String mgfName = file.getName();
                     if (mgfName.contains("_uncalibrated.mgf")) {
                         mgfName = mgfName.substring(0, mgfName.length() - 17);
-                    } else {
-                        mgfName = mgfName.substring(0, mgfName.length() - 4);
                     }
+                    mgfName = mgfName.substring(0, mgfName.length() - 4);
                     if (! mzmlFileMap.containsKey(mgfName)) { //only want mzml
                         mzmlFileMap.put(mgfName, file);
                     }

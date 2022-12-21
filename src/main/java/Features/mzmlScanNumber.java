@@ -6,10 +6,7 @@ import umich.ms.datatypes.spectrum.ISpectrum;
 import umich.ms.fileio.exceptions.FileParsingException;
 
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.Objects;
+import java.util.*;
 
 import static Features.floatUtils.doubleToFloat;
 
@@ -22,36 +19,46 @@ public class mzmlScanNumber {
     float normalizedRT;
     Float IM;
     int IMbinSize;
+    ArrayList<Float> NCEs = new ArrayList<>();
     ArrayList<peptideObj> peptideObjects = new ArrayList<>();
     //double[] mzFreqs;
     public static float[] zeroFloatArray = new float[]{0};
+    private static final HashSet<String> nceModels =
+            new HashSet<>(Arrays.asList("PredFull", "Prosit", "PrositTMT", "alphapeptdeep"));
 
+    //this version if creating from mzml scan number
     public mzmlScanNumber(IScan scan) throws FileParsingException {
         this.scanNum = scan.getNum();
         ISpectrum spectrum = scan.fetchSpectrum();
         this.expMZs = doubleToFloat(spectrum.getMZs());
-//        if (expMZs.length == 0) {
-//            System.out.println("scan with scan number " + scanNum + " is empty");
-//        }
         this.expIntensities = doubleToFloat(spectrum.getIntensities());
         this.RT = scan.getRt().floatValue();
         if (Constants.useIM) {
             this.IM = scan.getIm().floatValue();
         }
+        if (nceModels.contains(Constants.spectraRTPredModel)) {
+            String[] nceInfo = scan.getFilterString().split("@");
+            if (nceInfo.length > 1) {
+                for (String s : Arrays.copyOfRange(nceInfo, 1, nceInfo.length)) {
+                    String fragmentationInfo = s.split(" ")[0];
+                    for (int i = 0; i < fragmentationInfo.length(); i++) {
+                        if (Character.isDigit(fragmentationInfo.charAt(i))) {
+                            NCEs.add(Float.parseFloat(fragmentationInfo.substring(i)));
+                            break;
+                        }
+                    }
+                }
+            }
+        }
     }
 
+    //this version if creating from mgf file
     public mzmlScanNumber(int scanNum, float[] expMZs, float[] expInts, float RT, float IM) {
         this.scanNum = scanNum;
         this.expMZs = expMZs;
         this.expIntensities = expInts;
         this.RT = RT;
         this.IM = IM;
-    }
-    public mzmlScanNumber(int scanNum, float[] expMZs, float[] expInts, float RT) {
-        this.scanNum = scanNum;
-        this.expMZs = expMZs;
-        this.expIntensities = expInts;
-        this.RT = RT;
     }
 
     public float[] getExpMZs() { return expMZs; }

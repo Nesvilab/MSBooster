@@ -23,11 +23,9 @@ public class Constants {
     public static String spectraRTPredFile = null; //use this if predFile already made
     public static String detectPredFile = null;
     public static Boolean deletePreds = false;
-    public static Integer predictionTimeLimit = 120;
 
     //optional file locations and parameters
     //if calculating detectFractionGreater, these are used for FastaReader class
-    //C:/Users/kevin/OneDriveUmich/proteomics/fasta/2020-12-07-decoys-reviewed-contam-UP000005640.fas
     public static String fasta = "C:/Users/kevin/OneDriveUmich/proteomics/fasta/2020-12-07-decoys-reviewed-contam-UP000005640.fas";
     public static String decoyPrefix = ">rev_";
     public static String cutAfter = "KR";
@@ -47,9 +45,12 @@ public class Constants {
 
     //locations of executables and other models
     public static Integer numThreads = 0;
-    public static String DiaNN = null; //C:/DIA-NN/1.7.15beta1/DiaNN.exe
+    public static String DiaNN = null;
     public static String spectraRTPredModel = "DIA-NN";
     public static Boolean replaceYBintensities = true;
+
+    //additional modifications for alphapeptdeep
+    public static String additionalMods = "";
 
     ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
     //miscellaneous inner workings
@@ -182,17 +183,18 @@ public class Constants {
     }
     public static String[] fragmentIonHierarchy = makeFragmentIonHierarchy();
     public static String[] makeFragmentIonHierarchy() {
-        if (Constants.FragmentationType.equals("HCD")) {
-            return new String[] {"immonium", "y", "b", "a",
-                    "y-NL", "b-NL", "a-NL", "internal", "internal-NL", "unknown"};
-        } else if (Constants.FragmentationType.equals("ETD")) {
-            return new String[] {"zdot", "c", "z", "y", "unknown"};
-        } else if (Constants.FragmentationType.equals("ETHCD")) {
-            return new String[] {"immonium", "y", "b", "a", "zdot", "c", "z", "cdot",
-                    "y-NL", "b-NL", "a-NL", "internal", "internal-NL", "unknown"};
-        } else { //everything else, like CID
-            return new String[] {"immonium", "y", "b", "a",
-                    "y-NL", "b-NL", "a-NL", "internal", "internal-NL", "unknown"};
+        switch (Constants.FragmentationType) {
+            case "HCD":
+                return new String[]{"immonium", "y", "b", "a",
+                        "y-NL", "b-NL", "a-NL", "internal", "internal-NL", "unknown"};
+            case "ETD":
+                return new String[]{"zdot", "c", "z", "y", "unknown"};
+            case "ETHCD":
+                return new String[]{"immonium", "y", "b", "a", "zdot", "c", "z", "cdot",
+                        "y-NL", "b-NL", "a-NL", "internal", "internal-NL", "unknown"};
+            default:  //everything else, like CID
+                return new String[]{"immonium", "y", "b", "a",
+                        "y-NL", "b-NL", "a-NL", "internal", "internal-NL", "unknown"};
         }
     }
     public static Set<String> lowestFragmentIonType = makeLowestFragmentIonType();

@@ -1,10 +1,7 @@
 package Features;
 
 import java.io.*;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Map;
+import java.util.*;
 
 public class PTMhandler {
     //handling of PTMs, all in one location. Might need to import unimod mass file
@@ -57,12 +54,12 @@ public class PTMhandler {
 
         while((line = ptmFile.readLine()) != null) {
             String[] lineSplit = line.split("\t");
-            String classification = lineSplit[2];
+            String classification = lineSplit[6];
             if (classification.equals("Other") || classification.equals("AA substitution")) { //may need to exclude more
                 continue;
             }
             String ptmName = lineSplit[0].split("@")[0];
-            double doubleMass = Math.round(Double.parseDouble(lineSplit[5]) * 10000.0) / 10000.0;
+            double doubleMass = Math.round(Double.parseDouble(lineSplit[1]) * 10000.0) / 10000.0;
             for (double d : new double[]{-0.0001, 0, 0.0001}) { //robust against rounding and small mass differences
                 String mass = String.format("%.4f", doubleMass + d);
                 map.put(mass, ptmName);
@@ -94,7 +91,7 @@ public class PTMhandler {
         while((line = ptmFile.readLine()) != null) {
             String[] lineSplit = line.split("\t");
             String ptmName = lineSplit[0].split("@")[0];
-            String mass = String.format("%.4f", Math.round(Double.parseDouble(lineSplit[5]) * 10000.0) / 10000.0);
+            String mass = String.format("%.4f", Math.round(Double.parseDouble(lineSplit[1]) * 10000.0) / 10000.0);
             map.put(ptmName, mass);
         }
         ptmFile.close();
@@ -119,31 +116,42 @@ public class PTMhandler {
     private static HashMap<String, String> makeModAAmassToAlphapeptdeep() throws IOException {
         HashMap<String, String> map = new HashMap<>();
 
-        //get name and monoisotopic mass
-        final InputStream stream = PTMhandler.class.getResourceAsStream("/ptm_resources/modification_alphapeptdeep.tsv");
-        final InputStreamReader reader = new InputStreamReader(stream);
-        final BufferedReader ptmFile = new BufferedReader(reader);
-        String line = ptmFile.readLine(); //header
-
-        while((line = ptmFile.readLine()) != null) {
-            String[] lineSplit = line.split("\t");
-            String classification = lineSplit[2];
-            if (classification.equals("Other") || classification.equals("AA substitution")) { //may need to exclude more
-                continue;
-            }
-            String ptmName = lineSplit[0].split("@")[0];
-            String mass = String.format("%.4f", Math.round(Double.parseDouble(lineSplit[5]) * 10000.0) / 10000.0);
-            map.put(mass, ptmName);
-            alphapeptdeepModNames.add(lineSplit[0].split("\\^")[0]);
-            writeOutAlphapeptdeepModNames.put(lineSplit[0].split("\\^")[0], lineSplit[0]);
-            ArrayList<String> stringList = sameMass.get(mass);
-            if (stringList == null) {
-                stringList = new ArrayList<>();
-            }
-            stringList.add(ptmName);
-            sameMass.put(mass, stringList);
+        ArrayList<String> modPaths = new ArrayList<>();
+        modPaths.add("/ptm_resources/modification_alphapeptdeep.tsv");
+        if (! Constants.additionalMods.equals("")) {
+            modPaths.add(Constants.additionalMods);
         }
-        ptmFile.close();
+
+        for (String modPath : modPaths) {
+            //get name and monoisotopic mass
+            InputStream stream = PTMhandler.class.getResourceAsStream(modPath);
+            if (Objects.isNull(stream)) {
+                stream = new FileInputStream(modPath);
+            }
+            final InputStreamReader reader = new InputStreamReader(stream);
+            final BufferedReader ptmFile = new BufferedReader(reader);
+            String line = ptmFile.readLine(); //header
+
+            while ((line = ptmFile.readLine()) != null) {
+                String[] lineSplit = line.split("\t");
+                String classification = lineSplit[6];
+                if (classification.equals("Other") || classification.equals("AA substitution")) { //may need to exclude more
+                    continue;
+                }
+                String ptmName = lineSplit[0].split("@")[0];
+                String mass = String.format("%.4f", Math.round(Double.parseDouble(lineSplit[1]) * 10000.0) / 10000.0);
+                map.put(mass, ptmName);
+                alphapeptdeepModNames.add(lineSplit[0].split("\\^")[0]);
+                writeOutAlphapeptdeepModNames.put(lineSplit[0].split("\\^")[0], lineSplit[0]);
+                ArrayList<String> stringList = sameMass.get(mass);
+                if (stringList == null) {
+                    stringList = new ArrayList<>();
+                }
+                stringList.add(ptmName);
+                sameMass.put(mass, stringList);
+            }
+            ptmFile.close();
+        }
 
         return map;
     }
@@ -169,7 +177,7 @@ public class PTMhandler {
         while((line = ptmFile.readLine()) != null) {
             String[] lineSplit = line.split("\t");
             String ptmName = lineSplit[0].split("@")[0];
-            String mass = String.format("%.4f", Math.round(Double.parseDouble(lineSplit[5]) * 10000.0) / 10000.0);
+            String mass = String.format("%.4f", Math.round(Double.parseDouble(lineSplit[1]) * 10000.0) / 10000.0);
             map.put(ptmName, mass);
         }
         ptmFile.close();

@@ -248,7 +248,11 @@ public class PeptideFormatter {
                     break;
                 }
                 if (ptmSubstitutes.size() == 1) {
-                    System.out.println("This PTM is not supported with mass " + doubleModMass);
+                    System.out.println(modName + "@" + aa);
+                    System.out.println("This PTM is not supported with mass " + doubleModMass +
+                            ": " + modName + "@" + aa + "\n" +
+                            "Please provide PTM info via additional_mods param in --paramsList.");
+                    System.exit(1);
                 }
                 ptmSubstitutes.remove(modName);
                 modName = ptmSubstitutes.get(0);

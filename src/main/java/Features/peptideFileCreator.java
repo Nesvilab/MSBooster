@@ -21,6 +21,27 @@ public class peptideFileCreator {
         return hSetHits;
     }
 
+    //this version when removing scan_num
+    public static HashSet<String> getUniqueHits(String[] allHits, String sep) {
+        HashSet<String> hSetHits = new HashSet<>();
+        HashMap<String, String> rowToScanNum = new HashMap<>();
+        //for string in allHits, separate string from scan_num
+        for (String hit : allHits) {
+            String[] hitSplit = hit.split(sep);
+            String newHit = String.join(sep, Arrays.copyOfRange(hitSplit, 0, hitSplit.length - 1));
+            hSetHits.add(newHit);
+            //create hashmap that will map string back to scan_num
+            rowToScanNum.put(newHit, hitSplit[hitSplit.length - 1]);
+        }
+        //add scan_nums back
+        HashSet<String> finalHSetHits = new HashSet<>();
+        for (String hit : hSetHits) {
+            finalHSetHits.add(hit + sep + rowToScanNum.get(hit));
+        }
+        System.out.println(finalHSetHits.size() + " unique peptides from " + allHits.length + " PSMs");
+        return finalHSetHits;
+    }
+
     //infile is pepXML file locations
     public static void createPeptideFile(String infile, String outfile, String modelFormat, String psmFormat)
             throws IOException { //pepXML or pin
@@ -153,7 +174,12 @@ public class peptideFileCreator {
 
         //filter out redundant peptides
         //this step can reduce number of predictions needed to 1/3, decreasing prediction time
-        HashSet<String> hSetHits = getUniqueHits(allHits);
+        HashSet<String> hSetHits;
+        if (modelFormat.equals("alphapeptdeep")) {
+            hSetHits = getUniqueHits(allHits, ",");
+        } else {
+            hSetHits = getUniqueHits(allHits);
+        }
 
         //write to file
         try {
@@ -199,7 +225,7 @@ public class peptideFileCreator {
                     break;
                 case "alphapeptdeep":
                     System.out.println("Writing alphapeptdeep input file");
-                    myWriter.write("sequence,mods,mod_sites,charge,nce,instrument,base\n");
+                    myWriter.write("sequence,mods,mod_sites,charge,nce,instrument,base,scan_num\n");
                     break;
             }
             for (String hSetHit : hSetHits) {

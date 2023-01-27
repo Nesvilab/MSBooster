@@ -48,6 +48,7 @@ public class Constants {
     public static String DiaNN = null;
     public static String spectraRTPredModel = "DIA-NN";
     public static Boolean replaceYBintensities = true;
+    public static Integer splitPredInputFile = 1;
 
     //additional modifications for alphapeptdeep
     public static String additionalMods = "";

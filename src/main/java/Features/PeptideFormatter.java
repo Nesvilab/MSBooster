@@ -27,6 +27,7 @@ public class PeptideFormatter {
     String diann;
     String predfull;
     String prosit;
+    String prositTMT;
     String stripped;
     String baseCharge;
     String dlib;
@@ -212,6 +213,13 @@ public class PeptideFormatter {
         prosit = predfull.replace("M(O)", "M(ox)");
     }
 
+    private void prositTOprositTMT() {
+        //Prosit TMT assumes n-term and all lysines are TMT-labeled
+        String tmtLabel = "[" + PTMhandler.tmtMass + "]";
+        String intermediate = tmtLabel + prosit;
+        prositTMT = intermediate.replace("K", "K" + tmtLabel);
+    }
+
     private void strippedTOdlib() { dlib = stripped.replace("C", "C[" + PTMhandler.carbamidomethylationMass + "]") + "|" + charge;
     }
 
@@ -331,6 +339,7 @@ public class PeptideFormatter {
             baseTOpredfull();
             baseTOdiann();
             predfullTOprosit();
+            prositTOprositTMT();
             baseCharge = base + "|" + charge;
         }
 

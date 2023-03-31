@@ -159,10 +159,20 @@ public class MspReader implements SpectralPredictionMapper {
                         f.substring(0, f.length() - 4) + "_full.tsv"));
                 while ((line = TSVReader.readLine()) != null) {
                     String[] lineSplit2 = line.split("\t");
-                    //check if diann to base results in same base peptide
-                    PeptideFormatter pf = new PeptideFormatter(
-                            new PeptideFormatter(lineSplit2[0], lineSplit2[1], "base").prosit,
-                            lineSplit2[1], "prosit");
+                    PeptideFormatter pf = null;
+                    if (Constants.spectraRTPredModel.equals("Prosit")) {
+                        pf = new PeptideFormatter(
+                                new PeptideFormatter(lineSplit2[0], lineSplit2[1], "base").prosit,
+                                lineSplit2[1], "prosit");
+                    } else if (Constants.spectraRTPredModel.equals("PrositTMT")) {
+                        pf = new PeptideFormatter(
+                                new PeptideFormatter(lineSplit2[0], lineSplit2[1], "base").prositTMT,
+                                lineSplit2[1], "prosit");
+                    } else {
+                        System.out.println("spectraRTPredModel must either be Prosit or PrositTMT");
+                        System.exit(1);
+                    }
+
                     if (! pf.base.equals(lineSplit2[0])) {
                         //get predictionEntry
                         PredictionEntry tmp = allPreds.get(pf.baseCharge);

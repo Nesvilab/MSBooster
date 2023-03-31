@@ -121,11 +121,12 @@ public class peptideFileCreator {
                     hitsToAdd = pin.createPrositList();
                     break;
                 case "PrositTMT":
-                    if (Constants.FragmentationType == null || Constants.NCE == null) {
+                    if (Constants.FragmentationType.equals("")) {
                         System.out.println("Missing information for Prosit file generation. " +
-                                "Please provide FragmentationType (HCD or CID) and NCE (normalized collision energy) in " +
-                                "parameter file via --paramsList or as arguments on command line.");
-                        System.exit(-1);
+                                "Please provide FragmentationType (HCD or CID) in " +
+                                "parameter file via --paramsList or as arguments on command line." +
+                                "For now, setting as HCD.");
+                        Constants.FragmentationType = "HCD";
                     }
                     hitsToAdd = pin.createPrositTMTList();
                     break;

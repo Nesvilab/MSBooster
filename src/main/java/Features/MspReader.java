@@ -222,13 +222,4 @@ public class MspReader implements SpectralPredictionMapper {
     public void clear() {
         allPreds.clear();
     }
-
-    public static void main(String[] args)
-            throws IOException, InterruptedException, ExecutionException, FileParsingException, SQLException {
-        //MspReader m = new MspReader("C:/Users/kevin/Downloads/proteomics/newHLA/msfragger3.5rc9/myPrositLib31.msp");
-        ExecutorService executorService = Executors.newFixedThreadPool(11);
-        SpectralPredictionMapper spm = SpectralPredictionMapper.createSpectralPredictionMapper(
-                "C:/Users/kevin/Downloads/proteomics/newHLA/msfragger3.5rc9/myPrositLib31.msp", "", executorService);
-        executorService.shutdown();
-    }
 }

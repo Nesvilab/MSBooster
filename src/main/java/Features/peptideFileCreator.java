@@ -262,10 +262,4 @@ public class peptideFileCreator {
             //return null;
         }
     }
-
-    public static void main(String[] args) throws IOException {
-        createPeptideFile("C:/Users/kevin/Downloads/20190627_QX0_AnBr_SA_BPP_DDA_M01_01.pin",
-                "C:/Users/kevin/Downloads/20190627_QX0_AnBr_SA_BPP_DDA_M01_01_length63.tsv",
-                "Diann", "pin");
-    }
 }

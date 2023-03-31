@@ -152,10 +152,4 @@ public class FastaReader {
             System.exit(1);
         }
     }
-
-    public static void main(String[] args) throws FileNotFoundException {
-        FastaReader fasta = new FastaReader("C:/Users/kevin/OneDriveUmich/proteomics/fasta/2020-12-07-decoys-reviewed-contam-UP000005640.fas");
-//        FastaReader fasta = new FastaReader("C:/Users/kevin/OneDriveUmich/proteomics/fasta/napedro_3mixed_human_yeast_ecoli_20140403_iRT_reverse.fasta",
-//                false);
-    }
 }

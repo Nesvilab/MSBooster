@@ -458,16 +458,4 @@ public class MassCalculator {
 
         return new String[][] {annotations, fragmentIonTypes};
     }
-
-    public static void main(String[] args) {
-        Constants.FragmentationType = "ETD";
-        Constants.fragmentIonHierarchy = Constants.makeFragmentIonHierarchy();
-        Constants.lowestFragmentIonType = Constants.makeLowestFragmentIonType();
-        MassCalculator mc = new MassCalculator("NADPQAVT", 1);
-        mc.possibleFragmentIons();
-        for (Map.Entry<Float, String[]> entry : mc.fragmentIons.entrySet()) {
-            System.out.println(entry.getKey());
-            System.out.println(Arrays.toString(entry.getValue()));
-        }
-    }
 }

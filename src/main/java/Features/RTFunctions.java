@@ -321,8 +321,4 @@ public class RTFunctions {
 //
 //        return w1 * unifProb + w2 * empiricalProb;
 //    }
-
-    public static void main(String[] args) throws Exception {
-
-    }
 }

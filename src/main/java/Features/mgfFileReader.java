@@ -432,16 +432,4 @@ public class mgfFileReader implements SpectralPredictionMapper{
         scanNumberObjects.clear();
         futureList.clear();
     }
-
-    public static void main(String[] args) throws IOException, FileParsingException, ExecutionException, InterruptedException {
-//        Constants.numThreads = 11;
-//        ExecutorService executorService = Executors.newFixedThreadPool(Constants.numThreads);
-//        long startTime = System.nanoTime();
-//        mgfFileReader mgf = new mgfFileReader("C:/Users/kevin/Downloads/proteomics/hla2/spectraRT.mgf",
-//                true, executorService);
-//        long endTime = System.nanoTime();
-//        long duration = (endTime - startTime);
-//        System.out.println("loading took " + duration / 1000000 +" milliseconds");
-//        executorService.shutdown();
-    }
 }

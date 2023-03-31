@@ -638,13 +638,6 @@ public class pepXMLReader {
 
         return newMsmsPipelineAnalysis;
     }
-
-    public static void main(String[] args) {
-        pepXMLReader x = new pepXMLReader("C:/Users/kevin/Downloads/proteomics/cptac/2021-2-21/pepXMLtmp/proteinProphet/" +
-                "interact.pep.xml");
-        //x.getNativeIDs();
-
-    }
 }
 
 

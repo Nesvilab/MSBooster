@@ -282,9 +282,4 @@ public class DlibReader implements SpectralPredictionMapper{
         }
         return maxRT;
     }
-
-    public static void main(String[] args) throws SQLException, IOException {
-        DlibReader dlibReader = new DlibReader("C:/Users/yangkl/Downloads/proteomics/" +
-                "escherichia_coli_k12_prosit_generated_library.dlib");
-    }
 }

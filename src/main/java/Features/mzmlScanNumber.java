@@ -170,8 +170,4 @@ public class mzmlScanNumber {
         System.out.println("no peptideObj with name " + name + ", returning null");
         return returnedP; //only if peptide name not there
     }
-
-    public static void main(String[] args) throws IOException {
-        System.out.println(Arrays.toString("LAHYNKR||2".split("\\|", 2)));
-    }
 }

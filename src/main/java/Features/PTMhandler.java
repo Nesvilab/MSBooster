@@ -55,6 +55,7 @@ public class PTMhandler {
         HashMap<String, Double> map = new HashMap<>();
         map.put("Oxidation", oxidationMass);
         map.put("Carbamidomethyl", carbamidomethylationMass);
+        map.put("TMT_6", tmtMass);
         return map;
     }
     public static final HashMap<String, Double> prositToModAAmass = makePrositToModAAmass();
@@ -209,11 +210,5 @@ public class PTMhandler {
         } catch (IOException e) {
             e.printStackTrace();
         }
-    }
-
-    public static void main(String[] args) throws IOException {
-        System.out.println(aamassToAlphapeptdeep.get("14.0155"));
-        System.out.println(aamassToAlphapeptdeep.get("14.0156"));
-        System.out.println(aamassToAlphapeptdeep.get("14.0157"));
     }
 }

@@ -422,7 +422,7 @@ public class percolatorFormatter {
                     unifPriorSize = binSizes[cutoff];
 
                     //also need uniform probability with right bound of max predicted RT
-                    unifProb = 1.0f / predictedSpectra.getMaxPredRT();
+                    unifProb = 1.0f / predictedSpectra.getMaxPredRT(); //TODO: might need to change, if this is ever revisited. Need negative range
                 }
                 if (featuresList.contains("RTprobability") || featuresList.contains("RTprobabilityUnifPrior")) {
                     //System.out.println("Generating RT empirical densities");
@@ -494,7 +494,7 @@ public class percolatorFormatter {
                     //add extra protein columns
                     if (pin.getRow().length > pin.header.length) {
                         for (int j = pin.header.length; j < pin.getRow().length; j++) {
-                            writer.addValue(j + features.length, row[j]);
+                            writer.addValue(newHeader.size(), row[j]);
                         }
                     }
 
@@ -1124,16 +1124,5 @@ public class percolatorFormatter {
             System.exit(1);
         }
         executorService.shutdown();
-    }
-
-    public static void main(String[] args)
-            throws IOException, InterruptedException, ExecutionException, FileParsingException, SQLException {
-        editPin("C:/Users/yangkl/Downloads/proteomics/timsTOF/20180819_TIMS2_12-2_AnBr_SA_200ng_HeLa_50cm_120min_100ms_11CT_3_A1_01_2769.pin",
-                "C:/Users/yangkl/OneDriveUmich/proteomics/mzml/" +
-                        "20180819_TIMS2_12-2_AnBr_SA_200ng_HeLa_50cm_120min_100ms_11CT_3_A1_01_2769_uncalibrated.mgf",
-                "C:/Users/yangkl/Downloads/proteomics/timsTOF/DIANN.predicted.bin",
-                "",
-                ("unweightedSpectralEntropy").split(","),
-                "C:/Users/yangkl/Downloads/proteomics/timsTOF/edited_");
     }
 }

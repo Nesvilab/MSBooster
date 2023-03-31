@@ -347,9 +347,4 @@ public class StatMethods {
 
         return maxConsecutive;
     }
-
-    public static void main(String[] args) {
-        System.out.println(variance(new double[] {1.0, 1.0}));
-        System.out.println( 1f / Float.POSITIVE_INFINITY);
-    }
 }

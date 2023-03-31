@@ -195,12 +195,4 @@ public class DiannSpeclibReader implements SpectralPredictionMapper{
     public void clear() {
         allPreds.clear();
     }
-
-    public static void main(String[] args)
-            throws IOException, InterruptedException, ExecutionException, FileParsingException, SQLException {
-        ExecutorService executorService = Executors.newFixedThreadPool(11);
-        SpectralPredictionMapper spm = SpectralPredictionMapper.createSpectralPredictionMapper("C:/Users/kevin/Downloads/proteomics/" +
-                        "hla2/spectraRT.predicted.bin", "DIA-NN", executorService);
-        executorService.shutdown();
-    }
 }

@@ -198,10 +198,4 @@ public class pinReader {
         }
         return peps.toArray(new String[0]);
     }
-
-    public static void main(String[] args) throws IOException {
-        pinReader p = new pinReader("C:/Users/kevin/Downloads/proteomics/melanoma/201905024_F_7951_pro_1.pin");
-        p.next();
-        System.out.println(p.getEScore());
-    }
 }

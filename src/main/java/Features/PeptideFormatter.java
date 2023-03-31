@@ -237,8 +237,10 @@ public class PeptideFormatter {
                 doubleModMass += 0.0002;
                 modName = PTMhandler.aamassToAlphapeptdeep.get(String.format("%.4f", doubleModMass));
             }
-            if (modName == null) {
-                //TODO: make robust
+            if (modName == null) { //can try checking if it's a combo of fixed and var mod
+                System.out.println("There is an unknown modification with mass " + doubleModMass +
+                        ". Please provide PTM info via additionalMods param in --paramsList.");
+                System.exit(1);
             }
 
             int position = starts.get(i) - newEnds.get(i) + positions.get(i);
@@ -248,7 +250,7 @@ public class PeptideFormatter {
             positions.add(position);
             String aa;
             if (position == 0) {
-                aa = "ProteinN-term";
+                aa = "ProteinN-term"; //might need to change
             } else {
                 aa = stripped.substring(position - 1, position);
             }
@@ -265,7 +267,6 @@ public class PeptideFormatter {
                     break;
                 }
                 if (ptmSubstitutes.size() == 1) {
-                    System.out.println(modName + "@" + aa);
                     System.out.println("This PTM is not supported with mass " + doubleModMass +
                             ": " + modName + "@" + aa + "\n" +
                             "Please provide PTM info via additional_mods param in --paramsList.");

@@ -666,14 +666,4 @@ public class mzMLReader {
         IMLOESS.clear();
         peptideIMs.clear();
     }
-
-    public static void main(String[] args) throws Exception {
-        Constants.numThreads = 11;
-        Constants.spectraRTPredModel = "PredFull";
-        mzMLReader m = new mzMLReader("C:/Users/kevin/Downloads/proteomics/tmt16/" +
-                "Rowlf_20200720_TM_HStmtpro_Calu3_tot_fr9.mzML");
-        for (Map.Entry<Integer, mzmlScanNumber> entry : m.scanNumberObjects.entrySet()) {
-            System.out.println(entry.getValue().NCEs);
-        }
-    }
 }

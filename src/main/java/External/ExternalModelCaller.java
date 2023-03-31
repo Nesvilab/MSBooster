@@ -90,8 +90,7 @@ public class ExternalModelCaller {
                                 "--threads",
                                 String.valueOf(Constants.numThreads),
                                 "--strip-unknown-mods",
-                                "--mod",
-                                "TMT,229.1629",
+                                "--full-unimod",
                                 "--predict-n-frag",
                                 "100");
                         System.out.println(String.join(" ", builder.command()));

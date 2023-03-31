@@ -100,28 +100,4 @@ public class RTCalibrationFigure {
                         pinName.substring(0, pinName.length() - 4),
                 BitmapEncoder.BitmapFormat.PNG);
     }
-
-    public static void main(String[] args) throws Exception {
-        ExecutorService executorService = Executors.newFixedThreadPool(11);
-        mzMLReader mzml = new mzMLReader("C:/Users/yangkl/Downloads/proteomics/hla/" +
-                "AG20210507_SR_HLA_A0201_W632_2IPs_Fxn01.mzml");
-        pinReader pin = new pinReader("C:/Users/yangkl/Downloads/proteomics/hla/" +
-                "AG20210507_SR_HLA_A0201_W632_2IPs_Fxn01.pin");
-        SpectralPredictionMapper predictedSpectra = SpectralPredictionMapper.createSpectralPredictionMapper(
-                "C:/Users/yangkl/Downloads/proteomics/hla/" +
-                "spectraRT.predicted.bin", "", executorService);
-        Constants.numThreads = 11;
-
-//        mzMLReader mzml = new mzMLReader(new mgfFileReader("C:/Users/yangkl/OneDriveUmich/proteomics/mzml/" +
-//                "20180819_TIMS2_12-2_AnBr_SA_200ng_HeLa_50cm_120min_100ms_11CT_3_A1_01_2769.mgf", true, executorService));
-//        pinReader pin = new pinReader("C:/Users/yangkl/Downloads/proteomics/timsTOF/" +
-//                "20180819_TIMS2_12-2_AnBr_SA_200ng_HeLa_50cm_120min_100ms_11CT_3_A1_01_2769.pin");
-//        SpectralPredictionMapper predictedSpectra = SpectralPredictionMapper.createSpectralPredictionMapper(
-//                "C:/Users/yangkl/Downloads/proteomics/timsTOF/" +
-//                        "spectraRT.predicted.bin");
-        mzml.setPinEntries(pin, predictedSpectra);
-        mzml.setLOESS(Constants.RTregressionSize, Constants.bandwidth, Constants.robustIters, "RT");
-        RTCalibrationFigure fig = new RTCalibrationFigure(mzml, "C:/Users/yangkl/Downloads/proteomics/hla/", 0.2f);
-        executorService.shutdown();
-    }
 }

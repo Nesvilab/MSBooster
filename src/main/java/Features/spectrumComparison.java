@@ -730,7 +730,4 @@ public class spectrumComparison {
 
         return 1 - ( ((2 * spectralEntropy(SabVector)) - spectralEntropy(sum1MatchedIntensities) - spectralEntropy(sum1PredIntensities)) / Math.log(4));
     }
-
-    public static void main(String[] args) throws FileParsingException, IOException {
-    }
 }

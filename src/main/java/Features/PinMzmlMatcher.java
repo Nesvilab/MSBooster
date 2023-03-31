@@ -89,8 +89,7 @@ public class PinMzmlMatcher {
                     if (mgfName.contains("_uncalibrated.mgf")) {
                         mgfName = mgfName.substring(0, mgfName.length() - 17);
                     }
-                    mgfName = mgfName.substring(0, mgfName.length() - 4);
-                    if (! mzmlFileMap.containsKey(mgfName)) { //only want mzml
+                    if (! mzmlFileMap.containsKey(mgfName.substring(0, mgfName.length() - 4))) { //only want mzml
                         mzmlFileMap.put(mgfName, file);
                     }
                 }

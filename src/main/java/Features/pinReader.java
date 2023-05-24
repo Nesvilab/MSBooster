@@ -184,7 +184,7 @@ public class pinReader {
         while (next()) {
             PeptideFormatter pf = getPep();
             peps.add(pf.stripped + "," + pf.alphapeptdeepMods + "," + pf.modPositions + "," + pf.charge + "," +
-                    Constants.NCE + "," + Constants.instrument + "," + pf.base + "," + getScanNum());
+                    Constants.NCE + "," + Constants.instrument + "," + pf.base);
         }
         return peps.toArray(new String[0]);
     }

@@ -151,7 +151,7 @@ public class PTMhandler {
             String line = ptmFile.readLine(); //header
 
             while ((line = ptmFile.readLine()) != null) {
-                String[] lineSplit = line.split("\t");
+                String[] lineSplit = line.split("\t", -1);
                 String classification = lineSplit[6];
                 if (classification.equals("Other") || classification.equals("AA substitution")) { //may need to exclude more
                     continue;

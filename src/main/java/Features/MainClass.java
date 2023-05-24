@@ -593,7 +593,7 @@ public class MainClass {
 
             //generate predictions
             if ((Constants.spectraRTPredFile == null) && (createSpectraRTPredFile2)) {
-                ExternalModelCaller.callModel("DIA-NN");
+                ExternalModelCaller.callModel("DIA-NN", "");
             }
 
             //create new pin file with features

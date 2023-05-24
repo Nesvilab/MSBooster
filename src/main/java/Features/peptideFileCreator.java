@@ -243,7 +243,7 @@ public class peptideFileCreator {
                     break;
                 case "alphapeptdeep":
                     System.out.println("Writing alphapeptdeep input file");
-                    myWriter.write("sequence,mods,mod_sites,charge,nce,instrument,base,scan_num\n");
+                    myWriter.write("sequence,mods,mod_sites,charge,nce,instrument,base\n");
                     break;
             }
             for (String hSetHit : hSetHits) {

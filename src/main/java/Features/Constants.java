@@ -71,8 +71,9 @@ public class Constants {
     public static String additionalMods = ""; //this used in python script for common/user_defined_modifications
     public static Boolean predict = true;
     public static Boolean transfer = false;
-    public static String AlphaPeptDeep = null;
+    public static String AlphaPeptDeep = null; //path to exe
     public static String yaml = ""; //this used in python script for parameters
+    public static double MS2escore = -3.5;
 
     ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
     //miscellaneous inner workings

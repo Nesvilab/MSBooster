@@ -316,6 +316,7 @@ public class percolatorFormatter {
         //System.out.println("Detectability map and formatting loading took " + duration / 1000000 +" milliseconds");
 
         try {
+            HashMap<String, ArrayList<spectrumComparison>> peptidoforms = new HashMap<>();
             //////////////////////////////iterate through pin and mzml files//////////////////////////////////////////
             for (int i = 0; i < pinFiles.length; i++) {
                 //startTime = System.nanoTime();
@@ -376,6 +377,13 @@ public class percolatorFormatter {
                 //Special preparations dependent on features we require
                 if (needsMGF) {
                     mzml.setPinEntries(pin, predictedSpectra);
+
+                    //method to compare high scoring duplicate peptides to see what is baseline replicability of MS2 spectra
+                    //TODO extend across all mzmls, and choose 1 random one?
+                    if (Constants.spectraRTPredModel.contains("alphapeptdeep")
+                            && (Constants.predict || Constants.transfer)) {
+                        peptidoforms = mzml.findMS2replicability(peptidoforms);
+                    }
                 }
                 if (featuresList.contains("deltaRTLOESS") || featuresList.contains("deltaRTLOESSnormalized")) {
                     mzml.setLOESS(Constants.RTregressionSize, Constants.bandwidth, Constants.robustIters, "RT");
@@ -1117,6 +1125,42 @@ public class percolatorFormatter {
                     pinFiles[i].delete();
                     movedFile.renameTo(pinFiles[i]);
                 }
+            }
+
+            //iterate through all combinations of pairs of entries from same peptidoform and calculate similarity
+            if (Constants.spectraRTPredModel.contains("alphapeptdeep")
+                    && (Constants.predict || Constants.transfer)) {
+                BufferedWriter bw = new BufferedWriter(new FileWriter(
+                        Constants.outputDirectory + File.separator + "similarities.txt"));
+                for (ArrayList<spectrumComparison> spectrumComparisons : peptidoforms.values()) {
+                    if (spectrumComparisons.size() > 1) {
+                        //use generic unweightedSpectralEntropy calculation from new class SimilarityMethods
+                        //currently default to unweighted spectral entropy
+
+                        //version that enumerates all possibilities
+//                        for (int i = 0; i < spectrumComparisons.size() - 1; i++) {
+//                            for (int j = i + 1; j < spectrumComparisons.size(); j++) {
+//                                SimilarityMethods sm = new SimilarityMethods(
+//                                        spectrumComparisons.get(i).matchedIntensities,
+//                                        spectrumComparisons.get(j).matchedIntensities);
+//                                bw.write(sm.unweightedSpectralEntropy() + "\n");
+//                            }
+//                        }
+
+                        //version that only takes 1 random one
+                        Random random = new Random();
+                        int randomNumber1 = random.nextInt(spectrumComparisons.size());
+                        int randomNumber2 = random.nextInt(spectrumComparisons.size());
+                        while (randomNumber1 == randomNumber2) {
+                            randomNumber2 = random.nextInt(spectrumComparisons.size());
+                        }
+                        SimilarityMethods sm = new SimilarityMethods(
+                                spectrumComparisons.get(randomNumber1).matchedIntensities,
+                                spectrumComparisons.get(randomNumber2).matchedIntensities);
+                        bw.write(sm.unweightedSpectralEntropy() + "\n");
+                    }
+                }
+                bw.close();
             }
         } catch (Exception e) {
             executorService.shutdown();

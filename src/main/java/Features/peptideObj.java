@@ -26,7 +26,7 @@ public class peptideObj {
     final mzmlScanNumber scanNumObj;
     final int scanNum;
     final int targetORdecoy;
-    final String escore;
+    final String escore; //TODO parse to float right now
     final float RT;
     float deltaRT;
     float deltaRTbin;

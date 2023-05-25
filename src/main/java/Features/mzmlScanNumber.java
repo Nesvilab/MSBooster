@@ -36,7 +36,7 @@ public class mzmlScanNumber {
     float normalizedRT;
     Float IM;
     int IMbinSize;
-    ArrayList<Float> NCEs = new ArrayList<>();
+    ArrayList<Float> NCEs = new ArrayList<>(); //TODO use these to write peptide input files for prediction
     ArrayList<peptideObj> peptideObjects = new ArrayList<>();
     //double[] mzFreqs;
     public static float[] zeroFloatArray = new float[]{0};

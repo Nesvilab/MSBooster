@@ -27,6 +27,9 @@ import umich.ms.fileio.filetypes.mzml.MZMLFile;
 //import umontreal.ssj.gof.KernelDensity;
 import umontreal.ssj.probdist.EmpiricalDist;
 
+import java.io.BufferedWriter;
+import java.io.File;
+import java.io.FileWriter;
 import java.io.IOException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -241,9 +244,6 @@ public class mzMLReader {
         }
 
         scans.reset(); //free up memory. Could consider setting to null as well, but idk how to check if it's garbage collected
-        //long endTime = System.nanoTime();
-        //long duration = (endTime - startTime);
-        //System.out.println("createScanNumObjects took " + duration / 1000000 +" milliseconds");
     }
 
     public mzmlScanNumber getScanNumObject(int scanNum) {
@@ -280,6 +280,27 @@ public class mzMLReader {
         }
         pin.close();
         pin.reset();
+    }
+
+    //could consider not limiting ourselves to peaks predicted by model,
+    //but we want something quick to compute as a sanity check
+    public HashMap<String, ArrayList<spectrumComparison>> findMS2replicability(
+            HashMap<String, ArrayList<spectrumComparison>> peptidoforms) throws IOException {
+        //create hashmap with key:peptidoform and value:arraylist of spectrumComparisons
+        //filtered by e value
+        for (mzmlScanNumber msn : scanNumberObjects.values()) {
+            for (peptideObj pobj : msn.peptideObjects) {
+                if (Double.parseDouble(pobj.escore) < Constants.MS2escore) {
+                    ArrayList<spectrumComparison> arrayList = new ArrayList<>();
+                    if (peptidoforms.containsKey(pobj.name)) {
+                        arrayList = peptidoforms.get(pobj.name);
+                    }
+                    arrayList.add(pobj.spectralSimObj);
+                    peptidoforms.put(pobj.name, arrayList);
+                }
+            }
+        }
+        return peptidoforms;
     }
 
     public void setBetas(SpectralPredictionMapper preds, int RTregressionSize) throws IOException {

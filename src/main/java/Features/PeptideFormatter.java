@@ -54,6 +54,9 @@ public class PeptideFormatter {
         //remove AA and period at beginning and end
         peptide = peptide.substring(2, peptide.length() - 2);
 
+        //remove 0.0000
+        peptide = peptide.replace("[0.0000]", "");
+
         //n and c term mods
         if (peptide.charAt(0) == 'n') {
             peptide = peptide.replace("n", "");

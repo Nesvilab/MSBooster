@@ -27,6 +27,7 @@ import java.awt.*;
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.TreeSet;
 import java.util.concurrent.ExecutorService;
@@ -44,13 +45,24 @@ public class RTCalibrationFigure {
         chart.setXAxisTitle("experimental RT");
         chart.setYAxisTitle("predicted RT");
         chart.getStyler().setLegendVisible(false);
-        chart.getStyler().setMarkerSize(3);
+        chart.getStyler().setMarkerSize(6);
         chart.getStyler().setYAxisGroupPosition(0, Styler.YAxisPosition.Right);
         // Series
         List<Float> xData = new ArrayList<Float>();
         List<Float> yData = new ArrayList<Float>();
+
+        //for PTMs besides oxM and C57
+        List<Float> xDataMod = new ArrayList<Float>();
+        List<Float> yDataMod = new ArrayList<Float>();
         float minRT = Float.MAX_VALUE;
         float maxRT = Float.MIN_VALUE;
+
+        String[] masses;
+        if (Constants.RTfigure_masses.equals("")) {
+            masses = new String[0];
+        } else {
+            masses = Constants.RTfigure_masses.split(",");
+        }
         for (int scanNum : new TreeSet<Integer>(mzml.scanNumberObjects.keySet())) {
             mzmlScanNumber scanNumObj = mzml.getScanNumObject(scanNum);
             float rt = scanNumObj.RT; //experimental RT for this scan
@@ -65,16 +77,35 @@ public class RTCalibrationFigure {
                 peptideObj pep = scanNumObj.getPeptideObject(i);
                 //only get best ones
                 if (Float.parseFloat(pep.escore) < Constants.RTescoreCutoff && pep.spectralSimObj.predMZs[0] != 0f) {
-                    xData.add(rt);
-                    yData.add(pep.RT);
+                    boolean containsMod = false;
+                    for (String mass : masses) {
+                        if (pep.name.contains(mass)) {
+                            containsMod = true;
+                            break;
+                        }
+                    }
+                    if (! containsMod) {
+                        xData.add(rt);
+                        yData.add(pep.RT);
+                    } else {
+                        xDataMod.add(rt);
+                        yDataMod.add(pep.RT);
+                    }
                 } else {
                     break;
                 }
             }
         }
 
-        XYSeries series = chart.addSeries("scatter", xData, yData);
-        series.setMarkerColor(new Color(0, 0, 0, opacity));
+        if (xData.size() > 0) {
+            XYSeries series = chart.addSeries("scatter", xData, yData);
+            series.setMarkerColor(new Color(0, 0, 0, opacity));
+        }
+
+        if (xDataMod.size() > 0) {
+            XYSeries seriesMod = chart.addSeries("scatterMods", xDataMod, yDataMod);
+            seriesMod.setMarkerColor(new Color(65, 105, 225));
+        }
 
         //loess regression
         // generates Log data

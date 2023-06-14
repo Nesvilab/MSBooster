@@ -1,5 +1,7 @@
 # MSBooster
-MSBooster allows users to add deep learning-based features to .pin files before Percolator PSM rescoring
+MSBooster allows users to add deep learning-based features to .pin files before Percolator PSM rescoring. 
+
+Example pin files before and after ("_edited.pin") MSBooster annotation are included in the example_before_and_after_files.zip. Within FragPipe, there are individual checkboxes to enable calculation of MS2 spectral and retention time similarity scores, notated as "unweighted_spectral_entropy" and "delta_RT_loess", respectively, in the edited pin file. Appropriately formatted pin files are automatically generated in most loadable workflows within FragPipe.
 
 ## System requirements
 ### All software dependencies and OS

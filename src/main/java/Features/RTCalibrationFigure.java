@@ -17,6 +17,7 @@
 
 package Features;
 
+import org.apache.commons.lang3.StringUtils;
 import org.knowm.xchart.BitmapEncoder;
 import org.knowm.xchart.XYChart;
 import org.knowm.xchart.XYChartBuilder;
@@ -26,10 +27,8 @@ import org.knowm.xchart.style.Styler;
 import java.awt.*;
 import java.io.File;
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Arrays;
+import java.util.*;
 import java.util.List;
-import java.util.TreeSet;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
@@ -44,7 +43,7 @@ public class RTCalibrationFigure {
         chart.setTitle(mzml.pathStr);
         chart.setXAxisTitle("experimental RT");
         chart.setYAxisTitle("predicted RT");
-        chart.getStyler().setLegendVisible(false);
+        chart.getStyler().setLegendVisible(true);
         chart.getStyler().setMarkerSize(6);
         chart.getStyler().setYAxisGroupPosition(0, Styler.YAxisPosition.Right);
         // Series
@@ -52,8 +51,8 @@ public class RTCalibrationFigure {
         List<Float> yData = new ArrayList<Float>();
 
         //for PTMs besides oxM and C57
-        List<Float> xDataMod = new ArrayList<Float>();
-        List<Float> yDataMod = new ArrayList<Float>();
+        HashMap<Integer, List<Float>> xDataMod = new HashMap<>();
+        HashMap<Integer, List<Float>> yDataMod = new HashMap<>();
         float minRT = Float.MAX_VALUE;
         float maxRT = Float.MIN_VALUE;
 
@@ -88,8 +87,22 @@ public class RTCalibrationFigure {
                         xData.add(rt);
                         yData.add(pep.RT);
                     } else {
-                        xDataMod.add(rt);
-                        yDataMod.add(pep.RT);
+                        int matches = StringUtils.countMatches(pep.name, masses[0]);
+                        if (xDataMod.containsKey(matches)) {
+                            List<Float> XList = xDataMod.get(matches);
+                            XList.add(rt);
+                            List<Float> YList = yDataMod.get(matches);
+                            YList.add(pep.RT);
+                            xDataMod.put(matches, XList);
+                            yDataMod.put(matches, YList);
+                        } else {
+                            List<Float> newXList = new ArrayList<>();
+                            List<Float> newYList = new ArrayList<>();
+                            newXList.add(rt);
+                            newYList.add(pep.RT);
+                            xDataMod.put(matches, newXList);
+                            yDataMod.put(matches, newYList);
+                        }
                     }
                 } else {
                     break;
@@ -102,9 +115,13 @@ public class RTCalibrationFigure {
             series.setMarkerColor(new Color(0, 0, 0, opacity));
         }
 
-        if (xDataMod.size() > 0) {
-            XYSeries seriesMod = chart.addSeries("scatterMods", xDataMod, yDataMod);
-            seriesMod.setMarkerColor(new Color(65, 105, 225));
+        for (Integer matched : xDataMod.keySet()) {
+            List<Float> rts = xDataMod.get(matched);
+            List<Float> predrts = yDataMod.get(matched);
+            if (rts.size() > 0) {
+                XYSeries seriesMod = chart.addSeries("scatterMods" + matched, rts, predrts);
+                seriesMod.setMarkerColor(new Color(65 / 2 * matched, 105 / 2 * matched, 225 / matched));
+            }
         }
 
         //loess regression

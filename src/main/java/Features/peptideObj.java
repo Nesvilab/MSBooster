@@ -17,6 +17,9 @@
 
 package Features;
 
+import java.io.BufferedWriter;
+import java.io.FileWriter;
+import java.io.IOException;
 import java.util.*;
 
 public class peptideObj {
@@ -83,7 +86,7 @@ public class peptideObj {
     }
 
     public peptideObj(mzmlScanNumber scanNumObj, String name, int rank, int targetORdecoy, String escore,
-                      float[] predMZs, float[] predIntensities, float predRT, Float predIM, String[] fragmentIonTypes) {
+                      float[] predMZs, float[] predIntensities, float predRT, Float predIM, String[] fragmentIonTypes) throws IOException {
         this.name = name;
         this.charge = Integer.parseInt(name.split("\\|")[1]);
         this.rank = rank;

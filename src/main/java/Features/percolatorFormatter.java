@@ -28,6 +28,7 @@ import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
+import java.sql.Array;
 import java.sql.SQLException;
 import java.util.*;
 import java.util.concurrent.ExecutionException;
@@ -1132,7 +1133,9 @@ public class percolatorFormatter {
                     && (Constants.predict || Constants.transfer)) {
                 BufferedWriter bw = new BufferedWriter(new FileWriter(
                         Constants.outputDirectory + File.separator + "similarities.txt"));
-                for (ArrayList<spectrumComparison> spectrumComparisons : peptidoforms.values()) {
+                for (Map.Entry<String, ArrayList<spectrumComparison>> entry : peptidoforms.entrySet()) {
+                    String baseName = entry.getKey();
+                    ArrayList<spectrumComparison> spectrumComparisons = entry.getValue();
                     if (spectrumComparisons.size() > 1) {
                         //use generic unweightedSpectralEntropy calculation from new class SimilarityMethods
                         //currently default to unweighted spectral entropy
@@ -1157,7 +1160,7 @@ public class percolatorFormatter {
                         SimilarityMethods sm = new SimilarityMethods(
                                 spectrumComparisons.get(randomNumber1).matchedIntensities,
                                 spectrumComparisons.get(randomNumber2).matchedIntensities);
-                        bw.write(sm.unweightedSpectralEntropy() + "\n");
+                        bw.write(baseName + "\t" + sm.unweightedSpectralEntropy() + "\n");
                     }
                 }
                 bw.close();

@@ -17,6 +17,7 @@
 
 package Features;
 
+import org.apache.commons.lang3.StringUtils;
 import umich.ms.fileio.exceptions.FileParsingException;
 
 import java.io.*;
@@ -94,6 +95,7 @@ public class MspReader implements SpectralPredictionMapper {
                     ArrayList<Float> intsList = new ArrayList<>(numPeaks);
                     ArrayList<Integer> fragNumsList = new ArrayList<>(numPeaks);
                     ArrayList<Integer> flagsList = new ArrayList<>(numPeaks);
+                    ArrayList<String> flagsStrList = new ArrayList<>(numPeaks);
                     ArrayList<Integer> chargesList = new ArrayList<>(numPeaks);
 
                     for (int i = 0; i < numPeaks; i++) {
@@ -124,8 +126,10 @@ public class MspReader implements SpectralPredictionMapper {
                         chargesList.add(fragCharge);
                         if (fragment.charAt(0) == 'y') {
                             flagsList.add(1);
+                            flagsStrList.add("y");
                         } else {
                             flagsList.add(0);
+                            flagsStrList.add("b");
                         }
                         fragNumsList.add(fragNum);
                     }
@@ -135,8 +139,13 @@ public class MspReader implements SpectralPredictionMapper {
                     int[] fragNums = new int[intsList.size()];
                     int[] flags = new int[intsList.size()];
                     int[] charges = new int[intsList.size()];
+
+                    String[] pepSplit = pep.split("\\|");
+                    MassCalculator mc = new MassCalculator(pepSplit[0], pepSplit[1]);
                     for (int i = 0; i < mzs.length; i++) {
-                        mzs[i] = mzsList.get(i);
+                        //mzs[i] = mzsList.get(i);
+                        //fix until Prosit updates msp
+                        mzs[i] = mc.calcMass(fragNumsList.get(i), flagsStrList.get(i), chargesList.get(i));
                         ints[i] = intsList.get(i);
                         fragNums[i] = fragNumsList.get(i);
                         flags[i] = flagsList.get(i);
@@ -190,6 +199,10 @@ public class MspReader implements SpectralPredictionMapper {
                                 continue;
                             }
                             if (Integer.parseInt(pf.charge) > 6) {
+                                continue;
+                            }
+                            //apparently doesn't take more than 2 M(ox)
+                            if (StringUtils.countMatches(pf.base, "15.9949") > 2) {
                                 continue;
                             }
                         }

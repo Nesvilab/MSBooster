@@ -283,10 +283,10 @@ public class PepXMLDivider {
 //
 //        pxd.inputFileAssignBins("Z:/yangkl/adpribose/full/test/spectraRT.csv");
 
-        String[] pins = new String[] {"Z:/yangkl/adpribose/full/test/20140515_QE6_UPLC5_SCL_SA_Hela_PAR_PD_Rep1.pin",
-                "Z:/yangkl/adpribose/full/test/20140515_QE6_UPLC5_SCL_SA_Hela_PAR_PD_Rep2.pin",
-                "Z:/yangkl/adpribose/full/test/20140515_QE6_UPLC5_SCL_SA_Hela_PAR_PD_Rep3.pin"};
-        pxd.dividePinPepxml(pins, "Z:/yangkl/adpribose/full/test/spectraRT.csv");
+//        String[] pins = new String[] {"Z:/yangkl/adpribose/full/test/20140515_QE6_UPLC5_SCL_SA_Hela_PAR_PD_Rep1.pin",
+//                "Z:/yangkl/adpribose/full/test/20140515_QE6_UPLC5_SCL_SA_Hela_PAR_PD_Rep2.pin",
+//                "Z:/yangkl/adpribose/full/test/20140515_QE6_UPLC5_SCL_SA_Hela_PAR_PD_Rep3.pin"};
+//        pxd.dividePinPepxml(pins, "Z:/yangkl/adpribose/full/test/spectraRT.csv");
 
 //        pxd.loadPin("Z:/yangkl/DIA-TMT/yeast/spectraRT_alphapeptdeep/" +
 //                "20200314_Exploris_RSLC9_Waters_CC_DDA_TKO_0c5ng.pin");
@@ -332,6 +332,12 @@ public class PepXMLDivider {
 //                        "20200314_Exploris_RSLC9_Waters_CC_DIA_TKO_10ng.pin",
 //                "Z:/yangkl/DIA-TMT/yeast/spectraRT_alphapeptdeep/" +
 //                        "20200314_Exploris_RSLC9_Waters_CC_DIA_TKO_5ng.pin"};
-//        pxd.dividePinPepxml(pins, "Z:/yangkl/DIA-TMT/yeast/spectraRT_alphapeptdeep/spectraRT.csv");
+        File directory = new File("Z:/yangkl/DIA-TMT/yeast/redo");
+        File[] pinFiles = directory.listFiles((dir, name) -> name.endsWith(".pin"));
+        String[] pins = new String[pinFiles.length];
+        for (int i = 0; i < pinFiles.length; i++) {
+            pins[i] = pinFiles[i].getCanonicalPath();
+        }
+        pxd.dividePinPepxml(pins, "Z:/yangkl/DIA-TMT/yeast/redo/spectraRT_alpha.csv");
     }
 }

@@ -295,7 +295,12 @@ public class mzMLReader {
                     if (peptidoforms.containsKey(pobj.name)) {
                         arrayList = peptidoforms.get(pobj.name);
                     }
-                    arrayList.add(pobj.spectralSimObj);
+                    if (pobj.spectralSimObj.matchedIntensities != null) {
+                        arrayList.add(pobj.spectralSimObj);
+                    } else {
+                        arrayList.add(pobj.spectralSimObj.spectrumComparisons.get(1));
+                        //TODO expand to multiple similarity comparisons
+                    }
                     peptidoforms.put(pobj.name, arrayList);
                 }
             }

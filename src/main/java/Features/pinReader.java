@@ -18,12 +18,17 @@
 package Features;
 
 import org.apache.commons.lang3.ArrayUtils;
+import umich.ms.fileio.exceptions.FileParsingException;
 
 import java.io.BufferedReader;
+import java.io.File;
 import java.io.FileReader;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.concurrent.ExecutionException;
 
 //TODO: which of these tools allows O abd U amino acids?
 public class pinReader {
@@ -39,6 +44,8 @@ public class pinReader {
     int pepIdx;
     int eScoreIdx;
     private boolean calcEvalue = false;
+
+    mzMLReader mzml;
 
     public pinReader(String pin) throws IOException {
         name = pin;
@@ -148,43 +155,62 @@ public class pinReader {
         return peps.toArray(new String[0]);
     }
 
-    public String[] createPredFullList() throws IOException {
+    public String[] createPredFullList(File mzmlFile) throws IOException, InterruptedException, ExecutionException, FileParsingException {
         ArrayList<String> peps = new ArrayList<String>();
+        if (Constants.NCE.equals("")) {
+            mzml = new mzMLReader(mzmlFile.getCanonicalPath());
+        }
         while (next()) {
             PeptideFormatter pf = getPep();
             if (! pf.stripped.contains("O") && ! pf.stripped.contains("U") &&
                     ! pf.stripped.contains("Z") && ! pf.stripped.contains("B") &&
                     ! pf.stripped.contains("X")) {
-                peps.add(pf.predfull + "\t" + pf.charge + "\t" + Constants.FragmentationType + "\t" + Constants.NCE);
+                String NCE = getNCE();
+                peps.add(pf.predfull + "\t" + pf.charge + "\t" + Constants.FragmentationType + "\t" + NCE);
             }
         }
         return peps.toArray(new String[0]);
     }
 
-    public String[] createPrositList() throws IOException {
+    public String[] createPrositList(File mzmlFile) throws IOException, InterruptedException, ExecutionException, FileParsingException {
         ArrayList<String> peps = new ArrayList<String>();
+        if (Constants.NCE.equals("")) {
+            mzml = new mzMLReader(mzmlFile.getCanonicalPath());
+        }
         while (next()) {
             PeptideFormatter pf = getPep();
-            peps.add(pf.prosit + "," + Constants.NCE + "," + pf.charge);
+            String NCE = getNCE();
+            peps.add(pf.prosit + "," + NCE + "," + pf.charge);
         }
         return peps.toArray(new String[0]);
     }
 
-    public String[] createPrositTMTList() throws IOException {
+    public String[] createPrositTMTList(File mzmlFile) throws IOException, InterruptedException, ExecutionException, FileParsingException {
         ArrayList<String> peps = new ArrayList<String>();
+        if (Constants.NCE.equals("")) {
+            mzml = new mzMLReader(mzmlFile.getCanonicalPath());
+        }
         while (next()) {
             PeptideFormatter pf = getPep();
-            peps.add(pf.prosit + "," + Constants.NCE + "," + pf.charge + "," + Constants.FragmentationType);
+            String NCE = getNCE();
+            peps.add(pf.prosit + "," + NCE + "," + pf.charge + "," + Constants.FragmentationType);
         }
         return peps.toArray(new String[0]);
     }
 
-    public String[] createAlphapeptdeepList() throws IOException { //use this to convert between names when reading in predictions
+    public String[] createAlphapeptdeepList(File mzmlFile) throws IOException, InterruptedException, ExecutionException, FileParsingException { //use this to convert between names when reading in predictions
         ArrayList<String> peps = new ArrayList<String>();
+        if (Constants.NCE.equals("")) {
+            mzml = new mzMLReader(mzmlFile.getCanonicalPath());
+        }
+        if (Constants.instrument.equals("")) {
+            Constants.instrument = getInstrument();
+        }
         while (next()) {
             PeptideFormatter pf = getPep();
+            String NCE = getNCE();
             peps.add(pf.stripped + "," + pf.alphapeptdeepMods + "," + pf.modPositions + "," + pf.charge + "," +
-                    Constants.NCE + "," + Constants.instrument + "," + pf.base);
+                    NCE + "," + Constants.instrument + "," + pf.base);
         }
         return peps.toArray(new String[0]);
     }
@@ -197,5 +223,51 @@ public class pinReader {
             peps.add(pf.base + "\t" + pf.charge);
         }
         return peps.toArray(new String[0]);
+    }
+
+    private String getNCE() {
+        if (Constants.NCE.equals("")) {
+            return String.valueOf(mzml.scanNumberObjects.get(getScanNum()).NCEs.get(Constants.FragmentationType));
+        } else {
+            return Constants.NCE;
+        }
+
+    }
+
+    private String getInstrument() {
+        HashSet<String> LumosKeys = new HashSet<>(Arrays.asList("LTQ", "Lumos", "Fusion", "Elite", "Velos", "Eclipse", "Tribrid"));
+        HashSet<String> QEKeys = new HashSet<>(Arrays.asList("QE", "Exactive", "Exploris"));
+        HashSet<String> SciexTOFKeys = new HashSet<>(Arrays.asList("Sciex", "TripleTOF"));
+        HashSet<String> timsTOFKeys = new HashSet<>(Arrays.asList("flight"));
+
+        if (Constants.instrument.equals("")) {
+            String model = mzml.scans.getRunInfo().getDefaultInstrument().getModel();
+            String analyzer = mzml.scans.getRunInfo().getDefaultInstrument().getAnalyzer();
+            for (String k : LumosKeys) {
+                if (model.contains(k) || analyzer.contains(k)) {
+                    return "Lumos";
+                }
+            }
+            for (String k : QEKeys) {
+                if (model.contains(k) || analyzer.contains(k)) {
+                    return "QE";
+                }
+            }
+            for (String k : SciexTOFKeys) {
+                if (model.contains(k) || analyzer.contains(k)) {
+                    return "SciexTOF";
+                }
+            }
+            for (String k : timsTOFKeys) {
+                if (model.contains(k) || analyzer.contains(k)) {
+                    return "timsTOF";
+                }
+            }
+            System.out.println("Could not detect instrument type. Setting to Lumos");
+            return "Lumos"; //default if nothing found
+        } else {
+            return Constants.instrument;
+        }
+
     }
 }

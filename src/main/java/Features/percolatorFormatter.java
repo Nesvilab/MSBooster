@@ -24,9 +24,7 @@ import org.apache.commons.math3.stat.correlation.PearsonsCorrelation;
 import org.apache.commons.math3.stat.correlation.SpearmansCorrelation;
 import umich.ms.fileio.exceptions.FileParsingException;
 
-import java.io.BufferedWriter;
 import java.io.File;
-import java.io.FileWriter;
 import java.io.IOException;
 import java.sql.SQLException;
 import java.util.*;
@@ -376,6 +374,14 @@ public class percolatorFormatter {
                 //Special preparations dependent on features we require
                 if (needsMGF) {
                     mzml.setPinEntries(pin, predictedSpectra);
+                    if (Constants.removeRankPeaks && featuresList.contains("hypergeometricProbability")) {
+                        for (mzmlScanNumber msn : mzml.scanNumberObjects.values()) {
+                            msn.expMZs = msn.savedExpMZs;
+                            msn.expIntensities = msn.savedExpIntensities;
+                            msn.savedExpMZs = null;
+                            msn.savedExpIntensities = null;
+                        }
+                    }
                 }
                 if (featuresList.contains("deltaRTLOESS") || featuresList.contains("deltaRTLOESSnormalized")) {
                     mzml.setLOESS(Constants.RTregressionSize, Constants.bandwidth, Constants.robustIters, "RT");
@@ -468,9 +474,17 @@ public class percolatorFormatter {
                 //int totalPSMs = 0;
 
                 featuresList.remove("detectability");
+                peptideObj pepObj = null;
+                int linesRead = 1;
+                int currentPercent = Constants.loadingPercent;
+                System.out.println("Calculating features and writing new pin file");
                 while (pin.next()) {
-                    //totalPSMs += 1;
-                    //peptide name
+                    linesRead += 1;
+                    if (linesRead > pin.length * currentPercent / 100) {
+                        System.out.print("..." + currentPercent + "%");
+                        currentPercent += Constants.loadingPercent;
+                    }
+
                     String pep = pin.getPep().baseCharge;
 
                     //trying filtering out low detectability
@@ -481,7 +495,6 @@ public class percolatorFormatter {
 //                    }
 
                     //get entry
-                    peptideObj pepObj = null;
                     if (needsMGF) {
                         pepObj = mzml.scanNumberObjects.get(pin.getScanNum()).getPeptideObject(pep);
                     }
@@ -765,6 +778,23 @@ public class percolatorFormatter {
                                                 pepObj.spectralSimObj.spectrumComparisons.get(j).pearsonCorr());
                                     }
                                 }
+                                break;
+                            case "spearmanCorr":
+                                if (pepObj.spectralSimObj.spectrumComparisons.size() == 0) {
+                                    writer.addValue("spearman_corr", pepObj.spectralSimObj.spearmanCorr());
+                                } else {
+                                    String[] dividedFragments = Constants.divideFragments.split(";");
+                                    for (int j = 0; j < dividedFragments.length; j++) {
+                                        writer.addValue("spearman_corr" + dividedFragments[j],
+                                                pepObj.spectralSimObj.spectrumComparisons.get(j).spearmanCorr());
+                                    }
+                                }
+                                break;
+                            case "hypergeometricProbability":
+                                writer.addValue("hypergeometric_probability", pepObj.spectralSimObj.hyperGeometricProbability());
+                                break;
+                            case "intersection":
+                                writer.addValue("intersection", pepObj.spectralSimObj.intersection());
                                 break;
                             case "dotProduct":
                                 if (pepObj.spectralSimObj.spectrumComparisons.size() == 0) {
@@ -1102,7 +1132,11 @@ public class percolatorFormatter {
                     }
                     //flush values to output
                     writer.writeValuesToRow();
+
+                    //clear old pep obj
+                    pepObj.spectralSimObj = null;
                 }
+                System.out.println("");
                 pin.close();
                 //endTime = System.nanoTime();
                 //duration = (endTime - startTime);

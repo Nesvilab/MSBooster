@@ -27,7 +27,7 @@ import java.util.*;
 //this is what I use in the java jar file
 public class MainClass {
     public static void main(String[] args) throws Exception {
-        System.out.println("MSBooster v1.1.12");
+        System.out.println("MSBooster v1.1.13");
         try {
             //accept command line inputs
             HashSet<String> fields = new HashSet<>();
@@ -288,7 +288,9 @@ public class MainClass {
             Constants.individualSpectralSimilaritiesFeatures = Constants.makeIndividualSpectralSimilarities();
             Constants.intensitiesDifferenceFeatures = Constants.makeintensitiesDifference();
 
-            if (Constants.divideFragments.equals("1")) { //standard setting of yb vs others
+            if (Constants.adaptiveFragmentNum) {
+                Constants.topFragments = 36; //TODO think of better way than hardcoding
+            } else if (Constants.divideFragments.equals("1")) { //standard setting of yb vs others
                 Constants.divideFragments = "y_b;immonium_a_y-NL_b-NL_a-NL_internal_internal-NL_unknown";
                 Constants.topFragments = 12;
             } else if (Constants.divideFragments.equals("2")) {
@@ -304,7 +306,7 @@ public class MainClass {
                 Constants.divideFragments = "b_y_c_z;immonium_a_cdot_zdot_y-NL_b-NL_a-NL_internal_internal-NL_unknown";
                 Constants.topFragments = 12;
             } else if (Constants.divideFragments.equals("0") && Constants.spectraRTPredModel.equals("DIA-NN")) {
-                Constants.topFragments = 12; //may update in future
+                //Constants.topFragments = 12; //may update in future
             }
 
             //defining num threads
@@ -330,7 +332,7 @@ public class MainClass {
             }
 
             Constants.allowedFeatures = Constants.makeAllowedFeatures();
-            String[] featuresArray = Constants.features.split(",");
+            String[] featuresArray = Constants.features.replaceAll("\\s", "").split(",");
             for (String f : featuresArray) {
                 if (!Constants.allowedFeatures.contains(f.trim())) {
                     throw new IllegalArgumentException(f + " is not an allowed feature. " +

@@ -17,10 +17,14 @@
 
 package Features;
 
+import org.apache.commons.lang3.ArrayUtils;
+import org.apache.commons.math3.distribution.HypergeometricDistribution;
 import org.apache.commons.math3.stat.correlation.PearsonsCorrelation;
+import org.apache.commons.math3.stat.correlation.SpearmansCorrelation;
 import umich.ms.fileio.exceptions.FileParsingException;
 
 import java.io.IOException;
+import java.lang.reflect.Array;
 import java.util.*;
 import java.util.stream.IntStream;
 
@@ -34,14 +38,21 @@ public class spectrumComparison {
     float[] unitNormPredIntensities;
     float[] sum1MatchedIntensities;
     float[] sum1PredIntensities;
+    float[] allMatchedIntensities;
+    int length;
+    int matchedIons;
     LinkedHashSet<Integer> matchedIdx = new LinkedHashSet<Integer>();
     private static ArrayList<Float> tmpMZs = new ArrayList<Float>();
     private static ArrayList<Float> tmpInts = new ArrayList<Float>();
     private static PearsonsCorrelation pc = new PearsonsCorrelation();
+    private static SpearmansCorrelation sc = new SpearmansCorrelation();
     public ArrayList<spectrumComparison> spectrumComparisons = new ArrayList<>();
 
-    public spectrumComparison(float[] eMZs, float[] eIntensities,
-                              float[] pMZs, float[] pIntensities,
+    public peptideObj pepObj;
+    ArrayList<Integer> sortedIndicesList = new ArrayList<>();
+
+    public spectrumComparison(peptideObj pepObj, float[] eMZs, float[] eIntensities,
+                              float[] pMZs, float[] pIntensities, int length,
                               boolean filterTop, boolean filterBase) {
         predMZs = pMZs;
         predIntensities = pIntensities;
@@ -59,6 +70,9 @@ public class spectrumComparison {
         int[] sortedIndices = IntStream.range(0, predMZs.length)
                 .boxed().sorted((k, j) -> Float.compare(predMZs[k], predMZs[j]))
                 .mapToInt(ele -> ele).toArray();
+        for (int i : sortedIndices) {
+            sortedIndicesList.add(i);
+        }
         pMZs = predMZs;
         pIntensities = predIntensities;
         predMZs = new float[predMZs.length];
@@ -68,11 +82,17 @@ public class spectrumComparison {
             predIntensities[i] = pIntensities[sortedIndices[i]];
         }
 
-        matchedIntensities = this.getMatchedIntensities(eMZs, eIntensities);
+        matchedIntensities = this.getMatchedIntensities(eMZs, eIntensities, predMZs, predIntensities);
+        this.length = length;
+        tmpMZs.clear();
+        tmpInts.clear();
+        predMZs = null;
+
+        this.pepObj = pepObj;
     }
 
-    public spectrumComparison(float[] eMZs, float[] eIntensities,
-                              float[] pMZs, float[] pIntensities,
+    public spectrumComparison(peptideObj pepObj, float[] eMZs, float[] eIntensities,
+                              float[] pMZs, float[] pIntensities, int length,
                               boolean filterTop, boolean filterBase, String[] fragmentIonTypes) {
         predMZs = pMZs;
         predIntensities = pIntensities;
@@ -91,6 +111,9 @@ public class spectrumComparison {
             int[] sortedIndices = IntStream.range(0, predMZs.length)
                     .boxed().sorted((k, j) -> Float.compare(predMZs[k], predMZs[j]))
                     .mapToInt(ele -> ele).toArray();
+            for (int i : sortedIndices) {
+                sortedIndicesList.add(i);
+            }
             pMZs = predMZs;
             pIntensities = predIntensities;
             //String[] fIonTypes = fragmentIonTypes;
@@ -104,7 +127,7 @@ public class spectrumComparison {
                 //fragmentIonTypes[i] = fIonTypes[sortedIndices[i]];
             }
 
-            matchedIntensities = this.getMatchedIntensities(eMZs, eIntensities);
+            matchedIntensities = this.getMatchedIntensities(eMZs, eIntensities, predMZs, predIntensities);
         } else {
             String[] fragmentsSplit = Constants.divideFragments.split(";");
 
@@ -141,39 +164,15 @@ public class spectrumComparison {
 //                }
 
                 //create new spectrumComparison obj and add to list
-                spectrumComparisons.add(new spectrumComparison(eMZs, eIntensities,
-                        mzs, ints, Constants.useTopFragments, Constants.useBasePeak));
+                spectrumComparisons.add(new spectrumComparison(pepObj, eMZs, eIntensities,
+                        mzs, ints, length, Constants.useTopFragments, Constants.useBasePeak));
             }
         }
+        this.length = length;
+        tmpMZs.clear();
+        tmpInts.clear();
+        predMZs = null;
     }
-
-//    public spectrumComparison(float[] eMZs, float[] eIntensities,
-//                              float[] pMZs, float[] pIntensities,
-//                              boolean filterTop, int topFragments, boolean filterBase) {
-//        predMZs = pMZs;
-//        predIntensities = pIntensities;
-//
-//        if (filterBase) {
-//            this.filterIntensitiesByPercentage(Constants.percentBasePeak);
-//        }
-//        if (filterTop) {
-//            this.filterTopFragments(topFragments);
-//        }
-//
-//        int[] sortedIndices = IntStream.range(0, predMZs.length)
-//                .boxed().sorted((k, j) -> Float.compare(predMZs[k], predMZs[j]))
-//                .mapToInt(ele -> ele).toArray();
-//        pMZs = predMZs;
-//        pIntensities = predIntensities;
-//        predMZs = new float[predMZs.length];
-//        predIntensities = new float[predIntensities.length];
-//        for (int i = 0; i < sortedIndices.length; i++) {
-//            predMZs[i] = pMZs[sortedIndices[i]];
-//            predIntensities[i] = pIntensities[sortedIndices[i]];
-//        }
-//
-//        matchedIntensities = this.getMatchedIntensities(eMZs, eIntensities);
-//    }
 
     private void filterTopFragments() {
         //stick with arraylist because finding minimum will be faster than linkedlist due to indexing
@@ -248,7 +247,8 @@ public class spectrumComparison {
         }
     }
 
-    private float[] getMatchedIntensities(float[] expMZs, float[] expIntensities) {
+    private float[] getMatchedIntensities(float[] expMZs, float[] expIntensities,
+                                          float[] predMZs, float[] predIntensities) {
         if (predIntensities.length == 1) {
             return predIntensities;
         }
@@ -353,6 +353,28 @@ public class spectrumComparison {
         return weights;
     }
 
+    private float[][] filterFragments(int top) {
+        top = Math.min(top, sortedIndicesList.size());
+
+        //calculate
+        float[] newMatched = new float[top];
+        float[] newPred = new float[top];
+
+        if (Constants.adaptiveFragmentNum && predIntensities.length > top) {
+            //function to filter vectors, and methods will work with these filtered vectors
+            for (int i = 0; i < top; i++) {
+                int index = sortedIndicesList.indexOf(i);
+                newMatched[i] = matchedIntensities[index];
+                newPred[i] = predIntensities[index];
+            }
+        } else {
+            newPred = predIntensities;
+            newMatched = matchedIntensities;
+        }
+
+        return new float[][]{newPred, newMatched};
+    }
+
     private static float[] unitNormalize(float[] vector) {
         //if size 1
         if (vector.length == 1) {
@@ -407,9 +429,9 @@ public class spectrumComparison {
         return newVector;
     }
 
-    public void oneNormalizeIntensities() {
-        sum1MatchedIntensities = oneNormalize(matchedIntensities);
-        sum1PredIntensities = oneNormalize(predIntensities);
+    public void oneNormalizeIntensities(float[] predIs, float[] matchIs) {
+        sum1MatchedIntensities = oneNormalize(matchIs);
+        sum1PredIntensities = oneNormalize(predIs);
     }
 
     //if constants.dividefragments split is 2 or more,
@@ -417,19 +439,19 @@ public class spectrumComparison {
     //and calculate metric for both.
     //If percolatorFormatter gets multiple values back, then write them separately
     public double cosineSimilarity() {
-        if (predMZs.length < 2) {
+        if (predIntensities.length < 2) {
             return 0;
         }
         //numerator
         double num = 0;
-        for (int i = 0; i < predMZs.length; i++) {
+        for (int i = 0; i < predIntensities.length; i++) {
             num += predIntensities[i] * matchedIntensities[i];
         }
 
         //denominator
         double a = 0;
         double b = 0;
-        for (int i = 0; i < predMZs.length; i++) {
+        for (int i = 0; i < predIntensities.length; i++) {
             a += predIntensities[i] * predIntensities[i];
             b += matchedIntensities[i] * matchedIntensities[i];
         }
@@ -444,19 +466,19 @@ public class spectrumComparison {
 
     //https://stats.stackexchange.com/questions/384419/weighted-cosine-similarity
     public double weightedCosineSimilarity(double[] weights) {
-        if (predMZs.length < 2) {
+        if (predIntensities.length < 2) {
             return 0;
         }
         //numerator
         double num = 0;
-        for (int i = 0; i < predMZs.length; i++) {
+        for (int i = 0; i < predIntensities.length; i++) {
             num += predIntensities[i] * matchedIntensities[i] * weights[i];
         }
 
         //denominator
         double a = 0;
         double b = 0;
-        for (int i = 0; i < predMZs.length; i++) {
+        for (int i = 0; i < predIntensities.length; i++) {
             a += predIntensities[i] * predIntensities[i] * weights[i];
             b += matchedIntensities[i] * matchedIntensities[i] * weights[i];
         }
@@ -470,7 +492,7 @@ public class spectrumComparison {
     }
 
     public double spectralContrastAngle() {
-        if (predMZs.length < 2) {
+        if (predIntensities.length < 2) {
             return 0;
         }
         double cosSim = this.cosineSimilarity();
@@ -478,7 +500,7 @@ public class spectrumComparison {
     }
 
     public double weightedSpectralContrastAngle(double[] weights) {
-        if (predMZs.length < 2) {
+        if (predIntensities.length < 2) {
             return 0;
         }
         double cosSim = this.weightedCosineSimilarity(weights);
@@ -486,7 +508,7 @@ public class spectrumComparison {
     }
 
     public double euclideanDistance() {
-        if (predMZs.length < 2) {
+        if (predIntensities.length < 2) {
             return 0;
         }
         if (unitNormPredIntensities == null) {
@@ -502,7 +524,7 @@ public class spectrumComparison {
             return 1 - Math.sqrt(2);
         } else {
             double numSum = 0;
-            for (int i = 0; i < predMZs.length; i++) {
+            for (int i = 0; i < predIntensities.length; i++) {
                 double diff = unitNormPredIntensities[i] - unitNormMatchedIntensities[i];
                 double square = diff * diff;
                 numSum += square;
@@ -512,7 +534,7 @@ public class spectrumComparison {
     }
 
     public double weightedEuclideanDistance(double[] weights) {
-        if (predMZs.length < 2) {
+        if (predIntensities.length < 2) {
             return 0;
         }
         if (unitNormPredIntensities == null) {
@@ -539,7 +561,7 @@ public class spectrumComparison {
 
             //now just do euclidean distance
             double numSum = 0;
-            for (int i = 0; i < predMZs.length; i++) {
+            for (int i = 0; i < predIntensities.length; i++) {
                 double diff = newNormPred[i] - newNormMatched[i];
                 double square = diff * diff;
                 numSum += square;
@@ -549,7 +571,7 @@ public class spectrumComparison {
     }
 
     public double brayCurtis() {
-        if (predMZs.length < 2) {
+        if (predIntensities.length < 2) {
             return 0;
         }
         if (unitNormPredIntensities == null) {
@@ -566,7 +588,7 @@ public class spectrumComparison {
         } else {
             double num = 0;
             double den = 0;
-            for (int i = 0; i < predMZs.length; i++) {
+            for (int i = 0; i < predIntensities.length; i++) {
                 double exp = unitNormMatchedIntensities[i];
                 double pred = unitNormPredIntensities[i];
 
@@ -578,7 +600,7 @@ public class spectrumComparison {
     }
 
     public double weightedBrayCurtis(double[] weights) {
-        if (predMZs.length < 2) {
+        if (predIntensities.length < 2) {
             return 0;
         }
         if (unitNormPredIntensities == null) {
@@ -595,7 +617,7 @@ public class spectrumComparison {
         } else {
             double num = 0;
             double den = 0;
-            for (int i = 0; i < predMZs.length; i++) {
+            for (int i = 0; i < predIntensities.length; i++) {
                 double exp = unitNormMatchedIntensities[i];
                 double pred = unitNormPredIntensities[i];
 
@@ -607,7 +629,7 @@ public class spectrumComparison {
     }
 
     public double pearsonCorr() {
-        if (predMZs.length < 2) {
+        if (predIntensities.length < 2) {
             return 0;
         }
         if (Arrays.stream(floatToDouble(matchedIntensities)).sum() == 0 || matchedIntensities.length == 1) {
@@ -618,8 +640,25 @@ public class spectrumComparison {
         }
     }
 
+    public double spearmanCorr() {
+        if (predIntensities.length < 2) {
+            return 0;
+        }
+
+        float[][] vectors = filterFragments(36);
+        float[] predI = vectors[0];
+        float[] matchedI = vectors[1];
+
+        if (Arrays.stream(floatToDouble(matchedI)).sum() == 0 || matchedI.length == 1) {
+            return -1;
+        } else {
+            //uses Apache
+            return sc.correlation(floatToDouble(matchedI), floatToDouble(predI));
+        }
+    }
+
     public double weightedPearsonCorr(double[] weights) {
-        if (predMZs.length < 2) {
+        if (predIntensities.length < 2) {
             return 0;
         }
         if (Arrays.stream(floatToDouble(matchedIntensities)).sum() == 0) {
@@ -637,7 +676,7 @@ public class spectrumComparison {
     }
 
     public double dotProduct() {
-        if (predMZs.length < 2) {
+        if (predIntensities.length < 2) {
             return 0;
         }
         if (unitNormPredIntensities == null) {
@@ -653,7 +692,7 @@ public class spectrumComparison {
         }
         if (nonzero) {
             double num = 0;
-            for (int i = 0; i < predMZs.length; i++) {
+            for (int i = 0; i < predIntensities.length; i++) {
                 num += unitNormPredIntensities[i] * unitNormMatchedIntensities[i];
             }
 
@@ -664,7 +703,7 @@ public class spectrumComparison {
     }
 
     public double weightedDotProduct(double[] weights) {
-        if (predMZs.length < 2) {
+        if (predIntensities.length < 2) {
             return 0;
         }
         float floatSum = 0.0f;
@@ -686,7 +725,7 @@ public class spectrumComparison {
             double multiplier = predMax * matchedMax;
 
             double num = 0;
-            for (int i = 0; i < predMZs.length; i++) {
+            for (int i = 0; i < predIntensities.length; i++) {
                 num += newPred[i] * newMatched[i] * multiplier;
             }
 
@@ -705,11 +744,16 @@ public class spectrumComparison {
     }
 
     public double unweightedSpectralEntropy() { //from https://www.nature.com/articles/s41592-021-01331-z
-        if (predMZs.length < 2) {
+        if (predIntensities.length < 2) {
             return 0;
         }
+
+        float[][] vectors = filterFragments(12);
+        float[] predI = vectors[0];
+        float[] matchedI = vectors[1];
+
         if (sum1PredIntensities == null) {
-            oneNormalizeIntensities();
+            oneNormalizeIntensities(predI, matchedI);
         }
 
         float[] SabVector = new float[sum1PredIntensities.length];
@@ -729,5 +773,97 @@ public class spectrumComparison {
         }
 
         return 1 - ( ((2 * spectralEntropy(SabVector)) - spectralEntropy(sum1MatchedIntensities) - spectralEntropy(sum1PredIntensities)) / Math.log(4));
+    }
+
+    private void getAllMatchedIntensities() {
+        if (allMatchedIntensities == null) {
+            MassCalculator mc = new MassCalculator(pepObj.name.split("\\|")[0], pepObj.charge);
+            //calculate y and b m/zs
+            float[] mzs = new float[4 * (mc.peptide.length() - 1)];
+            String[] flags = {"y", "b"};
+            int i = 0;
+            for (int num = 1; num < mc.peptide.length(); num++) {
+                for (int charge = 1; charge < 3; charge++) {
+                    for (String flag : flags) {
+                        mzs[i] = mc.calcMass(num, flag, charge);
+                        i += 1;
+                    }
+                }
+            }
+            //sort
+            Arrays.sort(mzs);
+
+
+            //modify getMatchedIntensities to be more general, get how many nonzero matched intensities
+            //don't need length anymore?
+            matchedIdx.clear();
+
+            allMatchedIntensities = getMatchedIntensities(pepObj.scanNumObj.getExpMZs(), pepObj.scanNumObj.getExpIntensities(),
+                    mzs, new float[mzs.length]);
+        }
+    }
+
+    public double hyperGeometricProbability() {
+        this.getAllMatchedIntensities();
+        matchedIons = 0;
+        for (float f : allMatchedIntensities) {
+            if (f != 0) {
+                matchedIons += 1;
+            }
+        }
+
+//        for (int idx = matchedIdx.size() - 1; idx > -1; idx--) {
+//            pepObj.scanNumObj.expMZs = ArrayUtils.remove(pepObj.scanNumObj.expMZs, idx);
+//            pepObj.scanNumObj.expIntensities = ArrayUtils.remove(pepObj.scanNumObj.expIntensities, idx);
+//        }
+
+        //calculate
+        float[][] vectors = filterFragments(24);
+        float[] predI = vectors[0];
+        float[] matchedI = vectors[1];
+
+        HypergeometricDistribution hgd = new HypergeometricDistribution(4 * (length - 1), matchedIons, predI.length);
+        int successes = 0;
+        for (float f : matchedI) {
+            if (f != 0) {
+                successes += 1;
+            }
+        }
+        return -1 * Math.log10(hgd.upperCumulativeProbability(successes));
+    }
+
+    public double intersection() {
+        //calculate overlap of top predicted mzs and top matched mzs
+        int top = Constants.topFragments;
+        if (Constants.adaptiveFragmentNum) {
+            top = 12;
+        }
+
+        float[][] vectors = filterFragments(top);
+        float[] matchedI = vectors[1];
+        HashSet<Float> predSet = new HashSet<>();
+        for (float f : matchedI) {
+            predSet.add(f);
+        }
+
+        this.getAllMatchedIntensities();
+        float intersection = 0;
+        Arrays.sort(allMatchedIntensities);
+        float iters = 0;
+        for (int i = allMatchedIntensities.length - 1; i > 0; i--) {
+            if (allMatchedIntensities[i] == 0) {
+                break;
+            }
+            if (predSet.contains(allMatchedIntensities[i])) {
+                intersection += 1;
+            }
+            iters += 1;
+            if (iters >= top) {
+                break;
+            }
+        }
+
+        //return intersection / (matchedI.length + iters - intersection); //this would be jaccard
+        return intersection;
     }
 }

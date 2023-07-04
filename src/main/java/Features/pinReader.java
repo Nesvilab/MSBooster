@@ -40,6 +40,8 @@ public class pinReader {
     int eScoreIdx;
     private boolean calcEvalue = false;
 
+    int length;
+
     public pinReader(String pin) throws IOException {
         name = pin;
         in = new BufferedReader(new FileReader(name));
@@ -60,6 +62,8 @@ public class pinReader {
             Constants.RTescoreCutoff = (float) Math.pow(10, Constants.RTescoreCutoff);
             Constants.IMescoreCutoff = (float) Math.pow(10, Constants.IMescoreCutoff);
         }
+
+        getLength();
     }
 
     //reload from start
@@ -81,6 +85,13 @@ public class pinReader {
 
     public void close() throws IOException {
         in.close();
+    }
+
+    public void getLength() throws IOException {
+        while (next()) {
+            length += 1;
+        }
+        reset();
     }
 
     public String[] getRow() {return row;}

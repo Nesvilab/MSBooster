@@ -268,16 +268,25 @@ public class mzMLReader {
 
     public void setPinEntries(pinReader pin, SpectralPredictionMapper spm) throws AssertionError, Exception {
         //TODO: multithread?
+        System.out.println("Loading pin");
         HashMap<String, PredictionEntry> allPreds = spm.getPreds();
+        int linesRead = 1;
+        int currentPercent = Constants.loadingPercent;
         while (pin.next()) {
             try {
                 scanNumberObjects.get(pin.getScanNum()).setPeptideObject(pin.getPep(), pin.getRank(), pin.getTD(), pin.getEScore(),
                         allPreds);
+                linesRead += 1;
+                if (linesRead > pin.length * currentPercent / 100) {
+                    System.out.print("..." + currentPercent + "%");
+                    currentPercent += Constants.loadingPercent;
+                }
             } catch (Exception e) {
                 e.printStackTrace();
                 System.exit(1);
             }
         }
+        System.out.println("");
         pin.close();
         pin.reset();
     }

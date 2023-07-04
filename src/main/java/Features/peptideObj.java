@@ -26,6 +26,7 @@ public class peptideObj {
     final mzmlScanNumber scanNumObj;
     final int scanNum;
     final int targetORdecoy;
+    final int length;
     final String escore;
     final float RT;
     float deltaRT;
@@ -39,12 +40,12 @@ public class peptideObj {
     double deltaIMLOESSnormalized;
     Float IM;
     double IMprob;
-    float[] predMZs;
-    float[] predInts;
+    //float[] predMZs;
+    //float[] predInts;
     String[] fragmentIonTypes;
 
-    final HashMap<String, Float> baseMap = makeBaseMap();
-    private HashMap<String, Float> makeBaseMap() {
+    static final HashMap<String, Float> baseMap = makeBaseMap();
+    static private HashMap<String, Float> makeBaseMap() {
         HashMap<String, Float> map = new HashMap<>();
         for (String s : Constants.fragmentIonHierarchy) {
             map.put(s, 0f);
@@ -68,17 +69,24 @@ public class peptideObj {
         this.scanNumObj = scanNumObj;
         this.scanNum = scanNumObj.scanNum;
         this.targetORdecoy = targetORdecoy;
+        int length = 0;
+        for (int i = 0; i < name.length() - 2; i++) {
+            if (Character.isAlphabetic(name.charAt(i))) {
+                length += 1;
+            }
+        }
+        this.length = length;
         this.escore = escore;
-        this.predMZs = predMZs;
-        this.predInts = predIntensities;
-        this.spectralSimObj = new spectrumComparison(scanNumObj.getExpMZs(), scanNumObj.getExpIntensities(),
-                predMZs, predIntensities, Constants.useTopFragments, Constants.useBasePeak); //calculate similarity with subset of fragments
+        //this.predMZs = predMZs;
+        //this.predInts = predIntensities;
+        this.spectralSimObj = new spectrumComparison(this, scanNumObj.getExpMZs(), scanNumObj.getExpIntensities(),
+                predMZs, predIntensities, length, Constants.useTopFragments, Constants.useBasePeak); //calculate similarity with subset of fragments
         this.RT = predRT;
         this.IM = predIM;
         if (Constants.useMatchedIntensities || Constants.usePeakCounts || Constants.useIntensitiesDifference ||
                 Constants.usePredIntensities || Constants.useIndividualSpectralSimilarities ||
                 Constants.useIntensityDistributionSimilarity) {
-            makeFragmentAnnotationFeatures();
+            makeFragmentAnnotationFeatures(predMZs, predIntensities);
         }
     }
 
@@ -90,24 +98,31 @@ public class peptideObj {
         this.scanNumObj = scanNumObj;
         this.scanNum = scanNumObj.scanNum;
         this.targetORdecoy = targetORdecoy;
+        int length = 0;
+        for (int i = 0; i < name.length() - 2; i++) {
+            if (Character.isAlphabetic(name.charAt(i))) {
+                length += 1;
+            }
+        }
+        this.length = length;
         this.escore = escore;
-        this.predMZs = predMZs;
-        this.predInts = predIntensities;
+        //this.predMZs = predMZs;
+        //this.predInts = predIntensities;
         this.fragmentIonTypes = fragmentIonTypes;
-        this.spectralSimObj = new spectrumComparison(scanNumObj.getExpMZs(), scanNumObj.getExpIntensities(),
-                predMZs, predIntensities, Constants.useTopFragments, Constants.useBasePeak, fragmentIonTypes); //calculate similarity with subset of fragments
+        this.spectralSimObj = new spectrumComparison(this, scanNumObj.getExpMZs(), scanNumObj.getExpIntensities(),
+                predMZs, predIntensities, length, Constants.useTopFragments, Constants.useBasePeak, fragmentIonTypes); //calculate similarity with subset of fragments
         this.RT = predRT;
         this.IM = predIM;
         if (Constants.useMatchedIntensities || Constants.usePeakCounts || Constants.useIntensitiesDifference ||
                 Constants.usePredIntensities || Constants.useIndividualSpectralSimilarities ||
                 Constants.useIntensityDistributionSimilarity) {
-            makeFragmentAnnotationFeatures();
+            makeFragmentAnnotationFeatures(predMZs, predIntensities);
         }
     }
 
     //how to deal with this if ignored fragment ions types, so matchedIntensities and fragmentIonTypes not same length?
     //save masscalculator and annotateMZs
-    private void makeFragmentAnnotationFeatures() {
+    private void makeFragmentAnnotationFeatures(float[] predMZs, float[] predInts) {
         //filter for top fragments for all experimental and pred vectors
         ArrayList<Float> expIntensitiesList = new ArrayList<>();
         ArrayList<Float> expMZsList = new ArrayList<>();
@@ -219,8 +234,8 @@ public class peptideObj {
                 }
 
                 individualSpectralSimilarities.put(entry.getKey(),
-                        (float) new spectrumComparison(expMZs, expIntensities,
-                                subsetPredMZsArray, subsetPredIntsArray,
+                        (float) new spectrumComparison(this, expMZs, expIntensities,
+                                subsetPredMZsArray, subsetPredIntsArray, this.length,//doesn't really make sense to use hypergeo here
                                 Constants.useTopFragments, false).unweightedSpectralEntropy()); //already did base peak intensity filtering
             }
         }

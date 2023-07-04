@@ -40,6 +40,7 @@ public class Constants {
     public static String spectraRTPredFile = null; //use this if predFile already made
     public static String detectPredFile = null;
     public static Boolean deletePreds = false;
+    public static Integer loadingPercent = 10;
 
     //optional file locations and parameters
     //if calculating detectFractionGreater, these are used for FastaReader class
@@ -119,8 +120,9 @@ public class Constants {
     public static Boolean useSpectra = null;
     public static Boolean useTopFragments = true;
     public static Integer topFragments = 20;
+    public static Boolean adaptiveFragmentNum = false;
     public static Boolean removeRankPeaks = true; //whether to remove peaks from higher ranks
-    public static Boolean useBasePeak = true;
+    public static Boolean useBasePeak = false;
     public static Float percentBasePeak = 1f;
     //public static Boolean sqrtPredIntensities = false;
     //public static Float percentBasePeakExperimental = 1f;
@@ -254,13 +256,15 @@ public class Constants {
     public static final HashSet<String> spectraRTFeatures = new HashSet<>(Arrays.asList(
             "cosineSimilarity", "weightedCosineSimilarity", "spectralContrastAngle", "weightedSpectralContrastAngle",
             "euclideanDistance", "weightedEuclideanDistance", "brayCurtis", "weightedBrayCurtis",
-            "pearsonCorr", "weightedPearsonCorr", "dotProduct", "weightedDotProduct", "unweightedSpectralEntropy",
+            "pearsonCorr", "weightedPearsonCorr", "spearmanCorr", "dotProduct", "weightedDotProduct", "unweightedSpectralEntropy",
             "deltaRTlinear", "deltaRTbins", "deltaRTLOESS", "RTzscore", "RTprobability", "RTprobabilityUnifPrior",
-            "deltaRTLOESSnormalized", "calibratedRT", "predictedRT", "numMatchedFragments"));
+            "deltaRTLOESSnormalized", "calibratedRT", "predictedRT", "numMatchedFragments", "hypergeometricProbability",
+            "intersection"));
     public static final HashSet<String> spectraFeatures = new HashSet<>(Arrays.asList(
             "cosineSimilarity", "weightedCosineSimilarity", "spectralContrastAngle", "weightedSpectralContrastAngle",
             "euclideanDistance", "weightedEuclideanDistance", "brayCurtis", "weightedBrayCurtis", "unweightedSpectralEntropy",
-            "pearsonCorr", "weightedPearsonCorr", "dotProduct", "weightedDotProduct", "numMatchedFragments"));
+            "pearsonCorr", "weightedPearsonCorr", "spearmanCorr", "dotProduct", "weightedDotProduct", "numMatchedFragments",
+            "hypergeometricProbability", "intersection"));
     public static final HashSet<String> rtFeatures = new HashSet<>(Arrays.asList(
             "deltaRTlinear", "deltaRTbins", "deltaRTLOESS", "RTzscore", "RTprobability", "RTprobabilityUnifPrior",
             "deltaRTLOESSnormalized", "calibratedRT", "predictedRT"));
@@ -333,6 +337,7 @@ public class Constants {
         map.put("euclideanDistance", "euclidean_distance");
         map.put("brayCurtis", "bray_curtis");
         map.put("pearsonCorr", "pearson_corr");
+        map.put("spearmanCorr", "spearman_corr");
         map.put("dotProduct", "dot_product");
         map.put("unweightedSpectralEntropy", "unweighted_spectral_entropy");
         map.put("numMatchedFragments", "num_matched_fragments");
@@ -347,6 +352,8 @@ public class Constants {
         map.put("predictedIM", "predicted_IM");
         map.put("detectProtSpearmanDiff", "detect_prot_spearman_diff");
         map.put("detectSubtractMissing", "detect_subtract_missing");
+        map.put("hypergeometricProbability", "hypergeometric_probability");
+        map.put("intersection", "intersection");
         return map;
     }
     ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////

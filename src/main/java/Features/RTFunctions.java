@@ -86,7 +86,7 @@ public class RTFunctions {
             }
             peptideObj pep = scanNumObj.getPeptideObject(1);
 
-            if (pep.spectralSimObj.predMZs[0] == 0f) { //what it is set to if no entry
+            if (pep.spectralSimObj.predIntensities[0] == 0f) { //what it is set to if no entry
                 continue;
             }
             float e = Float.parseFloat(pep.escore);

@@ -29,8 +29,10 @@ import static Features.floatUtils.doubleToFloat;
 
 public class mzmlScanNumber {
     final int scanNum;
-    private float[] expMZs;
-    private float[] expIntensities;
+    public float[] expMZs;
+    public float[] expIntensities;
+    public float[] savedExpMZs;
+    public float[] savedExpIntensities;
     float RT;
     int RTbinSize;
     float normalizedRT;
@@ -49,6 +51,8 @@ public class mzmlScanNumber {
         ISpectrum spectrum = scan.fetchSpectrum();
         this.expMZs = doubleToFloat(spectrum.getMZs());
         this.expIntensities = doubleToFloat(spectrum.getIntensities());
+        this.savedExpMZs = this.expMZs;
+        this.savedExpIntensities = this.expIntensities;
         this.RT = scan.getRt().floatValue();
         if (Constants.useIM) {
             this.IM = scan.getIm().floatValue();

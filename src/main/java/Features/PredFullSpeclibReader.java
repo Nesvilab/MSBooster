@@ -27,7 +27,7 @@ import java.util.*;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 
-public class PredFullSpeclibReader extends mgfFileReader{
+public class PredFullSpeclibReader extends MgfFileReader {
     HashSet<String> peptides = new HashSet<>();
 
     public PredFullSpeclibReader(String file, boolean createScanNumObjects, File[] pinFiles,
@@ -38,7 +38,7 @@ public class PredFullSpeclibReader extends mgfFileReader{
 
         //read in peptides from pinFiles
         for (File pinFile : pinFiles) {
-            pinReader pin = new pinReader(pinFile.getCanonicalPath());
+            PinReader pin = new PinReader(pinFile.getCanonicalPath());
 
             //add to counter
             while (pin.next()) {

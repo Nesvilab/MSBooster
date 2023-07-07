@@ -37,9 +37,9 @@ import java.util.concurrent.Future;
 
 import static Features.StatMethods.LOESS;
 import static Features.StatMethods.movingAverage;
-import static Features.floatUtils.doubleToFloat;
+import static Features.FloatUtils.doubleToFloat;
 
-public class mzMLReader {
+public class MzmlReader {
     //final Path path;
     final String pathStr;
     public ScanCollectionDefault scans; //need to implement serializable
@@ -47,7 +47,7 @@ public class mzMLReader {
                       //similarity measures might be calculated using different weights. If you want to use different
                       //weights, just make new mzmlReader object
 
-    HashMap<Integer, mzmlScanNumber> scanNumberObjects = new HashMap<>();
+    HashMap<Integer, MzmlScanNumber> scanNumberObjects = new HashMap<>();
     List<Integer> scanNums;
     private float[] betas;
     public ArrayList<Float>[] RTbins = null;
@@ -64,7 +64,7 @@ public class mzMLReader {
     public double[][] expAndPredRTs;
     private List<Future> futureList = new ArrayList<>(Constants.numThreads);
 
-    public mzMLReader(String filename) throws FileParsingException, ExecutionException, InterruptedException {
+    public MzmlReader(String filename) throws FileParsingException, ExecutionException, InterruptedException {
         // Creating data source
         //path = Paths.get(filename); //
         Path path = Paths.get(filename);
@@ -100,12 +100,12 @@ public class mzMLReader {
         //this.getMzFreq(); only if we end up using weights
     }
 
-    public mzMLReader(mgfFileReader mgf) throws FileParsingException, ExecutionException, InterruptedException { //uncalibrated mgf from MSFragger .d search
+    public MzmlReader(MgfFileReader mgf) throws FileParsingException, ExecutionException, InterruptedException { //uncalibrated mgf from MSFragger .d search
         pathStr = mgf.filenames.get(0);
 
         //Constants.useIM = true;
         //scanNumberObjects = mgf.scanNumberObjects;
-        for (Map.Entry<Integer, mzmlScanNumber> entry : mgf.scanNumberObjects.entrySet()) {
+        for (Map.Entry<Integer, MzmlScanNumber> entry : mgf.scanNumberObjects.entrySet()) {
             scanNumberObjects.put(entry.getKey(), entry.getValue());
         }
         mgf.clear();
@@ -231,7 +231,7 @@ public class mzMLReader {
                     }
                 }
 
-                mzmlScanNumber msn = new mzmlScanNumber(scan);
+                MzmlScanNumber msn = new MzmlScanNumber(scan);
                 scanNumberObjects.put(scan.getNum(), msn);
             }
         }
@@ -250,7 +250,7 @@ public class mzMLReader {
         //System.out.println("createScanNumObjects took " + duration / 1000000 +" milliseconds");
     }
 
-    public mzmlScanNumber getScanNumObject(int scanNum) {
+    public MzmlScanNumber getScanNumObject(int scanNum) {
         return scanNumberObjects.get(scanNum);
     }
 
@@ -270,25 +270,18 @@ public class mzMLReader {
 //        }
 //    }
 
-    public void setPinEntries(pinReader pin, SpectralPredictionMapper spm) throws AssertionError, Exception {
+    public void setPinEntries(PinReader pin, SpectralPredictionMapper spm) throws AssertionError, Exception {
         //TODO: multithread?
         System.out.println("Loading pin");
         HashMap<String, PredictionEntry> allPreds = spm.getPreds();
-        int linesRead = 1;
-        int currentPercent = Constants.loadingPercent;
-        long startTime = System.nanoTime();
+
+        ProgressReporter pr = new ProgressReporter(pin.length);
         while (pin.next()) {
             try {
                 scanNumberObjects.get(pin.getScanNum()).setPeptideObject(pin.getPep(), pin.getRank(), pin.getTD(), pin.getEScore(),
                         allPreds);
-                linesRead += 1;
-                if (linesRead > pin.length * currentPercent / 100) {
-                    long endTime = System.nanoTime();
-                    System.out.print((endTime - startTime) / 1000000000  + "sec..." + currentPercent + "%");
-                    startTime = System.nanoTime();
-                    //System.out.print("..." + currentPercent + "%");
-                    currentPercent += Constants.loadingPercent;
-                }
+
+                pr.progress();
             } catch (Exception e) {
                 e.printStackTrace();
                 System.exit(1);
@@ -323,11 +316,11 @@ public class mzMLReader {
             int end = (int) (scanNumberObjects.size() * (long) (i + 1)) / Constants.numThreads;
             futureList.add(executorService.submit(() -> {
                 for (int j = start; j < end; j++) {
-                    mzmlScanNumber msn = getScanNumObject(scanNums.get(j));
+                    MzmlScanNumber msn = getScanNumObject(scanNums.get(j));
                     msn.normalizedRT = RTFunctions.normalizeRT(betas, msn.RT);
 
                     //now calculate deltaRTs
-                    for (peptideObj pep : msn.peptideObjects) {
+                    for (PeptideObj pep : msn.peptideObjects) {
                         pep.deltaRT = Math.abs(msn.normalizedRT - pep.RT);
                     }
                 }
@@ -397,7 +390,7 @@ public class mzMLReader {
             int end = (int) (scanNumberObjects.size() * (long) (i + 1)) / Constants.numThreads;
             futureList.add(executorService.submit(() -> {
                 for (int j = start; j < end; j++) {
-                    mzmlScanNumber msn = getScanNumObject(scanNums.get(j));
+                    MzmlScanNumber msn = getScanNumObject(scanNums.get(j));
 
                     //also set bin size, for use with uniform prior prob
                     int idx = (int) (msn.RT * Constants.RTbinMultiplier);
@@ -420,7 +413,7 @@ public class mzMLReader {
             int end = (int) (scanNumberObjects.size() * (long) (i + 1)) / Constants.numThreads;
             futureList.add(executorService.submit(() -> {
                 for (int j = start; j < end; j++) {
-                    mzmlScanNumber msn = getScanNumObject(scanNums.get(j));
+                    MzmlScanNumber msn = getScanNumObject(scanNums.get(j));
 
                     //get stats based on experimental RT bin
                     int idx = (int) (msn.RT * Constants.RTbinMultiplier);
@@ -431,7 +424,7 @@ public class mzMLReader {
                     //msn.RTbinSize = RTbins[idx].size();
 
                     //now calculate deltaRTs
-                    for (peptideObj pep : msn.peptideObjects) {
+                    for (PeptideObj pep : msn.peptideObjects) {
                         pep.deltaRTbin = Math.abs(binMean - pep.RT);
                         pep.RTzscore = Math.abs(StatMethods.zscore(pep.RT, binMean, binStd));
                     }
@@ -452,7 +445,7 @@ public class mzMLReader {
             int end = (int) (scanNumberObjects.size() * (long) (i + 1)) / Constants.numThreads;
             futureList.add(executorService.submit(() -> {
                 for (int j = start; j < end; j++) {
-                    mzmlScanNumber msn = getScanNumObject(scanNums.get(j));
+                    MzmlScanNumber msn = getScanNumObject(scanNums.get(j));
 
                     //get stats based on experimental RT bin
                     int idx = (int) (msn.RT * Constants.RTbinMultiplier);
@@ -461,7 +454,7 @@ public class mzMLReader {
 
                     //now calculate deltaRTs
                     double LOESSRT = RTLOESS.invoke((double) msn.RT);
-                    for (peptideObj pep : msn.peptideObjects) {
+                    for (PeptideObj pep : msn.peptideObjects) {
                         //pep.deltaRTLOESSnormalized = Math.abs(LOESSRT - pep.RT) / binStd;
                         pep.deltaRTLOESSnormalized = Math.abs(LOESSRT - pep.RT) / binIqr;
                     }
@@ -482,7 +475,7 @@ public class mzMLReader {
             int end = (int) (scanNumberObjects.size() * (long) (i + 1)) / Constants.numThreads;
             futureList.add(executorService.submit(() -> {
                 for (int j = start; j < end; j++) {
-                    mzmlScanNumber msn = getScanNumObject(scanNums.get(j));
+                    MzmlScanNumber msn = getScanNumObject(scanNums.get(j));
 
                     //also set bin size, for use with uniform prior prob
                     int idx = (int) (msn.IM * Constants.IMbinMultiplier);
@@ -506,13 +499,13 @@ public class mzMLReader {
             int end = (int) (scanNumberObjects.size() * (long) (i + 1)) / Constants.numThreads;
             futureList.add(executorService.submit(() -> {
                 for (int j = start; j < end; j++) {
-                    mzmlScanNumber msn = getScanNumObject(scanNums.get(j));
+                    MzmlScanNumber msn = getScanNumObject(scanNums.get(j));
 
                     //get stats based on experimental RT bin
                     int idx = (int) (msn.IM * Constants.IMbinMultiplier);
 
                     //now calculate deltaRTs
-                    for (peptideObj pep : msn.peptideObjects) {
+                    for (PeptideObj pep : msn.peptideObjects) {
                         float binIqr = IMbinStats[pep.charge - 1][idx][2];
                         double LOESSIM = IMLOESS.get(pep.charge - 1).invoke((double) msn.IM);
                         //pep.deltaIMLOESSnormalized = Math.abs(LOESSIM - pep.IM) / binStd;
@@ -539,9 +532,9 @@ public class mzMLReader {
                 int end = (int) (scanNumberObjects.size() * (long) (i + 1)) / Constants.numThreads;
                 futureList.add(executorService.submit(() -> {
                     for (int j = start; j < end; j++) {
-                        mzmlScanNumber msn = getScanNumObject(scanNums.get(j));
+                        MzmlScanNumber msn = getScanNumObject(scanNums.get(j));
 
-                        for (peptideObj pep : msn.peptideObjects) {
+                        for (PeptideObj pep : msn.peptideObjects) {
                             pep.RTprob = StatMethods.probability(msn.RT * Constants.RTbinMultiplier, pep.RT, kernelDensities);
                         }
                     }
@@ -568,9 +561,9 @@ public class mzMLReader {
                 int end = (int) (scanNumberObjects.size() * (long) (i + 1)) / Constants.numThreads;
                 futureList.add(executorService.submit(() -> {
                     for (int j = start; j < end; j++) {
-                        mzmlScanNumber msn = getScanNumObject(scanNums.get(j));
+                        MzmlScanNumber msn = getScanNumObject(scanNums.get(j));
 
-                        for (peptideObj pep : msn.peptideObjects) {
+                        for (PeptideObj pep : msn.peptideObjects) {
                             pep.IMprob = StatMethods.probability(msn.IM * Constants.IMbinMultiplier, pep.IM, kernelDensities[pep.charge - 1]);
                         }
                     }
@@ -612,10 +605,10 @@ public class mzMLReader {
             int end = (int) (scanNumberObjects.size() * (long) (i + 1)) / Constants.numThreads;
             futureList.add(executorService.submit(() -> {
                 for (int j = start; j < end; j++) {
-                    mzmlScanNumber msn = getScanNumObject(scanNums.get(j));
+                    MzmlScanNumber msn = getScanNumObject(scanNums.get(j));
                     double LOESSRT = RTLOESS.invoke((double) msn.RT);
 
-                    for (peptideObj pep : msn.peptideObjects) {
+                    for (PeptideObj pep : msn.peptideObjects) {
                         pep.deltaRTLOESS = Math.abs(LOESSRT - pep.RT);
                         pep.calibratedRT = LOESSRT;
                     }
@@ -640,9 +633,9 @@ public class mzMLReader {
             int end = (int) (scanNumberObjects.size() * (long) (i + 1)) / Constants.numThreads;
             futureList.add(executorService.submit(() -> {
                 for (int j = start; j < end; j++) {
-                    mzmlScanNumber msn = getScanNumObject(scanNums.get(j));
+                    MzmlScanNumber msn = getScanNumObject(scanNums.get(j));
 
-                    for (peptideObj pep : msn.peptideObjects) {
+                    for (PeptideObj pep : msn.peptideObjects) {
                         double LOESSIM = IMLOESS.get(pep.charge - 1).invoke((double) msn.IM);
                         pep.deltaIMLOESS = Math.abs(LOESSIM - pep.IM);
 

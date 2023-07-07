@@ -105,7 +105,7 @@ public class DlibReader implements SpectralPredictionMapper{
         System.out.println("generating modified and decoy peptides");
         PinMzmlMatcher pmm = new PinMzmlMatcher(Constants.mzmlDirectory, Constants.pinPepXMLDirectory);
         for (File f : pmm.pinFiles) {
-            pinReader pin = new pinReader(f.getCanonicalPath());
+            PinReader pin = new PinReader(f.getCanonicalPath());
 
             //for row in pin
             while (pin.next()) {

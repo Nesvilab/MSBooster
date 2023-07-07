@@ -21,10 +21,10 @@ import java.io.*;
 import java.util.HashMap;
 
 //only using DeepMSPeptide so far for prediction
-public class detectMap {
+public class DetectMap {
     HashMap<String, Float> detectabilities = new HashMap<>();
 
-    public detectMap(String detectFile) throws IOException {
+    public DetectMap(String detectFile) throws IOException {
 //        long startTime = System.nanoTime();
         BufferedReader br = new BufferedReader(new FileReader(new File(detectFile)));
         br.readLine(); //header

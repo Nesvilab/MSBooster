@@ -17,11 +17,7 @@
 
 package Features;
 
-import com.univocity.parsers.tsv.TsvWriter;
-import com.univocity.parsers.tsv.TsvWriterSettings;
 import org.apache.commons.lang3.ArrayUtils;
-import org.apache.commons.math3.stat.correlation.PearsonsCorrelation;
-import org.apache.commons.math3.stat.correlation.SpearmansCorrelation;
 import umich.ms.fileio.exceptions.FileParsingException;
 
 import java.io.File;
@@ -33,9 +29,7 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.stream.IntStream;
 
-import static Features.Constants.camelToUnderscore;
-
-public class percolatorFormatter {
+public class PercolatorFormatter {
 
     //set mgf or detectFile as null if not applicable
     //baseNames is the part before mzml or pin extensions
@@ -216,12 +210,12 @@ public class percolatorFormatter {
         }
         //create detectMap to store detectabilities for base sequence peptides
         //store peptide detectabilities in PredictionEntry
-        detectMap dm = null;
+        DetectMap dm = null;
         ArrayList<String> dFeatures = new ArrayList<String>(Constants.detectFeatures);
         dFeatures.retainAll(featuresList);
         //long startTime = System.nanoTime();
         if (dFeatures.size() > 0) {
-            dm = new detectMap(detectFile);
+            dm = new DetectMap(detectFile);
             HashMap<String, PredictionEntry> allPreds = predictedSpectra.getPreds();
             for (Map.Entry<String, PredictionEntry> e : allPreds.entrySet()) {
                 e.getValue().setDetectability(dm.getDetectability(
@@ -238,7 +232,7 @@ public class percolatorFormatter {
 
             //get all peptides present in pin
             for (File pinFile : pmMatcher.pinFiles) {
-                pinReader pin = new pinReader(pinFile.getCanonicalPath());
+                PinReader pin = new PinReader(pinFile.getCanonicalPath());
 
                 //add to counter
                 while (pin.next()) {
@@ -320,22 +314,22 @@ public class percolatorFormatter {
 
                 //load mzml file
                 System.out.println("Processing " + mzmlFiles[i].getName());
-                mzMLReader mzml;
+                MzmlReader mzml;
                 if (mzmlFiles[i].getName().substring( mzmlFiles[i].getName().length() - 3).toLowerCase().equals("mgf")) {
-                    mzml = new mzMLReader(new mgfFileReader(mzmlFiles[i].getCanonicalPath(),
+                    mzml = new MzmlReader(new MgfFileReader(mzmlFiles[i].getCanonicalPath(),
                             true, executorService, ""));
                 } else {
-                    mzml = new mzMLReader(mzmlFiles[i].getCanonicalPath());
+                    mzml = new MzmlReader(mzmlFiles[i].getCanonicalPath());
                 }
 
                 //load pin file, which already includes all ranks
-                pinReader pin = new pinReader(pinFiles[i].getCanonicalPath());
+                PinReader pin = new PinReader(pinFiles[i].getCanonicalPath());
 
                 //Special preparations dependent on features we require
                 if (needsMGF) {
                     mzml.setPinEntries(pin, predictedSpectra);
                     if (Constants.removeRankPeaks && featuresList.contains("hypergeometricProbability")) {
-                        for (mzmlScanNumber msn : mzml.scanNumberObjects.values()) {
+                        for (MzmlScanNumber msn : mzml.scanNumberObjects.values()) {
                             msn.expMZs = msn.savedExpMZs;
                             msn.expIntensities = msn.savedExpIntensities;
                             msn.savedExpMZs = null;

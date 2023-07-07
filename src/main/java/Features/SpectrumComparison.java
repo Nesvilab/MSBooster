@@ -17,21 +17,17 @@
 
 package Features;
 
-import org.apache.commons.lang3.ArrayUtils;
 import org.apache.commons.math3.distribution.HypergeometricDistribution;
 import org.apache.commons.math3.random.Well19937c;
 import org.apache.commons.math3.stat.correlation.PearsonsCorrelation;
 import org.apache.commons.math3.stat.correlation.SpearmansCorrelation;
-import umich.ms.fileio.exceptions.FileParsingException;
 
-import java.io.IOException;
-import java.lang.reflect.Array;
 import java.util.*;
 import java.util.stream.IntStream;
 
-import static Features.floatUtils.floatToDouble;
+import static Features.FloatUtils.floatToDouble;
 //TODO: also square root intensities? Squaring intensities may help for single cell data
-public class spectrumComparison {
+public class SpectrumComparison {
     float[] predMZs;
     float[] predIntensities;
     float[] matchedIntensities;
@@ -48,13 +44,13 @@ public class spectrumComparison {
     private static ArrayList<Float> tmpInts = new ArrayList<Float>();
     private static PearsonsCorrelation pc = new PearsonsCorrelation();
     private static SpearmansCorrelation sc = new SpearmansCorrelation();
-    public ArrayList<spectrumComparison> spectrumComparisons = new ArrayList<>();
+    public ArrayList<SpectrumComparison> spectrumComparisons = new ArrayList<>();
     public static Well19937c rng = new Well19937c(123);
 
-    public peptideObj pepObj;
+    public PeptideObj pepObj;
     ArrayList<Integer> sortedIndicesList = new ArrayList<>();
 
-    public spectrumComparison(peptideObj pepObj, float[] eMZs, float[] eIntensities,
+    public SpectrumComparison(PeptideObj pepObj, float[] eMZs, float[] eIntensities,
                               float[] pMZs, float[] pIntensities, int length,
                               boolean filterTop, boolean filterBase) {
         predMZs = pMZs;
@@ -94,7 +90,7 @@ public class spectrumComparison {
         this.pepObj = pepObj;
     }
 
-    public spectrumComparison(peptideObj pepObj, float[] eMZs, float[] eIntensities,
+    public SpectrumComparison(PeptideObj pepObj, float[] eMZs, float[] eIntensities,
                               float[] pMZs, float[] pIntensities, int length,
                               boolean filterTop, boolean filterBase, String[] fragmentIonTypes) {
         predMZs = pMZs;
@@ -167,7 +163,7 @@ public class spectrumComparison {
 //                }
 
                 //create new spectrumComparison obj and add to list
-                spectrumComparisons.add(new spectrumComparison(pepObj, eMZs, eIntensities,
+                spectrumComparisons.add(new SpectrumComparison(pepObj, eMZs, eIntensities,
                         mzs, ints, length, Constants.useTopFragments, Constants.useBasePeak));
             }
         }

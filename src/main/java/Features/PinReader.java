@@ -26,7 +26,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 
 //TODO: which of these tools allows O abd U amino acids?
-public class pinReader {
+public class PinReader {
     String name; //used for resetting
     BufferedReader in;
     String[] header;
@@ -42,7 +42,7 @@ public class pinReader {
 
     int length;
 
-    public pinReader(String pin) throws IOException {
+    public PinReader(String pin) throws IOException {
         name = pin;
         in = new BufferedReader(new FileReader(name));
         String line = in.readLine();

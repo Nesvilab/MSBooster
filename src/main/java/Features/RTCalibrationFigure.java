@@ -31,11 +31,9 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.TreeSet;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
 
 public class RTCalibrationFigure {
-    public RTCalibrationFigure(mzMLReader mzml, String outFile, float opacity) throws IOException {
+    public RTCalibrationFigure(MzmlReader mzml, String outFile, float opacity) throws IOException {
         String pinPath = new File(outFile).getParent();
         String pinName = new File(outFile).getName();
 
@@ -54,7 +52,7 @@ public class RTCalibrationFigure {
         float minRT = Float.MAX_VALUE;
         float maxRT = Float.MIN_VALUE;
         for (int scanNum : new TreeSet<Integer>(mzml.scanNumberObjects.keySet())) {
-            mzmlScanNumber scanNumObj = mzml.getScanNumObject(scanNum);
+            MzmlScanNumber scanNumObj = mzml.getScanNumObject(scanNum);
             float rt = scanNumObj.RT; //experimental RT for this scan
             if (rt < minRT) {
                 minRT = rt;
@@ -64,7 +62,7 @@ public class RTCalibrationFigure {
             }
 
             for (int i = 1; i < scanNumObj.peptideObjects.size() + 1; i++) {
-                peptideObj pep = scanNumObj.getPeptideObject(i);
+                PeptideObj pep = scanNumObj.getPeptideObject(i);
                 //only get best ones
                 if (Float.parseFloat(pep.escore) < Constants.RTescoreCutoff && pep.spectralSimObj.predIntensities[0] != 0f) {
                     xData.add(rt);

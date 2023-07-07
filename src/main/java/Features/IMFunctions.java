@@ -24,7 +24,7 @@ import java.util.stream.IntStream;
 public class IMFunctions {
     public static int numCharges = 7;
 
-    public static double[][][] getIMarrays(mzMLReader mzml, int IMregressionSize) {
+    public static double[][][] getIMarrays(MzmlReader mzml, int IMregressionSize) {
         double[][][] finalIMs = new double[numCharges][2][];
 
         //ArrayList<ArrayList<Float>> expIMs = new ArrayList<ArrayList<Float>>(numCharges);
@@ -42,11 +42,11 @@ public class IMFunctions {
         //collect RTs and escores
 
         for (int scanNum : new TreeSet<Integer>(mzml.scanNumberObjects.keySet())) {
-            mzmlScanNumber scanNumObj = mzml.getScanNumObject(scanNum);
+            MzmlScanNumber scanNumObj = mzml.getScanNumObject(scanNum);
             float im = scanNumObj.IM; //experimental RT for this scan
 
             for (int i = 1; i < scanNumObj.peptideObjects.size() + 1; i++) {
-                peptideObj pep = scanNumObj.getPeptideObject(i);
+                PeptideObj pep = scanNumObj.getPeptideObject(i);
                 int charge = pep.charge - 1;
                 float e = Float.parseFloat(pep.escore);
                 if (e > Constants.IMescoreCutoff) {
@@ -119,7 +119,7 @@ public class IMFunctions {
         return finalIMs;
     }
 
-    public static ArrayList<Float>[][] IMbins(mzMLReader mzml) throws IOException {
+    public static ArrayList<Float>[][] IMbins(MzmlReader mzml) throws IOException {
         //hard coded as 2, but if there are higher IM values, this can change
         int numBins = 2 * Constants.IMbinMultiplier;
 
@@ -132,12 +132,12 @@ public class IMFunctions {
 
         //iterate through scanNumbers
         for (int scanNum : mzml.scanNumberObjects.keySet()) {
-            mzmlScanNumber scanNumObj = mzml.getScanNumObject(scanNum);
+            MzmlScanNumber scanNumObj = mzml.getScanNumObject(scanNum);
             int round = (int) (scanNumObj.IM * Constants.IMbinMultiplier); //experimental RT for this scan, assume in minutes
 
             //iterate through PSMs
             for (int i = 1; i < scanNumObj.peptideObjects.size() + 1; i++) {
-                peptideObj pep = scanNumObj.getPeptideObject(i);
+                PeptideObj pep = scanNumObj.getPeptideObject(i);
                 int charge = pep.charge - 1;
 
                 int instances = Math.max(1, -1 * (int) Math.ceil(Math.log10(Double.parseDouble(pep.escore)))); //this version avoids empty bins

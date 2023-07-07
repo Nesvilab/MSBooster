@@ -26,7 +26,7 @@ import java.util.*;
 
 import static org.apache.commons.io.FileUtils.listFiles;
 
-public class peptideFileCreator {
+public class PeptideFileCreator {
     //private static String[] acceptableFormats = new String[] {"pDeep2", "pDeep3", "prosit"};
 
     public static HashSet<String> getUniqueHits(String[] allHits) {
@@ -93,7 +93,7 @@ public class peptideFileCreator {
 
         for (File f : x) {
             String fileName = f.getCanonicalPath();
-            pinReader pin = new pinReader(fileName);
+            PinReader pin = new PinReader(fileName);
             String[] hitsToAdd = new String[0];
             switch (modelFormat) {
                 case "pDeep2":

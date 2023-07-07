@@ -1,9 +1,24 @@
+/*
+ * This file is part of MSBooster.
+ *
+ * MSBooster is free software: you can redistribute it and/or modify it under
+ * the terms of the GNU Lesser General Public License as published by the Free
+ * Software Foundation, either version 3 of the License, or (at your
+ * option) any later version.
+ *
+ * MSBooster is distributed in the hope that it will be useful, but WITHOUT
+ * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+ * FITNESS FOR A PARTICULAR PURPOSE. See the GNU Lesser General Public License
+ * for more details.
+ *
+ * You should have received a copy of the GNU Lesser General Public License
+ * along with MSBooster. If not, see <https://www.gnu.org/licenses/>.
+ */
+
 package Features;
 
 import com.univocity.parsers.tsv.TsvWriter;
 import com.univocity.parsers.tsv.TsvWriterSettings;
-import org.apache.commons.math3.stat.correlation.PearsonsCorrelation;
-import org.apache.commons.math3.stat.correlation.SpearmansCorrelation;
 
 import java.io.File;
 import java.io.IOException;
@@ -15,14 +30,14 @@ import static Features.Constants.camelToUnderscore;
 
 public class PinWriter {
     String newOutfile;
-    pinReader pin;
+    PinReader pin;
     ArrayList<String> featuresList;
-    mzMLReader mzml;
+    MzmlReader mzml;
     TsvWriter writer;
     ArrayList<String> header = new ArrayList<>();
     HashMap<String, HashMap<Integer, StatMethods>> featureStats;
 
-    public PinWriter(String newOutfile, pinReader pin, ArrayList<String> featuresList, mzMLReader mzml,
+    public PinWriter(String newOutfile, PinReader pin, ArrayList<String> featuresList, MzmlReader mzml,
                      HashMap<String, HashMap<Integer, StatMethods>> featureStats) {
         this.newOutfile = newOutfile;
         this.pin = pin;
@@ -64,20 +79,10 @@ public class PinWriter {
     }
 
     public void write() throws IOException {
-        peptideObj pepObj = null;
-        int linesRead = 1;
-        int currentPercent = Constants.loadingPercent;
-        long startTime = System.nanoTime();
+        PeptideObj pepObj = null;
+        ProgressReporter pr = new ProgressReporter(pin.length);
         while (pin.next()) {
-            //progress
-            linesRead += 1;
-            if (linesRead > pin.length * currentPercent / 100) {
-                long endTime = System.nanoTime();
-                System.out.print((endTime - startTime) / 1000000000  + "sec..." + currentPercent + "%");
-                startTime = System.nanoTime();
-                //System.out.print("..." + currentPercent + "%");
-                currentPercent += Constants.loadingPercent;
-            }
+            pr.progress();
 
             //write everything we already have, not including extra protein columns
             String[] row = pin.getRow();

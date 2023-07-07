@@ -19,11 +19,11 @@ package Features;
 
 import java.util.*;
 
-public class peptideObj {
+public class PeptideObj {
     final String name;
     final int charge;
     final int rank;
-    final mzmlScanNumber scanNumObj;
+    final MzmlScanNumber scanNumObj;
     final int scanNum;
     final int targetORdecoy;
     final int length;
@@ -61,10 +61,10 @@ public class peptideObj {
     HashMap<String, Float> peakCounts = baseMap;
     HashMap<String, Float> individualSpectralSimilarities = baseMap;
 
-    spectrumComparison spectralSimObj;
+    SpectrumComparison spectralSimObj;
     double intensity_distribution_similarity;
 
-    public peptideObj(mzmlScanNumber scanNumObj, String name, int rank, int targetORdecoy, String escore,
+    public PeptideObj(MzmlScanNumber scanNumObj, String name, int rank, int targetORdecoy, String escore,
                       float[] predMZs, float[] predIntensities, float predRT, Float predIM) {
         this.name = name;
         this.charge = Integer.parseInt(name.split("\\|")[1]);
@@ -82,7 +82,7 @@ public class peptideObj {
         this.escore = escore;
         //this.predMZs = predMZs;
         //this.predInts = predIntensities;
-        this.spectralSimObj = new spectrumComparison(this, scanNumObj.getExpMZs(), scanNumObj.getExpIntensities(),
+        this.spectralSimObj = new SpectrumComparison(this, scanNumObj.getExpMZs(), scanNumObj.getExpIntensities(),
                 predMZs, predIntensities, length, Constants.useTopFragments, Constants.useBasePeak); //calculate similarity with subset of fragments
         this.RT = predRT;
         this.IM = predIM;
@@ -93,7 +93,7 @@ public class peptideObj {
         }
     }
 
-    public peptideObj(mzmlScanNumber scanNumObj, String name, int rank, int targetORdecoy, String escore,
+    public PeptideObj(MzmlScanNumber scanNumObj, String name, int rank, int targetORdecoy, String escore,
                       float[] predMZs, float[] predIntensities, float predRT, Float predIM, String[] fragmentIonTypes) {
         this.name = name;
         this.charge = Integer.parseInt(name.split("\\|")[1]);
@@ -112,7 +112,7 @@ public class peptideObj {
         //this.predMZs = predMZs;
         //this.predInts = predIntensities;
         this.fragmentIonTypes = fragmentIonTypes;
-        this.spectralSimObj = new spectrumComparison(this, scanNumObj.getExpMZs(), scanNumObj.getExpIntensities(),
+        this.spectralSimObj = new SpectrumComparison(this, scanNumObj.getExpMZs(), scanNumObj.getExpIntensities(),
                 predMZs, predIntensities, length, Constants.useTopFragments, Constants.useBasePeak, fragmentIonTypes); //calculate similarity with subset of fragments
         this.RT = predRT;
         this.IM = predIM;
@@ -237,7 +237,7 @@ public class peptideObj {
                 }
 
                 individualSpectralSimilarities.put(entry.getKey(),
-                        (float) new spectrumComparison(this, expMZs, expIntensities,
+                        (float) new SpectrumComparison(this, expMZs, expIntensities,
                                 subsetPredMZsArray, subsetPredIntsArray, this.length,//doesn't really make sense to use hypergeo here
                                 Constants.useTopFragments, false).unweightedSpectralEntropy()); //already did base peak intensity filtering
             }

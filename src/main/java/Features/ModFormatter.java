@@ -19,7 +19,7 @@ package Features;
 
 import java.util.HashMap;
 //TODO: delete later, as only pepxml uses. pDeep3 can use new PeptideFormatter
-public class modFormatter {
+public class ModFormatter {
     int[] pos;
     double[] mass;
     final HashMap <Double, String> modifications= new HashMap<Double, String>() {{
@@ -28,7 +28,7 @@ public class modFormatter {
         put(147.0354, "Oxidation[M]");
     }};
 
-    public modFormatter(int[] positions, double[] masses) {
+    public ModFormatter(int[] positions, double[] masses) {
         pos = positions;
         mass = masses;
     }

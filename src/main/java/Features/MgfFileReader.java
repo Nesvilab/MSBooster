@@ -24,13 +24,13 @@ import java.nio.charset.StandardCharsets;
 import java.util.*;
 import java.util.concurrent.*;
 
-public class mgfFileReader implements SpectralPredictionMapper{
+public class MgfFileReader implements SpectralPredictionMapper{
     //mgfFileReader can handle both single files and entire directories
 
     ArrayList<String> filenames = new ArrayList<>();
     private ConcurrentHashMap<String, PredictionEntry> allPreds = new ConcurrentHashMap<>();
     HashMap<String, PredictionEntry> allPredsHashMap = new HashMap<>();
-    public ConcurrentHashMap<Integer, mzmlScanNumber> scanNumberObjects = new ConcurrentHashMap<>();
+    public ConcurrentHashMap<Integer, MzmlScanNumber> scanNumberObjects = new ConcurrentHashMap<>();
     private List<Future> futureList = new ArrayList<>(Constants.numThreads);
 
     private String returnString(char endChar, byte[] myData, int startInt) {
@@ -60,7 +60,7 @@ public class mgfFileReader implements SpectralPredictionMapper{
     }
 
     //this version for uncalibrated mgf acting as mzml
-    public mgfFileReader(String file, boolean createScanNumObjects, ExecutorService executorService, String model)
+    public MgfFileReader(String file, boolean createScanNumObjects, ExecutorService executorService, String model)
             throws IOException, FileParsingException, ExecutionException, InterruptedException {
         try {
             //load allowed fragment ion types
@@ -260,7 +260,7 @@ public class mgfFileReader implements SpectralPredictionMapper{
                                         fragmentArray[h] = fragmentIonTypes.get(h);
                                     }
                                     if (createScanNumObjects) { //act as mzml
-                                        scanNumberObjects.put(scanNum, new mzmlScanNumber(scanNum, mzArray, intArray, RT, IM));
+                                        scanNumberObjects.put(scanNum, new MzmlScanNumber(scanNum, mzArray, intArray, RT, IM));
                                     } else { //act as predictions
                                         PredictionEntry newPred = new PredictionEntry();
                                         newPred.setMzs(mzArray);
@@ -367,7 +367,7 @@ public class mgfFileReader implements SpectralPredictionMapper{
                         }
                         if (createScanNumObjects) { //act as mzml
                             if (! scanNumberObjects.containsKey(scanNum)) {
-                                scanNumberObjects.put(scanNum, new mzmlScanNumber(scanNum, mzArray, intArray, RT, IM));
+                                scanNumberObjects.put(scanNum, new MzmlScanNumber(scanNum, mzArray, intArray, RT, IM));
                             }
                         } else { //act as predictions
                             PredictionEntry newPred = new PredictionEntry();

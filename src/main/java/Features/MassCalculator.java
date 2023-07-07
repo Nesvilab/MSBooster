@@ -74,6 +74,10 @@ public class MassCalculator {
         put('X', 0f);
     }};
 
+    private HashMap<String, double[]> series = new HashMap<>();
+    Set<String> leftIons = new HashSet<>(Arrays.asList("a", "b", "c", "cdot"));
+    Set<String> rightIons = new HashSet<>(Arrays.asList("x", "y", "z", "zdot"));
+
     //first formatting DIA-NN format to common one
     public MassCalculator(String pep, Object charge) {
         fullPeptide = pep + "|" + charge;
@@ -113,88 +117,114 @@ public class MassCalculator {
 
         this.mass = calcMass(pep.length(), "y", 1) - H;
         this.internalPeptides = new MassCalculator[peptide.length() - 3];
+
+        //TODO something smarter, like based off fragmentation mode? Or optional parameter to pass flags to initialize.
+        // Or fragger.params. Or based on model (DIANN always uses yb)
+        String[] flags = {"y", "b"};
+        for (String flag : flags) {
+            initializeSeries(flag);
+        }
+    }
+
+    public void initializeSeries(String s) {
+        double[] mySeries = new double[peptide.length() - 1];
+        if (leftIons.contains(s)) {
+            mySeries[0] = calcMass(1, s, 1) - proton;
+            for (int i = 1; i < peptide.length() - 1; i++) {
+                mySeries[i] = (mySeries[i - 1] + AAmap.get(this.peptide.charAt(i)) + modMasses.get(i + 1));
+            }
+        } else {
+            mySeries[peptide.length() - 2] = calcMass(1, s, 1) - proton;
+            for (int i = peptide.length() - 3; i > -1; i--) {
+                mySeries[i] = (mySeries[i + 1] + AAmap.get(this.peptide.charAt(i + 1)) + modMasses.get(i + 2));
+            }
+        }
+        series.put(s, mySeries);
     }
 
     public float calcMass(int num, String flag, int charge) {
-        float mass = 0f;
-
-        switch(flag) {
-            case "b":
-                mass += modMasses.get(0);
-                for (int i = 0; i < num; i++) {
-                    mass += AAmap.get(this.peptide.charAt(i)); //sum amino acid masses
-                    mass += modMasses.get(i + 1); //sum mods
-                }
-                if (num == this.peptide.length()) { //add c term mod
-                    mass += modMasses.get(num + 1);
-                }
-                break;
-            case "y":
-                mass = H2O;
-                mass += modMasses.get(this.peptide.length() + 1);
-                for (int i = this.peptide.length() - num; i < this.peptide.length(); i++) {
-                    mass += AAmap.get(this.peptide.charAt(i)); //sum amino acid masses
-                    mass += modMasses.get(i + 1); //sum mods
-                }
-                if (num == this.peptide.length()) { //add n term mod
+        double mass = 0f;
+        if (series.containsKey(flag)) {
+            mass = series.get(flag)[num - 1];
+        } else {
+            switch (flag) {
+                case "b":
                     mass += modMasses.get(0);
-                }
-                break;
-            case "a":
-                mass -= C;
-                mass -= O;
-                mass += modMasses.get(0);
-                for (int i = 0; i < num; i++) {
-                    mass += AAmap.get(this.peptide.charAt(i)); //sum amino acid masses
-                    mass += modMasses.get(i + 1); //sum mods
-                }
-                if (num == this.peptide.length()) { //add c term mod
-                    mass += modMasses.get(num + 1);
-                }
-                break;
-            case "x":
-                mass = 2 * O + C; //+H2O - H2 + CO
-                mass += modMasses.get(this.peptide.length() + 1);
-                for (int i = this.peptide.length() - num; i < this.peptide.length(); i++) {
-                    mass += AAmap.get(this.peptide.charAt(i)); //sum amino acid masses
-                    mass += modMasses.get(i + 1); //sum mods
-                }
-                if (num == this.peptide.length()) { //add n term mod
+                    for (int i = 0; i < num; i++) {
+                        mass += AAmap.get(this.peptide.charAt(i)); //sum amino acid masses
+                        mass += modMasses.get(i + 1); //sum mods
+                    }
+                    if (num == this.peptide.length()) { //add c term mod
+                        mass += modMasses.get(num + 1);
+                    }
+                    break;
+                case "y":
+                    mass = H2O;
+                    mass += modMasses.get(this.peptide.length() + 1);
+                    for (int i = this.peptide.length() - num; i < this.peptide.length(); i++) {
+                        mass += AAmap.get(this.peptide.charAt(i)); //sum amino acid masses
+                        mass += modMasses.get(i + 1); //sum mods
+                    }
+                    if (num == this.peptide.length()) { //add n term mod
+                        mass += modMasses.get(0);
+                    }
+                    break;
+                case "a":
+                    mass -= C;
+                    mass -= O;
                     mass += modMasses.get(0);
-                }
-                break;
-            case "c":
-                mass = NH3;
-                mass += modMasses.get(0);
-                for (int i = 0; i < num; i++) {
-                    mass += AAmap.get(this.peptide.charAt(i)); //sum amino acid masses
-                    mass += modMasses.get(i + 1); //sum mods
-                }
-                if (num == this.peptide.length()) { //add c term mod
-                    mass += modMasses.get(num + 1);
-                }
-                break;
-            case "z":
-                mass = O - N;
-                mass += modMasses.get(this.peptide.length() + 1);
-                for (int i = this.peptide.length() - num; i < this.peptide.length(); i++) {
-                    mass += AAmap.get(this.peptide.charAt(i)); //sum amino acid masses
-                    mass += modMasses.get(i + 1); //sum mods
-                }
-                if (num == this.peptide.length()) { //add n term mod
+                    for (int i = 0; i < num; i++) {
+                        mass += AAmap.get(this.peptide.charAt(i)); //sum amino acid masses
+                        mass += modMasses.get(i + 1); //sum mods
+                    }
+                    if (num == this.peptide.length()) { //add c term mod
+                        mass += modMasses.get(num + 1);
+                    }
+                    break;
+                case "x":
+                    mass = 2 * O + C; //+H2O - H2 + CO
+                    mass += modMasses.get(this.peptide.length() + 1);
+                    for (int i = this.peptide.length() - num; i < this.peptide.length(); i++) {
+                        mass += AAmap.get(this.peptide.charAt(i)); //sum amino acid masses
+                        mass += modMasses.get(i + 1); //sum mods
+                    }
+                    if (num == this.peptide.length()) { //add n term mod
+                        mass += modMasses.get(0);
+                    }
+                    break;
+                case "c":
+                    mass = NH3;
                     mass += modMasses.get(0);
-                }
-                break;
-            case "zdot":
-                mass = calcMass(num, "z", 1) - proton - H;
-                break;
-            case "cdot":
-                mass = calcMass(num, "c", 1) - proton - H;
-                break;
+                    for (int i = 0; i < num; i++) {
+                        mass += AAmap.get(this.peptide.charAt(i)); //sum amino acid masses
+                        mass += modMasses.get(i + 1); //sum mods
+                    }
+                    if (num == this.peptide.length()) { //add c term mod
+                        mass += modMasses.get(num + 1);
+                    }
+                    break;
+                case "z":
+                    mass = O - N;
+                    mass += modMasses.get(this.peptide.length() + 1);
+                    for (int i = this.peptide.length() - num; i < this.peptide.length(); i++) {
+                        mass += AAmap.get(this.peptide.charAt(i)); //sum amino acid masses
+                        mass += modMasses.get(i + 1); //sum mods
+                    }
+                    if (num == this.peptide.length()) { //add n term mod
+                        mass += modMasses.get(0);
+                    }
+                    break;
+                case "zdot":
+                    mass = calcMass(num, "z", 1) - proton - H;
+                    break;
+                case "cdot":
+                    mass = calcMass(num, "c", 1) - proton - H;
+                    break;
+            }
         }
 
         //calculate m/z using charge
-        return (mass + (float) charge * proton) / (float) charge;
+        return (float) ((mass + charge * proton) / charge);
     }
 
     //num1 is the y ion the internal fragment is derived from

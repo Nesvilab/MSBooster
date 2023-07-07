@@ -23,7 +23,6 @@ import java.io.File;
 import java.io.IOException;
 import java.sql.SQLException;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 
@@ -47,7 +46,7 @@ public interface SpectralPredictionMapper {
                 return new DiannSpeclibReader(file);
             case "mgf":
                 //for pdeep and alphapeptdeep
-                return new mgfFileReader(file, false, executorService, model);
+                return new MgfFileReader(file, false, executorService, model);
             case "msp":
                 return new MspReader(file);
             case "dlib":

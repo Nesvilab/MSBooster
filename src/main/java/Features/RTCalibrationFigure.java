@@ -24,20 +24,20 @@ import org.knowm.xchart.XYSeries;
 import org.knowm.xchart.style.Styler;
 
 import java.awt.*;
+import java.io.BufferedWriter;
 import java.io.File;
+import java.io.FileWriter;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.TreeSet;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
 
 public class RTCalibrationFigure {
-    public RTCalibrationFigure(mzMLReader mzml, String outFile, float opacity) throws IOException {
+    public RTCalibrationFigure(MzmlReader mzml, String outFile, float opacity) throws IOException {
+        String pinPath = new File(outFile).getParent();
+        String pinName = new File(outFile).getName();
+
         XYChart chart = new XYChartBuilder().width(1000).height(1000).build();
-        //new SwingWrapper<>(chart).displayChart();
-
-
         chart.getStyler().setDefaultSeriesRenderStyle(XYSeries.XYSeriesRenderStyle.Scatter);
         chart.getStyler().setChartTitleVisible(true);
         chart.setTitle(mzml.pathStr);
@@ -52,7 +52,7 @@ public class RTCalibrationFigure {
         float minRT = Float.MAX_VALUE;
         float maxRT = Float.MIN_VALUE;
         for (int scanNum : new TreeSet<Integer>(mzml.scanNumberObjects.keySet())) {
-            mzmlScanNumber scanNumObj = mzml.getScanNumObject(scanNum);
+            MzmlScanNumber scanNumObj = mzml.getScanNumObject(scanNum);
             float rt = scanNumObj.RT; //experimental RT for this scan
             if (rt < minRT) {
                 minRT = rt;
@@ -62,9 +62,9 @@ public class RTCalibrationFigure {
             }
 
             for (int i = 1; i < scanNumObj.peptideObjects.size() + 1; i++) {
-                peptideObj pep = scanNumObj.getPeptideObject(i);
+                PeptideObj pep = scanNumObj.getPeptideObject(i);
                 //only get best ones
-                if (Float.parseFloat(pep.escore) < Constants.RTescoreCutoff && pep.spectralSimObj.predMZs[0] != 0f) {
+                if (Float.parseFloat(pep.escore) < Constants.RTescoreCutoff && pep.spectralSimObj.predIntensities[0] != 0f) {
                     xData.add(rt);
                     yData.add(pep.RT);
                 } else {
@@ -80,10 +80,17 @@ public class RTCalibrationFigure {
         // generates Log data
         List<Float> x1Data = new ArrayList<Float>();
         List<Double> y1Data = new ArrayList<Double>();
+        BufferedWriter calibrationPoints = new BufferedWriter(new FileWriter(
+                pinPath + File.separator + "MSBooster_RTplots" + File.separator +
+                        pinName.substring(0, pinName.length() - 4) + "_calibration.csv"));
+        calibrationPoints.write("experimental RT,predicted RT");
         for (float i = minRT; i < maxRT; i = i + (maxRT - minRT) / 1000f) {
             x1Data.add(i);
-            y1Data.add(mzml.RTLOESS.invoke((double) i));
+            double y = mzml.RTLOESS.invoke((double) i);
+            y1Data.add(y);
+            calibrationPoints.write(i + "," + y);
         }
+        calibrationPoints.close();
         XYSeries series1 = chart.addSeries("regression", x1Data, y1Data);
         series1.setMarkerColor(new Color(243, 9, 9));
         //series.setLineWidth(1);
@@ -91,11 +98,9 @@ public class RTCalibrationFigure {
 
 //        BitmapEncoder.saveBitmap(chart, "C:/Users/yangkl/Downloads/proteomics/hla/Sample_Chart",
 //                BitmapEncoder.BitmapFormat.PNG);
-        String pinPath = new File(outFile).getParent();
         if (! new File(pinPath + File.separator + "MSBooster_RTplots").exists()) {
             new File(pinPath + File.separator + "MSBooster_RTplots").mkdirs();
         }
-        String pinName = new File(outFile).getName();
         BitmapEncoder.saveBitmap(chart, pinPath + File.separator + "MSBooster_RTplots" + File.separator +
                         pinName.substring(0, pinName.length() - 4),
                 BitmapEncoder.BitmapFormat.PNG);

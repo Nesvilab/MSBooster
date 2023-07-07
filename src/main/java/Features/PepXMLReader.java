@@ -25,7 +25,7 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.List;
 
-public class pepXMLReader {
+public class PepXMLReader {
 
     String pathname;
     MsmsPipelineAnalysis analysis;
@@ -40,7 +40,7 @@ public class pepXMLReader {
     private int[] NMCs;
     private int[] isotopeErrs;
 
-    public pepXMLReader(String path) {
+    public PepXMLReader(String path) {
         pathname = path;
         analysis = this.getAnalysis(pathname);
         String[] baseNameArray = analysis.getMsmsRunSummary().get(0).getBaseName().split("\\\\");
@@ -238,7 +238,7 @@ public class pepXMLReader {
                             }
 
                             //format new modifications
-                            modFormatter mf = new modFormatter(pos, modMass);
+                            ModFormatter mf = new ModFormatter(pos, modMass);
 
                             //add formatted new modifications onto modifications string
                             modifications += mf.format();
@@ -448,7 +448,7 @@ public class pepXMLReader {
                                     }
 
                                     //format new modifications
-                                    modFormatter mf = new modFormatter(pos, modMass);
+                                    ModFormatter mf = new ModFormatter(pos, modMass);
 
                                     //add formatted new modifications onto modifications string
                                     modifications += mf.format();

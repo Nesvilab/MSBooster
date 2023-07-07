@@ -1,0 +1,442 @@
+/*
+ * This file is part of MSBooster.
+ *
+ * MSBooster is free software: you can redistribute it and/or modify it under
+ * the terms of the GNU Lesser General Public License as published by the Free
+ * Software Foundation, either version 3 of the License, or (at your
+ * option) any later version.
+ *
+ * MSBooster is distributed in the hope that it will be useful, but WITHOUT
+ * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+ * FITNESS FOR A PARTICULAR PURPOSE. See the GNU Lesser General Public License
+ * for more details.
+ *
+ * You should have received a copy of the GNU Lesser General Public License
+ * along with MSBooster. If not, see <https://www.gnu.org/licenses/>.
+ */
+
+package Features;
+
+import org.apache.commons.lang3.ArrayUtils;
+import umich.ms.fileio.exceptions.FileParsingException;
+
+import java.io.File;
+import java.io.IOException;
+import java.sql.SQLException;
+import java.util.*;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.stream.IntStream;
+
+public class PercolatorFormatter {
+
+    //set mgf or detectFile as null if not applicable
+    //baseNames is the part before mzml or pin extensions
+    public static void editPin(String pinDirectory, String mzmlDirectory, String mgf, String detectFile,
+                               String[] features, String outfile)
+            throws IOException, InterruptedException, ExecutionException, FileParsingException, SQLException {
+
+        PinMzmlMatcher pmMatcher = new PinMzmlMatcher(mzmlDirectory, pinDirectory);
+
+        editPin(pmMatcher, mgf, detectFile, features, outfile);
+    }
+
+    public static void editPin(PinMzmlMatcher pmMatcher, String mgf, String detectFile,
+                               String[] features, String outfile)
+            throws IOException, InterruptedException, ExecutionException, FileParsingException, SQLException {
+        ExecutorService executorService = Executors.newFixedThreadPool(Constants.numThreads);
+
+        //defining num threads, in case using this outside of jar file
+        Runtime run  = Runtime.getRuntime();
+        if (Constants.numThreads <= 0) {
+            Constants.numThreads = run.availableProcessors();
+        }
+
+        ArrayList<String> featuresList = new ArrayList<>(Arrays.asList(features));
+        //remove features from array for multiple protein formatting
+        if (featuresList.contains("detectability")) {
+            int idx = ArrayUtils.indexOf(features, "detectability");
+            features = ArrayUtils.remove(features, idx);
+        }
+
+        //booleans for future determination of what to do
+        boolean needsMGF = false;
+
+        File[] pinFiles = pmMatcher.pinFiles;
+        File[] mzmlFiles = pmMatcher.mzmlFiles;
+
+        //load predicted spectra
+        SpectralPredictionMapper predictedSpectra = null;
+        SpectralPredictionMapper predictedSpectra2 = null; //first is prosit/diann, second predfull
+
+        //Special preparations dependent on features we require
+        //only time this isn't needed is detect
+        //could consider an mgf constant
+        if (mgf != null) {
+            needsMGF = true;
+            String[] mgfSplit = mgf.split(",");
+
+            if (mgfSplit.length == 1) {
+                System.out.println("Loading predicted spectra");
+                if (Constants.spectraRTPredModel.equals("PredFull")) {
+                    predictedSpectra = SpectralPredictionMapper.createSpectralPredictionMapper(
+                            mgfSplit[1], pinFiles, executorService);
+                } else {
+                    predictedSpectra = SpectralPredictionMapper.createSpectralPredictionMapper(
+                            mgf, Constants.spectraRTPredModel, executorService);
+                }
+            } else if (mgfSplit.length == 2){ //if fragment from predfull is not y/b, add.
+                                              //Prosit/diann is first, predfull second
+                String[] modelSplit = Constants.spectraRTPredModel.split(",");
+
+                System.out.println("Loading predicted spectra 1");
+                predictedSpectra = SpectralPredictionMapper.createSpectralPredictionMapper(
+                        mgfSplit[0], modelSplit[0], executorService);
+                System.out.println("Loading predicted spectra 2");
+                if (modelSplit[1].equals("PredFull")) {
+                    predictedSpectra2 = SpectralPredictionMapper.createSpectralPredictionMapper(
+                            mgfSplit[1], pinFiles, executorService);
+                } else {
+                    predictedSpectra2 = SpectralPredictionMapper.createSpectralPredictionMapper(
+                            mgfSplit[1], modelSplit[1], executorService);
+                }
+                System.out.println("Merging spectral libraries");
+
+                //get all possible keys from both preds1 and preds2
+                Set<String> totalKeyset = new HashSet<String>();
+                totalKeyset.addAll(predictedSpectra.getPreds().keySet());
+                totalKeyset.addAll(predictedSpectra2.getPreds().keySet());
+                float maxIntensity = Constants.modelMaxIntensity.get(modelSplit[0]);
+
+                //check what fragment ion types have been predicted by model 1
+                HashSet<String> model1FragmentIonTypes = new HashSet<>();
+                for (PredictionEntry pe : predictedSpectra.getPreds().values()) {
+                    if (pe.fragmentIonTypes == null) {
+                        pe.setFragmentIonTypes();
+                    }
+                    model1FragmentIonTypes.addAll(Arrays.asList(pe.fragmentIonTypes));
+                }
+
+                for (String key : totalKeyset) {
+//                    if (entry.getValue().fragmentIonTypes == null) { //something with base modifications that is never actually queried
+//                        predictedSpectra.getPreds().remove(entry.getKey());
+//                        //continue; //DIA-NN may still have the prediction
+//                    }
+                    PredictionEntry pe = predictedSpectra.getPreds().get(key);
+                    if (pe == null) { //missing in prosit/diann
+                        predictedSpectra.getPreds().put(key, predictedSpectra2.getPreds().get(key));
+                    } else { //add non-y/b ions
+                        ArrayList<Float> mzs = new ArrayList<>();
+                        ArrayList<Float> intensities = new ArrayList<>();
+                        ArrayList<String> fragTypes = new ArrayList<>();
+
+                        if (Constants.replaceYBintensities) {
+                            float maxIntensityMZ = Float.NaN;
+
+                            //add original peaks
+                            for(int i = 0; i < pe.mzs.length; i++) {
+                                float mz = pe.mzs[i];
+                                float intensity = pe.intensities[i];
+                                String fragType = pe.fragmentIonTypes[i];
+
+                                if (intensity == maxIntensity) {
+                                    maxIntensityMZ = mz;
+                                }
+
+                                mzs.add(mz);
+                                intensities.add(intensity);
+                                fragTypes.add(fragType);
+                            }
+
+                            float minMZ = maxIntensityMZ - Constants.DaTolerance;
+                            float maxMZ = maxIntensityMZ + Constants.DaTolerance;
+
+                            //add new peaks
+                            //Scale so that max intensity fragment of diann has same intensity as matched fragment in predfull
+                            //TODO: multiply pe2 intensity by (diann max intensity / predfull intensity of matching fragment)
+                            PredictionEntry pe2 = predictedSpectra2.getPreds().get(key);
+                            //if null, convert to base format
+
+                            if ((!Objects.isNull(pe2)) && (!Objects.isNull(pe2.fragmentIonTypes))) {
+                                float matchedFragInt = Constants.modelMaxIntensity.get(modelSplit[1]);
+                                for (int i = 0; i < pe2.mzs.length; i++) {
+                                    float potentialMZ = pe2.mzs[i];
+                                    float potentialInt = pe2.intensities[i];
+                                    if ((potentialMZ >= minMZ) & (potentialMZ <= maxMZ) & (potentialInt > matchedFragInt)) {
+                                        matchedFragInt = potentialInt;
+                                    }
+                                }
+
+                                for (int i = 0; i < pe2.fragmentIonTypes.length; i++) {
+                                    if (!model1FragmentIonTypes.contains(pe2.fragmentIonTypes[i])) {
+                                        mzs.add(pe2.mzs[i]);
+                                        intensities.add(pe2.intensities[i] * maxIntensity / matchedFragInt); //putting intensities on same scale
+                                        fragTypes.add(pe2.fragmentIonTypes[i]);
+                                    }
+                                }
+                            }
+
+                            //convert back to array
+                            float[] mzArray = new float[mzs.size()];
+                            float[] intArray = new float[intensities.size()];
+                            String[] typeArray = new String[fragTypes.size()];
+                            for (int i = 0; i < mzArray.length; i++) {
+                                mzArray[i] = mzs.get(i);
+                                intArray[i] = intensities.get(i);
+                                typeArray[i] = fragTypes.get(i);
+                            }
+
+                            pe.setMzs(mzArray);
+                            pe.setIntensities(intArray);
+                            pe.setFragmentIonTypes(typeArray);
+                            predictedSpectra.getPreds().put(key, pe);
+                        } else { //retain predfull intensities, just add RT from other model
+                            //but if predfull has missing entry, use other model instead
+                            PredictionEntry pe2 = predictedSpectra2.getPreds().get(key);
+                            if (!Objects.isNull(pe2)) {
+                                pe.setMzs(pe2.mzs);
+                                pe.setIntensities(pe2.intensities);
+                                pe.setFragmentIonTypes(pe2.fragmentIonTypes);
+                            }
+                            predictedSpectra.getPreds().put(key, pe);
+                        }
+
+                        predictedSpectra2.getPreds().put(key, null);
+                    }
+                }
+                predictedSpectra2 = null; //free up memory
+            }
+        }
+        //create detectMap to store detectabilities for base sequence peptides
+        //store peptide detectabilities in PredictionEntry
+        DetectMap dm = null;
+        ArrayList<String> dFeatures = new ArrayList<String>(Constants.detectFeatures);
+        dFeatures.retainAll(featuresList);
+        //long startTime = System.nanoTime();
+        if (dFeatures.size() > 0) {
+            dm = new DetectMap(detectFile);
+            HashMap<String, PredictionEntry> allPreds = predictedSpectra.getPreds();
+            for (Map.Entry<String, PredictionEntry> e : allPreds.entrySet()) {
+                e.getValue().setDetectability(dm.getDetectability(
+                        new PeptideFormatter(e.getKey().split("\\|")[0], e.getKey().split("\\|")[1], "pin").stripped));
+            }
+        }
+
+        FastaReader fasta = null;
+
+        if (featuresList.contains("detectFractionGreater") || featuresList.contains("detectSubtractMissing")
+                || featuresList.contains("detectProtSpearmanDiff")) {
+
+            HashMap<String, Integer> pepCounter = new HashMap<>();
+
+            //get all peptides present in pin
+            for (File pinFile : pmMatcher.pinFiles) {
+                PinReader pin = new PinReader(pinFile.getCanonicalPath());
+
+                //add to counter
+                while (pin.next()) {
+                    String pep = pin.getPep().base;
+                    if (pepCounter.containsKey(pep)) {
+                        pepCounter.put(pep, pepCounter.get(pep) + 1);
+                    } else {
+                        pepCounter.put(pep, 1);
+                    }
+                }
+                pin.close();
+            }
+
+            //load fasta
+            if (Constants.getFastaReader() == null) {
+                System.out.println("Creating fasta object");
+                fasta = new FastaReader(Constants.fasta);
+            } else {
+                System.out.println("Loading fasta");
+                fasta = Constants.getFastaReader();
+            }
+
+            System.out.println("Loading detectabilities for unique peptides from each protein");
+            for (Map.Entry<String, ProteinEntry> e : fasta.protToPep.entrySet()) {
+                ArrayList<String> pepList = e.getValue().peptides;
+                float[] protDetects = new float[pepList.size()]; //for storing initial detect order
+
+                //store detect unsorted
+                for (int pep = 0; pep < pepList.size(); pep++) {
+                    protDetects[pep] = dm.getDetectability(pepList.get(pep));
+                }
+
+                //dual pivot quicksort
+                //sorted indices
+                int[] sortedIndices = IntStream.range(0, protDetects.length)
+                        .boxed().sorted((k, j) -> Float.compare(protDetects[k], protDetects[j]))
+                        .mapToInt(ele -> ele).toArray();
+
+                float[] sortedDetect = new float[protDetects.length];
+                for (int j = 0; j < protDetects.length; j++) {
+                    sortedDetect[j] = protDetects[sortedIndices[j]];
+                }
+                e.getValue().detects = sortedDetect;
+
+                //check which peptides present, and get spectral counts
+                float[] protPresence = new float[protDetects.length];
+                float[] pepCounts = new float[protDetects.length];
+                float numPresent = 1f;
+                for (int j = protDetects.length - 1; j > -1; j--) {
+                    String currentPep = pepList.get(sortedIndices[j]);
+
+                    if (pepCounter.containsKey(currentPep)) {
+                        protPresence[j] = numPresent;
+                        numPresent += 1f;
+                        pepCounts[j] = pepCounter.get(currentPep);
+                    }
+                }
+                fasta.protToPep.get(e.getKey()).presence = protPresence;
+                fasta.protToPep.get(e.getKey()).spectralCounts = pepCounts;
+            }
+
+            HashMap<String, PredictionEntry> allPreds = predictedSpectra.getPreds();
+            for (Map.Entry<String, PredictionEntry> e : allPreds.entrySet()) {
+                try {
+                    e.getValue().setCounter(pepCounter.get(e.getKey().split("\\|")[0]));
+                } catch (Exception ee) { //peptide was in a pin file from another run
+                }
+            }
+            dm.clear();
+        }
+        //long endTime = System.nanoTime();
+        //long duration = (endTime - startTime);
+        //System.out.println("Detectability map and formatting loading took " + duration / 1000000 +" milliseconds");
+
+        try {
+            //////////////////////////////iterate through pin and mzml files//////////////////////////////////////////
+            for (int i = 0; i < pinFiles.length; i++) {
+                String newOutfile = pinFiles[i].getAbsolutePath().replaceAll("\\.pin$", "_" + outfile + ".pin");
+
+                //load mzml file
+                System.out.println("Processing " + mzmlFiles[i].getName());
+                MzmlReader mzml;
+                if (mzmlFiles[i].getName().substring( mzmlFiles[i].getName().length() - 3).toLowerCase().equals("mgf")) {
+                    mzml = new MzmlReader(new MgfFileReader(mzmlFiles[i].getCanonicalPath(),
+                            true, executorService, ""));
+                } else {
+                    mzml = new MzmlReader(mzmlFiles[i].getCanonicalPath());
+                }
+
+                //load pin file, which already includes all ranks
+                PinReader pin = new PinReader(pinFiles[i].getCanonicalPath());
+
+                //Special preparations dependent on features we require
+                if (needsMGF) {
+                    mzml.setPinEntries(pin, predictedSpectra);
+                    if (Constants.removeRankPeaks && featuresList.contains("hypergeometricProbability")) {
+                        for (MzmlScanNumber msn : mzml.scanNumberObjects.values()) {
+                            msn.expMZs = msn.savedExpMZs;
+                            msn.expIntensities = msn.savedExpIntensities;
+                            msn.savedExpMZs = null;
+                            msn.savedExpIntensities = null;
+                        }
+                    }
+                }
+                if (featuresList.contains("deltaRTLOESS") || featuresList.contains("deltaRTLOESSnormalized")) {
+                    mzml.setLOESS(Constants.RTregressionSize, Constants.bandwidth, Constants.robustIters, "RT");
+                    mzml.predictRTLOESS(executorService); //potentially only invoke once if normalized included
+
+                    //generate calibration figure, need mzml and loess
+                    if (! Constants.noRTscores) {
+                        RTCalibrationFigure rtfc = new RTCalibrationFigure(mzml, pinFiles[i].getCanonicalPath(), 0.2f);
+                    }
+                }
+                if (featuresList.contains("deltaRTlinear")) {
+                    if (mzml.expAndPredRTs != null) {
+                        mzml.setBetas();
+                    } else { mzml.setBetas(predictedSpectra, Constants.RTregressionSize);
+                    }
+                    mzml.normalizeRTs(executorService);
+                }
+                if (featuresList.contains("deltaRTbins") || featuresList.contains("RTzscore") ||
+                        featuresList.contains("RTprobability") || featuresList.contains("RTprobabilityUnifPrior") ||
+                        featuresList.contains("deltaRTLOESSnormalized")) {
+                    mzml.setRTbins();
+                    mzml.calculateBinStats("RT");
+                }
+                if (featuresList.contains("deltaRTbins") || featuresList.contains("RTzscore")) {
+                    mzml.calculateDeltaRTbinAndRTzscore(executorService);
+                }
+                if (featuresList.contains("deltaRTLOESSnormalized")) {
+                    mzml.calculateDeltaRTLOESSnormalized(executorService);
+                }
+
+                if (featuresList.contains("RTprobabilityUnifPrior")) {
+                    mzml.setRTBinSizes(executorService);
+
+                    //decide how many uniform points to add
+                    int[] binSizes = new int[mzml.RTbins.length];
+                    for (int bin = 0; bin < mzml.RTbins.length; bin++) {
+                        binSizes[bin] = mzml.RTbins[bin].size();
+                    }
+                    Arrays.sort(binSizes);
+                    int cutoff = (int) Math.floor(((double) mzml.RTbins.length / 100.0) * Constants.uniformPriorPercentile);
+                    mzml.unifPriorSize = binSizes[cutoff];
+
+                    //also need uniform probability with right bound of max predicted RT
+                    mzml.unifProb = 1.0f / predictedSpectra.getMaxPredRT(); //TODO: might need to change, if this is ever revisited. Need negative range
+                }
+                if (featuresList.contains("RTprobability") || featuresList.contains("RTprobabilityUnifPrior")) {
+                    mzml.setKernelDensities(executorService, "RT");
+                }
+                if (featuresList.contains("deltaIMLOESS") || featuresList.contains("deltaIMLOESSnormalized")) {
+                    mzml.setLOESS(Constants.IMregressionSize, Constants.bandwidth, Constants.robustIters, "IM");
+                    mzml.predictIMLOESS(executorService);
+                }
+                if (featuresList.contains("deltaIMLOESSnormalized") || featuresList.contains("IMprobabilityUnifPrior")) {
+                    mzml.setIMbins();
+                    mzml.calculateBinStats("IM");
+                }
+                if (featuresList.contains("deltaIMLOESSnormalized")) {
+                    mzml.calculateDeltaIMLOESSnormalized(executorService);
+                }
+
+                if (featuresList.contains("IMprobabilityUnifPrior")) {
+                    mzml.setIMBinSizes(executorService);
+
+                    //decide how many uniform points to add
+                    for (int charge = 0; charge < IMFunctions.numCharges; charge++) {
+                        int[] binSizes = new int[mzml.IMbins[charge].length];
+                        for (int bin = 0; bin < mzml.IMbins[charge].length; bin++) {
+                            binSizes[bin] = mzml.IMbins[charge][bin].size();
+                        }
+                        Arrays.sort(binSizes);
+                        int cutoff = (int) Math.floor(((double) mzml.IMbins[charge].length / 100.0) * Constants.uniformPriorPercentile);
+                        mzml.unifPriorSizeIM[charge] = binSizes[cutoff];
+
+                        //also need uniform probability with right bound of max predicted RT
+                        mzml.unifProbIM[charge] = 1.0f / (2 * Constants.IMbinMultiplier);
+
+                        mzml.setKernelDensities(executorService, "IM");
+                    }
+                }
+
+                System.out.println("Calculating features");
+                FeatureCalculator fc = new FeatureCalculator(pin, featuresList, mzml);
+                fc.calculate();
+
+                System.out.println("Writing features");
+                PinWriter pw = new PinWriter(newOutfile, pin, featuresList, mzml, fc.featureStats);
+                pw.write();
+                if (Constants.renamePin == 1) {
+                    System.out.println("Edited pin file at " + newOutfile);
+                } else { //really should be 0
+                    //move file at newOutfile to pinFiles[i] canonical name
+                    File movedFile = new File(newOutfile);
+                    pinFiles[i].delete();
+                    movedFile.renameTo(pinFiles[i]);
+                }
+            }
+        } catch (Exception e) {
+            executorService.shutdown();
+            e.printStackTrace();
+            System.exit(1);
+        }
+        executorService.shutdown();
+    }
+}

@@ -19,7 +19,7 @@ package Features;
 
 import java.util.ArrayList;
 
-public class floatUtils {
+public class FloatUtils {
     //move to another class if used more often
     public static float[] doubleToFloat(double[] arr){
         float[] newArr = new float[arr.length];

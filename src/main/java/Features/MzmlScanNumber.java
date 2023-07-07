@@ -22,33 +22,36 @@ import umich.ms.datatypes.scan.IScan;
 import umich.ms.datatypes.spectrum.ISpectrum;
 import umich.ms.fileio.exceptions.FileParsingException;
 
-import java.io.IOException;
 import java.util.*;
 
-import static Features.floatUtils.doubleToFloat;
+import static Features.FloatUtils.doubleToFloat;
 
-public class mzmlScanNumber {
+public class MzmlScanNumber {
     final int scanNum;
-    private float[] expMZs;
-    private float[] expIntensities;
+    public float[] expMZs;
+    public float[] expIntensities;
+    public float[] savedExpMZs;
+    public float[] savedExpIntensities;
     float RT;
     int RTbinSize;
     float normalizedRT;
     Float IM;
     int IMbinSize;
     ArrayList<Float> NCEs = new ArrayList<>();
-    ArrayList<peptideObj> peptideObjects = new ArrayList<>();
+    ArrayList<PeptideObj> peptideObjects = new ArrayList<>();
     //double[] mzFreqs;
     public static float[] zeroFloatArray = new float[]{0};
     private static final HashSet<String> nceModels =
             new HashSet<>(Arrays.asList("PredFull", "Prosit", "PrositTMT", "alphapeptdeep"));
 
     //this version if creating from mzml scan number
-    public mzmlScanNumber(IScan scan) throws FileParsingException {
+    public MzmlScanNumber(IScan scan) throws FileParsingException {
         this.scanNum = scan.getNum();
         ISpectrum spectrum = scan.fetchSpectrum();
         this.expMZs = doubleToFloat(spectrum.getMZs());
         this.expIntensities = doubleToFloat(spectrum.getIntensities());
+        this.savedExpMZs = this.expMZs;
+        this.savedExpIntensities = this.expIntensities;
         this.RT = scan.getRt().floatValue();
         if (Constants.useIM) {
             this.IM = scan.getIm().floatValue();
@@ -70,7 +73,7 @@ public class mzmlScanNumber {
     }
 
     //this version if creating from mgf file
-    public mzmlScanNumber(int scanNum, float[] expMZs, float[] expInts, float RT, float IM) {
+    public MzmlScanNumber(int scanNum, float[] expMZs, float[] expInts, float RT, float IM) {
         this.scanNum = scanNum;
         this.expMZs = expMZs;
         this.expIntensities = expInts;
@@ -94,17 +97,17 @@ public class mzmlScanNumber {
             float predRT = predictionEntry.RT;
             float predIM = predictionEntry.IM;
 
-            peptideObj newPepObj;
+            PeptideObj newPepObj;
             if (predMZs.length > 1) {
                 if (Constants.divideFragments.equals("0")) {
-                    newPepObj = new peptideObj(this, name.baseCharge, rank, targetORdecoy, escore, predMZs,
+                    newPepObj = new PeptideObj(this, name.baseCharge, rank, targetORdecoy, escore, predMZs,
                             predIntensities, predRT, predIM);
                 } else {
-                    newPepObj = new peptideObj(this, name.baseCharge, rank, targetORdecoy, escore, predMZs,
+                    newPepObj = new PeptideObj(this, name.baseCharge, rank, targetORdecoy, escore, predMZs,
                             predIntensities, predRT, predIM, predictionEntry.fragmentIonTypes);
                 }
             } else { //only 1 frag to match
-                newPepObj = new peptideObj(this, name.baseCharge, rank, targetORdecoy, escore, zeroFloatArray,
+                newPepObj = new PeptideObj(this, name.baseCharge, rank, targetORdecoy, escore, zeroFloatArray,
                         zeroFloatArray, predRT, predIM);
             }
             peptideObjects.add(rank - 1, newPepObj);
@@ -130,21 +133,21 @@ public class mzmlScanNumber {
             //may need to adapt this if using percolator imputation
             if (name.stripped.contains("U") || name.stripped.contains("O") || name.stripped.contains("X") ||
                     name.stripped.contains("B") || name.stripped.contains("Z") ) {
-                peptideObjects.add(rank - 1, new peptideObj(this, name.baseCharge, rank, targetORdecoy, escore,
+                peptideObjects.add(rank - 1, new PeptideObj(this, name.baseCharge, rank, targetORdecoy, escore,
                         zeroFloatArray, zeroFloatArray, predRT, predIM));
             } else if (name.stripped.length() > 15) { //TODO: update this when longer ones are supported
-                peptideObjects.add(rank - 1, new peptideObj(this, name.baseCharge, rank, targetORdecoy, escore,
+                peptideObjects.add(rank - 1, new PeptideObj(this, name.baseCharge, rank, targetORdecoy, escore,
                         zeroFloatArray, zeroFloatArray, predRT, predIM));
             } else if (name.stripped.length() < 7) { //TODO: update this when shorter ones are supported
-                peptideObjects.add(rank - 1, new peptideObj(this, name.baseCharge, rank, targetORdecoy, escore,
+                peptideObjects.add(rank - 1, new PeptideObj(this, name.baseCharge, rank, targetORdecoy, escore,
                         zeroFloatArray, zeroFloatArray, predRT, predIM));
             } else if (Integer.parseInt(name.charge) > 6) { //TODO: update this for different tools
-                peptideObjects.add(rank - 1, new peptideObj(this, name.baseCharge, rank, targetORdecoy, escore,
+                peptideObjects.add(rank - 1, new PeptideObj(this, name.baseCharge, rank, targetORdecoy, escore,
                         zeroFloatArray, zeroFloatArray, predRT, predIM));
             } else {
                 String[] periodSplit = Constants.spectraRTPredFile.split("\\.");
                 if (periodSplit[periodSplit.length - 1].equals("dlib")) { //won't always include every entry
-                    peptideObjects.add(rank - 1, new peptideObj(this, name.baseCharge, rank, targetORdecoy, escore,
+                    peptideObjects.add(rank - 1, new PeptideObj(this, name.baseCharge, rank, targetORdecoy, escore,
                             zeroFloatArray, zeroFloatArray, predRT, predIM));
                 } else {
                     System.out.println("Prediction missing in file for " + name.baseCharge);
@@ -155,14 +158,14 @@ public class mzmlScanNumber {
         }
     }
 
-    public peptideObj getPeptideObject(int rank) {
+    public PeptideObj getPeptideObject(int rank) {
         return peptideObjects.get(rank - 1);
     } //arraylist now, not hashmap
 
-    public peptideObj getPeptideObject(String name) {
-        peptideObj returnedP = null;
+    public PeptideObj getPeptideObject(String name) {
+        PeptideObj returnedP = null;
 
-        for (peptideObj p : peptideObjects) {
+        for (PeptideObj p : peptideObjects) {
             if (p.name.equals(name)) {
                 return p;
             }

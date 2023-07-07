@@ -27,7 +27,7 @@ import java.util.*;
 //this is what I use in the java jar file
 public class MainClass {
     public static void main(String[] args) throws Exception {
-        System.out.println("MSBooster v1.1.12");
+        System.out.println("MSBooster v1.1.13");
         try {
             //accept command line inputs
             HashSet<String> fields = new HashSet<>();
@@ -288,7 +288,9 @@ public class MainClass {
             Constants.individualSpectralSimilaritiesFeatures = Constants.makeIndividualSpectralSimilarities();
             Constants.intensitiesDifferenceFeatures = Constants.makeintensitiesDifference();
 
-            if (Constants.divideFragments.equals("1")) { //standard setting of yb vs others
+            if (Constants.adaptiveFragmentNum) {
+                Constants.topFragments = 36; //TODO think of better way than hardcoding
+            } else if (Constants.divideFragments.equals("1")) { //standard setting of yb vs others
                 Constants.divideFragments = "y_b;immonium_a_y-NL_b-NL_a-NL_internal_internal-NL_unknown";
                 Constants.topFragments = 12;
             } else if (Constants.divideFragments.equals("2")) {
@@ -304,7 +306,7 @@ public class MainClass {
                 Constants.divideFragments = "b_y_c_z;immonium_a_cdot_zdot_y-NL_b-NL_a-NL_internal_internal-NL_unknown";
                 Constants.topFragments = 12;
             } else if (Constants.divideFragments.equals("0") && Constants.spectraRTPredModel.equals("DIA-NN")) {
-                Constants.topFragments = 12; //may update in future
+                //Constants.topFragments = 12; //may update in future
             }
 
             //defining num threads
@@ -330,7 +332,7 @@ public class MainClass {
             }
 
             Constants.allowedFeatures = Constants.makeAllowedFeatures();
-            String[] featuresArray = Constants.features.split(",");
+            String[] featuresArray = Constants.features.replaceAll("\\s", "").split(",");
             for (String f : featuresArray) {
                 if (!Constants.allowedFeatures.contains(f.trim())) {
                     throw new IllegalArgumentException(f + " is not an allowed feature. " +
@@ -529,32 +531,32 @@ public class MainClass {
                         throw new IllegalArgumentException("path to DIA-NN executable must be provided");
                     }
                     System.out.println("Generating input file for DIA-NN");
-                    peptideFileCreator.createPeptideFile(pmMatcher.pinFiles, Constants.spectraRTPredInput, "Diann");
-                    peptideFileCreator.createPeptideFile(pmMatcher.pinFiles,
+                    PeptideFileCreator.createPeptideFile(pmMatcher.pinFiles, Constants.spectraRTPredInput, "Diann");
+                    PeptideFileCreator.createPeptideFile(pmMatcher.pinFiles,
                             Constants.spectraRTPredInput.substring(0, Constants.spectraRTPredInput.length() - 4) + "_full.tsv",
                             "createFull");
                 } else if (Constants.spectraRTPredModel.equals("pDeep2")) {
                     System.out.println("Generating input file for pDeep2");
-                    peptideFileCreator.createPeptideFile(pmMatcher.pinFiles, Constants.spectraRTPredInput, "pDeep2");
+                    PeptideFileCreator.createPeptideFile(pmMatcher.pinFiles, Constants.spectraRTPredInput, "pDeep2");
                 } else if (Constants.spectraRTPredModel.equals("pDeep3")) {
                     System.out.println("Generating input file for pDeep3");
-                    peptideFileCreator.createPeptideFile(pmMatcher.pinFiles, Constants.spectraRTPredInput, "pDeep3");
+                    PeptideFileCreator.createPeptideFile(pmMatcher.pinFiles, Constants.spectraRTPredInput, "pDeep3");
                 } else if (Constants.spectraRTPredModel.equals("PredFull")) {
                     System.out.println("Generating input file for PredFull");
-                    peptideFileCreator.createPeptideFile(pmMatcher.pinFiles, Constants.spectraRTPredInput, "PredFull");
-                    peptideFileCreator.createPeptideFile(pmMatcher.pinFiles,
+                    PeptideFileCreator.createPeptideFile(pmMatcher.pinFiles, Constants.spectraRTPredInput, "PredFull");
+                    PeptideFileCreator.createPeptideFile(pmMatcher.pinFiles,
                             Constants.spectraRTPredInput.substring(0, Constants.spectraRTPredInput.length() - 4) + "_full.tsv",
                             "createFull");
                 } else if (Constants.spectraRTPredModel.equals("Prosit")) {
                     System.out.println("Generating input file for Prosit");
-                    peptideFileCreator.createPeptideFile(pmMatcher.pinFiles, Constants.spectraRTPredInput, "Prosit");
-                    peptideFileCreator.createPeptideFile(pmMatcher.pinFiles,
+                    PeptideFileCreator.createPeptideFile(pmMatcher.pinFiles, Constants.spectraRTPredInput, "Prosit");
+                    PeptideFileCreator.createPeptideFile(pmMatcher.pinFiles,
                             Constants.spectraRTPredInput.substring(0, Constants.spectraRTPredInput.length() - 4) + "_full.tsv",
                             "createFull");
                 } else if (Constants.spectraRTPredModel.equals("PrositTMT")) {
                     System.out.println("Generating input file for PrositTMT");
-                    peptideFileCreator.createPeptideFile(pmMatcher.pinFiles, Constants.spectraRTPredInput, "PrositTMT");
-                    peptideFileCreator.createPeptideFile(pmMatcher.pinFiles,
+                    PeptideFileCreator.createPeptideFile(pmMatcher.pinFiles, Constants.spectraRTPredInput, "PrositTMT");
+                    PeptideFileCreator.createPeptideFile(pmMatcher.pinFiles,
                             Constants.spectraRTPredInput.substring(0, Constants.spectraRTPredInput.length() - 4) + "_full.tsv",
                             "createFull");
                 } else if (Constants.spectraRTPredModel.equals("DIA-NN,PredFull")) {
@@ -562,12 +564,12 @@ public class MainClass {
                         throw new IllegalArgumentException("path to DIA-NN executable must be provided");
                     }
                     System.out.println("Generating input file for DIA-NN");
-                    peptideFileCreator.createPeptideFile(pmMatcher.pinFiles, Constants.spectraRTPredInput, "Diann");
+                    PeptideFileCreator.createPeptideFile(pmMatcher.pinFiles, Constants.spectraRTPredInput, "Diann");
                     //does this need createfull?
                 } else if (Constants.spectraRTPredModel.equals("alphapeptdeep")) {
                     System.out.println("Generating input file for alphapeptdeep");
-                    peptideFileCreator.createPeptideFile(pmMatcher.pinFiles, Constants.spectraRTPredInput, "alphapeptdeep");
-                    peptideFileCreator.createPeptideFile(pmMatcher.pinFiles,
+                    PeptideFileCreator.createPeptideFile(pmMatcher.pinFiles, Constants.spectraRTPredInput, "alphapeptdeep");
+                    PeptideFileCreator.createPeptideFile(pmMatcher.pinFiles,
                             Constants.spectraRTPredInput.substring(0, Constants.spectraRTPredInput.length() - 4) + "_full.tsv",
                             "createFull");
                 } else {
@@ -602,7 +604,7 @@ public class MainClass {
             if (Constants.spectraRTPredModel.contains("PredFull")) {
                 Constants.matchWithDaltons = true; //they report predictions in bins
             }
-            percolatorFormatter.editPin(pmMatcher, Constants.spectraRTPredFile, Constants.detectPredFile, featuresArray, Constants.editedPin);
+            PercolatorFormatter.editPin(pmMatcher, Constants.spectraRTPredFile, Constants.detectPredFile, featuresArray, Constants.editedPin);
 
             //print parameters to ps
             //printParamsPS();

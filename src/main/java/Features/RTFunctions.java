@@ -17,7 +17,6 @@
 
 package Features;
 
-import umontreal.ssj.gof.KernelDensity;
 import umontreal.ssj.probdist.EmpiricalDist;
 
 import java.io.IOException;
@@ -50,7 +49,7 @@ public class RTFunctions {
     //given mzmlreader, get all peptide objects and their RTs
     //get predicted RTs
     //assumes peptide objects already set
-    public static float[] getBetas(mzMLReader mzml, int RTregressionSize) {
+    public static float[] getBetas(MzmlReader mzml, int RTregressionSize) {
         double[][] RTs = getRTarrays(mzml, RTregressionSize);
         return StatMethods.linearRegression(RTs[0], RTs[1]);
     }
@@ -62,7 +61,7 @@ public class RTFunctions {
     //utility for getBetas and LOESS
     //returns exp and pred RT arrays
     //if speed is issue, don't need extra steps for regular regression
-    public static double[][] getRTarrays(mzMLReader mzml, int RTregressionSize) {
+    public static double[][] getRTarrays(MzmlReader mzml, int RTregressionSize) {
         ArrayList<Float> expRTs = new ArrayList<>();
         ArrayList<Float> predRTs = new ArrayList<>();
         ArrayList<Float> eScores = new ArrayList<>(); //for sorting
@@ -71,7 +70,7 @@ public class RTFunctions {
 
         int added = 0;
         for (int scanNum : new TreeSet<Integer>(mzml.scanNumberObjects.keySet())) {
-            mzmlScanNumber scanNumObj = mzml.getScanNumObject(scanNum);
+            MzmlScanNumber scanNumObj = mzml.getScanNumObject(scanNum);
             float rt = scanNumObj.RT; //experimental RT for this scan
             if (Float.isNaN(rt)) {
                 continue;
@@ -84,9 +83,9 @@ public class RTFunctions {
             if (scanNumObj.peptideObjects.size() == 0) {
                 continue;
             }
-            peptideObj pep = scanNumObj.getPeptideObject(1);
+            PeptideObj pep = scanNumObj.getPeptideObject(1);
 
-            if (pep.spectralSimObj.predMZs[0] == 0f) { //what it is set to if no entry
+            if (pep.spectralSimObj.predIntensities[0] == 0f) { //what it is set to if no entry
                 continue;
             }
             float e = Float.parseFloat(pep.escore);
@@ -113,14 +112,14 @@ public class RTFunctions {
             Constants.RTescoreCutoff = Float.MAX_VALUE;
             added = 0;
             for (int scanNum : new TreeSet<Integer>(mzml.scanNumberObjects.keySet())) {
-                mzmlScanNumber scanNumObj = mzml.getScanNumObject(scanNum);
+                MzmlScanNumber scanNumObj = mzml.getScanNumObject(scanNum);
                 float rt = scanNumObj.RT; //experimental RT for this scan
 
                 //add RT until you reach decoy
                 //when doing good regression, decoys don't appear, so once decoy appears, expectation score is already too low
 
                 for (int i = 1; i < scanNumObj.peptideObjects.size() + 1; i++) {
-                    peptideObj pep = scanNumObj.getPeptideObject(i);
+                    PeptideObj pep = scanNumObj.getPeptideObject(i);
 
                     float e = Float.parseFloat(pep.escore);
                     expRTs.add(rt);
@@ -229,10 +228,10 @@ public class RTFunctions {
     //function that returns double[] of bin boundaries, with mean and var od each
     //exp on x axis, pred on y
     //to do: test for normal dist nature of each bin (Shapiro Wilk test)
-    public static ArrayList<Float>[] RTbins(mzMLReader mzml) throws IOException {
+    public static ArrayList<Float>[] RTbins(MzmlReader mzml) throws IOException {
         //get max index
         float maxRT = -1;
-        for (mzmlScanNumber msn : mzml.scanNumberObjects.values()) {
+        for (MzmlScanNumber msn : mzml.scanNumberObjects.values()) {
             if (msn.RT > maxRT) {
                 maxRT = msn.RT;
             }
@@ -246,12 +245,12 @@ public class RTFunctions {
 
         //iterate through scanNumbers
         for (int scanNum : mzml.scanNumberObjects.keySet()) {
-            mzmlScanNumber scanNumObj = mzml.getScanNumObject(scanNum);
+            MzmlScanNumber scanNumObj = mzml.getScanNumObject(scanNum);
             int round = (int) (scanNumObj.RT *  Constants.RTbinMultiplier); //experimental RT for this scan, assume in minutes
 
             //iterate through PSMs
             for (int i = 1; i < scanNumObj.peptideObjects.size() + 1; i++) {
-                peptideObj pep = scanNumObj.getPeptideObject(i);
+                PeptideObj pep = scanNumObj.getPeptideObject(i);
 
                 int instances = Math.max(1, -1 * (int) Math.ceil(Math.log10(Double.parseDouble(pep.escore)))); //this version avoids empty bins
                 for (int j = 0; j < instances; j++) {
@@ -281,7 +280,7 @@ public class RTFunctions {
             if (needToSort) {
                 Collections.sort(bin);
             }
-            return new EmpiricalDist(floatUtils.floatToDouble(bin));
+            return new EmpiricalDist(FloatUtils.floatToDouble(bin));
         } else if (binSize == 1) {
             return new EmpiricalDist(new double[]{(double) bin.get(0), (double) bin.get(0)});
         } else {

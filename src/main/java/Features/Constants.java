@@ -17,6 +17,8 @@
 
 package Features;
 
+import org.apache.commons.math3.random.Well19937c;
+
 import java.io.File;
 import java.util.*;
 
@@ -126,6 +128,8 @@ public class Constants {
     public static Float percentBasePeak = 1f;
     //public static Boolean sqrtPredIntensities = false;
     //public static Float percentBasePeakExperimental = 1f;
+    public static Boolean normalizeScoresByPeptideLength = true;
+    //public static Well19937c rng = new Well19937c(123);
 
     public static final Integer fineTuneSize = 100; //for generating a finetune file for pDeep3
 

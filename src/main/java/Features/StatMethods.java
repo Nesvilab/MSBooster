@@ -30,6 +30,58 @@ import java.util.*;
 import java.util.stream.IntStream;
 
 public class StatMethods {
+
+    long meanCounts = 0;
+    long medianCounts = 0;
+    double mean = 0;
+    double M2 = 0;
+    TreeMap<Double, Integer> medianHist = new TreeMap<>();
+    final int medianBins = 10000;
+    Double std = Double.NaN;
+    Double median = Double.NaN;
+
+    public StatMethods() {}
+
+    public void updateVariance(double x) {
+        meanCounts += 1;
+        double delta = x - mean;
+        mean += delta / meanCounts;
+        M2 += delta * (x - mean);
+    }
+
+    public double getMean() {
+        return mean;
+    }
+
+    public double getStd() {
+        std = Math.sqrt(M2 / (meanCounts - 1));
+        return std;
+    }
+
+    public void updateMedian(double x) {
+        double key = Math.floor(x * medianBins);
+        if (medianHist.containsKey(key)) {
+            medianHist.put(key, medianHist.get(key) + 1);
+        } else {
+            medianHist.put(key, 0);
+        }
+        medianCounts += 1;
+    }
+
+    public double getMedian() {
+        int goal = (int) (medianCounts / 2);
+        int counts = 0;
+        for (Map.Entry<Double, Integer> entry : medianHist.entrySet()) {
+            counts += entry.getValue();
+            if (counts >= goal) {
+                median = entry.getKey() / medianBins;
+                medianHist.clear();
+                break;
+            }
+        }
+        return median;
+    }
+
     public static float mean(double[] vector) {
         float meanX = 0;
         for (double x : vector) {

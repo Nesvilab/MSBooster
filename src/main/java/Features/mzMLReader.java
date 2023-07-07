@@ -53,6 +53,10 @@ public class mzMLReader {
     public ArrayList<Float>[] RTbins = null;
     public float[][] RTbinStats;
     public Function1<Double, Double> RTLOESS;
+    public int unifPriorSize;
+    public float unifProb;
+    public int[] unifPriorSizeIM;
+    public float[] unifProbIM;
     public ArrayList<Float>[][] IMbins = null;
     public float[][][] IMbinStats = new float[IMFunctions.numCharges][2 * Constants.IMbinMultiplier + 1][3];
     private ArrayList<Function1<Double, Double>> IMLOESS = new ArrayList<>();
@@ -272,13 +276,17 @@ public class mzMLReader {
         HashMap<String, PredictionEntry> allPreds = spm.getPreds();
         int linesRead = 1;
         int currentPercent = Constants.loadingPercent;
+        long startTime = System.nanoTime();
         while (pin.next()) {
             try {
                 scanNumberObjects.get(pin.getScanNum()).setPeptideObject(pin.getPep(), pin.getRank(), pin.getTD(), pin.getEScore(),
                         allPreds);
                 linesRead += 1;
                 if (linesRead > pin.length * currentPercent / 100) {
-                    System.out.print("..." + currentPercent + "%");
+                    long endTime = System.nanoTime();
+                    System.out.print((endTime - startTime) / 1000000000  + "sec..." + currentPercent + "%");
+                    startTime = System.nanoTime();
+                    //System.out.print("..." + currentPercent + "%");
                     currentPercent += Constants.loadingPercent;
                 }
             } catch (Exception e) {

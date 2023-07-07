@@ -37,7 +37,7 @@ public class MzmlScanNumber {
     float normalizedRT;
     Float IM;
     int IMbinSize;
-    ArrayList<Float> NCEs = new ArrayList<>();
+    HashMap<String, Float> NCEs = new HashMap<>();
     ArrayList<PeptideObj> peptideObjects = new ArrayList<>();
     //double[] mzFreqs;
     public static float[] zeroFloatArray = new float[]{0};
@@ -61,10 +61,15 @@ public class MzmlScanNumber {
             if (nceInfo.length > 1) {
                 for (String s : Arrays.copyOfRange(nceInfo, 1, nceInfo.length)) {
                     String fragmentationInfo = s.split(" ")[0];
+                    StringBuilder fragmentationType = new StringBuilder();
                     for (int i = 0; i < fragmentationInfo.length(); i++) {
-                        if (Character.isDigit(fragmentationInfo.charAt(i))) {
-                            NCEs.add(Float.parseFloat(fragmentationInfo.substring(i)));
+                        char myChar = fragmentationInfo.charAt(i);
+                        if (Character.isDigit(myChar)) {
+                            NCEs.put(fragmentationType.toString().toUpperCase(),
+                                    Float.parseFloat(fragmentationInfo.substring(i)));
                             break;
+                        } else {
+                            fragmentationType.append(myChar);
                         }
                     }
                 }

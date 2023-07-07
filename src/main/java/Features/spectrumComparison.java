@@ -19,6 +19,7 @@ package Features;
 
 import org.apache.commons.lang3.ArrayUtils;
 import org.apache.commons.math3.distribution.HypergeometricDistribution;
+import org.apache.commons.math3.random.Well19937c;
 import org.apache.commons.math3.stat.correlation.PearsonsCorrelation;
 import org.apache.commons.math3.stat.correlation.SpearmansCorrelation;
 import umich.ms.fileio.exceptions.FileParsingException;
@@ -39,6 +40,7 @@ public class spectrumComparison {
     float[] sum1MatchedIntensities;
     float[] sum1PredIntensities;
     float[] allMatchedIntensities;
+    HashMap<String, Double> scores = new HashMap<>();
     int length;
     int matchedIons;
     LinkedHashSet<Integer> matchedIdx = new LinkedHashSet<Integer>();
@@ -47,6 +49,7 @@ public class spectrumComparison {
     private static PearsonsCorrelation pc = new PearsonsCorrelation();
     private static SpearmansCorrelation sc = new SpearmansCorrelation();
     public ArrayList<spectrumComparison> spectrumComparisons = new ArrayList<>();
+    public static Well19937c rng = new Well19937c(123);
 
     public peptideObj pepObj;
     ArrayList<Integer> sortedIndicesList = new ArrayList<>();
@@ -335,6 +338,34 @@ public class spectrumComparison {
         }
         return matchedInts;
     }
+
+    private void getAllMatchedIntensities() {
+        if (allMatchedIntensities == null) {
+            MassCalculator mc = new MassCalculator(pepObj.name.split("\\|")[0], pepObj.charge);
+            //calculate y and b m/zs
+            float[] mzs = new float[4 * (mc.peptide.length() - 1)];
+            String[] flags = {"y", "b"};
+            int i = 0;
+            for (int num = 1; num < mc.peptide.length(); num++) {
+                for (int charge = 1; charge < 3; charge++) {
+                    for (String flag : flags) {
+                        mzs[i] = mc.calcMass(num, flag, charge);
+                        i += 1;
+                    }
+                }
+            }
+            //sort
+            Arrays.sort(mzs);
+
+            //modify getMatchedIntensities to be more general, get how many nonzero matched intensities
+            //don't need length anymore?
+            matchedIdx.clear();
+
+            allMatchedIntensities = getMatchedIntensities(pepObj.scanNumObj.getExpMZs(), pepObj.scanNumObj.getExpIntensities(),
+                    mzs, new float[mzs.length]);
+        }
+    }
+
 
     public double[] getWeights(double[] freqs) {
         //will need to use predMZs
@@ -775,34 +806,6 @@ public class spectrumComparison {
         return 1 - ( ((2 * spectralEntropy(SabVector)) - spectralEntropy(sum1MatchedIntensities) - spectralEntropy(sum1PredIntensities)) / Math.log(4));
     }
 
-    private void getAllMatchedIntensities() {
-        if (allMatchedIntensities == null) {
-            MassCalculator mc = new MassCalculator(pepObj.name.split("\\|")[0], pepObj.charge);
-            //calculate y and b m/zs
-            float[] mzs = new float[4 * (mc.peptide.length() - 1)];
-            String[] flags = {"y", "b"};
-            int i = 0;
-            for (int num = 1; num < mc.peptide.length(); num++) {
-                for (int charge = 1; charge < 3; charge++) {
-                    for (String flag : flags) {
-                        mzs[i] = mc.calcMass(num, flag, charge);
-                        i += 1;
-                    }
-                }
-            }
-            //sort
-            Arrays.sort(mzs);
-
-
-            //modify getMatchedIntensities to be more general, get how many nonzero matched intensities
-            //don't need length anymore?
-            matchedIdx.clear();
-
-            allMatchedIntensities = getMatchedIntensities(pepObj.scanNumObj.getExpMZs(), pepObj.scanNumObj.getExpIntensities(),
-                    mzs, new float[mzs.length]);
-        }
-    }
-
     public double hyperGeometricProbability() {
         this.getAllMatchedIntensities();
         matchedIons = 0;
@@ -822,7 +825,7 @@ public class spectrumComparison {
         float[] predI = vectors[0];
         float[] matchedI = vectors[1];
 
-        HypergeometricDistribution hgd = new HypergeometricDistribution(4 * (length - 1), matchedIons, predI.length);
+        HypergeometricDistribution hgd = new HypergeometricDistribution(rng, 4 * (length - 1), matchedIons, predI.length);
         int successes = 0;
         for (float f : matchedI) {
             if (f != 0) {

@@ -38,6 +38,8 @@ public class peptideObj {
     double calibratedRT;
     double deltaIMLOESS;
     double deltaIMLOESSnormalized;
+    double IMprobabilityUnifPrior;
+    double RTprobabilityUnifPrior;
     Float IM;
     double IMprob;
     //float[] predMZs;
@@ -60,6 +62,7 @@ public class peptideObj {
     HashMap<String, Float> individualSpectralSimilarities = baseMap;
 
     spectrumComparison spectralSimObj;
+    double intensity_distribution_similarity;
 
     public peptideObj(mzmlScanNumber scanNumObj, String name, int rank, int targetORdecoy, String escore,
                       float[] predMZs, float[] predIntensities, float predRT, Float predIM) {
@@ -237,6 +240,31 @@ public class peptideObj {
                         (float) new spectrumComparison(this, expMZs, expIntensities,
                                 subsetPredMZsArray, subsetPredIntsArray, this.length,//doesn't really make sense to use hypergeo here
                                 Constants.useTopFragments, false).unweightedSpectralEntropy()); //already did base peak intensity filtering
+            }
+        }
+    }
+
+    public void clearArrays() {
+        if (spectralSimObj.spectrumComparisons.size() == 0) {
+            spectralSimObj.predMZs = null;
+            spectralSimObj.predIntensities = null;
+            spectralSimObj.matchedIntensities = null;
+            spectralSimObj.unitNormMatchedIntensities = null;
+            spectralSimObj.unitNormPredIntensities = null;
+            spectralSimObj.sum1MatchedIntensities = null;
+            spectralSimObj.sum1PredIntensities = null;
+            spectralSimObj.allMatchedIntensities = null;
+        } else {
+            String[] dividedFragments = Constants.divideFragments.split(";");
+            for (int j = 0; j < dividedFragments.length; j++) {
+                spectralSimObj.spectrumComparisons.get(j).predMZs = null;
+                spectralSimObj.spectrumComparisons.get(j).predIntensities = null;
+                spectralSimObj.spectrumComparisons.get(j).matchedIntensities = null;
+                spectralSimObj.spectrumComparisons.get(j).unitNormMatchedIntensities = null;
+                spectralSimObj.spectrumComparisons.get(j).unitNormPredIntensities = null;
+                spectralSimObj.spectrumComparisons.get(j).sum1MatchedIntensities = null;
+                spectralSimObj.spectrumComparisons.get(j).sum1PredIntensities = null;
+                spectralSimObj.spectrumComparisons.get(j).allMatchedIntensities = null;
             }
         }
     }

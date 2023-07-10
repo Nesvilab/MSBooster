@@ -128,15 +128,15 @@ public class MassCalculator {
 
     public void initializeSeries(String s) {
         double[] mySeries = new double[peptide.length() - 1];
+        mySeries[0] = calcMass(1, s, 1) - proton;
+
         if (leftIons.contains(s)) {
-            mySeries[0] = calcMass(1, s, 1) - proton;
             for (int i = 1; i < peptide.length() - 1; i++) {
                 mySeries[i] = (mySeries[i - 1] + AAmap.get(this.peptide.charAt(i)) + modMasses.get(i + 1));
             }
         } else {
-            mySeries[peptide.length() - 2] = calcMass(1, s, 1) - proton;
-            for (int i = peptide.length() - 3; i > -1; i--) {
-                mySeries[i] = (mySeries[i + 1] + AAmap.get(this.peptide.charAt(i + 1)) + modMasses.get(i + 2));
+            for (int i = peptide.length() - 3; i > -1; i--) { //TODO this is so f'ing convoluted
+                mySeries[peptide.length() - i - 2] = (mySeries[peptide.length() - i - 3] + AAmap.get(this.peptide.charAt(i + 1)) + modMasses.get(i + 2));
             }
         }
         series.put(s, mySeries);

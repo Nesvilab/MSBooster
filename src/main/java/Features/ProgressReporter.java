@@ -29,7 +29,7 @@ public class ProgressReporter {
         startTime = System.nanoTime();
     }
 
-    public void progress() {
+    public int progress() {
         linesRead += 1;
         if (linesRead > iterations * currentPercent / 100) {
             long endTime = System.nanoTime();
@@ -37,5 +37,6 @@ public class ProgressReporter {
             startTime = System.nanoTime();
             currentPercent += Constants.loadingPercent;
         }
+        return currentPercent;
     }
 }

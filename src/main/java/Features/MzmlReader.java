@@ -47,7 +47,7 @@ public class MzmlReader {
                       //similarity measures might be calculated using different weights. If you want to use different
                       //weights, just make new mzmlReader object
 
-    HashMap<Integer, MzmlScanNumber> scanNumberObjects = new HashMap<>();
+    TreeMap<Integer, MzmlScanNumber> scanNumberObjects = new TreeMap<>();
     List<Integer> scanNums;
     private float[] betas;
     public ArrayList<Float>[] RTbins = null;
@@ -92,7 +92,7 @@ public class MzmlReader {
         // will be able to reclaim it.
         scans.loadData(LCMSDataSubset.MS2_WITH_SPECTRA);
         Constants.useIM = false;
-        scanNumberObjects = new HashMap<>(scans.getScanCount());
+        scanNumberObjects = new TreeMap<>();
         createScanNumObjects(); //seems like we always need this anyway
 
         scanNums = new ArrayList<>(scanNumberObjects.size());
@@ -276,12 +276,16 @@ public class MzmlReader {
         HashMap<String, PredictionEntry> allPreds = spm.getPreds();
 
         ProgressReporter pr = new ProgressReporter(pin.length);
+        int current = 0;
         while (pin.next()) {
             try {
                 scanNumberObjects.get(pin.getScanNum()).setPeptideObject(pin.getPep(), pin.getRank(), pin.getTD(), pin.getEScore(),
                         allPreds);
 
-                pr.progress();
+                current = pr.progress();
+//                if (current == 20) {
+//                    break;
+//                }
             } catch (Exception e) {
                 e.printStackTrace();
                 System.exit(1);

@@ -20,7 +20,7 @@ package Features;
 import java.util.*;
 
 public class MassCalculator {
-    private final float proton = 1.00727647f;
+    public final float proton = 1.00727647f;
     private final float H = 1.0078250321f;
     private final float O = 15.9949146221f;
     private final float C = 12.000000f;

@@ -17,6 +17,9 @@
 
 package Features;
 
+import com.google.common.collect.Range;
+import com.google.common.collect.RangeMap;
+import com.google.common.collect.TreeRangeMap;
 import org.apache.commons.lang3.ArrayUtils;
 import umich.ms.fileio.exceptions.FileParsingException;
 
@@ -31,6 +34,7 @@ import java.util.stream.IntStream;
 
 public class PercolatorFormatter {
 
+    static HashMap<String, PredictionEntry> allPreds;
     //set mgf or detectFile as null if not applicable
     //baseNames is the part before mzml or pin extensions
     public static void editPin(String pinDirectory, String mzmlDirectory, String mgf, String detectFile,
@@ -86,6 +90,7 @@ public class PercolatorFormatter {
                     predictedSpectra = SpectralPredictionMapper.createSpectralPredictionMapper(
                             mgf, Constants.spectraRTPredModel, executorService);
                 }
+                allPreds = predictedSpectra.getPreds();
             } else if (mgfSplit.length == 2){ //if fragment from predfull is not y/b, add.
                                               //Prosit/diann is first, predfull second
                 String[] modelSplit = Constants.spectraRTPredModel.split(",");
@@ -105,13 +110,14 @@ public class PercolatorFormatter {
 
                 //get all possible keys from both preds1 and preds2
                 Set<String> totalKeyset = new HashSet<String>();
-                totalKeyset.addAll(predictedSpectra.getPreds().keySet());
+                allPreds = predictedSpectra.getPreds();
+                totalKeyset.addAll(allPreds.keySet());
                 totalKeyset.addAll(predictedSpectra2.getPreds().keySet());
                 float maxIntensity = Constants.modelMaxIntensity.get(modelSplit[0]);
 
                 //check what fragment ion types have been predicted by model 1
                 HashSet<String> model1FragmentIonTypes = new HashSet<>();
-                for (PredictionEntry pe : predictedSpectra.getPreds().values()) {
+                for (PredictionEntry pe : allPreds.values()) {
                     if (pe.fragmentIonTypes == null) {
                         pe.setFragmentIonTypes();
                     }
@@ -123,9 +129,9 @@ public class PercolatorFormatter {
 //                        predictedSpectra.getPreds().remove(entry.getKey());
 //                        //continue; //DIA-NN may still have the prediction
 //                    }
-                    PredictionEntry pe = predictedSpectra.getPreds().get(key);
+                    PredictionEntry pe = allPreds.get(key);
                     if (pe == null) { //missing in prosit/diann
-                        predictedSpectra.getPreds().put(key, predictedSpectra2.getPreds().get(key));
+                        allPreds.put(key, predictedSpectra2.getPreds().get(key));
                     } else { //add non-y/b ions
                         ArrayList<Float> mzs = new ArrayList<>();
                         ArrayList<Float> intensities = new ArrayList<>();
@@ -190,7 +196,7 @@ public class PercolatorFormatter {
                             pe.setMzs(mzArray);
                             pe.setIntensities(intArray);
                             pe.setFragmentIonTypes(typeArray);
-                            predictedSpectra.getPreds().put(key, pe);
+                            allPreds.put(key, pe);
                         } else { //retain predfull intensities, just add RT from other model
                             //but if predfull has missing entry, use other model instead
                             PredictionEntry pe2 = predictedSpectra2.getPreds().get(key);
@@ -199,7 +205,7 @@ public class PercolatorFormatter {
                                 pe.setIntensities(pe2.intensities);
                                 pe.setFragmentIonTypes(pe2.fragmentIonTypes);
                             }
-                            predictedSpectra.getPreds().put(key, pe);
+                            allPreds.put(key, pe);
                         }
 
                         predictedSpectra2.getPreds().put(key, null);
@@ -216,7 +222,6 @@ public class PercolatorFormatter {
         //long startTime = System.nanoTime();
         if (dFeatures.size() > 0) {
             dm = new DetectMap(detectFile);
-            HashMap<String, PredictionEntry> allPreds = predictedSpectra.getPreds();
             for (Map.Entry<String, PredictionEntry> e : allPreds.entrySet()) {
                 e.getValue().setDetectability(dm.getDetectability(
                         new PeptideFormatter(e.getKey().split("\\|")[0], e.getKey().split("\\|")[1], "pin").stripped));
@@ -294,7 +299,6 @@ public class PercolatorFormatter {
                 fasta.protToPep.get(e.getKey()).spectralCounts = pepCounts;
             }
 
-            HashMap<String, PredictionEntry> allPreds = predictedSpectra.getPreds();
             for (Map.Entry<String, PredictionEntry> e : allPreds.entrySet()) {
                 try {
                     e.getValue().setCounter(pepCounter.get(e.getKey().split("\\|")[0]));
@@ -328,12 +332,48 @@ public class PercolatorFormatter {
                 //Special preparations dependent on features we require
                 if (needsMGF) {
                     mzml.setPinEntries(pin, predictedSpectra);
-                    if (Constants.removeRankPeaks && featuresList.contains("hypergeometricProbability")) {
+                    //these require all experimental peaks before removing higher rank peaks
+                    if (Constants.removeRankPeaks &&
+                            (featuresList.contains("hypergeometricProbability") ||
+                                    featuresList.contains("intersection") ||
+                                    featuresList.contains("adjacentSimilarity"))) {
                         for (MzmlScanNumber msn : mzml.scanNumberObjects.values()) {
                             msn.expMZs = msn.savedExpMZs;
                             msn.expIntensities = msn.savedExpIntensities;
                             msn.savedExpMZs = null;
                             msn.savedExpIntensities = null;
+                        }
+                        Constants.removeRankPeaks = false;
+                    }
+                    if (featuresList.contains("adjacentSimilarity")) {
+                        //use rangemap from guava
+                        RangeMap<Double, Integer> mzRange = TreeRangeMap.create();
+                        for (MzmlScanNumber msn : mzml.scanNumberObjects.values()) {
+                            for (PeptideObj pObj : msn.peptideObjects) {
+                                //optionally, make sure pObj.mass is in the range of this msn's scan range
+                                Integer previousScan = mzRange.get(pObj.precursorMz);
+                                if (previousScan != null) {
+                                    pObj.previousScan = previousScan;
+                                }
+                            }
+
+                            //this is the most recent scan that spanned this range
+                            mzRange.put(Range.open(msn.scanLower, msn.scanUpper), msn.scanNum);
+                        }
+
+                        //repeat in opposite direction?
+                        mzRange = TreeRangeMap.create();
+                        for (MzmlScanNumber msn : mzml.scanNumberObjects.descendingMap().values()) {
+                            for (PeptideObj pObj : msn.peptideObjects) {
+                                //optionally, make sure pObj.mass is in the range of this msn's scan range
+                                Integer nextScan = mzRange.get(pObj.precursorMz);
+                                if (nextScan != null) {
+                                    pObj.nextScan = nextScan;
+                                }
+                            }
+
+                            //this is the most recent scan that spanned this range
+                            mzRange.put(Range.open(msn.scanLower, msn.scanUpper), msn.scanNum);
                         }
                     }
                 }

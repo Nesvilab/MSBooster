@@ -23,8 +23,11 @@ public class PeptideObj {
     final String name;
     final int charge;
     final int rank;
+    double precursorMz;
     final MzmlScanNumber scanNumObj;
     final int scanNum;
+    int previousScan;
+    int nextScan;
     final int targetORdecoy;
     final int length;
     final String escore;

@@ -27,8 +27,8 @@ public class FeatureCalculator {
     HashMap<String, HashMap<Integer, StatMethods>> featureStats = new HashMap<>();
 
     final Set<String> supportedFeatures = new HashSet<>(Arrays.asList("intersection",
-            "hypergeometricProbability", "unweightedSpectralEntropy"));
-    final Set<String> medianMethods = new HashSet<>(Arrays.asList("intersection", "unweightedSpectralEntropy"));
+            "hypergeometricProbability", "unweightedSpectralEntropy", "adjacentSimilarity"));
+    final Set<String> medianMethods = new HashSet<>(Arrays.asList("intersection", "unweightedSpectralEntropy", "adjacentSimilarity"));
     final Set<String> zscoreMethods = new HashSet<>(Arrays.asList("hypergeometricProbability"));
 
 
@@ -377,6 +377,49 @@ public class FeatureCalculator {
                                         feature, pepObj.spectralSimObj.spectrumComparisons.get(j).unweightedSpectralEntropy()
                                 );
                             }
+                        }
+                        break;
+                    case "adjacentSimilarity":
+                        double score = 0;
+                        int divisor = 0;
+                        ArrayList<Double> scores = new ArrayList<>();
+
+                        int previous = pepObj.previousScan;
+                        if (previous != 0) {
+                            MzmlScanNumber msn = mzml.scanNumberObjects.get(previous);
+                            PredictionEntry pe = PercolatorFormatter.allPreds.get(pepObj.name);
+                            SpectrumComparison sc = new SpectrumComparison(msn.getExpMZs(), msn.getExpIntensities(),
+                                    pe.mzs, pe.intensities, pepObj.length,
+                                    Constants.useTopFragments, Constants.useBasePeak);
+                            score += sc.unweightedSpectralEntropy();
+                            scores.add(sc.unweightedSpectralEntropy());
+//                            sc = new SpectrumComparison(mzml.scanNumberObjects.get(pepObj.scanNum).getExpMZs(),
+//                                    mzml.scanNumberObjects.get(pepObj.scanNum).getExpIntensities(),
+//                                    pe.mzs, pe.intensities, pepObj.length,
+//                                    Constants.useTopFragments, Constants.useBasePeak);
+//                            if (sc.unweightedSpectralEntropy() - score < 0) {
+//                                System.out.println(pepObj.name);
+//                            }
+                            divisor += 1;
+                        }
+
+                        int next = pepObj.nextScan;
+                        if (next != 0) {
+                            MzmlScanNumber msn = mzml.scanNumberObjects.get(next);
+                            PredictionEntry pe = PercolatorFormatter.allPreds.get(pepObj.name);
+                            SpectrumComparison sc = new SpectrumComparison(msn.getExpMZs(), msn.getExpIntensities(),
+                                    pe.mzs, pe.intensities, pepObj.length,
+                                    Constants.useTopFragments, Constants.useBasePeak);
+                            score += sc.unweightedSpectralEntropy();
+                            scores.add(sc.unweightedSpectralEntropy());
+                            divisor += 1;
+                        }
+
+                        if (divisor == 0) { //TODO: why are they missing so deep into RT?
+                            pepObj.spectralSimObj.scores.put(feature, 0d);
+                        } else {
+                            //pepObj.spectralSimObj.scores.put(feature, score / divisor);
+                            pepObj.spectralSimObj.scores.put(feature, Collections.max(scores));
                         }
                         break;
                     case "deltaIMLOESS":

@@ -19,6 +19,7 @@ package Features;
 
 import org.apache.commons.lang3.ArrayUtils;
 import umich.ms.datatypes.scan.IScan;
+import umich.ms.datatypes.scan.props.PrecursorInfo;
 import umich.ms.datatypes.spectrum.ISpectrum;
 import umich.ms.fileio.exceptions.FileParsingException;
 
@@ -28,6 +29,8 @@ import static Features.FloatUtils.doubleToFloat;
 
 public class MzmlScanNumber {
     final int scanNum;
+    public double scanLower;
+    public double scanUpper;
     public float[] expMZs;
     public float[] expIntensities;
     public float[] savedExpMZs;
@@ -47,6 +50,9 @@ public class MzmlScanNumber {
     //this version if creating from mzml scan number
     public MzmlScanNumber(IScan scan) throws FileParsingException {
         this.scanNum = scan.getNum();
+        PrecursorInfo pi = scan.getPrecursor();
+        this.scanLower = pi.getMzRangeStart();
+        this.scanUpper = pi.getMzRangeEnd();
         ISpectrum spectrum = scan.fetchSpectrum();
         this.expMZs = doubleToFloat(spectrum.getMZs());
         this.expIntensities = doubleToFloat(spectrum.getIntensities());

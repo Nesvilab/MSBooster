@@ -6,7 +6,7 @@
 
     <groupId>org.example</groupId>
     <artifactId>MSBooster</artifactId>
-    <version>1.1.14</version>
+    <version>1.1.15</version>
 
     <properties>
         <maven.compiler.source>1.8</maven.compiler.source>
@@ -84,7 +84,13 @@
             <artifactId>xchart</artifactId>
             <version>3.8.1</version>
         </dependency>
-<!--        <dependency>-->
+        <dependency>
+            <groupId>com.google.guava</groupId>
+            <artifactId>guava</artifactId>
+            <version>32.1.1-jre</version>
+        </dependency>
+
+        <!--        <dependency>-->
 <!--            <groupId>com.oracle.database.jdbc</groupId>-->
 <!--            <artifactId>ojdbc8</artifactId>-->
 <!--            <version>21.5.0.0</version>-->

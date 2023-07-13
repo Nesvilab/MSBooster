@@ -88,6 +88,10 @@ public class SpectrumComparison {
         predMZs = null;
 
         this.pepObj = pepObj;
+        if (Constants.features.contains("adjacent")) {
+            MassCalculator mc = new MassCalculator(pepObj.name.split("\\|")[0], pepObj.charge);
+            pepObj.precursorMz = (mc.mass + pepObj.charge * mc.proton) / pepObj.charge;
+        }
     }
 
     public SpectrumComparison(PeptideObj pepObj, float[] eMZs, float[] eIntensities,
@@ -167,6 +171,47 @@ public class SpectrumComparison {
                         mzs, ints, length, Constants.useTopFragments, Constants.useBasePeak));
             }
         }
+        this.length = length;
+        tmpMZs.clear();
+        tmpInts.clear();
+        predMZs = null;
+
+        this.pepObj = pepObj;
+        if (Constants.features.contains("adjacent")) {
+            MassCalculator mc = new MassCalculator(pepObj.name.split("\\|")[0], pepObj.charge);
+            pepObj.precursorMz = (mc.mass + pepObj.charge * mc.proton) / pepObj.charge;
+        }
+    }
+
+    public SpectrumComparison(float[] eMZs, float[] eIntensities,
+                              float[] pMZs, float[] pIntensities, int length,
+                              boolean filterTop, boolean filterBase) {
+        predMZs = pMZs;
+        predIntensities = pIntensities;
+
+        if (filterBase) {
+            this.filterIntensitiesByPercentage(Constants.percentBasePeak);
+        }
+        if (filterTop) {
+            this.filterTopFragments();
+        }
+
+        int[] sortedIndices = IntStream.range(0, predMZs.length)
+                .boxed().sorted((k, j) -> Float.compare(predMZs[k], predMZs[j]))
+                .mapToInt(ele -> ele).toArray();
+        for (int i : sortedIndices) {
+            sortedIndicesList.add(i);
+        }
+        pMZs = predMZs;
+        pIntensities = predIntensities;
+        predMZs = new float[predMZs.length];
+        predIntensities = new float[predIntensities.length];
+        for (int i = 0; i < sortedIndices.length; i++) {
+            predMZs[i] = pMZs[sortedIndices[i]];
+            predIntensities[i] = pIntensities[sortedIndices[i]];
+        }
+
+        matchedIntensities = this.getMatchedIntensities(eMZs, eIntensities, predMZs, predIntensities);
         this.length = length;
         tmpMZs.clear();
         tmpInts.clear();
@@ -354,7 +399,6 @@ public class SpectrumComparison {
             Arrays.sort(mzs);
 
             //modify getMatchedIntensities to be more general, get how many nonzero matched intensities
-            //don't need length anymore?
             matchedIdx.clear();
 
             allMatchedIntensities = getMatchedIntensities(pepObj.scanNumObj.getExpMZs(), pepObj.scanNumObj.getExpIntensities(),
@@ -657,7 +701,7 @@ public class SpectrumComparison {
 
     public double pearsonCorr() {
         if (predIntensities.length < 2) {
-            return 0;
+            return -1;
         }
         if (Arrays.stream(floatToDouble(matchedIntensities)).sum() == 0 || matchedIntensities.length == 1) {
             return -1; //minimum pearson correlation
@@ -669,7 +713,7 @@ public class SpectrumComparison {
 
     public double spearmanCorr() {
         if (predIntensities.length < 2) {
-            return 0;
+            return -1;
         }
 
         float[][] vectors = filterFragments(36);

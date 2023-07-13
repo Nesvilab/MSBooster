@@ -422,6 +422,13 @@ public class PinWriter {
                             }
                         }
                         break;
+                    case "adjacentSimilarity":
+                        double score = pepObj.spectralSimObj.scores.get(feature);
+                        if (Constants.normalizeScoresByPeptideLength) {
+                            score -= featureStats.get(feature).get(pepObj.length).getMedian();
+                        }
+                        writer.addValue("adjacent_similarity", score);
+                        break;
                     case "deltaIMLOESS":
                         writer.addValue("delta_IM_loess", pepObj.deltaIMLOESS);
                         break;

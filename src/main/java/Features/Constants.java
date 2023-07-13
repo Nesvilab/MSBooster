@@ -263,12 +263,12 @@ public class Constants {
             "pearsonCorr", "weightedPearsonCorr", "spearmanCorr", "dotProduct", "weightedDotProduct", "unweightedSpectralEntropy",
             "deltaRTlinear", "deltaRTbins", "deltaRTLOESS", "RTzscore", "RTprobability", "RTprobabilityUnifPrior",
             "deltaRTLOESSnormalized", "calibratedRT", "predictedRT", "numMatchedFragments", "hypergeometricProbability",
-            "intersection"));
+            "intersection", "adjacentSimilarity"));
     public static final HashSet<String> spectraFeatures = new HashSet<>(Arrays.asList(
             "cosineSimilarity", "weightedCosineSimilarity", "spectralContrastAngle", "weightedSpectralContrastAngle",
             "euclideanDistance", "weightedEuclideanDistance", "brayCurtis", "weightedBrayCurtis", "unweightedSpectralEntropy",
             "pearsonCorr", "weightedPearsonCorr", "spearmanCorr", "dotProduct", "weightedDotProduct", "numMatchedFragments",
-            "hypergeometricProbability", "intersection"));
+            "hypergeometricProbability", "intersection", "adjacentSimilarity"));
     public static final HashSet<String> rtFeatures = new HashSet<>(Arrays.asList(
             "deltaRTlinear", "deltaRTbins", "deltaRTLOESS", "RTzscore", "RTprobability", "RTprobabilityUnifPrior",
             "deltaRTLOESSnormalized", "calibratedRT", "predictedRT"));
@@ -358,6 +358,7 @@ public class Constants {
         map.put("detectSubtractMissing", "detect_subtract_missing");
         map.put("hypergeometricProbability", "hypergeometric_probability");
         map.put("intersection", "intersection");
+        map.put("adjacentSimilarity", "adjacent_similarity");
         return map;
     }
     ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////

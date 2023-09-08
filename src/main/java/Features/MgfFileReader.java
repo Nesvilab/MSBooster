@@ -29,7 +29,7 @@ public class MgfFileReader implements SpectralPredictionMapper{
 
     ArrayList<String> filenames = new ArrayList<>();
     private ConcurrentHashMap<String, PredictionEntry> allPreds = new ConcurrentHashMap<>();
-    HashMap<String, PredictionEntry> allPredsHashMap = new HashMap<>();
+    ConcurrentHashMap<String, PredictionEntry> allPredsHashMap = new ConcurrentHashMap<>();
     public ConcurrentHashMap<Integer, MzmlScanNumber> scanNumberObjects = new ConcurrentHashMap<>();
     private List<Future> futureList = new ArrayList<>(Constants.numThreads);
 
@@ -409,9 +409,9 @@ public class MgfFileReader implements SpectralPredictionMapper{
         }
     }
 
-    public HashMap<String, PredictionEntry> getPreds() {
+    public ConcurrentHashMap<String, PredictionEntry> getPreds() {
         if (allPredsHashMap.size() == 0) {
-            allPredsHashMap = new HashMap<>(allPreds);
+            allPredsHashMap = new ConcurrentHashMap<>(allPreds);
             allPreds = null; //no longer need concurrency
         }
         return allPredsHashMap;

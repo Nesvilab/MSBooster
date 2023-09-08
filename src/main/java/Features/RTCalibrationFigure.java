@@ -29,6 +29,7 @@ import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.List;
 import java.util.TreeSet;
 
@@ -49,6 +50,7 @@ public class RTCalibrationFigure {
         // Series
         List<Float> xData = new ArrayList<Float>();
         List<Float> yData = new ArrayList<Float>();
+        List<Float> eScores = new ArrayList<Float>();
         float minRT = Float.MAX_VALUE;
         float maxRT = Float.MIN_VALUE;
         for (int scanNum : new TreeSet<Integer>(mzml.scanNumberObjects.keySet())) {
@@ -65,6 +67,23 @@ public class RTCalibrationFigure {
                 PeptideObj pep = scanNumObj.getPeptideObject(i);
                 //only get best ones
                 if (Float.parseFloat(pep.escore) < Constants.RTescoreCutoff && pep.spectralSimObj.predIntensities[0] != 0f) {
+                    eScores.add(Float.parseFloat(pep.escore));
+                } else {
+                    break;
+                }
+            }
+        }
+
+        eScores.sort(Comparator.naturalOrder());
+        float maxEScore = eScores.get(Constants.numRTplot);
+        for (int scanNum : new TreeSet<Integer>(mzml.scanNumberObjects.keySet())) {
+            MzmlScanNumber scanNumObj = mzml.getScanNumObject(scanNum);
+            float rt = scanNumObj.RT; //experimental RT for this scan
+            for (int i = 1; i < scanNumObj.peptideObjects.size() + 1; i++) {
+                PeptideObj pep = scanNumObj.getPeptideObject(i);
+                //only get best ones
+                if (Float.parseFloat(pep.escore) <= maxEScore &&
+                        pep.spectralSimObj.predIntensities[0] != 0f) {
                     xData.add(rt);
                     yData.add(pep.RT);
                 } else {

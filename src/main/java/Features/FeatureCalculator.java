@@ -21,14 +21,16 @@ import org.apache.commons.math3.stat.correlation.PearsonsCorrelation;
 
 import java.io.IOException;
 import java.util.*;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 public class FeatureCalculator {
 
     HashMap<String, HashMap<Integer, StatMethods>> featureStats = new HashMap<>();
 
     final Set<String> supportedFeatures = new HashSet<>(Arrays.asList("intersection",
-            "hypergeometricProbability", "unweightedSpectralEntropy", "adjacentSimilarity"));
-    final Set<String> medianMethods = new HashSet<>(Arrays.asList("intersection", "unweightedSpectralEntropy", "adjacentSimilarity"));
+            "hypergeometricProbability", "unweightedSpectralEntropy"));
+    final Set<String> medianMethods = new HashSet<>(Arrays.asList("intersection", "unweightedSpectralEntropy"));
     final Set<String> zscoreMethods = new HashSet<>(Arrays.asList("hypergeometricProbability"));
 
 
@@ -46,6 +48,7 @@ public class FeatureCalculator {
         PeptideObj pepObj = null;
         HashMap<Integer, StatMethods> hm;
         StatMethods sm;
+        ExecutorService executorService = Executors.newFixedThreadPool(Constants.numThreads);
 
         ProgressReporter pr = new ProgressReporter(pin.length);
         while (pin.next()) {
@@ -379,48 +382,70 @@ public class FeatureCalculator {
                             }
                         }
                         break;
+                    case "bootstrapSimilarity":
+                        if (pepObj.spectralSimObj.spectrumComparisons.size() == 0) {
+                            mzml.futureList.clear();
+                            for (int j = 0; j < Constants.numThreads; j++) {
+                                int start = (int) (Constants.bootstraps * (long) j) / Constants.numThreads;
+                                int end = (int) (Constants.bootstraps * (long) (j + 1)) / Constants.numThreads;
+                                PeptideObj finalPepObj = pepObj;
+                                mzml.futureList.add(executorService.submit(() -> {
+                                    SpectrumComparison sc;
+                                    ArrayList<Double> scores = new ArrayList<>();
+                                    for (int i = start; i < end; i++) {
+                                        sc = finalPepObj.spectralSimObj.pickedPredicted();
+                                        scores.add(sc.unweightedSpectralEntropy());
+                                    }
+                                    Collections.sort(scores);
+                                    finalPepObj.spectralSimObj.scores.put(feature,
+                                            (scores.get(scores.size() / 2) + scores.get(scores.size() / 2 - 1)) / 2);
+                                    }));
+                                }
+                            }
+                        break;
                     case "adjacentSimilarity":
-                        double score = 0;
-                        int divisor = 0;
-                        ArrayList<Double> scores = new ArrayList<>();
-
-                        int previous = pepObj.previousScan;
-                        if (previous != 0) {
-                            MzmlScanNumber msn = mzml.scanNumberObjects.get(previous);
-                            PredictionEntry pe = PercolatorFormatter.allPreds.get(pepObj.name);
-                            SpectrumComparison sc = new SpectrumComparison(msn.getExpMZs(), msn.getExpIntensities(),
-                                    pe.mzs, pe.intensities, pepObj.length,
-                                    Constants.useTopFragments, Constants.useBasePeak);
-                            score += sc.unweightedSpectralEntropy();
-                            scores.add(sc.unweightedSpectralEntropy());
-//                            sc = new SpectrumComparison(mzml.scanNumberObjects.get(pepObj.scanNum).getExpMZs(),
-//                                    mzml.scanNumberObjects.get(pepObj.scanNum).getExpIntensities(),
+//                        double score = 0;
+//                        int divisor = 0;
+//                        ArrayList<Double> scores = new ArrayList<>();
+//
+//                        int previous = pepObj.previousScan;
+//                        if (previous != 0) {
+//                            MzmlScanNumber msn = mzml.scanNumberObjects.get(previous);
+//                            PredictionEntry pe = PercolatorFormatter.allPreds.get(pep);
+//                            SpectrumComparison sc = new SpectrumComparison(msn.getExpMZs(), msn.getExpIntensities(),
 //                                    pe.mzs, pe.intensities, pepObj.length,
-//                                    Constants.useTopFragments, Constants.useBasePeak);
-//                            if (sc.unweightedSpectralEntropy() - score < 0) {
-//                                System.out.println(pepObj.name);
-//                            }
-                            divisor += 1;
-                        }
+//                                    Constants.useTopFragments, Constants.useBasePeak, false);
+//                            score += sc.unweightedSpectralEntropy();
+//                            scores.add(sc.unweightedSpectralEntropy());
+//                            divisor += 1;
+//                        }
+//
+//                        int next = pepObj.nextScan;
+//                        if (next != 0) {
+//                            MzmlScanNumber msn = mzml.scanNumberObjects.get(next);
+//                            PredictionEntry pe = PercolatorFormatter.allPreds.get(pep);
+//                            SpectrumComparison sc = new SpectrumComparison(msn.getExpMZs(), msn.getExpIntensities(),
+//                                    pe.mzs, pe.intensities, pepObj.length,
+//                                    Constants.useTopFragments, Constants.useBasePeak, false);
+//                            score += sc.unweightedSpectralEntropy();
+//                            scores.add(sc.unweightedSpectralEntropy());
+//                            divisor += 1;
+//                        }
+//
+//                        if (divisor == 0) { //TODO: why are they missing so deep into RT?
+//                            pepObj.spectralSimObj.scores.put(feature, 0d);
+//                        } else {
+//                            //pepObj.spectralSimObj.scores.put(feature, score / divisor);
+//                            pepObj.spectralSimObj.scores.put(feature, Collections.max(scores));
+//                        }
 
-                        int next = pepObj.nextScan;
-                        if (next != 0) {
-                            MzmlScanNumber msn = mzml.scanNumberObjects.get(next);
-                            PredictionEntry pe = PercolatorFormatter.allPreds.get(pepObj.name);
-                            SpectrumComparison sc = new SpectrumComparison(msn.getExpMZs(), msn.getExpIntensities(),
-                                    pe.mzs, pe.intensities, pepObj.length,
-                                    Constants.useTopFragments, Constants.useBasePeak);
-                            score += sc.unweightedSpectralEntropy();
-                            scores.add(sc.unweightedSpectralEntropy());
-                            divisor += 1;
-                        }
-
-                        if (divisor == 0) { //TODO: why are they missing so deep into RT?
-                            pepObj.spectralSimObj.scores.put(feature, 0d);
-                        } else {
-                            //pepObj.spectralSimObj.scores.put(feature, score / divisor);
-                            pepObj.spectralSimObj.scores.put(feature, Collections.max(scores));
-                        }
+//                        for (PeptideObj pobj : msn.peptideObjects) {
+//                            allPreds.get(pobj.name).times.add(allMatchedScans.get(pobj.precursorMz).indexOf(msn.scanNum));
+//                        }
+                        break;
+                    case "bestScan":
+//                        pepObj.spectralSimObj.scores.put(feature,
+//                                (double) Math.abs(PercolatorFormatter.allPreds.get(pep).bestScan - pepObj.scanNum));
                         break;
                     case "deltaIMLOESS":
                         break;

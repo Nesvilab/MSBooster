@@ -27,13 +27,14 @@ import java.sql.*;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.zip.DataFormatException;
 import java.util.zip.Inflater;
 
 //refer to https://bitbucket.org/searleb/encyclopedia/wiki/EncyclopeDIA%20File%20Formats
 public class DlibReader implements SpectralPredictionMapper{
     ArrayList<String> filenames = new ArrayList<>();
-    HashMap<String, PredictionEntry> allPreds = new HashMap();
+    ConcurrentHashMap<String, PredictionEntry> allPreds = new ConcurrentHashMap();
 
     public DlibReader(String dlib) throws SQLException, IOException {
         File predsDirectory = new File(dlib);
@@ -265,7 +266,7 @@ public class DlibReader implements SpectralPredictionMapper{
         return decompressedData;
     }
 
-    public HashMap<String, PredictionEntry> getPreds() throws IOException {
+    public ConcurrentHashMap<String, PredictionEntry> getPreds() throws IOException {
         return allPreds;
     }
 

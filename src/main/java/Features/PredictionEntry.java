@@ -17,7 +17,9 @@
 
 package Features;
 
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.stream.IntStream;
 
 public class PredictionEntry {
@@ -31,6 +33,9 @@ public class PredictionEntry {
     float IM;
     float detectability;
     int counter;
+    HashMap<String, Float[]> scores = new HashMap<>();
+    ArrayList<Integer> times = new ArrayList<>();
+    double precursorMz = 0d;
 
     public PredictionEntry() {}
 

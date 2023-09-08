@@ -31,6 +31,7 @@ import java.io.IOException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Future;
@@ -62,7 +63,7 @@ public class MzmlReader {
     private ArrayList<Function1<Double, Double>> IMLOESS = new ArrayList<>();
     public HashMap<String, ArrayList<Float>> peptideIMs = new HashMap<>();
     public double[][] expAndPredRTs;
-    private List<Future> futureList = new ArrayList<>(Constants.numThreads);
+    public List<Future> futureList = new ArrayList<>(Constants.numThreads);
 
     public MzmlReader(String filename) throws FileParsingException, ExecutionException, InterruptedException {
         // Creating data source
@@ -273,7 +274,7 @@ public class MzmlReader {
     public void setPinEntries(PinReader pin, SpectralPredictionMapper spm) throws AssertionError, Exception {
         //TODO: multithread?
         System.out.println("Loading pin");
-        HashMap<String, PredictionEntry> allPreds = spm.getPreds();
+        ConcurrentHashMap<String, PredictionEntry> allPreds = spm.getPreds();
 
         ProgressReporter pr = new ProgressReporter(pin.length);
         int current = 0;
@@ -283,7 +284,7 @@ public class MzmlReader {
                         allPreds);
 
                 current = pr.progress();
-//                if (current == 20) {
+//                if (current >= 20) {
 //                    break;
 //                }
             } catch (Exception e) {

@@ -47,7 +47,7 @@ public class PinWriter {
 
         TsvWriterSettings tws = new TsvWriterSettings();
         tws.setMaxCharsPerColumn(-1);
-        tws.setMaxColumns(50000); //who knows if it needs to be longer?
+        tws.setMaxColumns(75000); //who knows if it needs to be longer?
         writer = new TsvWriter(new File(newOutfile), tws);
 
         //add header to written tsv
@@ -422,12 +422,52 @@ public class PinWriter {
                             }
                         }
                         break;
+                    case "bootstrapSimilarity":
+//                        if (pepObj.spectralSimObj.spectrumComparisons.size() == 0) {
+////                            double score = pepObj.spectralSimObj.scores.get(feature);
+//
+//                            SpectrumComparison sc;
+//                            String score = "";
+//                            for (int i = 0; i < Constants.bootstraps; i++) {
+//                                sc = pepObj.spectralSimObj.pickedPredicted();
+//                                score += sc.unweightedSpectralEntropy() + ",";
+//                            }
+//
+//                            writer.addValue("bootstrap_similarity",
+//                                    score.substring(0, score.length() - 1));
+//                        }
+                        break;
+                    case "bestScan":
+//                        double score = pepObj.spectralSimObj.scores.get(feature);
+//                        if (Constants.normalizeScoresByPeptideLength) {
+//                            score -= featureStats.get(feature).get(pepObj.length).getMedian();
+//                        }
+//                        int score = PercolatorFormatter.allPreds.get(pep).bestScanIdx;
+//                        writer.addValue("best_scan", score);
+                        break;
                     case "adjacentSimilarity":
-                        double score = pepObj.spectralSimObj.scores.get(feature);
-                        if (Constants.normalizeScoresByPeptideLength) {
-                            score -= featureStats.get(feature).get(pepObj.length).getMedian();
+                        //writer.addValue("best_scan", pepObj.spectralSimObj.scores.get(feature));
+                        StringBuilder s = new StringBuilder();
+
+                        Float[] scores = PercolatorFormatter.allPreds.get(pep).scores.get("entropy");
+                        //System.out.println(scores.length + "\t" + pepObj.chromatogramWindowQuery);
+                        for (int i = Math.max(0, pepObj.chromatogramWindowQuery - Constants.chromatogramWindow);
+                             i < Math.min(scores.length, pepObj.chromatogramWindowQuery + Constants.chromatogramWindow + 1);
+                             i++) {
+                            float f = scores[i];
+                            s.append(f).append(",");
                         }
-                        writer.addValue("adjacent_similarity", score);
+                        s.deleteCharAt(s.length() - 1);
+                        s.append(";");
+                        scores = PercolatorFormatter.allPreds.get(pep).scores.get("hypergeom");
+                        for (int i = Math.max(0, pepObj.chromatogramWindowQuery - Constants.chromatogramWindow);
+                             i < Math.min(scores.length, pepObj.chromatogramWindowQuery + Constants.chromatogramWindow + 1);
+                             i++) {
+                            float f = scores[i];
+                            s.append(f).append(",");
+                        }
+                        s.deleteCharAt(s.length() - 1);
+                        writer.addValue("adjacent_similarity", s.toString());
                         break;
                     case "deltaIMLOESS":
                         writer.addValue("delta_IM_loess", pepObj.deltaIMLOESS);

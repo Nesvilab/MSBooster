@@ -24,13 +24,14 @@ import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
 public class MspReader implements SpectralPredictionMapper {
     final ArrayList<String> filenames;
-    HashMap<String, PredictionEntry> allPreds = new HashMap<>();
+    ConcurrentHashMap<String, PredictionEntry> allPreds = new ConcurrentHashMap<>();
 
     //convert int flag to fragment ion type
     private static HashMap<Integer, String> makeFlagTOion() {
@@ -217,7 +218,7 @@ public class MspReader implements SpectralPredictionMapper {
         }
     }
 
-    public HashMap<String, PredictionEntry> getPreds() { return allPreds; }
+    public ConcurrentHashMap<String, PredictionEntry> getPreds() { return allPreds; }
 
     public float getMaxPredRT() {
         float maxRT = 0f;

@@ -20,18 +20,18 @@ package Features;
 import java.util.*;
 
 public class PeptideObj {
-    final String name;
-    final int charge;
-    final int rank;
+    String name;
+    int charge;
+    int rank;
     double precursorMz;
-    final MzmlScanNumber scanNumObj;
-    final int scanNum;
+    MzmlScanNumber scanNumObj;
+    int scanNum;
     int previousScan;
     int nextScan;
-    final int targetORdecoy;
-    final int length;
-    final String escore;
-    final float RT;
+    int targetORdecoy;
+    int length;
+    String escore;
+    float RT;
     float deltaRT;
     float deltaRTbin;
     float RTzscore;
@@ -48,6 +48,7 @@ public class PeptideObj {
     //float[] predMZs;
     //float[] predInts;
     String[] fragmentIonTypes;
+    int chromatogramWindowQuery;
 
     static final HashMap<String, Float> baseMap = makeBaseMap();
     static private HashMap<String, Float> makeBaseMap() {
@@ -125,6 +126,8 @@ public class PeptideObj {
             makeFragmentAnnotationFeatures(predMZs, predIntensities);
         }
     }
+
+    public PeptideObj(){}
 
     //how to deal with this if ignored fragment ions types, so matchedIntensities and fragmentIonTypes not same length?
     //save masscalculator and annotateMZs

@@ -130,6 +130,9 @@ public class Constants {
     //public static Float percentBasePeakExperimental = 1f;
     public static Boolean normalizeScoresByPeptideLength = true;
     //public static Well19937c rng = new Well19937c(123);
+    public static Integer chromatogramWindow = 5;
+    public static Integer bootstraps = 500;
+    public static Double bootstrapFragmentProportion = 0.5;
 
     public static final Integer fineTuneSize = 100; //for generating a finetune file for pDeep3
 
@@ -141,6 +144,7 @@ public class Constants {
     public static Integer RTbinMultiplier = 1;
     public static Float RTIQR = 50f;
     public static boolean noRTscores = false; //TODO: better handling of this
+    public static Integer numRTplot = 5000;
 
     //LOESS
     public static Double bandwidth = 0.05;
@@ -263,12 +267,12 @@ public class Constants {
             "pearsonCorr", "weightedPearsonCorr", "spearmanCorr", "dotProduct", "weightedDotProduct", "unweightedSpectralEntropy",
             "deltaRTlinear", "deltaRTbins", "deltaRTLOESS", "RTzscore", "RTprobability", "RTprobabilityUnifPrior",
             "deltaRTLOESSnormalized", "calibratedRT", "predictedRT", "numMatchedFragments", "hypergeometricProbability",
-            "intersection", "adjacentSimilarity"));
+            "intersection", "adjacentSimilarity", "bestScan", "bootstrapSimilarity"));
     public static final HashSet<String> spectraFeatures = new HashSet<>(Arrays.asList(
             "cosineSimilarity", "weightedCosineSimilarity", "spectralContrastAngle", "weightedSpectralContrastAngle",
             "euclideanDistance", "weightedEuclideanDistance", "brayCurtis", "weightedBrayCurtis", "unweightedSpectralEntropy",
             "pearsonCorr", "weightedPearsonCorr", "spearmanCorr", "dotProduct", "weightedDotProduct", "numMatchedFragments",
-            "hypergeometricProbability", "intersection", "adjacentSimilarity"));
+            "hypergeometricProbability", "intersection", "adjacentSimilarity", "bestScan", "bootstrapSimilarity"));
     public static final HashSet<String> rtFeatures = new HashSet<>(Arrays.asList(
             "deltaRTlinear", "deltaRTbins", "deltaRTLOESS", "RTzscore", "RTprobability", "RTprobabilityUnifPrior",
             "deltaRTLOESSnormalized", "calibratedRT", "predictedRT"));
@@ -359,6 +363,8 @@ public class Constants {
         map.put("hypergeometricProbability", "hypergeometric_probability");
         map.put("intersection", "intersection");
         map.put("adjacentSimilarity", "adjacent_similarity");
+        map.put("bestScan", "best_scan");
+        map.put("bootstrapSimilarity", "bootstrap_similarity");
         return map;
     }
     ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////

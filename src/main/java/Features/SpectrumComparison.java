@@ -40,8 +40,8 @@ public class SpectrumComparison {
     int length;
     int matchedIons;
     LinkedHashSet<Integer> matchedIdx = new LinkedHashSet<Integer>();
-    private static ArrayList<Float> tmpMZs = new ArrayList<Float>();
-    private static ArrayList<Float> tmpInts = new ArrayList<Float>();
+    private ArrayList<Float> tmpMZs = new ArrayList<Float>();
+    private ArrayList<Float> tmpInts = new ArrayList<Float>();
     private static PearsonsCorrelation pc = new PearsonsCorrelation();
     private static SpearmansCorrelation sc = new SpearmansCorrelation();
     public ArrayList<SpectrumComparison> spectrumComparisons = new ArrayList<>();
@@ -88,7 +88,7 @@ public class SpectrumComparison {
         predMZs = null;
 
         this.pepObj = pepObj;
-        if (Constants.features.contains("adjacent")) {
+        if (Constants.features.contains("adjacent") || Constants.features.contains("bestScan")) {
             MassCalculator mc = new MassCalculator(pepObj.name.split("\\|")[0], pepObj.charge);
             pepObj.precursorMz = (mc.mass + pepObj.charge * mc.proton) / pepObj.charge;
         }
@@ -177,15 +177,16 @@ public class SpectrumComparison {
         predMZs = null;
 
         this.pepObj = pepObj;
-        if (Constants.features.contains("adjacent")) {
+        if (Constants.features.contains("adjacent") || Constants.features.contains("bestScan")) {
             MassCalculator mc = new MassCalculator(pepObj.name.split("\\|")[0], pepObj.charge);
             pepObj.precursorMz = (mc.mass + pepObj.charge * mc.proton) / pepObj.charge;
         }
     }
 
-    public SpectrumComparison(float[] eMZs, float[] eIntensities,
+    public SpectrumComparison(PeptideObj peptideObj, float[] eMZs, float[] eIntensities,
                               float[] pMZs, float[] pIntensities, int length,
-                              boolean filterTop, boolean filterBase) {
+                              boolean filterTop, boolean filterBase, boolean willReload) {
+        pepObj = peptideObj;
         predMZs = pMZs;
         predIntensities = pIntensities;
 
@@ -215,7 +216,43 @@ public class SpectrumComparison {
         this.length = length;
         tmpMZs.clear();
         tmpInts.clear();
-        predMZs = null;
+        if (! willReload) {
+            predMZs = null;
+        }
+    }
+    public SpectrumComparison() {}
+
+    //get new scan read in
+    public void reload(PeptideObj pobj, float[] eMZs, float[] eIntensities) {
+        pepObj = pobj;
+
+        unitNormMatchedIntensities = null;
+        unitNormPredIntensities = null;
+        sum1MatchedIntensities = null;
+        sum1PredIntensities = null;
+
+        allMatchedIntensities = null;
+        matchedIntensities = getMatchedIntensities(eMZs, eIntensities, predMZs, predIntensities);
+        tmpMZs.clear();
+        tmpInts.clear();
+    }
+
+    public SpectrumComparison pickedPredicted() {
+        SpectrumComparison sc = new SpectrumComparison();
+
+        sc.predIntensities = new float[(int) (predIntensities.length * Constants.bootstrapFragmentProportion)];
+        sc.matchedIntensities = new float[sc.predIntensities.length];
+
+        int[] rand = new Random().ints(0, predIntensities.length).distinct().
+                limit(sc.predIntensities.length).toArray();
+
+
+        for (int i = 0; i < rand.length; i++) {
+            sc.predIntensities[i] = predIntensities[rand[i]];
+            sc.matchedIntensities[i] = matchedIntensities[rand[i]];
+        }
+
+        return sc;
     }
 
     private void filterTopFragments() {
@@ -716,7 +753,12 @@ public class SpectrumComparison {
             return -1;
         }
 
-        float[][] vectors = filterFragments(36);
+        int top = Constants.topFragments;
+        if (Constants.adaptiveFragmentNum) {
+            top = 36;
+        }
+
+        float[][] vectors = filterFragments(top);
         float[] predI = vectors[0];
         float[] matchedI = vectors[1];
 
@@ -819,7 +861,12 @@ public class SpectrumComparison {
             return 0;
         }
 
-        float[][] vectors = filterFragments(12);
+        int top = Constants.topFragments;
+        if (Constants.adaptiveFragmentNum) {
+            top = 12;
+        }
+
+        float[][] vectors = filterFragments(top);
         float[] predI = vectors[0];
         float[] matchedI = vectors[1];
 
@@ -861,7 +908,12 @@ public class SpectrumComparison {
 //        }
 
         //calculate
-        float[][] vectors = filterFragments(24);
+        int top = Constants.topFragments;
+        if (Constants.adaptiveFragmentNum) {
+            top = 24;
+        }
+
+        float[][] vectors = filterFragments(top);
         float[] predI = vectors[0];
         float[] matchedI = vectors[1];
 

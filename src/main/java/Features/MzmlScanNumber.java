@@ -24,6 +24,7 @@ import umich.ms.datatypes.spectrum.ISpectrum;
 import umich.ms.fileio.exceptions.FileParsingException;
 
 import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
 
 import static Features.FloatUtils.doubleToFloat;
 
@@ -36,6 +37,7 @@ public class MzmlScanNumber {
     public float[] savedExpMZs;
     public float[] savedExpIntensities;
     float RT;
+    Double calibratedRT;
     int RTbinSize;
     float normalizedRT;
     Float IM;
@@ -96,7 +98,7 @@ public class MzmlScanNumber {
     public float[] getExpIntensities() { return expIntensities; }
 
     public void setPeptideObject(PeptideFormatter name, int rank, int targetORdecoy, String escore,
-                                 HashMap<String, PredictionEntry> allPreds) throws Exception {
+                                 ConcurrentHashMap<String, PredictionEntry> allPreds) {
 
         if (rank != peptideObjects.size() + 1) { //need to add entries in order
             throw new AssertionError("must add next rank");

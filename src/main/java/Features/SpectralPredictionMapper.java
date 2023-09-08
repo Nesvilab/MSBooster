@@ -23,12 +23,13 @@ import java.io.File;
 import java.io.IOException;
 import java.sql.SQLException;
 import java.util.HashMap;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 
 public interface SpectralPredictionMapper {
 
-    HashMap<String, PredictionEntry> getPreds() throws IOException;
+    ConcurrentHashMap<String, PredictionEntry> getPreds() throws IOException;
     void clear();
 
     float getMaxPredRT();

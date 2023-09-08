@@ -17,6 +17,8 @@
 
 package Features;
 
+import com.univocity.parsers.tsv.TsvWriter;
+import com.univocity.parsers.tsv.TsvWriterSettings;
 import umich.ms.fileio.exceptions.FileParsingException;
 
 import java.io.*;
@@ -27,13 +29,14 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
 public class DiannSpeclibReader implements SpectralPredictionMapper{
     final ArrayList<String> filenames;
-    HashMap<String, PredictionEntry> allPreds = new HashMap<>();
+    ConcurrentHashMap<String, PredictionEntry> allPreds = new ConcurrentHashMap<>();
 
     //https://stackoverflow.com/questions/46163114/get-bit-values-from-byte-array
     //https://www.geeksforgeeks.org/bitwise-operators-in-java/
@@ -180,7 +183,7 @@ public class DiannSpeclibReader implements SpectralPredictionMapper{
         return n >> (32 - offset - length) & ~(-1 << length);
     }
 
-    public HashMap<String, PredictionEntry> getPreds() { return allPreds; }
+    public ConcurrentHashMap<String, PredictionEntry> getPreds() { return allPreds; }
 
     public float getMaxPredRT() {
         float maxRT = 0f;

@@ -45,14 +45,33 @@ public class RTCalibrationFigure {
         chart.setXAxisTitle("experimental RT");
         chart.setYAxisTitle("predicted RT");
         chart.getStyler().setLegendVisible(false);
-        chart.getStyler().setMarkerSize(3);
+        chart.getStyler().setMarkerSize(8);
         chart.getStyler().setYAxisGroupPosition(0, Styler.YAxisPosition.Right);
+        chart.getStyler().setLegendVisible(true);
+        chart.getStyler().setLegendPosition(Styler.LegendPosition.InsideNW);
+
         // Series
         List<Float> xData = new ArrayList<Float>();
         List<Float> yData = new ArrayList<Float>();
         List<Float> eScores = new ArrayList<Float>();
+
+        //for PTMs besides oxM and C57
+        List<List<Float>> xDataMod = new ArrayList<>();
+        List<List<Float>> yDataMod = new ArrayList<>();
         float minRT = Float.MAX_VALUE;
         float maxRT = Float.MIN_VALUE;
+
+        String[] masses;
+        if (Constants.RTfigure_masses.equals("")) {
+            masses = new String[0];
+        } else {
+            masses = Constants.RTfigure_masses.split(",");
+            for (int i = 0; i < masses.length; i++) {
+                masses[i] = masses[i].trim();
+                xDataMod.add(new ArrayList<>());
+                yDataMod.add(new ArrayList<>());
+            }
+        }
         for (int scanNum : new TreeSet<Integer>(mzml.scanNumberObjects.keySet())) {
             MzmlScanNumber scanNumObj = mzml.getScanNumObject(scanNum);
             float rt = scanNumObj.RT; //experimental RT for this scan
@@ -75,7 +94,7 @@ public class RTCalibrationFigure {
         }
 
         eScores.sort(Comparator.naturalOrder());
-        float maxEScore = eScores.get(Constants.numRTplot);
+        float maxEScore = eScores.get(Math.min(Constants.numRTplot, eScores.size()) - 1);
         for (int scanNum : new TreeSet<Integer>(mzml.scanNumberObjects.keySet())) {
             MzmlScanNumber scanNumObj = mzml.getScanNumObject(scanNum);
             float rt = scanNumObj.RT; //experimental RT for this scan
@@ -84,32 +103,58 @@ public class RTCalibrationFigure {
                 //only get best ones
                 if (Float.parseFloat(pep.escore) <= maxEScore &&
                         pep.spectralSimObj.predIntensities[0] != 0f) {
-                    xData.add(rt);
-                    yData.add(pep.RT);
+                    boolean containsMod = false;
+                    int modIndex = 0;
+                    for (int j = 0; j < masses.length; j++) {
+                        String mass = masses[j];
+                        if (pep.name.contains(mass)) {
+                            containsMod = true;
+                            modIndex = j;
+                            break;
+                        }
+                    }
+                    if (! containsMod) {
+                        xData.add(rt);
+                        yData.add(pep.RT);
+                    } else {
+                        xDataMod.get(modIndex).add(rt);
+                        yDataMod.get(modIndex).add(pep.RT);
+                    }
                 } else {
                     break;
                 }
             }
         }
 
-        XYSeries series = chart.addSeries("scatter", xData, yData);
-        series.setMarkerColor(new Color(0, 0, 0, opacity));
+        if (xData.size() > 0) {
+            XYSeries series = chart.addSeries("scatter", xData, yData);
+            series.setMarkerColor(new Color(0, 0, 0, opacity));
+        }
+
+        for (int i = 0; i < xDataMod.size(); i++) {
+            List<Float> ix = xDataMod.get(i);
+            List<Float> iy = yDataMod.get(i);
+            if (ix.size() > 0) {
+                XYSeries seriesMod = chart.addSeries("scatterMods - " + masses[i], ix, iy);
+                seriesMod.setMarkerColor(new Color(65 * i % 255, 105 * i % 255, 225 * i % 255));
+            }
+        }
 
         //loess regression
         // generates Log data
         List<Float> x1Data = new ArrayList<Float>();
         List<Double> y1Data = new ArrayList<Double>();
-        BufferedWriter calibrationPoints = new BufferedWriter(new FileWriter(
-                pinPath + File.separator + "MSBooster_RTplots" + File.separator +
-                        pinName.substring(0, pinName.length() - 4) + "_calibration.csv"));
-        calibrationPoints.write("experimental RT,predicted RT");
+//        BufferedWriter calibrationPoints = new BufferedWriter(new FileWriter(
+//                pinPath + File.separator + "MSBooster_RTplots" + File.separator +
+//                        pinName.substring(0, pinName.length() - 4) + "_calibration.csv"));
+//        calibrationPoints.write("experimental RT,predicted RT");
         for (float i = minRT; i < maxRT; i = i + (maxRT - minRT) / 1000f) {
             x1Data.add(i);
             double y = mzml.RTLOESS.invoke((double) i);
             y1Data.add(y);
-            calibrationPoints.write(i + "," + y);
+//            calibrationPoints.write(i + "," + y);
         }
-        calibrationPoints.close();
+//        calibrationPoints.close();
         XYSeries series1 = chart.addSeries("regression", x1Data, y1Data);
         series1.setMarkerColor(new Color(243, 9, 9));
         //series.setLineWidth(1);

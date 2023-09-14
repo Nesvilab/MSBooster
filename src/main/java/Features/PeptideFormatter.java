@@ -54,6 +54,9 @@ public class PeptideFormatter {
         //remove AA and period at beginning and end
         peptide = peptide.substring(2, peptide.length() - 2);
 
+        //remove 0.0000
+        peptide = peptide.replace("[0.0000]", "");
+
         //n and c term mods
         if (peptide.charAt(0) == 'n') {
             peptide = peptide.replace("n", "");
@@ -258,15 +261,15 @@ public class PeptideFormatter {
             positions.add(position);
             String aa;
             if (position == 0) {
-                aa = "ProteinN-term"; //might need to change
+                aa = "Any N-term"; //might need to change
             } else {
                 aa = stripped.substring(position - 1, position);
             }
 
             String modinfo = position + "," + modName + "[" + aa + "]" + ";";
-            if (aa.equals("ProteinN-term")) {
-                aa = "Protein N-term";
-            }
+//            if (aa.equals("ProteinN-term")) {
+//                aa = "Protein N-term";
+//            }
 
             //check that the ptmName@aa is accepted by alphapeptdeep
             ArrayList<String> ptmSubstitutes = PTMhandler.sameMass.get(String.format("%.4f", doubleModMass));

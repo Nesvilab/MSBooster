@@ -145,6 +145,7 @@ public class Constants {
     public static Float RTIQR = 50f;
     public static boolean noRTscores = false; //TODO: better handling of this
     public static Integer numRTplot = 5000;
+    public static String RTfigure_masses = ""; //separate by comma
 
     //LOESS
     public static Double bandwidth = 0.05;

@@ -235,7 +235,15 @@ public class StatMethods {
                 if (bandwidth == 1d) {
                     loessInterpolator = new LoessInterpolator(bandwidth, robustIters);
                     y = loessInterpolator.smooth(newX, newY);
-
+                    for (int i = 0; i < y.length; i++) {
+                        y[i] = y[i] - newY[i];
+                    }
+                    double[] weights = new double[y.length];
+                    for (int i = 0; i < y.length; i++) {
+                        weights[i] = Math.pow(mean(Arrays.copyOfRange(y, Math.max(i - y.length/100, 0),
+                                Math.min(i + y.length/100, y.length))), 2);
+                    }
+                    y = loessInterpolator.smooth(newX, newY, weights); //weighting so ends become better fit
                     ArrayList<Integer> nanIdx = new ArrayList<>();
                     int i = 0;
                     for (double yval : y) {
@@ -264,6 +272,15 @@ public class StatMethods {
                 } else {
                     loessInterpolator = new LoessInterpolator(bandwidth, robustIters);
                     y = loessInterpolator.smooth(newX, newY);
+                    for (int i = 0; i < y.length; i++) {
+                        y[i] = y[i] - newY[i];
+                    }
+                    double[] weights = new double[y.length];
+                    for (int i = 0; i < y.length; i++) {
+                        weights[i] = Math.pow(mean(Arrays.copyOfRange(y, Math.max(i - y.length/100, 0),
+                                Math.min(i + y.length/100, y.length))), 2);
+                    }
+                    y = loessInterpolator.smooth(newX, newY, weights); //weighting so ends become better fit
                     for (double yval : y) {
                         if (Double.isNaN(yval)) {
                             throw new Exception(bandwidth + " bandwidth is too small");
@@ -372,6 +389,16 @@ public class StatMethods {
     public static float median(ArrayList<Float> alist) {
         Collections.sort(alist);
         float median;
+        if (alist.size() % 2 == 0)
+            median = (alist.get(alist.size() / 2 - 1) + alist.get(alist.size() / 2)) / 2;
+        else
+            median = alist.get(alist.size() / 2);
+        return median;
+    }
+
+    public static double medianDouble(ArrayList<Double> alist) {
+        Collections.sort(alist);
+        double median;
         if (alist.size() % 2 == 0)
             median = (alist.get(alist.size() / 2 - 1) + alist.get(alist.size() / 2)) / 2;
         else

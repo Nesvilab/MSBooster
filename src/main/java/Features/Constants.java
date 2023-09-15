@@ -128,7 +128,7 @@ public class Constants {
     public static Float percentBasePeak = 1f;
     //public static Boolean sqrtPredIntensities = false;
     //public static Float percentBasePeakExperimental = 1f;
-    public static Boolean normalizeScoresByPeptideLength = true;
+    public static Boolean normalizeScoresByPeptideLength = false;
     //public static Well19937c rng = new Well19937c(123);
     public static Integer chromatogramWindow = 5;
     public static Integer bootstraps = 500;

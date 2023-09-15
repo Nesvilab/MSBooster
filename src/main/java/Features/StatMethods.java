@@ -54,7 +54,9 @@ public class StatMethods {
     }
 
     public double getStd() {
-        std = Math.sqrt(M2 / (meanCounts - 1));
+        if (std.isNaN()) {
+            std = Math.sqrt(M2 / (meanCounts - 1));
+        }
         return std;
     }
 
@@ -63,20 +65,22 @@ public class StatMethods {
         if (medianHist.containsKey(key)) {
             medianHist.put(key, medianHist.get(key) + 1);
         } else {
-            medianHist.put(key, 0);
+            medianHist.put(key, 1);
         }
         medianCounts += 1;
     }
 
     public double getMedian() {
-        int goal = (int) (medianCounts / 2);
-        int counts = 0;
-        for (Map.Entry<Double, Integer> entry : medianHist.entrySet()) {
-            counts += entry.getValue();
-            if (counts >= goal) {
-                median = entry.getKey() / medianBins;
-                medianHist.clear();
-                break;
+        if (median.isNaN()) {
+            int goal = (int) (medianCounts / 2);
+            int counts = 0;
+            for (Map.Entry<Double, Integer> entry : medianHist.entrySet()) {
+                counts += entry.getValue();
+                if (counts >= goal) {
+                    median = entry.getKey() / medianBins;
+                    medianHist.clear();
+                    break;
+                }
             }
         }
         return median;

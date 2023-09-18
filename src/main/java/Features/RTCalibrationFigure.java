@@ -17,6 +17,7 @@
 
 package Features;
 
+import jdk.internal.module.SystemModuleFinders;
 import org.knowm.xchart.BitmapEncoder;
 import org.knowm.xchart.XYChart;
 import org.knowm.xchart.XYChartBuilder;
@@ -28,10 +29,8 @@ import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Comparator;
+import java.util.*;
 import java.util.List;
-import java.util.TreeSet;
 
 public class RTCalibrationFigure {
     public RTCalibrationFigure(MzmlReader mzml, String outFile, float opacity) throws IOException {
@@ -72,6 +71,7 @@ public class RTCalibrationFigure {
                 yDataMod.add(new ArrayList<>());
             }
         }
+        HashMap<String, Float> bestEScore = new HashMap<>();
         for (int scanNum : new TreeSet<Integer>(mzml.scanNumberObjects.keySet())) {
             MzmlScanNumber scanNumObj = mzml.getScanNumObject(scanNum);
             float rt = scanNumObj.RT; //experimental RT for this scan
@@ -85,15 +85,30 @@ public class RTCalibrationFigure {
             for (int i = 1; i < scanNumObj.peptideObjects.size() + 1; i++) {
                 PeptideObj pep = scanNumObj.getPeptideObject(i);
                 //only get best ones
-                if (Float.parseFloat(pep.escore) < Constants.RTescoreCutoff && pep.spectralSimObj.predIntensities[0] != 0f) {
-                    eScores.add(Float.parseFloat(pep.escore));
+                float currentScore = Float.parseFloat(pep.escore);
+                if (currentScore < Constants.RTescoreCutoff && pep.spectralSimObj.predIntensities[0] != 0f) {
+                    if (Constants.plotBestPSMPerPeptide) {
+                        if (bestEScore.containsKey(pep.name)) {
+                            if (bestEScore.get(pep.name) > currentScore) {
+                                bestEScore.put(pep.name, currentScore);
+                            }
+                        } else {
+                            bestEScore.put(pep.name, currentScore);
+                        }
+                    } else {
+                        eScores.add(Float.parseFloat(pep.escore));
+                    }
                 } else {
                     break;
                 }
             }
         }
+        if (Constants.plotBestPSMPerPeptide) {
+            eScores.addAll(bestEScore.values());
+        }
 
         eScores.sort(Comparator.naturalOrder());
+        //this will plot more than numRTplot if PSMs are tied
         float maxEScore = eScores.get(Math.min(Constants.numRTplot, eScores.size()) - 1);
         for (int scanNum : new TreeSet<Integer>(mzml.scanNumberObjects.keySet())) {
             MzmlScanNumber scanNumObj = mzml.getScanNumObject(scanNum);
@@ -101,8 +116,12 @@ public class RTCalibrationFigure {
             for (int i = 1; i < scanNumObj.peptideObjects.size() + 1; i++) {
                 PeptideObj pep = scanNumObj.getPeptideObject(i);
                 //only get best ones
-                if (Float.parseFloat(pep.escore) <= maxEScore &&
+                float parsedScore = Float.parseFloat(pep.escore);
+                if (parsedScore <= maxEScore &&
                         pep.spectralSimObj.predIntensities[0] != 0f) {
+                    if (Constants.plotBestPSMPerPeptide && parsedScore != bestEScore.get(pep.name)) {
+                        break;
+                    }
                     boolean containsMod = false;
                     int modIndex = 0;
                     for (int j = 0; j < masses.length; j++) {

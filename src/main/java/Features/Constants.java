@@ -143,9 +143,10 @@ public class Constants {
     public static Float RTescoreCutoff = -3.5f; //PSMs with e score higher than this won't make it into RT regression modeling
     public static Integer RTbinMultiplier = 1;
     public static Float RTIQR = 50f;
-    public static boolean noRTscores = false; //TODO: better handling of this
+    public static Boolean noRTscores = false; //TODO: better handling of this
     public static Integer numRTplot = 5000;
     public static String RTfigure_masses = ""; //separate by comma
+    public static Boolean plotBestPSMPerPeptide = false;
 
     //LOESS
     public static Double bandwidth = 0.05;

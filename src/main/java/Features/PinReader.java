@@ -18,15 +18,16 @@
 package Features;
 
 import org.apache.commons.lang3.ArrayUtils;
+import org.checkerframework.checker.units.qual.A;
 import umich.ms.fileio.exceptions.FileParsingException;
+import umontreal.ssj.probdist.EmpiricalDist;
 
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileReader;
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.HashSet;
+import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutionException;
 
 //TODO: which of these tools allows O abd U amino acids?
@@ -42,10 +43,12 @@ public class PinReader {
     int specIdx;
     int pepIdx;
     int eScoreIdx;
+    int rtIdx;
     private boolean calcEvalue = false;
 
     MzmlReader mzml;
     int length;
+    Double rtCutoff = Double.NaN;
 
     public PinReader(String pin) throws IOException {
         name = pin;
@@ -59,6 +62,7 @@ public class PinReader {
         rankIdx = ArrayUtils.indexOf(header, "rank");
         specIdx = ArrayUtils.indexOf(header, "SpecId");
         pepIdx = ArrayUtils.indexOf(header, "Peptide");
+        rtIdx = ArrayUtils.indexOf(header, "retentiontime");
         if (Arrays.asList(header).contains("log10_evalue")) {
             eScoreIdx = ArrayUtils.indexOf(header, "log10_evalue"); //DDA
         } else {
@@ -82,6 +86,9 @@ public class PinReader {
         String line = in.readLine();
         if (line != null) {
             row = line.split("\t");
+            if (! rtCutoff.isNaN()) {
+                return !(getRT() > rtCutoff);
+            }
             return true;
         }
         //in.close();
@@ -92,7 +99,12 @@ public class PinReader {
         in.close();
     }
 
+    public void attachMzml(MzmlReader mzml) {
+        this.mzml = mzml;
+    }
+
     public void getLength() throws IOException {
+        length = 0;
         while (next()) {
             length += 1;
         }
@@ -126,6 +138,53 @@ public class PinReader {
         } else {
             return row[eScoreIdx];
         }
+    }
+
+    public float getRT() {return Float.parseFloat(row[rtIdx]);}
+
+    public void findWashGradientCutoff(ConcurrentHashMap<String, PredictionEntry> preds) throws IOException {
+        int bins = Constants.washGradientBins;
+        //TODO read in RT directly from pin
+        next();
+        float minRT = getRT();
+        float maxRT = 0;
+        while (next()) {
+            maxRT = getRT();
+        }
+        reset();
+        float RTrange = maxRT - minRT;
+
+        int[] counts = new int[bins];
+        while (next()) {
+            int bin = Math.min(bins-1,Math.round(((mzml.scanNumberObjects.get(getScanNum()).RT - minRT) / RTrange * bins)));
+            counts[bin] += 1;
+        }
+        reset();
+        int maxAt = 0;
+        for (int i = 0; i < counts.length; i++) {
+            maxAt = counts[i] > counts[maxAt] ? i : maxAt;
+        }
+        int zeroAt = -1;
+        for (int i = maxAt + 1; i < counts.length; i++) {
+            if (counts[i] == 0) {
+                zeroAt = i;
+                break;
+            }
+        }
+
+        float cutoffRT = maxRT * 2;
+        if (zeroAt != -1) {
+            cutoffRT = minRT + zeroAt * RTrange / bins;
+        } else {
+            System.out.println("Washing gradient not detected. If there is one, you can try increasing the parameter " +
+                    "washGradientBins (default 100) or manually setting it with the parameter rtCutoff.");
+        }
+
+        rtCutoff = (double) cutoffRT;
+        System.out.println("Setting RT cutoff at " + rtCutoff);
+
+        //edit length
+        getLength();
     }
 
     public String[] createPDeep2List() throws IOException {

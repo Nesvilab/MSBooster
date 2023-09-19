@@ -328,6 +328,14 @@ public class PercolatorFormatter {
 
                 //load pin file, which already includes all ranks
                 PinReader pin = new PinReader(pinFiles[i].getCanonicalPath());
+                if (Constants.removeWashGradient) {
+                    if (Constants.rtCutoff.isNaN()) {
+                        pin.attachMzml(mzml);
+                        pin.findWashGradientCutoff(predictedSpectra.getPreds());
+                    } else {
+                        pin.rtCutoff = Constants.rtCutoff;
+                    }
+                }
 
                 //Special preparations dependent on features we require
                 if (needsMGF) {

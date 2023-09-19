@@ -147,6 +147,9 @@ public class Constants {
     public static Integer numRTplot = 5000;
     public static String RTfigure_masses = ""; //separate by comma
     public static Boolean plotBestPSMPerPeptide = false;
+    public static Integer washGradientBins = 100;
+    public static Double rtCutoff = Double.NaN;
+    public static Boolean removeWashGradient = false;
 
     //LOESS
     public static Double bandwidth = 0.05;

@@ -235,10 +235,17 @@ public class MgfFileReader implements SpectralPredictionMapper{
                                     start += returnAdd('\n', finalData, start) + 1;
                                     break;
                                 case 'R': //RTINSECONDS
+                                    //TODO convert to minutes?
                                     if (finalData[start + 1] == 'T') {
-                                        start += 12;
-                                        line = returnString('\n', finalData, start);
-                                        RT = Float.parseFloat(line);
+                                        if (finalData[start + 4] == 'S') {
+                                            start += 12;
+                                            line = returnString('\n', finalData, start);
+                                            RT = Float.parseFloat(line) / 60;
+                                        } else {
+                                            start += 3;
+                                            line = returnString('\n', finalData, start);
+                                            RT = Float.parseFloat(line);
+                                        }
                                     } else {
                                         line = returnString('\n', finalData, start);
                                     }

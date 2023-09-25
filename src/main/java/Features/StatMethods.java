@@ -239,15 +239,17 @@ public class StatMethods {
                 if (bandwidth == 1d) {
                     loessInterpolator = new LoessInterpolator(bandwidth, robustIters);
                     y = loessInterpolator.smooth(newX, newY);
-                    for (int i = 0; i < y.length; i++) {
-                        y[i] = y[i] - newY[i];
+                    if (y.length > 100) {
+                        for (int i = 0; i < y.length; i++) {
+                            y[i] = y[i] - newY[i];
+                        }
+                        double[] weights = new double[y.length];
+                        for (int i = 0; i < y.length; i++) {
+                            weights[i] = Math.pow(mean(Arrays.copyOfRange(y, Math.max(i - y.length / 100, 0),
+                                    Math.min(i + y.length / 100, y.length))), 2);
+                        }
+                        y = loessInterpolator.smooth(newX, newY, weights); //weighting so ends become better fit
                     }
-                    double[] weights = new double[y.length];
-                    for (int i = 0; i < y.length; i++) {
-                        weights[i] = Math.pow(mean(Arrays.copyOfRange(y, Math.max(i - y.length/100, 0),
-                                Math.min(i + y.length/100, y.length))), 2);
-                    }
-                    y = loessInterpolator.smooth(newX, newY, weights); //weighting so ends become better fit
                     ArrayList<Integer> nanIdx = new ArrayList<>();
                     int i = 0;
                     for (double yval : y) {

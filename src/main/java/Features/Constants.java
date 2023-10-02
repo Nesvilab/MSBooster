@@ -141,7 +141,7 @@ public class Constants {
     public static Boolean useRT = null;
     public static Integer RTregressionSize = 5000;
     public static Double uniformPriorPercentile = 10d;
-    public static Float RTescoreCutoff = -3.5f; //PSMs with e score higher than this won't make it into RT regression modeling
+    public static Float RTescoreCutoff = (float) Math.pow(10, -3.5); //PSMs with e score higher than this won't make it into RT regression modeling
     public static Integer RTbinMultiplier = 1;
     public static Float RTIQR = 50f;
     public static Boolean noRTscores = false; //TODO: better handling of this
@@ -165,7 +165,7 @@ public class Constants {
     //ion mobility
     public static Boolean useIM = null;
     public static Integer IMregressionSize = 5000;
-    public static Float IMescoreCutoff = -3.5f;
+    public static Float IMescoreCutoff = (float) Math.pow(10, -3.5);
     public static Integer IMbinMultiplier = 100;
     public static final Float IMIQR = 50f;
 

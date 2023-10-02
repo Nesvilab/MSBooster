@@ -33,7 +33,8 @@ public class ProgressReporter {
         linesRead += 1;
         if (linesRead > iterations * currentPercent / 100) {
             long endTime = System.nanoTime();
-            System.out.print("..." + currentPercent + "% (" + (endTime - startTime) / 1000000000 + "sec)");
+//            System.out.print("..." + currentPercent + "% (" + (endTime - startTime) / 1000000000 + "sec)");
+            System.out.print("..." + currentPercent + "%");
             startTime = System.nanoTime();
             currentPercent += Constants.loadingPercent;
         }

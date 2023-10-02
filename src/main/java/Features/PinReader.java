@@ -68,8 +68,6 @@ public class PinReader {
         } else {
             eScoreIdx = ArrayUtils.indexOf(header, "hyperscore"); //DIA
             calcEvalue = true;
-            Constants.RTescoreCutoff = (float) Math.pow(10, Constants.RTescoreCutoff);
-            Constants.IMescoreCutoff = (float) Math.pow(10, Constants.IMescoreCutoff);
         }
 
         getLength();

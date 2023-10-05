@@ -54,6 +54,7 @@ public class MzmlReader {
     public ArrayList<Float>[] RTbins = null;
     public float[][] RTbinStats;
     public Function1<Double, Double> RTLOESS;
+    public Function1<Double, Double> predToExpRTLOESS;
     public int unifPriorSize;
     public float unifProb;
     public int[] unifPriorSizeIM;
@@ -587,6 +588,7 @@ public class MzmlReader {
         if (mode.equals("RT")) {
             expAndPredRTs = RTFunctions.getRTarrays(this, regressionSize);
             RTLOESS = LOESS(expAndPredRTs, bandwidth, robustIters);
+            predToExpRTLOESS = LOESS(new double[][]{expAndPredRTs[1], expAndPredRTs[0]}, bandwidth, robustIters);
         } else if (mode.equals("IM")) {
             double[][][] expAndPredIMs = IMFunctions.getIMarrays(this, regressionSize);
             for (double[][] bins : expAndPredIMs) {
@@ -611,11 +613,15 @@ public class MzmlReader {
             futureList.add(executorService.submit(() -> {
                 for (int j = start; j < end; j++) {
                     MzmlScanNumber msn = getScanNumObject(scanNums.get(j));
-                    double LOESSRT = RTLOESS.invoke((double) msn.RT);
+//                    double LOESSRT = RTLOESS.invoke((double) msn.RT);
+//
+//                    for (PeptideObj pep : msn.peptideObjects) {
+//                        pep.deltaRTLOESS = Math.abs(LOESSRT - pep.RT);
+//                        pep.calibratedRT = LOESSRT;
+//                    }
 
                     for (PeptideObj pep : msn.peptideObjects) {
-                        pep.deltaRTLOESS = Math.abs(LOESSRT - pep.RT);
-                        pep.calibratedRT = LOESSRT;
+                        pep.deltaRTLOESS = Math.abs(msn.RT - predToExpRTLOESS.invoke((double) pep.RT));
                     }
                 }
             }));

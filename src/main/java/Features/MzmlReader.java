@@ -454,14 +454,19 @@ public class MzmlReader {
 
                     //get stats based on experimental RT bin
                     int idx = (int) (msn.RT * Constants.RTbinMultiplier);
-                    float binStd = RTbinStats[idx][1];
+//                    float binStd = RTbinStats[idx][1];
                     float binIqr = RTbinStats[idx][2];
 
                     //now calculate deltaRTs
-                    double LOESSRT = RTLOESS.invoke((double) msn.RT);
+//                    double LOESSRT = RTLOESS.invoke((double) msn.RT);
+//                    for (PeptideObj pep : msn.peptideObjects) {
+//                        //pep.deltaRTLOESSnormalized = Math.abs(LOESSRT - pep.RT) / binStd;
+//                        pep.deltaRTLOESSnormalized = Math.abs(LOESSRT - pep.RT) / binIqr;
+//                    }
+
                     for (PeptideObj pep : msn.peptideObjects) {
-                        //pep.deltaRTLOESSnormalized = Math.abs(LOESSRT - pep.RT) / binStd;
-                        pep.deltaRTLOESSnormalized = Math.abs(LOESSRT - pep.RT) / binIqr;
+                        pep.deltaRTLOESSnormalized =
+                                Math.abs(msn.RT - predToExpRTLOESS.invoke((double) pep.RT)) / binIqr;
                     }
                 }
             }));

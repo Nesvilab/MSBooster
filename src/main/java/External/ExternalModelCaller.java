@@ -30,6 +30,7 @@ public class ExternalModelCaller {
         switch (model) {
             case "DIA-NN":
                 try {
+                    boolean useTMT = false;
                     //DIA-NN command
                     System.out.println("Generating DIA-NN predictions");
                     Constants.spectraRTPredFile =
@@ -37,11 +38,21 @@ public class ExternalModelCaller {
                                     ".predicted.bin";
                     String line;
 
+                    //check for TMT
+                    BufferedReader br = new BufferedReader(new FileReader(Constants.spectraRTPredInput));
+                    while ((line = br.readLine()) != null) {
+                        if (line.contains("[TMT]")) {
+                            useTMT = true;
+                            break;
+                        }
+                    }
+                    br.close();
+
                     //get num PSMs
                     int subFileSize = 0;
                     int linenumTotal = 0;
                     if (Constants.splitPredInputFile != 1) {
-                        BufferedReader br = new BufferedReader(new FileReader(Constants.spectraRTPredInput));
+                        br = new BufferedReader(new FileReader(Constants.spectraRTPredInput));
                         int linenum = -1;
                         while ((line = br.readLine()) != null) {
                             linenum += 1;
@@ -67,7 +78,7 @@ public class ExternalModelCaller {
                                 endRow = linenumTotal;
                             }
 
-                            BufferedReader br = new BufferedReader(new FileReader(Constants.spectraRTPredInput));
+                            br = new BufferedReader(new FileReader(Constants.spectraRTPredInput));
                             line = br.readLine();
                             FileWriter myWriter = new FileWriter(inputString);
                             myWriter.write(line + "\n");
@@ -83,16 +94,32 @@ public class ExternalModelCaller {
                         }
 
                         //actual prediction
-                        ProcessBuilder builder = new ProcessBuilder(Constants.DiaNN,
-                                "--lib",
-                                inputString,
-                                "--predict",
-                                "--threads",
-                                String.valueOf(Constants.numThreads),
-                                "--strip-unknown-mods",
-                                "--full-unimod",
-                                "--predict-n-frag",
-                                "100");
+                        ProcessBuilder builder;
+                        if (useTMT) {
+                            builder = new ProcessBuilder(Constants.DiaNN,
+                                    "--lib",
+                                    inputString,
+                                    "--predict",
+                                    "--threads",
+                                    String.valueOf(Constants.numThreads),
+                                    "--strip-unknown-mods",
+                                    "--full-unimod",
+                                    "--predict-n-frag",
+                                    "100",
+                                    "--mod",
+                                    "TMT,229.1629");
+                        } else {
+                            builder = new ProcessBuilder(Constants.DiaNN,
+                                    "--lib",
+                                    inputString,
+                                    "--predict",
+                                    "--threads",
+                                    String.valueOf(Constants.numThreads),
+                                    "--strip-unknown-mods",
+                                    "--full-unimod",
+                                    "--predict-n-frag",
+                                    "100");
+                        }
                         System.out.println(String.join(" ", builder.command()));
                         builder.redirectErrorStream(true);
                         Process process = builder.start();

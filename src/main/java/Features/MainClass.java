@@ -288,6 +288,19 @@ public class MainClass {
             Constants.individualSpectralSimilaritiesFeatures = Constants.makeIndividualSpectralSimilarities();
             Constants.intensitiesDifferenceFeatures = Constants.makeintensitiesDifference();
 
+            //if different RT and spectra models
+            if (!Constants.rtModel.equals("")  || !Constants.spectraModel.equals("")) {
+                Constants.spectraRTPredModel = "";
+                if (!Constants.rtModel.equals("")) {
+                    Constants.spectraRTPredModel += Constants.rtModel + ",";
+                }
+                if (!Constants.spectraModel.equals("")) {
+                    Constants.spectraRTPredModel += Constants.spectraModel + ",";
+                }
+                Constants.spectraRTPredModel = Constants.spectraRTPredModel.substring(0,
+                        Constants.spectraRTPredModel.length() - 1);
+            }
+
             if (Constants.adaptiveFragmentNum) {
                 Constants.topFragments = 36; //TODO think of better way than hardcoding
             } else if (Constants.divideFragments.equals("1")) { //standard setting of yb vs others
@@ -524,57 +537,56 @@ public class MainClass {
 
             //get matched pin files for mzML files
             PinMzmlMatcher pmMatcher = new PinMzmlMatcher(Constants.mzmlDirectory, Constants.pinPepXMLDirectory);
-            //TODO: switch case
             if (createSpectraRTPredFile || Constants.createPredFileOnly) {
-                if (Constants.spectraRTPredModel.equals("DIA-NN")) {
-                    if (Constants.DiaNN == null) {
-                        throw new IllegalArgumentException("path to DIA-NN executable must be provided");
+                for (String currentModel : Constants.spectraRTPredModel.split(",")) {
+                    if (Constants.useKoina) {
+                        PeptideFileCreator.createPeptideFile(pmMatcher,
+                                Constants.spectraRTPredInput.substring(0, Constants.spectraRTPredInput.length() - 4)
+                                        + "_" + currentModel + ".json", currentModel);
+                    } else {
+                        //createfull is needed for everything
+                        PeptideFileCreator.createPeptideFile(pmMatcher,
+                                Constants.spectraRTPredInput.substring(0, Constants.spectraRTPredInput.length() - 4) + "_full.tsv",
+                                "createFull");
+
+                        switch (currentModel) {
+                            case "DIA-NN":
+                                if (Constants.DiaNN == null) {
+                                    throw new IllegalArgumentException("path to DIA-NN executable must be provided");
+                                }
+                                System.out.println("Generating input file for DIA-NN");
+                                PeptideFileCreator.createPeptideFile(pmMatcher, Constants.spectraRTPredInput, "Diann");
+                                break;
+                            case "pDeep2":
+                                System.out.println("Generating input file for pDeep2");
+                                PeptideFileCreator.createPeptideFile(pmMatcher, Constants.spectraRTPredInput, "pDeep2");
+                                break;
+                            case "pDeep3":
+                                System.out.println("Generating input file for pDeep3");
+                                PeptideFileCreator.createPeptideFile(pmMatcher, Constants.spectraRTPredInput, "pDeep3");
+                                break;
+                            case "PredFull":
+                                System.out.println("Generating input file for PredFull");
+                                PeptideFileCreator.createPeptideFile(pmMatcher, Constants.spectraRTPredInput, "PredFull");
+                                break;
+                            case "Prosit":
+                                System.out.println("Generating input file for Prosit");
+                                PeptideFileCreator.createPeptideFile(pmMatcher, Constants.spectraRTPredInput, "Prosit");
+                                break;
+                            case "PrositTMT":
+                                System.out.println("Generating input file for PrositTMT");
+                                PeptideFileCreator.createPeptideFile(pmMatcher, Constants.spectraRTPredInput, "PrositTMT");
+                                break;
+                            case "alphapeptdeep":
+                                System.out.println("Generating input file for alphapeptdeep");
+                                PeptideFileCreator.createPeptideFile(pmMatcher, Constants.spectraRTPredInput, "alphapeptdeep");
+                                break;
+                            default:
+                                System.out.println("spectraRTPredModel must be one of DIA-NN, Prosit, PrositTMT, " +
+                                        "PredFull, pDeep2, pDeep3, or alphapeptdeep");
+                                System.exit(-1);
+                        }
                     }
-                    System.out.println("Generating input file for DIA-NN");
-                    PeptideFileCreator.createPeptideFile(pmMatcher, Constants.spectraRTPredInput, "Diann");
-                    PeptideFileCreator.createPeptideFile(pmMatcher,
-                            Constants.spectraRTPredInput.substring(0, Constants.spectraRTPredInput.length() - 4) + "_full.tsv",
-                            "createFull");
-                } else if (Constants.spectraRTPredModel.equals("pDeep2")) {
-                    System.out.println("Generating input file for pDeep2");
-                    PeptideFileCreator.createPeptideFile(pmMatcher, Constants.spectraRTPredInput, "pDeep2");
-                } else if (Constants.spectraRTPredModel.equals("pDeep3")) {
-                    System.out.println("Generating input file for pDeep3");
-                    PeptideFileCreator.createPeptideFile(pmMatcher, Constants.spectraRTPredInput, "pDeep3");
-                } else if (Constants.spectraRTPredModel.equals("PredFull")) {
-                    System.out.println("Generating input file for PredFull");
-                    PeptideFileCreator.createPeptideFile(pmMatcher, Constants.spectraRTPredInput, "PredFull");
-                    PeptideFileCreator.createPeptideFile(pmMatcher,
-                            Constants.spectraRTPredInput.substring(0, Constants.spectraRTPredInput.length() - 4) + "_full.tsv",
-                            "createFull");
-                } else if (Constants.spectraRTPredModel.equals("Prosit")) {
-                    System.out.println("Generating input file for Prosit");
-                    PeptideFileCreator.createPeptideFile(pmMatcher, Constants.spectraRTPredInput, "Prosit");
-                    PeptideFileCreator.createPeptideFile(pmMatcher,
-                            Constants.spectraRTPredInput.substring(0, Constants.spectraRTPredInput.length() - 4) + "_full.tsv",
-                            "createFull");
-                } else if (Constants.spectraRTPredModel.equals("PrositTMT")) {
-                    System.out.println("Generating input file for PrositTMT");
-                    PeptideFileCreator.createPeptideFile(pmMatcher, Constants.spectraRTPredInput, "PrositTMT");
-                    PeptideFileCreator.createPeptideFile(pmMatcher,
-                            Constants.spectraRTPredInput.substring(0, Constants.spectraRTPredInput.length() - 4) + "_full.tsv",
-                            "createFull");
-                } else if (Constants.spectraRTPredModel.equals("DIA-NN,PredFull")) {
-                    if (Constants.DiaNN == null) {
-                        throw new IllegalArgumentException("path to DIA-NN executable must be provided");
-                    }
-                    System.out.println("Generating input file for DIA-NN");
-                    PeptideFileCreator.createPeptideFile(pmMatcher, Constants.spectraRTPredInput, "Diann");
-                    //does this need createfull?
-                } else if (Constants.spectraRTPredModel.equals("alphapeptdeep")) {
-                    System.out.println("Generating input file for alphapeptdeep");
-                    PeptideFileCreator.createPeptideFile(pmMatcher, Constants.spectraRTPredInput, "alphapeptdeep");
-                    PeptideFileCreator.createPeptideFile(pmMatcher,
-                            Constants.spectraRTPredInput.substring(0, Constants.spectraRTPredInput.length() - 4) + "_full.tsv",
-                            "createFull");
-                } else {
-                    System.out.println("spectraRTPredModel must be one of DIA-NN, Prosit, PredFull, pDeep, or alphapeptdeep");
-                    System.exit(-1);
                 }
 
                 if (Constants.createPredFileOnly) {
@@ -594,6 +606,7 @@ public class MainClass {
 //            }
 
             //generate predictions
+            //TODO: add behavior for koina
             if ((Constants.spectraRTPredFile == null) && (createSpectraRTPredFile2)) {
                 ExternalModelCaller.callModel("DIA-NN");
             }

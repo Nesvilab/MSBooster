@@ -91,8 +91,10 @@ public class PercolatorFormatter {
                             mgf, Constants.spectraRTPredModel, executorService);
                 }
                 allPreds = predictedSpectra.getPreds();
-            } else if (mgfSplit.length == 2){ //if fragment from predfull is not y/b, add.
-                                              //Prosit/diann is first, predfull second
+            } else if (mgfSplit.length == 2){
+                //if fragment from predfull is not y/b, add.
+                //Prosit/diann is first, predfull second
+                //can also add two models, the first being for RT, the second for spectra
                 String[] modelSplit = Constants.spectraRTPredModel.split(",");
 
                 System.out.println("Loading predicted spectra 1");
@@ -101,10 +103,11 @@ public class PercolatorFormatter {
                 System.out.println("Loading predicted spectra 2");
                 if (modelSplit[1].equals("PredFull")) {
                     predictedSpectra2 = SpectralPredictionMapper.createSpectralPredictionMapper(
-                            mgfSplit[1], pinFiles, executorService);
+                            mgfSplit[1], pinFiles, executorService); //get predfull library
                 } else {
                     predictedSpectra2 = SpectralPredictionMapper.createSpectralPredictionMapper(
-                            mgfSplit[1], modelSplit[1], executorService);
+                            mgfSplit[1], modelSplit[1], executorService); //get other library
+                    Constants.addNonYb = false; //probably just want to use separate spectra and RT models
                 }
                 System.out.println("Merging spectral libraries");
 
@@ -137,7 +140,7 @@ public class PercolatorFormatter {
                         ArrayList<Float> intensities = new ArrayList<>();
                         ArrayList<String> fragTypes = new ArrayList<>();
 
-                        if (Constants.replaceYBintensities) {
+                        if (Constants.addNonYb) {
                             float maxIntensityMZ = Float.NaN;
 
                             //add original peaks

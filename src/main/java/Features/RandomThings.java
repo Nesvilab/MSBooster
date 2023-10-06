@@ -31,6 +31,7 @@ public class RandomThings {
     }
 
     public static void main(String[] args) {
+        System.out.println(5f / 2f);
     }
 }
 

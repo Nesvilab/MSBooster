@@ -18,7 +18,6 @@
 package Features;
 
 import org.apache.commons.lang3.ArrayUtils;
-import org.graalvm.compiler.java.JsrNotSupportedBailout;
 import umich.ms.fileio.exceptions.FileParsingException;
 
 import java.io.File;
@@ -207,9 +206,10 @@ public class PeptideFileCreator {
 
         //write to file
         try {
+            String filename = "";
             if (Constants.useKoina) {
                 JSONWriter jw = new JSONWriter(modelFormat, hSetHits);
-                jw.write();
+                filename = jw.write(true);
             } else {
                 //TODO: outfile name with prediction model in name
                 FileWriter myWriter = new FileWriter(outfile);
@@ -265,7 +265,11 @@ public class PeptideFileCreator {
             long endTime = System.nanoTime();
             long duration = (endTime - startTime);
             System.out.println(modelFormat + " input file generation took " + duration / 1000000 +" milliseconds");
-            System.out.println("Input file at  " + outfile);
+            if (!Constants.useKoina) {
+                System.out.println("Input file at  " + outfile);
+            } else {
+                System.out.println("Input files in " + filename);
+            }
             //return fasta; //save fasta for later
         } catch (IOException e) {
             System.out.println("An error occurred");

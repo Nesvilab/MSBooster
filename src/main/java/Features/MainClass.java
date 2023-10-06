@@ -594,6 +594,7 @@ public class MainClass {
                     System.exit(0);
                 }
             }
+            System.exit(0);
 //            if (createDetectAllPredFile) {
 //                System.out.println("Generating input file for DeepMSPeptide");
 //                //long startTime = System.nanoTime();

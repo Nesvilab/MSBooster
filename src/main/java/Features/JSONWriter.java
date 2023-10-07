@@ -10,8 +10,11 @@ import java.io.IOException;
 import java.lang.reflect.Array;
 import java.nio.file.Files;
 import java.nio.file.Paths;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashSet;
+import java.util.List;
+import java.util.concurrent.*;
 
 public class JSONWriter {
     String url;
@@ -25,6 +28,7 @@ public class JSONWriter {
     boolean TMT = false;
     int numFiles;
     int iteration = -1;
+    public List<Future> futureList = new ArrayList<>(Constants.numThreads);
 
     private HashSet<String> RTmodels = new HashSet<>(Arrays.asList("AlphaPept_rt_generic",
             "Prosit_2019_irt", "Prosit_2020_irt_TMT"));
@@ -95,7 +99,7 @@ public class JSONWriter {
                 Math.min(start + maxJsonLength, parent.peptides.length));
     }
 
-    public String write(boolean createDir) throws IOException {
+    public String write(boolean createDir) throws IOException, ExecutionException, InterruptedException {
         String jsonOutFolder = Constants.outputDirectory + File.separator + "jsonFiles";
         if (createDir) {
             if (Files.exists(Paths.get(jsonOutFolder))) {
@@ -106,10 +110,26 @@ public class JSONWriter {
 
         String fileName = "";
         if (numFiles > 1) {
-            for (int rep = 0; rep < numFiles; rep ++) {
-                JSONWriter jw = new JSONWriter(this, rep);
-                jw.write(false);
+            futureList.clear();
+            ExecutorService executorService = Executors.newFixedThreadPool(Constants.numThreads);
+            for (int i = 0; i < Constants.numThreads; i++) {
+                int start = (int) (numFiles * (long) i) / Constants.numThreads;
+                int end = (int) (numFiles * (long) (i + 1)) / Constants.numThreads;
+                futureList.add(executorService.submit(() -> {
+                    for (int rep = start; rep < end; rep ++) {
+                        JSONWriter jw = new JSONWriter(this, rep);
+                        try {
+                            jw.write(false);
+                        } catch (IOException | ExecutionException | InterruptedException e) {
+                            e.printStackTrace();
+                        }
+                    }
+                }));
             }
+            for (Future future : futureList) {
+                future.get();
+            }
+            executorService.shutdown();
         } else {
             switch (model) {
                 case "alphapept":

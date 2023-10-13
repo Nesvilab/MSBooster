@@ -307,9 +307,13 @@ public class PinReader {
             }
             String NCE = getNCE(fragmentation);
             String pep = pf.diann.replace("UniMod", "UNIMOD");
-            if (pep.contains("TMT")) {
-                pep = pep.replace("TMT", "UNIMOD:737");
-                pep = "[UNIMOD:737]-" + pep.substring(12);
+            if (pep.contains("[TMT]")) {
+                pep = pep.replace("[TMT]", "[UNIMOD:737]");
+            }
+
+            if (pep.startsWith("[")) { //this is the case for all n term mods //TODO deal with c term mods
+                int splitpoint = pep.indexOf("]");
+                pep = pep.substring(0, splitpoint + 1) + "-" + pep.substring(splitpoint + 1);
             }
             StringBuilder sb = new StringBuilder();
             sb.append(pep).append(",").append(pf.charge).append(",").append(NCE).append(",").

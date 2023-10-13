@@ -17,7 +17,9 @@
 
 package Features;
 
+import External.DiannModelCaller;
 import External.ExternalModelCaller;
+import External.KoinaModelCaller;
 
 import java.io.*;
 import java.lang.reflect.Field;
@@ -594,7 +596,6 @@ public class MainClass {
                     System.exit(0);
                 }
             }
-            System.exit(0);
 //            if (createDetectAllPredFile) {
 //                System.out.println("Generating input file for DeepMSPeptide");
 //                //long startTime = System.nanoTime();
@@ -607,10 +608,16 @@ public class MainClass {
 //            }
 
             //generate predictions
-            //TODO: add behavior for koina
-            if ((Constants.spectraRTPredFile == null) && (createSpectraRTPredFile2)) {
-                ExternalModelCaller.callModel("DIA-NN");
+            for (String currentModel : Constants.spectraRTPredModel.split(",")) {
+                if ((Constants.spectraRTPredFile == null) && (createSpectraRTPredFile2)) {
+                    if (Constants.useKoina) {
+                        KoinaModelCaller.callModel(currentModel);
+                    } else {
+                        DiannModelCaller.callModel();
+                    }
+                }
             }
+            System.exit(0);
 
             //create new pin file with features
             System.out.println("Generating edited pin with following features: " + Arrays.toString(featuresArray));

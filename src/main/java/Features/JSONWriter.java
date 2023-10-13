@@ -30,24 +30,17 @@ public class JSONWriter {
     int iteration = -1;
     public List<Future> futureList = new ArrayList<>(Constants.numThreads);
 
-    private HashSet<String> RTmodels = new HashSet<>(Arrays.asList("AlphaPept_rt_generic",
-            "Prosit_2019_irt", "Prosit_2020_irt_TMT"));
-    private HashSet<String> MS2models = new HashSet<>(Arrays.asList("ms2pip_2021_HCD",
-            "AlphaPept_ms2_generic", "Prosit_2019_intensity", "Prosit_2020_intensity_CID",
-            "Prosit_2020_intensity_TMT", "Prosit_2020_intensity_HCD", "Prosit_2023_intensity_TOF"));
-    private HashSet<String> TMTmodels = new HashSet<>(Arrays.asList("Prosit_2020_irt_TMT",
-            "Prosit_2020_intensity_TMT"));
     private final int maxJsonLength = 1000;
 
     public JSONWriter(String url, HashSet<String> entries) {
         this.url = url;
         this.model = url.toLowerCase().split("_")[0];
-        if (RTmodels.contains(url)) {
+        if (Constants.KoinaRTmodels.contains(url)) {
             property = "rt";
-        } else if (MS2models.contains(url)) {
+        } else if (Constants.KoinaMS2models.contains(url)) {
             property = "ms2";
         }
-        if (TMTmodels.contains(url)) {
+        if (Constants.KoinaTMTmodels.contains(url)) {
             TMT = true;
         }
 
@@ -77,12 +70,12 @@ public class JSONWriter {
         int start = iteration * maxJsonLength;
         this.url = parent.url;
         this.model = url.toLowerCase().split("_")[0];
-        if (RTmodels.contains(url)) {
+        if (Constants.KoinaRTmodels.contains(url)) {
             property = "rt";
-        } else if (MS2models.contains(url)) {
+        } else if (Constants.KoinaMS2models.contains(url)) {
             property = "ms2";
         }
-        if (TMTmodels.contains(url)) {
+        if (Constants.KoinaTMTmodels.contains(url)) {
             TMT = true;
         }
 
@@ -103,9 +96,10 @@ public class JSONWriter {
         String jsonOutFolder = Constants.outputDirectory + File.separator + "jsonFiles";
         if (createDir) {
             if (Files.exists(Paths.get(jsonOutFolder))) {
-                FileUtils.deleteDirectory(new File(jsonOutFolder));
+                FileUtils.cleanDirectory(new File(jsonOutFolder));
+            } else {
+                Files.createDirectories(Paths.get(jsonOutFolder));
             }
-            Files.createDirectories(Paths.get(jsonOutFolder));
         }
 
         String fileName = "";
@@ -148,11 +142,11 @@ public class JSONWriter {
                     JSONArray peptideData = new JSONArray();
                     JSONArray innerArray;
 
-                    if (TMT) {
-                        for (int i = 0; i < peptides.length; i++) {
-                            peptides[i] = "[UNIMOD:737]-" + peptides[i];
-                        }
-                    }
+//                    if (TMT) {
+//                        for (int i = 0; i < peptides.length; i++) {
+//                            peptides[i] = "[UNIMOD:737]-" + peptides[i];
+//                        }
+//                    }
                     for (String pep : peptides) {
                         innerArray = new JSONArray();
                         innerArray.put(pep);

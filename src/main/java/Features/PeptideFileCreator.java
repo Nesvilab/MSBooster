@@ -209,7 +209,12 @@ public class PeptideFileCreator {
             String filename = "";
             if (Constants.useKoina) {
                 JSONWriter jw = new JSONWriter(modelFormat, hSetHits);
-                filename = jw.write(true);
+                if (!Constants.usedKoina) {
+                    filename = jw.write(true);
+                    Constants.usedKoina = true;
+                } else {
+                    filename = jw.write(false);
+                }
             } else {
                 //TODO: outfile name with prediction model in name
                 FileWriter myWriter = new FileWriter(outfile);

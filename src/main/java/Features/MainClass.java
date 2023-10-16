@@ -231,6 +231,11 @@ public class MainClass {
                             case "database_name":
                                 params.put("fasta", val);
                                 break;
+                            case "precursor_charge":
+                                vals = val.split(" ");
+                                params.put("minPrecursorCharge", vals[0]);
+                                params.put("maxPrecursorCharge", vals[1]);
+                                break;
                         }
                     }
 
@@ -608,10 +613,14 @@ public class MainClass {
 //            }
 
             //generate predictions
-            for (String currentModel : Constants.spectraRTPredModel.split(",")) {
+            KoinaLibReader klr = new KoinaLibReader();
+            //this is just so that ms2 is predicted first, and which works for Koina
+            List<String> models = Arrays.asList(Constants.spectraRTPredModel.split(","));
+            Collections.reverse(models);
+            for (String currentModel : models) {
                 if ((Constants.spectraRTPredFile == null) && (createSpectraRTPredFile2)) {
                     if (Constants.useKoina) {
-                        KoinaModelCaller.callModel(currentModel);
+                        KoinaModelCaller.callModel(currentModel, klr);
                     } else {
                         DiannModelCaller.callModel();
                     }

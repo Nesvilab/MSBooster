@@ -56,6 +56,9 @@ public class Constants {
     public static Integer digestMaxLength = 50;
     public static Float digestMinMass = 500f; //Da
     public static Float digestMaxMass = 5000f;
+    public static Integer minPrecursorCharge = 1;
+    public static Integer maxPrecursorCharge = 8;
+
     //public static Boolean includeDecoy = false;
     private static FastaReader fastaReader = null;
     public static void setFastaReader(FastaReader f) {
@@ -74,6 +77,7 @@ public class Constants {
     public static Boolean addNonYb = true;
     public static Integer splitPredInputFile = 1;
     public static Boolean useKoina = false;
+    public static Boolean usedKoina = false;
     public static HashSet<String> KoinaRTmodels = new HashSet<>(Arrays.asList("AlphaPept_rt_generic",
             "Prosit_2019_irt", "Prosit_2020_irt_TMT"));
     public static HashSet<String> KoinaMS2models = new HashSet<>(Arrays.asList("ms2pip_2021_HCD",

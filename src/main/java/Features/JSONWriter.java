@@ -235,10 +235,10 @@ public class JSONWriter {
                     // Write JSON data to a file
                     if (iteration != -1) {
                         fileName = jsonOutFolder + File.separator +
-                                "spectraRT_" + url + iteration + ".json";
+                                "spectraRT_" + url + iteration + property + ".json";
                     } else {
                         fileName = jsonOutFolder + File.separator +
-                                "spectraRT_" + url + ".json";
+                                "spectraRT_" + url + property + ".json";
                     }
                     try (FileWriter fileWriter = new FileWriter(fileName)) {
                         fileWriter.write(jsonData.toString(4)); // Using 4 for indentation

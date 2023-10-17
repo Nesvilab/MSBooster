@@ -290,7 +290,8 @@ public class PinReader {
         return peps.toArray(new String[0]);
     }
 
-    public String[] createJSON(File mzmlFile) throws IOException, InterruptedException, ExecutionException, FileParsingException {
+    public String[] createJSON(File mzmlFile, String modelFormat)
+            throws IOException, InterruptedException, ExecutionException, FileParsingException {
         ArrayList<String> peps = new ArrayList<String>();
         if (Constants.NCE.equals("")) {
             mzml = new MzmlReader(mzmlFile.getCanonicalPath());
@@ -298,6 +299,13 @@ public class PinReader {
         Constants.instrument = getInstrument();
         while (next()) {
             PeptideFormatter pf = getPep();
+            if ((modelFormat.contains("Prosit") || modelFormat.contains("ms2pip"))
+                    && pf.stripped.contains("U")) { // no peptides with U
+                continue;
+            }
+            if (modelFormat.contains("ms2pip") && pf.stripped.length() > 30) { //peptide has length limit
+                continue;
+            }
             String fragmentation = "";
             Set<String> fragTypes = mzml.scanNumberObjects.get(getScanNum()).NCEs.keySet();
             if (fragTypes.contains("CID")) {
@@ -313,7 +321,11 @@ public class PinReader {
 
             if (pep.startsWith("[")) { //this is the case for all n term mods //TODO deal with c term mods
                 int splitpoint = pep.indexOf("]");
-                pep = pep.substring(0, splitpoint + 1) + "-" + pep.substring(splitpoint + 1);
+                if (modelFormat.contains("Prosit")) {
+                    pep = pep.substring(splitpoint + 1);
+                } else {
+                    pep = pep.substring(0, splitpoint + 1) + "-" + pep.substring(splitpoint + 1);
+                }
             }
             StringBuilder sb = new StringBuilder();
             sb.append(pep).append(",").append(pf.charge).append(",").append(NCE).append(",").

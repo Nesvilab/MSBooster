@@ -23,7 +23,8 @@ public class KoinaModelCaller {
     private static final int ms2pipMzIdx = 1;
     private static final int ms2pipIntIdx = 2;
 
-    public static void callModel(String model, KoinaLibReader klr) throws IOException {
+    public static void callModel(String model, KoinaLibReader klr) {
+        System.out.println("Calling " + model + " model");
         long startTime = System.currentTimeMillis();
 
         String property = null;
@@ -96,7 +97,8 @@ public class KoinaModelCaller {
                             KoinaModelCaller.parseKoinaOutput(filenameArray[i], koinaSb.toString(),
                                     finalProperty, model, klr);
                         } catch (Exception e) {
-                            System.out.println(koinaSb.toString().substring(koinaSb.toString().length() - 100));
+                            System.out.println(filenameArray[i] + " had output that ended in: ");
+                            System.out.println(koinaSb.toString().substring(Math.max(0, koinaSb.toString().length() - 1000)));
                             e.printStackTrace();
                         }
                     }

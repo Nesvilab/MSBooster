@@ -188,7 +188,7 @@ public class PeptideFileCreator {
                     break;
             }
             if (Constants.useKoina) {
-                hitsToAdd = pin.createJSON(mzmlf);
+                hitsToAdd = pin.createJSON(mzmlf, modelFormat);
             }
             pin.close();
 

@@ -77,29 +77,54 @@ public class KoinaModelCaller {
                 String finalProperty = property;
                 futureList.add(executorService.submit(() -> {
                     for (int i = start; i < end; i++) {
-                        StringBuilder koinaSb = new StringBuilder();
-                        try {
-                            Process p = processes[i];
-                            BufferedReader reader = readers[i];
+                        int attempts = 0;
+                        while (attempts < 3) {
+                            StringBuilder koinaSb = new StringBuilder();
+                            try {
+                                Process p = processes[i];
+                                BufferedReader reader = readers[i];
 
-                            String line = "";
-                            while ((line = reader.readLine()) != null) {
-                                koinaSb.append(line);
+                                String line = "";
+                                while ((line = reader.readLine()) != null) {
+                                    koinaSb.append(line);
+                                }
+                                reader.close();
+                                p.waitFor();
+                                p.destroy();
+                            } catch (Exception e) {
+                                e.printStackTrace();
                             }
-                            p.waitFor();
-                            p.destroy();
-                            reader.close();
-                        } catch (Exception e) {
-                            e.printStackTrace();
-                        }
 
-                        try {
-                            KoinaModelCaller.parseKoinaOutput(filenameArray[i], koinaSb.toString(),
-                                    finalProperty, model, klr);
-                        } catch (Exception e) {
-                            System.out.println(filenameArray[i] + " had output that ended in: ");
-                            System.out.println(koinaSb.toString().substring(Math.max(0, koinaSb.toString().length() - 1000)));
-                            e.printStackTrace();
+                            try {
+                                KoinaModelCaller.parseKoinaOutput(filenameArray[i], koinaSb.toString(),
+                                        finalProperty, model, klr);
+                                break;
+                            } catch (Exception e) {
+                                System.out.println("Retrying calling " + filenameArray[i]);
+                                attempts++;
+                                if (attempts == 3) {
+                                    System.out.println(filenameArray[i] + " had output that ended in: ");
+                                    System.out.println(koinaSb.toString().substring(Math.max(0, koinaSb.toString().length() - 1000)));
+                                    System.out.println("Retried calling " + filenameArray[i] + " " + attempts +
+                                            " times. Moving on.");
+                                    e.printStackTrace();
+                                    break;
+                                }
+
+                                //set up again
+                                String command = "curl -s --parallel --parallel-immediate --parallel-max 36 " +
+                                        "-H content-type:application/json -d @" + filenameArray[i] +
+                                        " https://koina.proteomicsdb.org/v2/models/" + model + "/infer";
+
+                                ProcessBuilder builder = new ProcessBuilder(command.split(" "));
+                                builder.redirectErrorStream(true);
+                                try {
+                                    processes[i] = builder.start();
+                                } catch (IOException ioException) {
+                                    ioException.printStackTrace();
+                                }
+                                readers[i] = new BufferedReader(new InputStreamReader(processes[i].getInputStream()));
+                            }
                         }
                     }
                 }));

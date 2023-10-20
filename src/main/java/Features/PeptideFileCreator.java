@@ -184,11 +184,11 @@ public class PeptideFileCreator {
                         System.out.println("If mzml file is available, will read in NCE from there");
                         Constants.FragmentationType = "HCD";
                     }
-                    hitsToAdd = pin.createAlphapeptdeepList(mzmlf);
+                    hitsToAdd = pin.createAlphapeptdeepList(mzmlf, pmm);
                     break;
             }
             if (Constants.useKoina) {
-                hitsToAdd = pin.createJSON(mzmlf, modelFormat);
+                hitsToAdd = pin.createJSON(mzmlf, pmm, modelFormat);
             }
             pin.close();
 

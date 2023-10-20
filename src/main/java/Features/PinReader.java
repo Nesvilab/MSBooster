@@ -265,12 +265,17 @@ public class PinReader {
         return peps.toArray(new String[0]);
     }
 
-    public String[] createAlphapeptdeepList(File mzmlFile) throws IOException, InterruptedException, ExecutionException, FileParsingException {
+    public String[] createAlphapeptdeepList(File mzmlFile, PinMzmlMatcher pmm) throws IOException, InterruptedException, ExecutionException, FileParsingException {
         ArrayList<String> peps = new ArrayList<String>();
-        if (Constants.NCE.equals("")) {
+        int fileI = 0;
+        if (Constants.NCE.equals("") && pmm.mzmlReaders[fileI] == null) {
             mzml = new MzmlReader(mzmlFile.getCanonicalPath());
+        } else if (pmm.mzmlReaders[fileI] != null) {
+            mzml = pmm.mzmlReaders[fileI];
         }
-        Constants.instrument = getInstrument();
+        if (Constants.instrument.equals("")) {
+            Constants.instrument = getInstrument();
+        }
         while (next()) {
             PeptideFormatter pf = getPep();
             String NCE = getNCE();
@@ -290,13 +295,25 @@ public class PinReader {
         return peps.toArray(new String[0]);
     }
 
-    public String[] createJSON(File mzmlFile, String modelFormat)
+    public String[] createJSON(File mzmlFile, PinMzmlMatcher pmm, String modelFormat)
             throws IOException, InterruptedException, ExecutionException, FileParsingException {
         ArrayList<String> peps = new ArrayList<String>();
-        if (Constants.NCE.equals("")) {
-            mzml = new MzmlReader(mzmlFile.getCanonicalPath());
+        int fileI = 0;
+        for (File f : pmm.mzmlFiles) {
+            if (f.toString().equals(mzmlFile.toString())) {
+                break;
+            }
+            fileI++;
         }
-        Constants.instrument = getInstrument();
+        if (Constants.NCE.equals("") && pmm.mzmlReaders[fileI] == null) {
+            mzml = new MzmlReader(mzmlFile.getCanonicalPath());
+            pmm.mzmlReaders[fileI] = mzml;
+        } else if (pmm.mzmlReaders[fileI] != null) {
+            mzml = pmm.mzmlReaders[fileI];
+        }
+        if (Constants.instrument.equals("")) {
+            Constants.instrument = getInstrument();
+        }
         while (next()) {
             PeptideFormatter pf = getPep();
             if ((modelFormat.contains("Prosit") || modelFormat.contains("ms2pip"))
@@ -306,14 +323,21 @@ public class PinReader {
             if (modelFormat.contains("ms2pip") && pf.stripped.length() > 30) { //peptide has length limit
                 continue;
             }
-            String fragmentation = "";
-            Set<String> fragTypes = mzml.scanNumberObjects.get(getScanNum()).NCEs.keySet();
-            if (fragTypes.contains("CID")) {
-                fragmentation = "CID";
+
+            String NCE;
+            String fragmentation;
+            if (mzml != null) {
+                Set<String> fragTypes = mzml.scanNumberObjects.get(getScanNum()).NCEs.keySet();
+                if (fragTypes.contains("CID")) {
+                    fragmentation = "CID";
+                } else {
+                    fragmentation = "HCD";
+                }
+                NCE = getNCE(fragmentation);
             } else {
-                fragmentation = "HCD";
+                NCE = Constants.NCE;
+                fragmentation = Constants.FragmentationType;
             }
-            String NCE = getNCE(fragmentation);
             String pep = pf.diann.replace("UniMod", "UNIMOD");
             if (pep.contains("[TMT]")) {
                 pep = pep.replace("[TMT]", "[UNIMOD:737]");

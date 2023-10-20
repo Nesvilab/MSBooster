@@ -100,7 +100,6 @@ public class KoinaModelCaller {
                                         finalProperty, model, klr);
                                 break;
                             } catch (Exception e) {
-                                System.out.println("Retrying calling " + filenameArray[i]);
                                 attempts++;
                                 if (attempts == 3) {
                                     System.out.println(filenameArray[i] + " had output that ended in: ");

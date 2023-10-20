@@ -68,6 +68,7 @@ public class MzmlReader {
     public MzmlReader(String filename) throws FileParsingException, ExecutionException, InterruptedException {
         // Creating data source
         //path = Paths.get(filename); //
+        System.out.println("Processing " + filename);
         Path path = Paths.get(filename);
         pathStr = path.toString();
         MZMLFile source = new MZMLFile(pathStr);
@@ -103,6 +104,7 @@ public class MzmlReader {
 
     public MzmlReader(MgfFileReader mgf) throws FileParsingException, ExecutionException, InterruptedException { //uncalibrated mgf from MSFragger .d search
         pathStr = mgf.filenames.get(0);
+        System.out.println("Processing " + pathStr);
 
         //Constants.useIM = true;
         //scanNumberObjects = mgf.scanNumberObjects;

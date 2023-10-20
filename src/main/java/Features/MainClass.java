@@ -626,7 +626,6 @@ public class MainClass {
                     }
                 }
             }
-            System.exit(0);
 
             //create new pin file with features
             System.out.println("Generating edited pin with following features: " + Arrays.toString(featuresArray));

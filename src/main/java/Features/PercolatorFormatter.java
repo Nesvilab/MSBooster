@@ -69,6 +69,7 @@ public class PercolatorFormatter {
 
         File[] pinFiles = pmMatcher.pinFiles;
         File[] mzmlFiles = pmMatcher.mzmlFiles;
+        MzmlReader[] mzmlReaders = pmMatcher.mzmlReaders;
 
         //load predicted spectra
         SpectralPredictionMapper predictedSpectra = null;
@@ -320,13 +321,16 @@ public class PercolatorFormatter {
                 String newOutfile = pinFiles[i].getAbsolutePath().replaceAll("\\.pin$", "_" + outfile + ".pin");
 
                 //load mzml file
-                System.out.println("Processing " + mzmlFiles[i].getName());
                 MzmlReader mzml;
                 if (mzmlFiles[i].getName().substring( mzmlFiles[i].getName().length() - 3).toLowerCase().equals("mgf")) {
                     mzml = new MzmlReader(new MgfFileReader(mzmlFiles[i].getCanonicalPath(),
                             true, executorService, ""));
                 } else {
-                    mzml = new MzmlReader(mzmlFiles[i].getCanonicalPath());
+                    if (mzmlReaders[i] == null) {
+                        mzml = new MzmlReader(mzmlFiles[i].getCanonicalPath());
+                    } else {
+                        mzml = mzmlReaders[i];
+                    }
                 }
 
                 //load pin file, which already includes all ranks

@@ -3,6 +3,7 @@ package External;
 import Features.Constants;
 import Features.KoinaLibReader;
 import Features.PredictionEntry;
+import Features.ProgressReporter;
 import com.google.gson.Gson;
 import com.google.gson.stream.JsonReader;
 
@@ -76,6 +77,7 @@ public class KoinaModelCaller {
                 int end = (int) (numProcesses * (long) (j + 1)) / Constants.numThreads;
                 String finalProperty = property;
                 futureList.add(executorService.submit(() -> {
+                    ProgressReporter pr = new ProgressReporter(end - start);
                     for (int i = start; i < end; i++) {
                         int attempts = 0;
                         while (attempts < 3) {
@@ -124,6 +126,9 @@ public class KoinaModelCaller {
                                 }
                                 readers[i] = new BufferedReader(new InputStreamReader(processes[i].getInputStream()));
                             }
+                        }
+                        if (start == 0) {
+                            pr.progress();
                         }
                     }
                 }));

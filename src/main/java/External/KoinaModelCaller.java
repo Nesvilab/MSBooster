@@ -6,6 +6,7 @@ import com.google.gson.stream.JsonReader;
 
 import java.io.*;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutorService;
@@ -15,14 +16,20 @@ import java.util.concurrent.Future;
 public class KoinaModelCaller {
     private final int AlphaPeptDeepMzIdx = 1;
     private final int AlphaPeptDeepIntIdx = 0;
+    private final int AlphaPeptDeepFragIdx = 2;
     private final int PrositMzIdx = 1;
     private final int PrositIntIdx = 2;
+    private final int PrositFragIdx = 0;
     private final int ms2pipMzIdx = 1;
     private final int ms2pipIntIdx = 2;
+    private final int ms2pipFragIdx = 0;
+    private String modelType;
 
     public KoinaModelCaller(){}
 
     public void callModel(String model, KoinaLibReader klr) {
+        this.modelType = model.toLowerCase().split("_")[0];
+
         System.out.println("Calling " + model + " model");
         long startTime = System.currentTimeMillis();
 
@@ -103,6 +110,7 @@ public class KoinaModelCaller {
                                     System.out.println("Retried calling " + filenameArray[i] + " " + attempts +
                                             " times. Moving on.");
                                     e.printStackTrace();
+                                    System.exit(1);
                                     break;
                                 }
 
@@ -156,15 +164,19 @@ public class KoinaModelCaller {
             //get indices for processing
             int mzIdx = 0;
             int intIdx = 0;
+            int fragIdx = 0;
             if (model.contains("AlphaPept")) {
                 mzIdx = AlphaPeptDeepMzIdx;
                 intIdx = AlphaPeptDeepIntIdx;
+                fragIdx = AlphaPeptDeepFragIdx;
             } else if (model.contains("Prosit")) {
                 mzIdx = PrositMzIdx;
                 intIdx = PrositIntIdx;
+                fragIdx = PrositFragIdx;
             } else if (model.contains("ms2pip")) {
                 mzIdx = ms2pipMzIdx;
                 intIdx = ms2pipIntIdx;
+                fragIdx = ms2pipFragIdx;
             }
 
             String msInfo = koinaString.split("outputs")[1];
@@ -173,34 +185,11 @@ public class KoinaModelCaller {
             msInfo = msInfo.substring(3, msInfo.length() - 3);
             String[] dataResults = msInfo.split("},");
 
-            //intensities
-            msInfo = dataResults[intIdx].split("data\":\\[")[1];
-            msInfo = msInfo.substring(0, msInfo.length() - 1);
-            String[] results = msInfo.split(",");
-            int vectorLength = results.length / numPeptides;
-            float[][] allIntensities = new float[numPeptides][];
-            for (int i = 0; i < numPeptides; i++) {
-                ArrayList<Float> intensities = new ArrayList<>();
-                for (int j = i * vectorLength; j < (i + 1) * vectorLength; j++) {
-                    String result = results[j];
-                    if (result.equals("-1.0")) {
-                        break;
-                    } else {
-                        intensities.add(Float.parseFloat(result));
-                    }
-                }
-                float[] intensitiesArray = new float[intensities.size()];
-                for (int j = 0; j < intensities.size(); j++) {
-                    intensitiesArray[j] = intensities.get(j);
-                }
-                allIntensities[i] = intensitiesArray;
-            }
-
             //mz
             msInfo = dataResults[mzIdx].split("data\":\\[")[1];
             msInfo = msInfo.substring(0, msInfo.length() - 1);
-            results = msInfo.split(",");
-            vectorLength = results.length / numPeptides;
+            String[] results = msInfo.split(",");
+            int vectorLength = results.length / numPeptides;
             float[][] allMZs = new float[numPeptides][];
             for (int i = 0; i < numPeptides; i++) {
                 ArrayList<Float> mz = new ArrayList<>();
@@ -219,11 +208,32 @@ public class KoinaModelCaller {
                 allMZs[i] = mzArray;
             }
 
-            //fragment annotations
-            msInfo = dataResults[2].split("data\":\\[")[1];
+            //intensities
+            msInfo = dataResults[intIdx].split("data\":\\[")[1];
             msInfo = msInfo.substring(0, msInfo.length() - 1);
             results = msInfo.split(",");
-            vectorLength = results.length / numPeptides;
+            float[][] allIntensities = new float[numPeptides][];
+            for (int i = 0; i < numPeptides; i++) {
+                ArrayList<Float> intensities = new ArrayList<>();
+                for (int j = i * vectorLength; j < (i + 1) * vectorLength; j++) {
+                    String result = results[j];
+                    if (result.equals("-1.0")) {
+                        break;
+                    } else {
+                        intensities.add(Float.parseFloat(result));
+                    }
+                }
+                float[] intensitiesArray = new float[allMZs[i].length];
+                for (int j = 0; j < intensities.size(); j++) {
+                    intensitiesArray[j] = intensities.get(j);
+                }
+                allIntensities[i] = intensitiesArray;
+            }
+
+            //fragment annotations
+            msInfo = dataResults[fragIdx].split("data\":\\[")[1];
+            msInfo = msInfo.substring(0, msInfo.length() - 1);
+            results = msInfo.split(",");
             String[][] allFragmentIonTypes = new String[numPeptides][];
             int[][] allFragNums = new int[numPeptides][];
             int[][] allCharges = new int[numPeptides][];
@@ -234,7 +244,7 @@ public class KoinaModelCaller {
                 for (int j = i * vectorLength; j < (i + 1) * vectorLength; j++) {
                     String result = results[j];
                     result = result.substring(1, result.length() - 1);
-                    if (result.equals("")) {
+                    if (result.equals("") || j >= allMZs[i].length) {
                         break;
                     } else {
                         String[] info = result.split("\\+");
@@ -307,29 +317,63 @@ public class KoinaModelCaller {
 
         while ((l = TSVReader.readLine()) != null) {
             line = l.split("\t");
-            if (! preds.containsKey(line[0] + "|" + line[1])) {
-                System.out.println(l);
+            if (!preds.containsKey(line[0] + "|" + line[1])) {
                 //get predictionEntry
-                PeptideFormatter pf = new PeptideFormatter(
-                        new PeptideFormatter(line[0], line[1], "base").getDiann(), line[1], "diann");
-                PredictionEntry tmp = preds.get(pf.getBaseCharge());
-                MassCalculator mc = new MassCalculator(line[0], line[1]);
-                float[] newMZs = new float[tmp.getMzs().length];
-                for (int i = 0; i < newMZs.length; i++) {
-                    newMZs[i] = mc.calcMass(tmp.getFragNums()[i],
-                            Constants.flagTOion.get(tmp.getFlags()[i]), tmp.getCharges()[i]);
+                PeptideFormatter pf;
+                PredictionEntry tmp = new PredictionEntry();
+                String stripped = "";
+                String baseCharge = "";
+                switch (modelType) {
+                    case "alphapept":
+                        pf = new PeptideFormatter(
+                                new PeptideFormatter(line[0], line[1], "base").getDiann(), line[1], "diann");
+                        baseCharge = pf.getBaseCharge();
+                        tmp = preds.get(baseCharge);
+                        stripped = pf.getStripped();
+                        break;
+                    case "prosit":
+                        pf = new PeptideFormatter(
+                                new PeptideFormatter(line[0], line[1], "base").getProsit(), line[1], "prosit");
+                        baseCharge = pf.getBaseCharge();
+                        tmp = preds.get(baseCharge);
+                        stripped = pf.getStripped();
+                        break;
+                    case "ms2pip":
+                        pf = new PeptideFormatter(
+                                new PeptideFormatter(line[0], line[1], "base").getDiann(), line[1], "diann");
+                        baseCharge = pf.getBaseCharge();
+                        tmp = preds.get(baseCharge);
+                        stripped = pf.getStripped();
+                        break;
+                    default:
+                        System.out.println(modelType + " not supported by Koina");
+                        System.exit(1);
                 }
+                try {
+                    MassCalculator mc = new MassCalculator(line[0], line[1]);
+                    float[] newMZs = new float[tmp.getMzs().length];
+                    for (int i = 0; i < newMZs.length; i++) {
+                        newMZs[i] = mc.calcMass(tmp.getFragNums()[i],
+                                Constants.flagTOion.get(tmp.getFlags()[i]), tmp.getCharges()[i]);
+                    }
 
-                //add to hashmap
-                PredictionEntry newPred = new PredictionEntry();
-                newPred.setMzs(newMZs);
-                newPred.setIntensities(tmp.getIntensities());
-                newPred.setRT(tmp.getRT());
-                newPred.setIM(tmp.getIM());
-                newPred.setFragmentIonTypes(tmp.getFragmentIonTypes());
-                newPred.setFragNums(tmp.getFragNums());
-                newPred.setFlags(tmp.getFlags());
-                preds.put(mc.fullPeptide, newPred);
+                    //add to hashmap
+                    PredictionEntry newPred = new PredictionEntry();
+                    newPred.setMzs(newMZs);
+                    newPred.setIntensities(tmp.getIntensities());
+                    newPred.setRT(tmp.getRT());
+                    newPred.setIM(tmp.getIM());
+                    newPred.setFragmentIonTypes(tmp.getFragmentIonTypes());
+                    newPred.setFragNums(tmp.getFragNums());
+                    newPred.setFlags(tmp.getFlags());
+                    preds.put(mc.fullPeptide, newPred);
+                } catch (Exception e) {
+                    if (stripped.contains("O") || stripped.contains("U") ||
+                            stripped.contains("Z") || stripped.contains("B") ||
+                            stripped.contains("X")) {
+                        System.out.println("Skipping " + baseCharge);
+                    }
+                }
             }
         }
     }

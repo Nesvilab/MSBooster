@@ -399,4 +399,10 @@ public class PeptideFormatter {
     public String getDiann() {
         return diann;
     }
+    public String getProsit() {
+        return prosit;
+    }
+    public String getStripped() {
+        return stripped;
+    }
 }

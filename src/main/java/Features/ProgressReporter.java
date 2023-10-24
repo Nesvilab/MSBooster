@@ -36,7 +36,7 @@ public class ProgressReporter {
 //            System.out.print("..." + currentPercent + "% (" + (endTime - startTime) / 1000000000 + "sec)");
             System.out.print("..." + currentPercent + "%");
             if (currentPercent == 100) {
-                System.out.println("");
+//                System.out.println("");
                 currentPercent++;
                 break;
             }

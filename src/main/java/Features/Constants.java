@@ -85,6 +85,7 @@ public class Constants {
             "Prosit_2020_intensity_TMT", "Prosit_2020_intensity_HCD", "Prosit_2023_intensity_TOF"));
     public static HashSet<String> KoinaTMTmodels = new HashSet<>(Arrays.asList("Prosit_2020_irt_TMT",
             "Prosit_2020_intensity_TMT"));
+    public static SpectralPredictionMapper spectralPredictionMapper;
 
     //additional modifications for alphapeptdeep
     public static String additionalMods = "";

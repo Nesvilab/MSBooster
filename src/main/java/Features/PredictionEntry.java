@@ -59,42 +59,48 @@ public class PredictionEntry {
     }
 
     public void setMzs(float[] mzs) {this.mzs = mzs;}
+    public float[] getMzs() {return mzs;}
 
     public void setIntensities(float[] intensities) {this.intensities = intensities;}
+    public float[] getIntensities() {return intensities;}
 
     public void setFragNums(int[] fragNums) {this.fragNums = fragNums;}
+    public int[] getFragNums() {return fragNums;}
 
-    public void setFlags(int[] flags) { //save time with this
+    public void setFlags(int[] flags) {
         this.flags = flags;
         this.fragmentIonTypes = new String[flags.length];
         for (int i = 0; i < flags.length; i++) {
             this.fragmentIonTypes[i] = Constants.flagTOion.get(flags[i]);
         }
     }
-
-    public void setFlags() { //save time with this
+    public void setFlags() {
         this.flags = new int[fragmentIonTypes.length];
         for (int i = 0; i < fragmentIonTypes.length; i++) {
             this.flags[i] = Constants.ionTOflag.get(fragmentIonTypes[i]);
         }
     }
+    public int[] getFlags() {return flags;}
 
     public void setCharges(int[] charges) {this.charges = charges;}
+    public int[] getCharges() {return charges;}
 
     public void setRT(float RT) {this.RT = RT;}
+    public float getRT() {return RT;}
 
     public void setIM(float IM) {this.IM = IM;}
+    public float getIM() {return IM;}
 
     public void setDetectability(float detectability) {this.detectability = detectability;}
 
     public void setCounter(int counts) {this.counter = counts;}
 
     public void setFragmentIonTypes(String[] ions) { this.fragmentIonTypes = ions; }
-
     public void setFragmentIonTypes() {
         this.fragmentIonTypes = new String[flags.length];
         for (int i = 0; i < flags.length; i++) {
             this.fragmentIonTypes[i] = Constants.flagTOion.get(flags[i]);
         }
     }
+    public String[] getFragmentIonTypes() {return fragmentIonTypes;}
 }

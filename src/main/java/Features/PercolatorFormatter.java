@@ -64,9 +64,6 @@ public class PercolatorFormatter {
             features = ArrayUtils.remove(features, idx);
         }
 
-        //booleans for future determination of what to do
-        boolean needsMGF = false;
-
         File[] pinFiles = pmMatcher.pinFiles;
         File[] mzmlFiles = pmMatcher.mzmlFiles;
         MzmlReader[] mzmlReaders = pmMatcher.mzmlReaders;
@@ -74,12 +71,14 @@ public class PercolatorFormatter {
         //load predicted spectra
         SpectralPredictionMapper predictedSpectra = null;
         SpectralPredictionMapper predictedSpectra2 = null; //first is prosit/diann, second predfull
+        if (Constants.spectralPredictionMapper != null) {
+            predictedSpectra = Constants.spectralPredictionMapper;
+        }
 
         //Special preparations dependent on features we require
         //only time this isn't needed is detect
         //could consider an mgf constant
         if (mgf != null) {
-            needsMGF = true;
             String[] mgfSplit = mgf.split(",");
 
             if (mgfSplit.length == 1) {
@@ -345,7 +344,7 @@ public class PercolatorFormatter {
                 }
 
                 //Special preparations dependent on features we require
-                if (needsMGF) {
+                if (predictedSpectra != null) {
                     mzml.setPinEntries(pin, predictedSpectra);
                     //these require all experimental peaks before removing higher rank peaks
                     if (Constants.removeRankPeaks &&

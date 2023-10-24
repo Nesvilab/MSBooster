@@ -1,15 +1,11 @@
 package External;
 
-import Features.Constants;
-import Features.KoinaLibReader;
-import Features.PredictionEntry;
-import Features.ProgressReporter;
+import Features.*;
 import com.google.gson.Gson;
 import com.google.gson.stream.JsonReader;
 
 import java.io.*;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutorService;
@@ -17,14 +13,16 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 
 public class KoinaModelCaller {
-    private static final int AlphaPeptDeepMzIdx = 1;
-    private static final int AlphaPeptDeepIntIdx = 0;
-    private static final int PrositMzIdx = 1;
-    private static final int PrositIntIdx = 2;
-    private static final int ms2pipMzIdx = 1;
-    private static final int ms2pipIntIdx = 2;
+    private final int AlphaPeptDeepMzIdx = 1;
+    private final int AlphaPeptDeepIntIdx = 0;
+    private final int PrositMzIdx = 1;
+    private final int PrositIntIdx = 2;
+    private final int ms2pipMzIdx = 1;
+    private final int ms2pipIntIdx = 2;
 
-    public static void callModel(String model, KoinaLibReader klr) {
+    public KoinaModelCaller(){}
+
+    public void callModel(String model, KoinaLibReader klr) {
         System.out.println("Calling " + model + " model");
         long startTime = System.currentTimeMillis();
 
@@ -93,12 +91,8 @@ public class KoinaModelCaller {
                                 reader.close();
                                 p.waitFor();
                                 p.destroy();
-                            } catch (Exception e) {
-                                e.printStackTrace();
-                            }
 
-                            try {
-                                KoinaModelCaller.parseKoinaOutput(filenameArray[i], koinaSb.toString(),
+                                parseKoinaOutput(filenameArray[i], koinaSb.toString(),
                                         finalProperty, model, klr);
                                 break;
                             } catch (Exception e) {
@@ -142,12 +136,12 @@ public class KoinaModelCaller {
             System.out.println("cURL and parse time in milliseconds: " + elapsedTime);
 
         } catch (Exception e) {
-            System.out.println(); //TODO print error message from bufferedreader
+//            System.out.println(); //TODO print error message from bufferedreader
             e.printStackTrace();
         }
     }
 
-    public static void parseKoinaOutput(String fileName, String koinaString, String property, String model,
+    public void parseKoinaOutput(String fileName, String koinaString, String property, String model,
                                         KoinaLibReader klr) throws IOException {
         if (property.toLowerCase().equals("rt")) {
             String rts = koinaString.split("data")[2];
@@ -225,44 +219,122 @@ public class KoinaModelCaller {
                 allMZs[i] = mzArray;
             }
 
-            assignMS2(fileName, allMZs, allIntensities, klr);
+            //fragment annotations
+            msInfo = dataResults[2].split("data\":\\[")[1];
+            msInfo = msInfo.substring(0, msInfo.length() - 1);
+            results = msInfo.split(",");
+            vectorLength = results.length / numPeptides;
+            String[][] allFragmentIonTypes = new String[numPeptides][];
+            int[][] allFragNums = new int[numPeptides][];
+            int[][] allCharges = new int[numPeptides][];
+            for (int i = 0; i < numPeptides; i++) {
+                ArrayList<String> fragmentIonTypes = new ArrayList<>();
+                ArrayList<Integer> fragNums = new ArrayList<>();
+                ArrayList<Integer> charges = new ArrayList<>();
+                for (int j = i * vectorLength; j < (i + 1) * vectorLength; j++) {
+                    String result = results[j];
+                    result = result.substring(1, result.length() - 1);
+                    if (result.equals("")) {
+                        break;
+                    } else {
+                        String[] info = result.split("\\+");
+                        charges.add(Integer.parseInt(info[1]));
+                        fragmentIonTypes.add(info[0].substring(0, 1));
+                        fragNums.add(Integer.parseInt(info[0].substring(1)));
+                    }
+                }
+                String[] fragmentIonTypesArray = new String[fragmentIonTypes.size()];
+                int[] fragNumsArray = new int[fragNums.size()];
+                int[] chargesArray = new int[charges.size()];
+                for (int j = 0; j < fragmentIonTypes.size(); j++) {
+                    fragmentIonTypesArray[j] = fragmentIonTypes.get(j);
+                    fragNumsArray[j] = fragNums.get(j);
+                    chargesArray[j] = charges.get(j);
+                }
+                allFragmentIonTypes[i] = fragmentIonTypesArray;
+                allFragNums[i] = fragNumsArray;
+                allCharges[i] = chargesArray;
+            }
+
+            assignMS2(fileName, allMZs, allIntensities, allFragmentIonTypes, allFragNums, allCharges, klr);
         }
     }
 
-    private static void assignRTs(String fileName, float[] RTs, KoinaLibReader klr) throws IOException {
+    private void assignRTs(String fileName, float[] RTs, KoinaLibReader klr) throws IOException {
         String[] peptides = readJSON(fileName, RTs.length);
         ConcurrentHashMap<String, PredictionEntry> preds = klr.getPreds();
         for (int i = 0; i < peptides.length; i++) {
-            String peptide = peptides[i];
+            PeptideFormatter pf = new PeptideFormatter(peptides[i], 1, "diann");
             for (int charge = Constants.minPrecursorCharge; charge < Constants.maxPrecursorCharge + 1; charge++) {
-                if (preds.containsKey(peptide + "|" + charge)) {
-                    PredictionEntry pe = preds.get(peptide + "|" + charge);
+                String peptide = pf.getBase() + "|" + charge;
+                if (preds.containsKey(peptide)) {
+                    PredictionEntry pe = preds.get(peptide);
                     pe.setRT(RTs[i]);
-                    preds.put(peptide + "|" + charge, pe);
+                    preds.put(peptide, pe);
                 }
             }
         }
     }
 
-    private static void assignMS2(String fileName, float[][] mzs, float[][] intensities, KoinaLibReader klr)
+    private void assignMS2(String fileName, float[][] mzs, float[][] intensities,
+                           String[][] fragmentIonTypes, int[][] fragNums, int[][] charges, KoinaLibReader klr)
             throws IOException {
         String[] peptides = readJSON(fileName, mzs.length);
         ConcurrentHashMap<String, PredictionEntry> preds = klr.getPreds();
         for (int i = 0; i < peptides.length; i++) {
-            String peptide = peptides[i];
-            PredictionEntry pe;
+            PeptideFormatter pf = new PeptideFormatter(peptides[i].split("\\|")[0],
+                    peptides[i].split("\\|")[1], "diann");
+            String peptide = pf.getBaseCharge();
+            PredictionEntry pe = new PredictionEntry(mzs[i], intensities[i], true);
+            pe.setFragNums(fragNums[i]);
+            pe.setCharges(charges[i]);
+            pe.setFragmentIonTypes(fragmentIonTypes[i]);
+            pe.setFlags();
+
             if (preds.containsKey(peptide)) {
-                pe = preds.get(peptide);
-            } else {
-                pe = new PredictionEntry();
+                pe.setRT(preds.get(peptide).getRT());
             }
-            pe.setMzs(mzs[i]);
-            pe.setIntensities(intensities[i]);
             preds.put(peptide, pe);
         }
     }
 
-    private static String[] readJSON(String fileName, int length) throws IOException {
+    public void assignMissingPeptidePredictions(KoinaLibReader klr) throws IOException {
+        BufferedReader TSVReader = new BufferedReader(new FileReader(
+                Constants.spectraRTPredInput.substring(0, Constants.spectraRTPredInput.length() - 4) + "_full.tsv"));
+        String l;
+        String[] line;
+        ConcurrentHashMap<String, PredictionEntry> preds = klr.getPreds();
+
+        while ((l = TSVReader.readLine()) != null) {
+            line = l.split("\t");
+            if (! preds.containsKey(line[0] + "|" + line[1])) {
+                System.out.println(l);
+                //get predictionEntry
+                PeptideFormatter pf = new PeptideFormatter(
+                        new PeptideFormatter(line[0], line[1], "base").getDiann(), line[1], "diann");
+                PredictionEntry tmp = preds.get(pf.getBaseCharge());
+                MassCalculator mc = new MassCalculator(line[0], line[1]);
+                float[] newMZs = new float[tmp.getMzs().length];
+                for (int i = 0; i < newMZs.length; i++) {
+                    newMZs[i] = mc.calcMass(tmp.getFragNums()[i],
+                            Constants.flagTOion.get(tmp.getFlags()[i]), tmp.getCharges()[i]);
+                }
+
+                //add to hashmap
+                PredictionEntry newPred = new PredictionEntry();
+                newPred.setMzs(newMZs);
+                newPred.setIntensities(tmp.getIntensities());
+                newPred.setRT(tmp.getRT());
+                newPred.setIM(tmp.getIM());
+                newPred.setFragmentIonTypes(tmp.getFragmentIonTypes());
+                newPred.setFragNums(tmp.getFragNums());
+                newPred.setFlags(tmp.getFlags());
+                preds.put(mc.fullPeptide, newPred);
+            }
+        }
+    }
+
+    private String[] readJSON(String fileName, int length) throws IOException {
         String[] peptides = new String[length];
         String[] charges = new String[length];
         ArrayList<String> names = new ArrayList<>();

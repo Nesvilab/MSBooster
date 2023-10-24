@@ -545,17 +545,21 @@ public class MainClass {
             //get matched pin files for mzML files
             PinMzmlMatcher pmMatcher = new PinMzmlMatcher(Constants.mzmlDirectory, Constants.pinPepXMLDirectory);
             if (createSpectraRTPredFile || Constants.createPredFileOnly) {
+                //createfull is needed for everything
+                boolean revertToKoina = Constants.useKoina;
+                Constants.useKoina = false;
+                PeptideFileCreator.createPeptideFile(pmMatcher,
+                        Constants.spectraRTPredInput.substring(0, Constants.spectraRTPredInput.length() - 4) + "_full.tsv",
+                        "createFull");
+                if (revertToKoina) {
+                    Constants.useKoina = true;
+                }
                 for (String currentModel : Constants.spectraRTPredModel.split(",")) {
                     if (Constants.useKoina) {
                         PeptideFileCreator.createPeptideFile(pmMatcher,
                                 Constants.spectraRTPredInput.substring(0, Constants.spectraRTPredInput.length() - 4)
                                         + "_" + currentModel + ".json", currentModel);
                     } else {
-                        //createfull is needed for everything
-                        PeptideFileCreator.createPeptideFile(pmMatcher,
-                                Constants.spectraRTPredInput.substring(0, Constants.spectraRTPredInput.length() - 4) + "_full.tsv",
-                                "createFull");
-
                         switch (currentModel) {
                             case "DIA-NN":
                                 if (Constants.DiaNN == null) {
@@ -620,7 +624,10 @@ public class MainClass {
             for (String currentModel : models) {
                 if ((Constants.spectraRTPredFile == null) && (createSpectraRTPredFile2)) {
                     if (Constants.useKoina) {
-                        KoinaModelCaller.callModel(currentModel, klr);
+                        KoinaModelCaller kmc = new KoinaModelCaller();
+                        kmc.callModel(currentModel, klr);
+                        kmc.assignMissingPeptidePredictions(klr);
+                        Constants.spectralPredictionMapper = klr;
                     } else {
                         DiannModelCaller.callModel();
                     }
@@ -651,6 +658,7 @@ public class MainClass {
             long end = System.nanoTime();
             long duration = (end - start);
             System.out.println("Done in " + duration / 1000000 + " ms");
+            System.exit(0);
         } catch (Exception e) {
             e.printStackTrace();
             System.exit(1);

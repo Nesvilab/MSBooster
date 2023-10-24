@@ -134,6 +134,7 @@ public class MzmlScanNumber {
                 }
             }
         } catch (Exception e) { //TODO: percolator imputation
+            e.printStackTrace();
             float predRT = 0f;
             float predIM = 0f;
             if (predictionEntry != null) {

@@ -8,10 +8,10 @@ public class KoinaLibReader implements SpectralPredictionMapper {
 
     public KoinaLibReader() {}
 
-    public ConcurrentHashMap<String, PredictionEntry> getPreds() {return allPreds; }
+    public ConcurrentHashMap<String, PredictionEntry> getPreds() {return allPreds;}
 
     public void clear() {
-
+        allPreds.clear();
     }
 
     public float getMaxPredRT() {

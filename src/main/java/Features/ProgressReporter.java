@@ -34,11 +34,12 @@ public class ProgressReporter {
         while (linesRead > iterations * currentPercent / 100 && currentPercent <= 100) {
 //            long endTime = System.nanoTime();
 //            System.out.print("..." + currentPercent + "% (" + (endTime - startTime) / 1000000000 + "sec)");
-            System.out.print("..." + currentPercent + "%");
             if (currentPercent == 100) {
-//                System.out.println("");
+                System.out.println("..." + currentPercent + "%");
                 currentPercent++;
                 break;
+            } else {
+                System.out.print("..." + currentPercent + "%");
             }
 //            startTime = System.nanoTime();
             currentPercent += Constants.loadingPercent;

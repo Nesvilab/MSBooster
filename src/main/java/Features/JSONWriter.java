@@ -129,6 +129,7 @@ public class JSONWriter {
                 case "alphapept":
                 case "prosit":
                 case "ms2pip":
+                case "deeplc":
                     // Create the JSON data structure
                     JSONObject jsonData = new JSONObject();
                     jsonData.put("id", "0");

@@ -316,7 +316,7 @@ public class PinReader {
         }
         while (next()) {
             PeptideFormatter pf = getPep();
-            if ((modelFormat.contains("Prosit") || modelFormat.contains("ms2pip"))
+            if ((modelFormat.contains("Prosit") || modelFormat.contains("ms2pip") || modelFormat.contains("Deeplc"))
                     && pf.stripped.contains("U")) { // no peptides with U
                 continue;
             }

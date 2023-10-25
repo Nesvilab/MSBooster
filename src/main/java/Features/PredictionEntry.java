@@ -58,6 +58,37 @@ public class PredictionEntry {
         }
     }
 
+    public PredictionEntry(float[] mzs, float[] intensities, int[] fragNums, int[] charges, String[] fragmentIonTypes,
+                           boolean needToSort) {
+        if (needToSort) {
+            this.mzs = new float[mzs.length];
+            this.intensities = new float[intensities.length];
+            this.fragNums = new int[fragNums.length];
+            this.charges = new int[charges.length];
+            this.fragmentIonTypes = new String[fragmentIonTypes.length];
+
+            int[] sortedIndices = IntStream.range(0, mzs.length)
+                    .boxed().sorted((k, j) -> Float.compare(mzs[k], mzs[j]))
+                    .mapToInt(ele -> ele).toArray();
+
+            for (int i = 0; i < sortedIndices.length; i++) {
+                this.mzs[i] = mzs[sortedIndices[i]];
+                this.intensities[i] = intensities[sortedIndices[i]];
+                this.fragNums[i] = fragNums[sortedIndices[i]];
+                this.charges[i] = charges[sortedIndices[i]];
+                this.fragmentIonTypes[i] = fragmentIonTypes[sortedIndices[i]];
+            }
+            setFlags();
+        } else {
+            setMzs(mzs);
+            setIntensities(intensities);
+            setFragNums(fragNums);
+            setCharges(charges);
+            setFragmentIonTypes(fragmentIonTypes);
+            setFlags();
+        }
+    }
+
     public void setMzs(float[] mzs) {this.mzs = mzs;}
     public float[] getMzs() {return mzs;}
 

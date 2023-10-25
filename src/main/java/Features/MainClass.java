@@ -618,20 +618,22 @@ public class MainClass {
 
             //generate predictions
             KoinaLibReader klr = new KoinaLibReader();
+            KoinaModelCaller kmc = new KoinaModelCaller();
             //this is just so that ms2 is predicted first, and which works for Koina
             List<String> models = Arrays.asList(Constants.spectraRTPredModel.split(","));
             Collections.reverse(models);
             for (String currentModel : models) {
                 if ((Constants.spectraRTPredFile == null) && (createSpectraRTPredFile2)) {
                     if (Constants.useKoina) {
-                        KoinaModelCaller kmc = new KoinaModelCaller();
                         kmc.callModel(currentModel, klr);
-                        kmc.assignMissingPeptidePredictions(klr);
                         Constants.spectralPredictionMapper = klr;
                     } else {
                         DiannModelCaller.callModel();
                     }
                 }
+            }
+            if (Constants.useKoina) {
+                kmc.assignMissingPeptidePredictions(klr);
             }
 
             //create new pin file with features
@@ -657,7 +659,7 @@ public class MainClass {
 
             long end = System.nanoTime();
             long duration = (end - start);
-            System.out.println("Done in " + duration / 1000000 + " ms");
+            System.out.println("Feature calculation and edited pin writing done in " + duration / 1000000 + " ms");
             System.exit(0);
         } catch (Exception e) {
             e.printStackTrace();

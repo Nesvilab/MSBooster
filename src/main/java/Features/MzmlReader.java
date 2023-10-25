@@ -279,16 +279,12 @@ public class MzmlReader {
         ConcurrentHashMap<String, PredictionEntry> allPreds = spm.getPreds();
 
         ProgressReporter pr = new ProgressReporter(pin.length);
-        int current = 0;
         while (pin.next()) {
             try {
                 scanNumberObjects.get(pin.getScanNum()).setPeptideObject(pin.getPep(), pin.getRank(), pin.getTD(), pin.getEScore(),
                         allPreds);
 
-                current = pr.progress();
-//                if (current >= 20) {
-//                    break;
-//                }
+                pr.progress();
             } catch (Exception e) {
                 e.printStackTrace();
                 System.exit(1);

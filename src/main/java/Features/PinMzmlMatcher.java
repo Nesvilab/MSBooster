@@ -90,7 +90,7 @@ public class PinMzmlMatcher {
                         mgfName = mgfName.substring(0, mgfName.length() - 17);
                     }
                     if (! mzmlFileMap.containsKey(mgfName.substring(0, mgfName.length() - 4))) { //only want mzml
-                        mzmlFileMap.put(mgfName, file);
+                        mzmlFileMap.put(mgfName.substring(0, mgfName.length() - 4), file);
                     }
                 }
             }

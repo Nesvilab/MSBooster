@@ -456,16 +456,16 @@ public class MzmlReader {
                     float binIqr = RTbinStats[idx][2];
 
                     //now calculate deltaRTs
-//                    double LOESSRT = RTLOESS.invoke((double) msn.RT);
-//                    for (PeptideObj pep : msn.peptideObjects) {
-//                        //pep.deltaRTLOESSnormalized = Math.abs(LOESSRT - pep.RT) / binStd;
-//                        pep.deltaRTLOESSnormalized = Math.abs(LOESSRT - pep.RT) / binIqr;
-//                    }
-
+                    double LOESSRT = RTLOESS.invoke((double) msn.RT);
                     for (PeptideObj pep : msn.peptideObjects) {
-                        pep.deltaRTLOESSnormalized =
-                                Math.abs(msn.RT - predToExpRTLOESS.invoke((double) pep.RT)) / binIqr;
+                        //pep.deltaRTLOESSnormalized = Math.abs(LOESSRT - pep.RT) / binStd;
+                        pep.deltaRTLOESSnormalized = Math.abs(LOESSRT - pep.RT) / binIqr;
                     }
+
+//                    for (PeptideObj pep : msn.peptideObjects) {
+//                        pep.deltaRTLOESSnormalized =
+//                                Math.abs(msn.RT - predToExpRTLOESS.invoke((double) pep.RT)) / binIqr;
+//                    }
                 }
             }));
         }

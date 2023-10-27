@@ -186,42 +186,22 @@ public class KoinaModelCaller {
             msInfo = msInfo.substring(3, msInfo.length() - 3);
             String[] dataResults = msInfo.split("},");
 
-            //mz
-            msInfo = dataResults[mzIdx].split("data\":\\[")[1];
-            msInfo = msInfo.substring(0, msInfo.length() - 1);
-            String[] results = msInfo.split(",");
-            int vectorLength = results.length / numPeptides;
-            float[][] allMZs = new float[numPeptides][];
-            HashSet<Integer>[] acceptedIdx = new HashSet[numPeptides]; //dealing with -1 values
-            for (int i = 0; i < numPeptides; i++) {
-                ArrayList<Float> mz = new ArrayList<>();
-                HashSet<Integer> accepted = new HashSet<>();
-                for (int j = i * vectorLength; j < (i + 1) * vectorLength; j++) {
-                    String result = results[j];
-                    if (! result.equals("-1.0")) {
-                        mz.add(Float.parseFloat(result));
-                        accepted.add(j);
-                    }
-                }
-                float[] mzArray = new float[mz.size()];
-                for (int j = 0; j < mz.size(); j++) {
-                    mzArray[j] = mz.get(j);
-                }
-                allMZs[i] = mzArray;
-                acceptedIdx[i] = accepted;
-            }
-
             //intensities
             msInfo = dataResults[intIdx].split("data\":\\[")[1];
             msInfo = msInfo.substring(0, msInfo.length() - 1);
-            results = msInfo.split(",");
+            String[] results = msInfo.split(",");
+            int vectorLength = results.length / numPeptides;
+            HashSet<Integer>[] acceptedIdx = new HashSet[numPeptides]; //dealing with -1 values
             float[][] allIntensities = new float[numPeptides][];
             for (int i = 0; i < numPeptides; i++) {
                 ArrayList<Float> intensities = new ArrayList<>();
+                HashSet<Integer> accepted = new HashSet<>();
                 for (int j = i * vectorLength; j < (i + 1) * vectorLength; j++) {
                     String result = results[j];
-                    if (acceptedIdx[i].contains(j)) {
-                        intensities.add(Float.parseFloat(result));
+                    float intensity = Float.parseFloat(result);
+                    if (intensity > 0) {
+                        intensities.add(intensity);
+                        accepted.add(j);
                     }
                 }
                 float[] intensitiesArray = new float[intensities.size()];
@@ -229,6 +209,27 @@ public class KoinaModelCaller {
                     intensitiesArray[j] = intensities.get(j);
                 }
                 allIntensities[i] = intensitiesArray;
+                acceptedIdx[i] = accepted;
+            }
+
+            //mz
+            msInfo = dataResults[mzIdx].split("data\":\\[")[1];
+            msInfo = msInfo.substring(0, msInfo.length() - 1);
+            results = msInfo.split(",");
+            float[][] allMZs = new float[numPeptides][];
+            for (int i = 0; i < numPeptides; i++) {
+                ArrayList<Float> mz = new ArrayList<>();
+                for (int j = i * vectorLength; j < (i + 1) * vectorLength; j++) {
+                    String result = results[j];
+                    if (acceptedIdx[i].contains(j)) {
+                        mz.add(Float.parseFloat(result));
+                    }
+                }
+                float[] mzArray = new float[mz.size()];
+                for (int j = 0; j < mz.size(); j++) {
+                    mzArray[j] = mz.get(j);
+                }
+                allMZs[i] = mzArray;
             }
 
             //fragment annotations

@@ -632,8 +632,10 @@ public class MainClass {
                     }
                 }
             }
-            if (Constants.useKoina) {
+            if (Constants.useKoina && (Constants.spectraRTPredFile == null)) {
                 kmc.assignMissingPeptidePredictions(klr);
+                MgfFileWriter mfw = new MgfFileWriter(klr);
+                mfw.write(Constants.outputDirectory + File.separator + "spectraRT_koina.mgf");
             }
 
             //create new pin file with features

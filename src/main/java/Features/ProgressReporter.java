@@ -26,17 +26,24 @@ public class ProgressReporter {
     public ProgressReporter(int iterations) {
         this.iterations = iterations;
         currentPercent = Constants.loadingPercent;
-        startTime = System.nanoTime();
+//        startTime = System.nanoTime();
     }
 
     public int progress() {
         linesRead += 1;
-        if (linesRead > iterations * currentPercent / 100) {
-            long endTime = System.nanoTime();
+        while (linesRead > iterations * currentPercent / 100 && currentPercent <= 100) {
+//            long endTime = System.nanoTime();
 //            System.out.print("..." + currentPercent + "% (" + (endTime - startTime) / 1000000000 + "sec)");
-            System.out.print("..." + currentPercent + "%");
-            startTime = System.nanoTime();
+            if (currentPercent == 100) {
+                System.out.println("..." + currentPercent + "%");
+                currentPercent++;
+                break;
+            } else {
+                System.out.print("..." + currentPercent + "%");
+            }
+//            startTime = System.nanoTime();
             currentPercent += Constants.loadingPercent;
+            currentPercent = Math.min(currentPercent, 100);
         }
         return currentPercent;
     }

@@ -184,8 +184,11 @@ public class PeptideFileCreator {
                         System.out.println("If mzml file is available, will read in NCE from there");
                         Constants.FragmentationType = "HCD";
                     }
-                    hitsToAdd = pin.createAlphapeptdeepList(mzmlf);
+                    hitsToAdd = pin.createAlphapeptdeepList(mzmlf, pmm);
                     break;
+            }
+            if (Constants.useKoina) {
+                hitsToAdd = pin.createJSON(mzmlf, pmm, modelFormat);
             }
             pin.close();
 
@@ -203,60 +206,76 @@ public class PeptideFileCreator {
 
         //write to file
         try {
-            //TODO: outfile name with prediction model in name
-            FileWriter myWriter = new FileWriter(outfile);
-            switch (modelFormat) {
-                case "pDeep2":
-                    System.out.println("Writing pDeep2 input file");
-                    myWriter.write("peptide" + "\t" + "modification" + "\t" + "charge\n");
-                    break;
-                case "pDeep3":
-                    System.out.println("Writing pDeep3 input file");
-                    myWriter.write("raw_name" + "\t" + "scan" + "\t" + "peptide" + "\t" +
-                            "modinfo" + "\t" + "charge\n");
-                    break;
-                case "fineTune":
-                    myWriter.write("raw_name" + "\t" + "scan" + "\t" + "peptide" + "\t" +
-                            "modinfo" + "\t" + "charge" + "\t" + "RTInSeconds\n");
-                    break;
-                case "DeepMSPeptide":
-                    System.out.println("Writing DeepMSPeptide input file");
-                    //hSetHits.removeIf(hSetHit -> hSetHit.contains("B") || hSetHit.contains("X") || hSetHit.contains("Z"));
-                    break; //no header
-                case "DeepMSPeptideAll":
-                    System.out.println("Writing DeepMSPeptideAll input file");
-                    //hSetHits.removeIf(hSetHit -> hSetHit.contains("B") || hSetHit.contains("X") || hSetHit.contains("Z"));
-                    break; //no header
-                case "Diann":
-                    System.out.println("Writing DIA-NN input file");
-                    myWriter.write("peptide" + "\t" + "charge\n");
-                    break;
-                case "PredFull":
-                    System.out.println("Writing PredFull input file");
-                    myWriter.write("Peptide" + "\t" + "Charge" + "\t" + "Type" + "\t" + "NCE\n");
-                    break;
-                case "Prosit":
-                    System.out.println("Writing Prosit input file");
-                    myWriter.write("modified_sequence,collision_energy,precursor_charge\n");
-                    break;
-                case "PrositTMT":
-                    System.out.println("Writing Prosit TMT input file");
-                    myWriter.write("modified_sequence,collision_energy,precursor_charge,fragmentation\n");
-                    break;
-                case "alphapeptdeep":
-                    System.out.println("Writing alphapeptdeep input file");
-                    myWriter.write("sequence,mods,mod_sites,charge,nce,instrument,base,scan_num\n");
-                    break;
-            }
-            for (String hSetHit : hSetHits) {
-                myWriter.write(hSetHit + "\n");
+            String filename = "";
+            if (Constants.useKoina) {
+                JSONWriter jw = new JSONWriter(modelFormat, hSetHits);
+                if (!Constants.usedKoina) {
+                    filename = jw.write(true);
+                    Constants.usedKoina = true;
+                } else {
+                    filename = jw.write(false);
+                }
+            } else {
+                //TODO: outfile name with prediction model in name
+                FileWriter myWriter = new FileWriter(outfile);
+                switch (modelFormat) {
+                    case "pDeep2":
+                        System.out.println("Writing pDeep2 input file");
+                        myWriter.write("peptide" + "\t" + "modification" + "\t" + "charge\n");
+                        break;
+                    case "pDeep3":
+                        System.out.println("Writing pDeep3 input file");
+                        myWriter.write("raw_name" + "\t" + "scan" + "\t" + "peptide" + "\t" +
+                                "modinfo" + "\t" + "charge\n");
+                        break;
+                    case "fineTune":
+                        myWriter.write("raw_name" + "\t" + "scan" + "\t" + "peptide" + "\t" +
+                                "modinfo" + "\t" + "charge" + "\t" + "RTInSeconds\n");
+                        break;
+                    case "DeepMSPeptide":
+                        System.out.println("Writing DeepMSPeptide input file");
+                        //hSetHits.removeIf(hSetHit -> hSetHit.contains("B") || hSetHit.contains("X") || hSetHit.contains("Z"));
+                        break; //no header
+                    case "DeepMSPeptideAll":
+                        System.out.println("Writing DeepMSPeptideAll input file");
+                        //hSetHits.removeIf(hSetHit -> hSetHit.contains("B") || hSetHit.contains("X") || hSetHit.contains("Z"));
+                        break; //no header
+                    case "Diann":
+                        System.out.println("Writing DIA-NN input file");
+                        myWriter.write("peptide" + "\t" + "charge\n");
+                        break;
+                    case "PredFull":
+                        System.out.println("Writing PredFull input file");
+                        myWriter.write("Peptide" + "\t" + "Charge" + "\t" + "Type" + "\t" + "NCE\n");
+                        break;
+                    case "Prosit":
+                        System.out.println("Writing Prosit input file");
+                        myWriter.write("modified_sequence,collision_energy,precursor_charge\n");
+                        break;
+                    case "PrositTMT":
+                        System.out.println("Writing Prosit TMT input file");
+                        myWriter.write("modified_sequence,collision_energy,precursor_charge,fragmentation\n");
+                        break;
+                    case "alphapeptdeep":
+                        System.out.println("Writing alphapeptdeep input file");
+                        myWriter.write("sequence,mods,mod_sites,charge,nce,instrument,base,scan_num\n");
+                        break;
+                }
+                for (String hSetHit : hSetHits) {
+                    myWriter.write(hSetHit + "\n");
+                }
+                myWriter.close();
             }
 
             long endTime = System.nanoTime();
             long duration = (endTime - startTime);
             System.out.println(modelFormat + " input file generation took " + duration / 1000000 +" milliseconds");
-            myWriter.close();
-            System.out.println("Input file at  " + outfile);
+            if (!Constants.useKoina) {
+                System.out.println("Input file at  " + outfile);
+            } else {
+                System.out.println("Input files in " + filename);
+                Constants.JsonDirectory = filename;
+            }
             //return fasta; //save fasta for later
         } catch (IOException e) {
             System.out.println("An error occurred");

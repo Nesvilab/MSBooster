@@ -28,6 +28,7 @@ import static org.apache.commons.io.FileUtils.listFiles;
 public class PinMzmlMatcher {
     public File[] mzmlFiles;
     public File[] pinFiles;
+    public MzmlReader[] mzmlReaders;
 
     public PinMzmlMatcher(String mzmlDirectory, String pinDirectory) throws IOException {
         //get pin files
@@ -110,5 +111,7 @@ public class PinMzmlMatcher {
                         "please check that provided mzml/mgf directories contain proper mzml/mgf files.");
             }
         }
+
+        mzmlReaders = new MzmlReader[mzmlFiles.length];
     }
 }

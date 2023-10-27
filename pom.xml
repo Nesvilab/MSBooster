@@ -6,7 +6,7 @@
 
     <groupId>org.example</groupId>
     <artifactId>MSBooster</artifactId>
-    <version>1.1.22.1</version>
+    <version>1.1.23</version>
 
     <properties>
         <maven.compiler.source>1.8</maven.compiler.source>
@@ -88,6 +88,16 @@
             <groupId>com.google.guava</groupId>
             <artifactId>guava</artifactId>
             <version>32.1.1-jre</version>
+        </dependency>
+        <dependency>
+            <groupId>org.json</groupId>
+            <artifactId>json</artifactId>
+            <version>20230618</version>
+        </dependency>
+        <dependency>
+            <groupId>com.google.code.gson</groupId>
+            <artifactId>gson</artifactId>
+            <version>2.10.1</version>
         </dependency>
 
         <!--        <dependency>-->

@@ -35,6 +35,7 @@ public class Constants {
     public static String pinPepXMLDirectory = null; //C:/Users/kevin/Downloads/proteomics/cptac/2021-2-21/
     public static String mzmlDirectory = null; //C:/Users/kevin/OneDriveUmich/proteomics/mzml/cptac/
     public static String outputDirectory = null; //where to write all intermediate and final files
+    public static String JsonDirectory = null;
     public static String editedPin = null; //a prefix. Default is edited_
     public static Integer renamePin = 1;
     public static String spectraRTPredInput = null;
@@ -55,6 +56,9 @@ public class Constants {
     public static Integer digestMaxLength = 50;
     public static Float digestMinMass = 500f; //Da
     public static Float digestMaxMass = 5000f;
+    public static Integer minPrecursorCharge = 1;
+    public static Integer maxPrecursorCharge = 8;
+
     //public static Boolean includeDecoy = false;
     private static FastaReader fastaReader = null;
     public static void setFastaReader(FastaReader f) {
@@ -67,9 +71,21 @@ public class Constants {
     //locations of executables and other models
     public static Integer numThreads = 0;
     public static String DiaNN = null;
-    public static String spectraRTPredModel = "DIA-NN";
-    public static Boolean replaceYBintensities = true;
+    public static String spectraRTPredModel = "DIA-NN"; //can also include koina urls
+    public static String spectraModel = "";
+    public static String rtModel = "";
+    public static Boolean addNonYb = true;
     public static Integer splitPredInputFile = 1;
+    public static Boolean useKoina = false;
+    public static Boolean usedKoina = false;
+    public static HashSet<String> KoinaRTmodels = new HashSet<>(Arrays.asList("AlphaPept_rt_generic",
+            "Prosit_2019_irt", "Prosit_2020_irt_TMT", "Deeplc_hela_hf"));
+    public static HashSet<String> KoinaMS2models = new HashSet<>(Arrays.asList("ms2pip_2021_HCD",
+            "AlphaPept_ms2_generic", "Prosit_2019_intensity", "Prosit_2020_intensity_CID",
+            "Prosit_2020_intensity_TMT", "Prosit_2020_intensity_HCD", "Prosit_2023_intensity_TOF"));
+    public static HashSet<String> KoinaTMTmodels = new HashSet<>(Arrays.asList("Prosit_2020_irt_TMT",
+            "Prosit_2020_intensity_TMT"));
+    public static SpectralPredictionMapper spectralPredictionMapper;
 
     //additional modifications for alphapeptdeep
     public static String additionalMods = "";

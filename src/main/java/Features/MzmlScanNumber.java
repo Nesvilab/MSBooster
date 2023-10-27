@@ -64,7 +64,7 @@ public class MzmlScanNumber {
         if (Constants.useIM) {
             this.IM = scan.getIm().floatValue();
         }
-        if (nceModels.contains(Constants.spectraRTPredModel)) {
+        if (nceModels.contains(Constants.spectraRTPredModel) || Constants.useKoina) {
             String[] nceInfo = scan.getFilterString().split("@");
             if (nceInfo.length > 1) {
                 for (String s : Arrays.copyOfRange(nceInfo, 1, nceInfo.length)) {

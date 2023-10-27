@@ -64,21 +64,21 @@ public class PercolatorFormatter {
             features = ArrayUtils.remove(features, idx);
         }
 
-        //booleans for future determination of what to do
-        boolean needsMGF = false;
-
         File[] pinFiles = pmMatcher.pinFiles;
         File[] mzmlFiles = pmMatcher.mzmlFiles;
+        MzmlReader[] mzmlReaders = pmMatcher.mzmlReaders;
 
         //load predicted spectra
         SpectralPredictionMapper predictedSpectra = null;
         SpectralPredictionMapper predictedSpectra2 = null; //first is prosit/diann, second predfull
+        if (Constants.spectralPredictionMapper != null) {
+            predictedSpectra = Constants.spectralPredictionMapper;
+        }
 
         //Special preparations dependent on features we require
         //only time this isn't needed is detect
         //could consider an mgf constant
         if (mgf != null) {
-            needsMGF = true;
             String[] mgfSplit = mgf.split(",");
 
             if (mgfSplit.length == 1) {
@@ -91,8 +91,10 @@ public class PercolatorFormatter {
                             mgf, Constants.spectraRTPredModel, executorService);
                 }
                 allPreds = predictedSpectra.getPreds();
-            } else if (mgfSplit.length == 2){ //if fragment from predfull is not y/b, add.
-                                              //Prosit/diann is first, predfull second
+            } else if (mgfSplit.length == 2){
+                //if fragment from predfull is not y/b, add.
+                //Prosit/diann is first, predfull second
+                //can also add two models, the first being for RT, the second for spectra
                 String[] modelSplit = Constants.spectraRTPredModel.split(",");
 
                 System.out.println("Loading predicted spectra 1");
@@ -101,10 +103,11 @@ public class PercolatorFormatter {
                 System.out.println("Loading predicted spectra 2");
                 if (modelSplit[1].equals("PredFull")) {
                     predictedSpectra2 = SpectralPredictionMapper.createSpectralPredictionMapper(
-                            mgfSplit[1], pinFiles, executorService);
+                            mgfSplit[1], pinFiles, executorService); //get predfull library
                 } else {
                     predictedSpectra2 = SpectralPredictionMapper.createSpectralPredictionMapper(
-                            mgfSplit[1], modelSplit[1], executorService);
+                            mgfSplit[1], modelSplit[1], executorService); //get other library
+                    Constants.addNonYb = false; //probably just want to use separate spectra and RT models
                 }
                 System.out.println("Merging spectral libraries");
 
@@ -137,7 +140,7 @@ public class PercolatorFormatter {
                         ArrayList<Float> intensities = new ArrayList<>();
                         ArrayList<String> fragTypes = new ArrayList<>();
 
-                        if (Constants.replaceYBintensities) {
+                        if (Constants.addNonYb) {
                             float maxIntensityMZ = Float.NaN;
 
                             //add original peaks
@@ -317,13 +320,16 @@ public class PercolatorFormatter {
                 String newOutfile = pinFiles[i].getAbsolutePath().replaceAll("\\.pin$", "_" + outfile + ".pin");
 
                 //load mzml file
-                System.out.println("Processing " + mzmlFiles[i].getName());
                 MzmlReader mzml;
                 if (mzmlFiles[i].getName().substring( mzmlFiles[i].getName().length() - 3).toLowerCase().equals("mgf")) {
                     mzml = new MzmlReader(new MgfFileReader(mzmlFiles[i].getCanonicalPath(),
                             true, executorService, ""));
                 } else {
-                    mzml = new MzmlReader(mzmlFiles[i].getCanonicalPath());
+                    if (mzmlReaders[i] == null) {
+                        mzml = new MzmlReader(mzmlFiles[i].getCanonicalPath());
+                    } else {
+                        mzml = mzmlReaders[i];
+                    }
                 }
 
                 //load pin file, which already includes all ranks
@@ -338,7 +344,7 @@ public class PercolatorFormatter {
                 }
 
                 //Special preparations dependent on features we require
-                if (needsMGF) {
+                if (predictedSpectra != null) {
                     mzml.setPinEntries(pin, predictedSpectra);
                     //these require all experimental peaks before removing higher rank peaks
                     if (Constants.removeRankPeaks &&

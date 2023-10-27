@@ -19,6 +19,7 @@ package Features;
 
 import org.apache.commons.lang3.ArrayUtils;
 import org.checkerframework.checker.units.qual.A;
+import org.checkerframework.checker.units.qual.N;
 import umich.ms.fileio.exceptions.FileParsingException;
 import umontreal.ssj.probdist.EmpiricalDist;
 
@@ -264,10 +265,13 @@ public class PinReader {
         return peps.toArray(new String[0]);
     }
 
-    public String[] createAlphapeptdeepList(File mzmlFile) throws IOException, InterruptedException, ExecutionException, FileParsingException {
+    public String[] createAlphapeptdeepList(File mzmlFile, PinMzmlMatcher pmm) throws IOException, InterruptedException, ExecutionException, FileParsingException {
         ArrayList<String> peps = new ArrayList<String>();
-        if (Constants.NCE.equals("")) {
+        int fileI = 0;
+        if (Constants.NCE.equals("") && pmm.mzmlReaders[fileI] == null) {
             mzml = new MzmlReader(mzmlFile.getCanonicalPath());
+        } else if (pmm.mzmlReaders[fileI] != null) {
+            mzml = pmm.mzmlReaders[fileI];
         }
         if (Constants.instrument.equals("")) {
             Constants.instrument = getInstrument();
@@ -291,6 +295,70 @@ public class PinReader {
         return peps.toArray(new String[0]);
     }
 
+    public String[] createJSON(File mzmlFile, PinMzmlMatcher pmm, String modelFormat)
+            throws IOException, InterruptedException, ExecutionException, FileParsingException {
+        ArrayList<String> peps = new ArrayList<String>();
+        int fileI = 0;
+        for (File f : pmm.mzmlFiles) {
+            if (f.toString().equals(mzmlFile.toString())) {
+                break;
+            }
+            fileI++;
+        }
+        if (Constants.NCE.equals("") && pmm.mzmlReaders[fileI] == null) {
+            mzml = new MzmlReader(mzmlFile.getCanonicalPath());
+            pmm.mzmlReaders[fileI] = mzml;
+        } else if (pmm.mzmlReaders[fileI] != null) {
+            mzml = pmm.mzmlReaders[fileI];
+        }
+        if (Constants.instrument.equals("")) {
+            Constants.instrument = getInstrument();
+        }
+        while (next()) {
+            PeptideFormatter pf = getPep();
+            if ((modelFormat.contains("Prosit") || modelFormat.contains("ms2pip") || modelFormat.contains("Deeplc"))
+                    && pf.stripped.contains("U")) { // no peptides with U
+                continue;
+            }
+            if (modelFormat.contains("ms2pip") && pf.stripped.length() > 30) { //peptide has length limit
+                continue;
+            }
+
+            String NCE;
+            String fragmentation;
+            if (mzml != null) {
+                Set<String> fragTypes = mzml.scanNumberObjects.get(getScanNum()).NCEs.keySet();
+                if (fragTypes.contains("CID")) {
+                    fragmentation = "CID";
+                } else {
+                    fragmentation = "HCD";
+                }
+                NCE = getNCE(fragmentation);
+            } else {
+                NCE = Constants.NCE;
+                fragmentation = Constants.FragmentationType;
+            }
+            String pep = pf.diann.replace("UniMod", "UNIMOD");
+            if (pep.contains("[TMT]")) {
+                pep = pep.replace("[TMT]", "[UNIMOD:737]");
+            }
+
+            if (pep.startsWith("[")) { //this is the case for all n term mods //TODO deal with c term mods
+                int splitpoint = pep.indexOf("]");
+                if (modelFormat.contains("Prosit")) {
+                    pep = pep.substring(splitpoint + 1);
+                } else {
+                    pep = pep.substring(0, splitpoint + 1) + "-" + pep.substring(splitpoint + 1);
+                }
+            }
+            StringBuilder sb = new StringBuilder();
+            sb.append(pep).append(",").append(pf.charge).append(",").append(NCE).append(",").
+                    append(Constants.instrument).append(",").append(fragmentation);
+            peps.add(sb.toString());
+        }
+        return peps.toArray(new String[0]);
+    }
+
     private String getNCE() {
         if (Constants.NCE.equals("")) {
             return String.valueOf(mzml.scanNumberObjects.get(getScanNum()).NCEs.get(Constants.FragmentationType));
@@ -300,6 +368,16 @@ public class PinReader {
 
     }
 
+    private String getNCE(String frag) {
+        if (Constants.NCE.equals("")) {
+            return String.valueOf(mzml.scanNumberObjects.get(getScanNum()).NCEs.get(frag));
+        } else {
+            return Constants.NCE;
+        }
+
+    }
+
+    //TODO: support for astral model?
     private String getInstrument() {
         HashSet<String> LumosKeys = new HashSet<>(Arrays.asList("LTQ", "Lumos", "Fusion", "Elite", "Velos", "Eclipse", "Tribrid"));
         HashSet<String> QEKeys = new HashSet<>(Arrays.asList("QE", "Exactive", "Exploris"));

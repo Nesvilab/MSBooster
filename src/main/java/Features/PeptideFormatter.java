@@ -68,8 +68,13 @@ public class PeptideFormatter {
     }
 
     private void diannTObase(String peptide) {
-        peptide = peptide.replace("UniMod:","");
+        peptide = peptide.toUpperCase();
+        peptide = peptide.replace("UNIMOD:","");
         peptide = peptide.replace("[TMT]","[737]");
+
+        //for koina
+        peptide = peptide.replace("]-", "]");
+        peptide = peptide.replace("-[", "[");
         //convert unimod to mass
         ArrayList<Integer> newStarts = new ArrayList<>();
         ArrayList<Integer> newEnds = new ArrayList<>();
@@ -301,7 +306,12 @@ public class PeptideFormatter {
     }
 
     public PeptideFormatter(String peptide, Object c, String format) {
-        charge = (String) c;
+//        try {
+//            charge = (String) c;
+//        } catch (Exception e) {
+//            charge = c.toString();
+//        }
+        charge = c.toString();
 
         if (format.equals("pin")) {
             pinTObase(peptide);
@@ -378,5 +388,21 @@ public class PeptideFormatter {
             baseTOstripped();
             baseCharge = base + "|" + charge;
         }
+    }
+
+    public String getBaseCharge() {
+        return baseCharge;
+    }
+    public String getBase() {
+        return base;
+    }
+    public String getDiann() {
+        return diann;
+    }
+    public String getProsit() {
+        return prosit;
+    }
+    public String getStripped() {
+        return stripped;
     }
 }

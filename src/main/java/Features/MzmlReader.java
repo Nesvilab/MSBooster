@@ -68,6 +68,7 @@ public class MzmlReader {
     public MzmlReader(String filename) throws FileParsingException, ExecutionException, InterruptedException {
         // Creating data source
         //path = Paths.get(filename); //
+        System.out.println("Processing " + filename);
         Path path = Paths.get(filename);
         pathStr = path.toString();
         MZMLFile source = new MZMLFile(pathStr);
@@ -103,6 +104,7 @@ public class MzmlReader {
 
     public MzmlReader(MgfFileReader mgf) throws FileParsingException, ExecutionException, InterruptedException { //uncalibrated mgf from MSFragger .d search
         pathStr = mgf.filenames.get(0);
+        System.out.println("Processing " + pathStr);
 
         //Constants.useIM = true;
         //scanNumberObjects = mgf.scanNumberObjects;
@@ -277,16 +279,12 @@ public class MzmlReader {
         ConcurrentHashMap<String, PredictionEntry> allPreds = spm.getPreds();
 
         ProgressReporter pr = new ProgressReporter(pin.length);
-        int current = 0;
         while (pin.next()) {
             try {
                 scanNumberObjects.get(pin.getScanNum()).setPeptideObject(pin.getPep(), pin.getRank(), pin.getTD(), pin.getEScore(),
                         allPreds);
 
-                current = pr.progress();
-//                if (current >= 20) {
-//                    break;
-//                }
+                pr.progress();
             } catch (Exception e) {
                 e.printStackTrace();
                 System.exit(1);
@@ -454,7 +452,7 @@ public class MzmlReader {
 
                     //get stats based on experimental RT bin
                     int idx = (int) (msn.RT * Constants.RTbinMultiplier);
-                    float binStd = RTbinStats[idx][1];
+//                    float binStd = RTbinStats[idx][1];
                     float binIqr = RTbinStats[idx][2];
 
                     //now calculate deltaRTs
@@ -463,6 +461,11 @@ public class MzmlReader {
                         //pep.deltaRTLOESSnormalized = Math.abs(LOESSRT - pep.RT) / binStd;
                         pep.deltaRTLOESSnormalized = Math.abs(LOESSRT - pep.RT) / binIqr;
                     }
+
+//                    for (PeptideObj pep : msn.peptideObjects) {
+//                        pep.deltaRTLOESSnormalized =
+//                                Math.abs(msn.RT - predToExpRTLOESS.invoke((double) pep.RT)) / binIqr;
+//                    }
                 }
             }));
         }

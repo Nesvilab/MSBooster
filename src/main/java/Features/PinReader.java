@@ -135,7 +135,7 @@ public class PinReader {
         if (calcEvalue) {
             return String.valueOf(Math.exp(15.0 - Double.parseDouble(row[eScoreIdx])));
         } else {
-            return row[eScoreIdx];
+            return String.valueOf(Math.pow(10, Double.parseDouble(row[eScoreIdx])));
         }
     }
 

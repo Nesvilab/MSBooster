@@ -17,12 +17,14 @@
 
 package Features;
 
+import jdk.internal.module.SystemModuleFinders;
 import umich.ms.fileio.exceptions.FileParsingException;
 
 import java.io.*;
 import java.nio.charset.StandardCharsets;
 import java.util.*;
 import java.util.concurrent.*;
+import java.util.stream.IntStream;
 
 public class MgfFileReader implements SpectralPredictionMapper{
     //mgfFileReader can handle both single files and entire directories
@@ -267,7 +269,25 @@ public class MgfFileReader implements SpectralPredictionMapper{
                                         fragmentArray[h] = fragmentIonTypes.get(h);
                                     }
                                     if (createScanNumObjects) { //act as mzml
-                                        scanNumberObjects.put(scanNum, new MzmlScanNumber(scanNum, mzArray, intArray, RT, IM));
+                                        if (! scanNumberObjects.containsKey(scanNum)) {
+                                            Integer[] indices = new Integer[mzArray.length];
+                                            for (int j = 0; j < mzArray.length; j++) {
+                                                indices[j] = j;
+                                            }
+                                            Arrays.sort(indices, (a, b) -> {
+                                                float aValue = mzArray[a];
+                                                float bValue = mzArray[b];
+                                                return Float.compare(aValue, bValue);
+                                            });
+                                            float[] sortedMzArray = new float[mzArray.length];
+                                            float[] sortedIntArray = new float[mzArray.length];
+
+                                            for (int j = 0; j < mzArray.length; j++) {
+                                                sortedMzArray[j] = mzArray[indices[j]];
+                                                sortedIntArray[j] = intArray[indices[j]];
+                                            }
+                                            scanNumberObjects.put(scanNum, new MzmlScanNumber(scanNum, sortedMzArray, sortedIntArray, RT, IM));
+                                        }
                                     } else { //act as predictions
                                         PredictionEntry newPred = new PredictionEntry();
                                         newPred.setMzs(mzArray);
@@ -374,7 +394,23 @@ public class MgfFileReader implements SpectralPredictionMapper{
                         }
                         if (createScanNumObjects) { //act as mzml
                             if (! scanNumberObjects.containsKey(scanNum)) {
-                                scanNumberObjects.put(scanNum, new MzmlScanNumber(scanNum, mzArray, intArray, RT, IM));
+                                Integer[] indices = new Integer[mzArray.length];
+                                for (int j = 0; j < mzArray.length; j++) {
+                                    indices[j] = j;
+                                }
+                                Arrays.sort(indices, (a, b) -> {
+                                    float aValue = mzArray[a];
+                                    float bValue = mzArray[b];
+                                    return Float.compare(aValue, bValue);
+                                });
+                                float[] sortedMzArray = new float[mzArray.length];
+                                float[] sortedIntArray = new float[mzArray.length];
+
+                                for (int j = 0; j < mzArray.length; j++) {
+                                    sortedMzArray[j] = mzArray[indices[j]];
+                                    sortedIntArray[j] = intArray[indices[j]];
+                                }
+                                scanNumberObjects.put(scanNum, new MzmlScanNumber(scanNum, sortedMzArray, sortedIntArray, RT, IM));
                             }
                         } else { //act as predictions
                             PredictionEntry newPred = new PredictionEntry();

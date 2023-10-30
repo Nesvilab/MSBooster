@@ -162,17 +162,23 @@ public class RTCalibrationFigure {
         // generates Log data
         List<Float> x1Data = new ArrayList<Float>();
         List<Double> y1Data = new ArrayList<Double>();
-//        BufferedWriter calibrationPoints = new BufferedWriter(new FileWriter(
-//                pinPath + File.separator + "MSBooster_RTplots" + File.separator +
-//                        pinName.substring(0, pinName.length() - 4) + "_calibration.csv"));
-//        calibrationPoints.write("experimental RT,predicted RT");
+        BufferedWriter calibrationPoints = new BufferedWriter(new FileWriter(
+                pinPath + File.separator + "MSBooster_RTplots" + File.separator +
+                        pinName.substring(0, pinName.length() - 4) + "_calibration.csv"));
+        if (Constants.writeCalibration) {
+            calibrationPoints.write("experimental RT,predicted RT");
+        }
         for (float i = minRT; i < maxRT; i = i + (maxRT - minRT) / 1000f) {
             x1Data.add(i);
             double y = mzml.RTLOESS.invoke((double) i);
             y1Data.add(y);
-//            calibrationPoints.write(i + "," + y);
+            if (Constants.writeCalibration) {
+                calibrationPoints.write(i + "," + y);
+            }
         }
-//        calibrationPoints.close();
+        if (Constants.writeCalibration) {
+            calibrationPoints.close();
+        }
         XYSeries series1 = chart.addSeries("regression", x1Data, y1Data);
         series1.setMarkerColor(new Color(243, 9, 9));
         //series.setLineWidth(1);

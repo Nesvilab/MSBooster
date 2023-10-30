@@ -167,6 +167,7 @@ public class Constants {
     public static Integer washGradientBins = 100;
     public static Double rtCutoff = Double.NaN;
     public static Boolean removeWashGradient = false;
+    public static Boolean writeCalibration = false;
 
     //LOESS
     public static Double bandwidth = 0.05;

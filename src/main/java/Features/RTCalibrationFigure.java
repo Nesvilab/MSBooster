@@ -36,6 +36,10 @@ public class RTCalibrationFigure {
         String pinPath = new File(outFile).getParent();
         String pinName = new File(outFile).getName();
 
+        if (! new File(pinPath + File.separator + "MSBooster_RTplots").exists()) {
+            new File(pinPath + File.separator + "MSBooster_RTplots").mkdirs();
+        }
+
         XYChart chart = new XYChartBuilder().width(1000).height(1000).build();
         chart.getStyler().setDefaultSeriesRenderStyle(XYSeries.XYSeriesRenderStyle.Scatter);
         chart.getStyler().setChartTitleVisible(true);
@@ -186,9 +190,6 @@ public class RTCalibrationFigure {
 
 //        BitmapEncoder.saveBitmap(chart, "C:/Users/yangkl/Downloads/proteomics/hla/Sample_Chart",
 //                BitmapEncoder.BitmapFormat.PNG);
-        if (! new File(pinPath + File.separator + "MSBooster_RTplots").exists()) {
-            new File(pinPath + File.separator + "MSBooster_RTplots").mkdirs();
-        }
         BitmapEncoder.saveBitmap(chart, pinPath + File.separator + "MSBooster_RTplots" + File.separator +
                         pinName.substring(0, pinName.length() - 4),
                 BitmapEncoder.BitmapFormat.PNG);

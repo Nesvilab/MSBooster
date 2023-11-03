@@ -166,18 +166,19 @@ public class RTCalibrationFigure {
         // generates Log data
         List<Float> x1Data = new ArrayList<Float>();
         List<Double> y1Data = new ArrayList<Double>();
-        BufferedWriter calibrationPoints = new BufferedWriter(new FileWriter(
-                pinPath + File.separator + "MSBooster_RTplots" + File.separator +
-                        pinName.substring(0, pinName.length() - 4) + "_calibration.csv"));
+        BufferedWriter calibrationPoints = null;
         if (Constants.writeCalibration) {
-            calibrationPoints.write("experimental RT,predicted RT");
+            calibrationPoints = new BufferedWriter(new FileWriter(
+                    pinPath + File.separator + "MSBooster_RTplots" + File.separator +
+                            pinName.substring(0, pinName.length() - 4) + "_calibration.csv"));
+            calibrationPoints.write("experimental RT,predicted RT\n");
         }
         for (float i = minRT; i < maxRT; i = i + (maxRT - minRT) / 1000f) {
             x1Data.add(i);
             double y = mzml.RTLOESS.invoke((double) i);
             y1Data.add(y);
             if (Constants.writeCalibration) {
-                calibrationPoints.write(i + "," + y);
+                calibrationPoints.write(i + "," + y + "\n");
             }
         }
         if (Constants.writeCalibration) {

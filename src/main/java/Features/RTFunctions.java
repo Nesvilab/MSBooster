@@ -49,8 +49,9 @@ public class RTFunctions {
     //given mzmlreader, get all peptide objects and their RTs
     //get predicted RTs
     //assumes peptide objects already set
+    //TODO: only supporting getting PSMs for supported PTMs
     public static float[] getBetas(MzmlReader mzml, int RTregressionSize) {
-        double[][] RTs = getRTarrays(mzml, RTregressionSize);
+        double[][] RTs = getRTarrays(mzml, RTregressionSize).get("");
         return StatMethods.linearRegression(RTs[0], RTs[1]);
     }
 
@@ -61,10 +62,11 @@ public class RTFunctions {
     //utility for getBetas and LOESS
     //returns exp and pred RT arrays
     //if speed is issue, don't need extra steps for regular regression
-    public static double[][] getRTarrays(MzmlReader mzml, int RTregressionSize) {
+    public static HashMap<String, double[][]> getRTarrays(MzmlReader mzml, int RTregressionSize) {
         ArrayList<Float> expRTs = new ArrayList<>();
         ArrayList<Float> predRTs = new ArrayList<>();
         ArrayList<Float> eScores = new ArrayList<>(); //for sorting
+        ArrayList<String> peptides = new ArrayList<>();
         HashMap<String, ArrayList<Integer>> pepIdx = new HashMap<>();
         //collect RTs and escores. Collect peptide IDs for selecting best PSM for each
 
@@ -95,6 +97,7 @@ public class RTFunctions {
             expRTs.add(rt);
             predRTs.add(pep.RT);
             eScores.add(e);
+            peptides.add(pep.name);
             if (pepIdx.containsKey(pep.name)) {
                 ArrayList<Integer> tmpList = pepIdx.get(pep.name);
                 tmpList.add(added);
@@ -105,7 +108,6 @@ public class RTFunctions {
                 pepIdx.put(pep.name, tmpList);
             }
             added += 1;
-            //}
         }
         if (expRTs.size() == 0) { //no more e score threshold
             System.out.println("Not enough high quality PSMs for RT regression. Removing escore cutoff");
@@ -125,6 +127,7 @@ public class RTFunctions {
                     expRTs.add(rt);
                     predRTs.add(pep.RT);
                     eScores.add(e);
+                    peptides.add(pep.name);
                     if (pepIdx.containsKey(pep.name)) {
                         ArrayList<Integer> tmpList = pepIdx.get(pep.name);
                         tmpList.add(added);
@@ -167,63 +170,102 @@ public class RTFunctions {
             expRTs.remove(removed);
             predRTs.remove(removed);
             eScores.remove(removed);
-        }
-//        PSMtoRemove.forEach(expRTs::remove);
-//        PSMtoRemove.forEach(predRTs::remove);
-//        PSMtoRemove.forEach(eScores::remove);
-
-        //get top peptides based on eScore
-        //https://stackoverflow.com/questions/4859261/get-the-indices-of-an-array-after-sorting
-        //also consider taking them all, if want more samples for regression/z scoring
-        //then divide into bins with constant size (higher precursor density in middle of RT)
-
-        //if negative, use all
-        //can consider e score cutoff in constants
-        int sizeLimit = expRTs.size();
-        if (sizeLimit < 2) {
-            System.out.println("Warning: not enough target PSMs are available for regression, " +
-                    "setting RT scores equal to 0");
-            Constants.noRTscores = true;
-
-            //just so that there's an output
-            double[][] RTs = new double[2][2];
-            RTs[0] = new double[2] ;
-            RTs[1] = new double[2] ;
-            return RTs;
+            peptides.remove(removed);
         }
 
-        if (RTregressionSize > 0 && RTregressionSize <= sizeLimit) {
-            System.out.println("RT regression using " + RTregressionSize + " PSMs");
-            int[] sortedIndices = IntStream.range(0, eScores.size())
-                    .boxed().sorted(Comparator.comparing(eScores::get))
-                    .mapToInt(ele -> ele).toArray();
-
-            int[] sortedIndices2 = Arrays.copyOfRange(sortedIndices, 0, RTregressionSize);
-            //Arrays.sort(sortedIndices2); //this ensures increasing RT (sorted in LOESS anyways)
-
-            double[][] RTs = new double[2][RTregressionSize];
-            for (int i = 0; i < RTregressionSize; i++) {
-                int idx = sortedIndices2[i];
-                RTs[0][i] = expRTs.get(idx);
-                RTs[1][i] = predRTs.get(idx);
+        //get masses that need to be calibrated
+        HashMap<String, double[][]> RTs = new HashMap<>();
+        if (! Constants.RTmassesForCalibration.equals("")) {
+            String[] masses = Constants.RTmassesForCalibration.split(",");
+            for (String mass : masses) {
+                RTs.put(mass, new double[2][]);
             }
-            return RTs;
-
+            RTs.put("others", new double[2][]);
         } else {
-            System.out.println("RT regression using " + sizeLimit + " PSMs");
-            double[][] RTs = new double[2][];
-            RTs[0] = expRTs.stream().mapToDouble(i -> i).toArray();
-            RTs[1] = predRTs.stream().mapToDouble(i -> i).toArray();
-            return RTs;
+            RTs.put("", new double[2][]);
         }
-    }
 
-//    public static Function1<Double, Double> LOESS(mzMLReader mzml, int RTregressionSize,
-//                             double bandwidth, int robustIters) {
-//        double[][] RTs = getRTarrays(mzml, RTregressionSize);
-//
-//        return LOESS(RTs, bandwidth, robustIters);
-//    }
+        for (String mass : RTs.keySet()) {
+            ArrayList<Float> thisExpRTs = new ArrayList<>();
+            ArrayList<Float> thisPredRTs = new ArrayList<>();
+            ArrayList<Float> thisEscores = new ArrayList<>();
+            //get PSMs specific to this mass
+            if (mass.equals("")) {
+                thisExpRTs = expRTs;
+                thisPredRTs = predRTs;
+                thisEscores = eScores;
+            } else if (mass.equals("others")) {
+                for (int i = 0; i < peptides.size(); i++) {
+                    boolean peptideContains = false;
+                    for (String m : RTs.keySet()) {
+                        if (peptides.get(i).contains(m)) {
+                            peptideContains = true;
+                            break;
+                        }
+                    }
+
+                    if (!peptideContains) {
+                        thisExpRTs.add(expRTs.get(i));
+                        thisPredRTs.add(predRTs.get(i));
+                        thisEscores.add(eScores.get(i));
+                    }
+                }
+            } else {
+                for (int i = 0; i < peptides.size(); i++) {
+                    if (peptides.get(i).contains(mass)) {
+                        thisExpRTs.add(expRTs.get(i));
+                        thisPredRTs.add(predRTs.get(i));
+                        thisEscores.add(eScores.get(i));
+                    }
+                }
+            }
+
+            //get top peptides based on eScore
+            //https://stackoverflow.com/questions/4859261/get-the-indices-of-an-array-after-sorting
+            //also consider taking them all, if want more samples for regression/z scoring
+            //then divide into bins with constant size (higher precursor density in middle of RT)
+
+            //if negative, use all
+            //can consider e score cutoff in constants
+            int sizeLimit = thisExpRTs.size();
+            if (sizeLimit < 2) {
+                System.out.println("Warning: not enough target PSMs are available for regression, " +
+                        "setting RT scores equal to 0");
+                Constants.noRTscores = true;
+
+                //just so that there's an output
+                double[][] thisRTs = new double[2][2];
+                thisRTs[0] = new double[2];
+                thisRTs[1] = new double[2];
+                RTs.put(mass, thisRTs);
+            }
+
+            if (RTregressionSize > 0 && RTregressionSize <= sizeLimit) {
+                System.out.println("RT regression for mass " + mass + " using " + RTregressionSize + " PSMs");
+                int[] sortedIndices = IntStream.range(0, thisEscores.size())
+                        .boxed().sorted(Comparator.comparing(thisEscores::get))
+                        .mapToInt(ele -> ele).toArray();
+
+                int[] sortedIndices2 = Arrays.copyOfRange(sortedIndices, 0, RTregressionSize);
+
+                double[][] thisRTs = new double[2][RTregressionSize];
+                for (int i = 0; i < RTregressionSize; i++) {
+                    int idx = sortedIndices2[i];
+                    thisRTs[0][i] = thisExpRTs.get(idx);
+                    thisRTs[1][i] = thisPredRTs.get(idx);
+                }
+                RTs.put(mass, thisRTs);
+
+            } else {
+                System.out.println("RT regression for mass " + mass + " using " + sizeLimit + " PSMs");
+                double[][] thisRTs = new double[2][];
+                thisRTs[0] = thisExpRTs.stream().mapToDouble(i -> i).toArray();
+                thisRTs[1] = thisPredRTs.stream().mapToDouble(i -> i).toArray();
+                RTs.put(mass, thisRTs);
+            }
+        }
+        return RTs;
+    }
 
     //function that returns double[] of bin boundaries, with mean and var od each
     //exp on x axis, pred on y

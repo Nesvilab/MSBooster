@@ -241,7 +241,11 @@ public class RTFunctions {
             }
 
             if (RTregressionSize > 0 && RTregressionSize <= sizeLimit) {
-                System.out.println("RT regression for mass " + mass + " using " + RTregressionSize + " PSMs");
+                if (mass.equals("")) {
+                    System.out.println("RT regression using " + RTregressionSize + " PSMs");
+                } else {
+                    System.out.println("RT regression for mass " + mass + " using " + RTregressionSize + " PSMs");
+                }
                 int[] sortedIndices = IntStream.range(0, thisEscores.size())
                         .boxed().sorted(Comparator.comparing(thisEscores::get))
                         .mapToInt(ele -> ele).toArray();

@@ -68,6 +68,7 @@ public class RTCalibrationFigure {
                 }
             }
         }
+        massesList.remove("");
         for (int i = 0; i < massesList.size(); i++) {
             xDataMod.add(new ArrayList<>());
             yDataMod.add(new ArrayList<>());
@@ -183,21 +184,18 @@ public class RTCalibrationFigure {
         for (String mass : mzml.RTLOESS.keySet()) {
             List<Float> x1Data = new ArrayList<Float>();
             List<Double> y1Data = new ArrayList<Double>();
-//        BufferedWriter calibrationPoints = new BufferedWriter(new FileWriter(
-//                pinPath + File.separator + "MSBooster_RTplots" + File.separator +
-//                        pinName.substring(0, pinName.length() - 4) + "_calibration.csv"));
-//        calibrationPoints.write("experimental RT,predicted RT");
             for (float i = minRT; i < maxRT; i = i + (maxRT - minRT) / 1000f) {
                 x1Data.add(i);
                 double y = mzml.RTLOESS.get(mass).invoke((double) i); //TODO adapt
                 y1Data.add(y);
-//            calibrationPoints.write(i + "," + y);
             }
-//        calibrationPoints.close();
-            XYSeries series1 = chart.addSeries("regression - " + mass, x1Data, y1Data);
+            XYSeries series1;
+            if (mass.equals("")) {
+                series1 = chart.addSeries("regression", x1Data, y1Data);
+            } else {
+                series1 = chart.addSeries("regression - " + mass, x1Data, y1Data);
+            }
             series1.setMarkerColor(new Color(243 * j % 255, 9 * j % 255, 9 * j % 255));
-            //series.setLineWidth(1);
-            //series.setLineColor(XChartSeriesColors.RED);
             j += 2;
         }
 

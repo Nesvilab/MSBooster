@@ -53,7 +53,7 @@ public class MzmlReader {
     private float[] betas;
     public ArrayList<Float>[] RTbins = null;
     public float[][] RTbinStats;
-    public Function1<Double, Double> RTLOESS;
+    public HashMap<String, Function1<Double, Double>> RTLOESS = new HashMap<>();
     public int unifPriorSize;
     public float unifProb;
     public int[] unifPriorSizeIM;
@@ -62,7 +62,7 @@ public class MzmlReader {
     public float[][][] IMbinStats = new float[IMFunctions.numCharges][2 * Constants.IMbinMultiplier + 1][3];
     private ArrayList<Function1<Double, Double>> IMLOESS = new ArrayList<>();
     public HashMap<String, ArrayList<Float>> peptideIMs = new HashMap<>();
-    public double[][] expAndPredRTs;
+    public HashMap<String, double[][]> expAndPredRTs;
     public List<Future> futureList = new ArrayList<>(Constants.numThreads);
 
     public MzmlReader(String filename) throws FileParsingException, ExecutionException, InterruptedException {
@@ -299,7 +299,7 @@ public class MzmlReader {
         betas = RTFunctions.getBetas(this, RTregressionSize);
     }
     public void setBetas() {
-        betas = RTFunctions.getBetas(expAndPredRTs);
+        betas = RTFunctions.getBetas(expAndPredRTs.get(""));
     }
 
     public float[] getBetas() {
@@ -447,6 +447,7 @@ public class MzmlReader {
             int start = (int) (scanNumberObjects.size() * (long) i) / Constants.numThreads;
             int end = (int) (scanNumberObjects.size() * (long) (i + 1)) / Constants.numThreads;
             futureList.add(executorService.submit(() -> {
+                HashMap<String, Double> LOESSRT = new HashMap<>();
                 for (int j = start; j < end; j++) {
                     MzmlScanNumber msn = getScanNumObject(scanNums.get(j));
 
@@ -456,16 +457,21 @@ public class MzmlReader {
                     float binIqr = RTbinStats[idx][2];
 
                     //now calculate deltaRTs
-                    double LOESSRT = RTLOESS.invoke((double) msn.RT);
-                    for (PeptideObj pep : msn.peptideObjects) {
-                        //pep.deltaRTLOESSnormalized = Math.abs(LOESSRT - pep.RT) / binStd;
-                        pep.deltaRTLOESSnormalized = Math.abs(LOESSRT - pep.RT) / binIqr;
+                    for (String mass : RTLOESS.keySet()) {
+                        LOESSRT.put(mass, RTLOESS.get(mass).invoke((double) msn.RT));
                     }
-
-//                    for (PeptideObj pep : msn.peptideObjects) {
-//                        pep.deltaRTLOESSnormalized =
-//                                Math.abs(msn.RT - predToExpRTLOESS.invoke((double) pep.RT)) / binIqr;
-//                    }
+                    for (PeptideObj pep : msn.peptideObjects) {
+                        double finalDelta = Double.MAX_VALUE;
+                        for (String mass : LOESSRT.keySet()) {
+                            if (pep.name.contains(mass)) {
+                                double delta = Math.abs(LOESSRT.get(mass) - pep.RT);
+                                if (delta < finalDelta) {
+                                    finalDelta = delta;
+                                }
+                            }
+                        }
+                        pep.deltaRTLOESSnormalized = finalDelta / binIqr;
+                    }
                 }
             }));
         }
@@ -589,7 +595,16 @@ public class MzmlReader {
     public void setLOESS(int regressionSize, double bandwidth, int robustIters, String mode) {
         if (mode.equals("RT")) {
             expAndPredRTs = RTFunctions.getRTarrays(this, regressionSize);
-            RTLOESS = LOESS(expAndPredRTs, bandwidth, robustIters);
+            ArrayList<String> masses = new ArrayList<>();
+            if (Constants.RTmassesForCalibration.equals("")) {
+                masses.add("");
+            } else {
+                masses.addAll(Arrays.asList(Constants.RTmassesForCalibration.split(",")));
+                masses.add("others");
+            }
+            for (String mass : masses) {
+                RTLOESS.put(mass, LOESS(expAndPredRTs.get(mass), bandwidth, robustIters));
+            }
         } else if (mode.equals("IM")) {
             double[][][] expAndPredIMs = IMFunctions.getIMarrays(this, regressionSize);
             for (double[][] bins : expAndPredIMs) {
@@ -603,6 +618,7 @@ public class MzmlReader {
         }
     }
 
+    //this assumes min delta RT is the best method, but could also be average across mass calibratioin curves
     public void predictRTLOESS(ExecutorService executorService) throws ExecutionException, InterruptedException {
         //long startTime = System.nanoTime();
         futureList.clear();
@@ -612,13 +628,30 @@ public class MzmlReader {
             int start = (int) (scanNumberObjects.size() * (long) i) / Constants.numThreads;
             int end = (int) (scanNumberObjects.size() * (long) (i + 1)) / Constants.numThreads;
             futureList.add(executorService.submit(() -> {
+                HashMap<String, Double> LOESSRT = new HashMap<>();
                 for (int j = start; j < end; j++) {
                     MzmlScanNumber msn = getScanNumObject(scanNums.get(j));
-                    double LOESSRT = RTLOESS.invoke((double) msn.RT);
-
+                    for (String mass : RTLOESS.keySet()) {
+                        LOESSRT.put(mass, RTLOESS.get(mass).invoke((double) msn.RT));
+                    } //TODO: change for unmodified peptides
                     for (PeptideObj pep : msn.peptideObjects) {
-                        pep.deltaRTLOESS = Math.abs(LOESSRT - pep.RT);
-                        pep.calibratedRT = LOESSRT;
+                        double finalDelta = Double.MAX_VALUE;
+                        boolean isNone = true;
+                        for (String mass : LOESSRT.keySet()) {
+                            if (pep.name.contains(mass)) {
+                                isNone = false;
+                                double delta = Math.abs(LOESSRT.get(mass) - pep.RT);
+                                if (delta < finalDelta) {
+                                    finalDelta = delta;
+                                    pep.calibratedRT = LOESSRT.get(mass);
+                                }
+                            }
+                        }
+                        if (isNone) {
+                            pep.calibratedRT = LOESSRT.get("others");
+                            finalDelta = Math.abs(pep.calibratedRT - pep.RT);
+                        }
+                        pep.deltaRTLOESS = finalDelta;
                     }
                 }
             }));

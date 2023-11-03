@@ -63,17 +63,21 @@ public class RTCalibrationFigure {
         float minRT = Float.MAX_VALUE;
         float maxRT = Float.MIN_VALUE;
 
-        String[] masses;
-        if (Constants.RTfigure_masses.equals("")) {
-            masses = new String[0];
-        } else {
-            masses = Constants.RTfigure_masses.split(",");
-            for (int i = 0; i < masses.length; i++) {
-                masses[i] = masses[i].trim();
-                xDataMod.add(new ArrayList<>());
-                yDataMod.add(new ArrayList<>());
+        ArrayList<String> massesList = new ArrayList<>();
+        massesList.addAll(Arrays.asList(Constants.RTmassesForCalibration.split(",")));
+        if (! Constants.RTfigure_masses.equals("")) {
+            for (String mass : Constants.RTfigure_masses.split(",")) {
+                if (! massesList.contains(mass)) {
+                    massesList.add(mass);
+                }
             }
         }
+        massesList.remove("");
+        for (int i = 0; i < massesList.size(); i++) {
+            xDataMod.add(new ArrayList<>());
+            yDataMod.add(new ArrayList<>());
+        }
+
         HashMap<String, Float> bestEScore = new HashMap<>();
         for (int scanNum : new TreeSet<Integer>(mzml.scanNumberObjects.keySet())) {
             MzmlScanNumber scanNumObj = mzml.getScanNumObject(scanNum);
@@ -127,8 +131,8 @@ public class RTCalibrationFigure {
                     }
                     boolean containsMod = false;
                     int modIndex = 0;
-                    for (int j = 0; j < masses.length; j++) {
-                        String mass = masses[j];
+                    for (int j = 0; j < massesList.size(); j++) {
+                        String mass = massesList.get(j);
                         if (pep.name.contains(mass)) {
                             containsMod = true;
                             modIndex = j;
@@ -148,6 +152,22 @@ public class RTCalibrationFigure {
             }
         }
 
+        //set y lim
+        double ymax = 0;
+        for (float f : yData) {
+            if (f > ymax) {
+                ymax = f;
+            }
+        }
+        for (List<Float> listf : yDataMod) {
+            for (float f : listf) {
+                if (f > ymax) {
+                    ymax = f;
+                }
+            }
+        }
+        chart.getStyler().setYAxisMax(ymax);
+
         if (xData.size() > 0) {
             XYSeries series = chart.addSeries("scatter", xData, yData);
             series.setMarkerColor(new Color(0, 0, 0, opacity));
@@ -157,37 +177,31 @@ public class RTCalibrationFigure {
             List<Float> ix = xDataMod.get(i);
             List<Float> iy = yDataMod.get(i);
             if (ix.size() > 0) {
-                XYSeries seriesMod = chart.addSeries("scatterMods - " + masses[i], ix, iy);
+                XYSeries seriesMod = chart.addSeries("scatterMods - " + massesList.get(i), ix, iy);
                 seriesMod.setMarkerColor(new Color(65 * i % 255, 105 * i % 255, 225 * i % 255));
             }
         }
 
         //loess regression
         // generates Log data
-        List<Float> x1Data = new ArrayList<Float>();
-        List<Double> y1Data = new ArrayList<Double>();
-        BufferedWriter calibrationPoints = null;
-        if (Constants.writeCalibration) {
-            calibrationPoints = new BufferedWriter(new FileWriter(
-                    pinPath + File.separator + "MSBooster_RTplots" + File.separator +
-                            pinName.substring(0, pinName.length() - 4) + "_calibration.csv"));
-            calibrationPoints.write("experimental RT,predicted RT\n");
-        }
-        for (float i = minRT; i < maxRT; i = i + (maxRT - minRT) / 1000f) {
-            x1Data.add(i);
-            double y = mzml.RTLOESS.invoke((double) i);
-            y1Data.add(y);
-            if (Constants.writeCalibration) {
-                calibrationPoints.write(i + "," + y + "\n");
+        int j = 1;
+        for (String mass : mzml.RTLOESS.keySet()) {
+            List<Float> x1Data = new ArrayList<Float>();
+            List<Double> y1Data = new ArrayList<Double>();
+            for (float i = minRT; i < maxRT; i = i + (maxRT - minRT) / 1000f) {
+                x1Data.add(i);
+                double y = mzml.RTLOESS.get(mass).invoke((double) i); //TODO adapt
+                y1Data.add(y);
             }
+            XYSeries series1;
+            if (mass.equals("")) {
+                series1 = chart.addSeries("regression", x1Data, y1Data);
+            } else {
+                series1 = chart.addSeries("regression - " + mass, x1Data, y1Data);
+            }
+            series1.setMarkerColor(new Color(243 * j % 255, 9 * j % 255, 9 * j % 255));
+            j += 2;
         }
-        if (Constants.writeCalibration) {
-            calibrationPoints.close();
-        }
-        XYSeries series1 = chart.addSeries("regression", x1Data, y1Data);
-        series1.setMarkerColor(new Color(243, 9, 9));
-        //series.setLineWidth(1);
-        //series.setLineColor(XChartSeriesColors.RED);
 
 //        BitmapEncoder.saveBitmap(chart, "C:/Users/yangkl/Downloads/proteomics/hla/Sample_Chart",
 //                BitmapEncoder.BitmapFormat.PNG);

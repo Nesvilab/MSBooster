@@ -82,11 +82,11 @@ public class DiannModelCaller {
                             "--threads",
                             String.valueOf(Constants.numThreads),
                             "--strip-unknown-mods",
-                            "--full-unimod",
                             "--predict-n-frag",
                             "100",
                             "--mod",
-                            "TMT,229.1629");
+                            "TMT,229.1629",
+                            "--original-mods");
                 } else {
                     builder = new ProcessBuilder(Constants.DiaNN,
                             "--lib",
@@ -95,7 +95,6 @@ public class DiannModelCaller {
                             "--threads",
                             String.valueOf(Constants.numThreads),
                             "--strip-unknown-mods",
-                            "--full-unimod",
                             "--predict-n-frag",
                             "100");
                 }

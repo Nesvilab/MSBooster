@@ -17,6 +17,7 @@
 
 package Features;
 
+import com.ctc.wstx.shaded.msv_core.verifier.jarv.Const;
 import com.univocity.parsers.tsv.TsvWriter;
 import com.univocity.parsers.tsv.TsvWriterSettings;
 
@@ -754,6 +755,13 @@ public class PinWriter {
                             break;
                     }
                 }
+                //RT filter
+                if (pepObj.deltaRTLOESS > Constants.RTfilter) {
+                    writer.discardValues();
+                    pepObj.spectralSimObj = null;
+                    continue;
+                }
+
                 //flush values to output
                 writer.writeValuesToRow();
 

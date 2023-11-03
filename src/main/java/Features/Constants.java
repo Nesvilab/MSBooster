@@ -168,6 +168,7 @@ public class Constants {
     public static Double rtCutoff = Double.NaN;
     public static Boolean removeWashGradient = false;
     public static Boolean writeCalibration = false;
+    public static String RTmassesForCalibration = "";
 
     //LOESS
     public static Double bandwidth = 0.05;

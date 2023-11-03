@@ -186,12 +186,26 @@ public class RTCalibrationFigure {
         // generates Log data
         int j = 1;
         for (String mass : mzml.RTLOESS.keySet()) {
+            BufferedWriter calibrationPoints = null;
+            if (Constants.writeCalibration) {
+                calibrationPoints = new BufferedWriter(new FileWriter(
+                        pinPath + File.separator + "MSBooster_RTplots" + File.separator +
+                                pinName.substring(0, pinName.length() - 4) + "_calibration" + mass + ".csv"));
+                calibrationPoints.write("experimental RT,predicted RT\n");
+            }
+
             List<Float> x1Data = new ArrayList<Float>();
             List<Double> y1Data = new ArrayList<Double>();
             for (float i = minRT; i < maxRT; i = i + (maxRT - minRT) / 1000f) {
                 x1Data.add(i);
                 double y = mzml.RTLOESS.get(mass).invoke((double) i); //TODO adapt
                 y1Data.add(y);
+                if (Constants.writeCalibration) {
+                    calibrationPoints.write(i + "," + y + "\n");
+                }
+            }
+            if (Constants.writeCalibration) {
+                calibrationPoints.close();
             }
             XYSeries series1;
             if (mass.equals("")) {
@@ -203,8 +217,6 @@ public class RTCalibrationFigure {
             j += 2;
         }
 
-//        BitmapEncoder.saveBitmap(chart, "C:/Users/yangkl/Downloads/proteomics/hla/Sample_Chart",
-//                BitmapEncoder.BitmapFormat.PNG);
         BitmapEncoder.saveBitmap(chart, pinPath + File.separator + "MSBooster_RTplots" + File.separator +
                         pinName.substring(0, pinName.length() - 4),
                 BitmapEncoder.BitmapFormat.PNG);

@@ -18,7 +18,6 @@
 package Features;
 
 import External.DiannModelCaller;
-import External.ExternalModelCaller;
 import External.KoinaModelCaller;
 
 import java.io.*;
@@ -29,7 +28,7 @@ import java.util.*;
 //this is what I use in the java jar file
 public class MainClass {
     public static void main(String[] args) throws Exception {
-        System.out.println("MSBooster v1.1.25");
+        System.out.println("MSBooster v1.1.25.apd");
         try {
             //accept command line inputs
             HashSet<String> fields = new HashSet<>();

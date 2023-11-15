@@ -17,6 +17,7 @@
 
 package Features;
 
+import jakarta.xml.bind.JAXBException;
 import org.apache.commons.lang3.ArrayUtils;
 import umich.ms.fileio.exceptions.FileParsingException;
 
@@ -258,13 +259,18 @@ public class PeptideFileCreator {
                         break;
                     case "alphapeptdeep":
                         System.out.println("Writing alphapeptdeep input file");
-                        myWriter.write("sequence,mods,mod_sites,charge,nce,instrument,base,scan_num\n");
+                        myWriter.write("sequence,mods,mod_sites,charge,nce,instrument,base\n");
                         break;
                 }
                 for (String hSetHit : hSetHits) {
                     myWriter.write(hSetHit + "\n");
                 }
                 myWriter.close();
+
+                if (Constants.modelSplit && modelFormat.equals("alphapeptdeep")) {
+                    PepXMLDivider pxd = new PepXMLDivider(Constants.modelSplitNum);
+                    pxd.dividePinPepxml(pmm.pinFiles, Constants.spectraRTPredInput);
+                }
             }
 
             long endTime = System.nanoTime();
@@ -277,7 +283,7 @@ public class PeptideFileCreator {
                 Constants.JsonDirectory = filename;
             }
             //return fasta; //save fasta for later
-        } catch (IOException e) {
+        } catch (IOException | JAXBException e) {
             System.out.println("An error occurred");
             e.printStackTrace();
             System.exit(1);

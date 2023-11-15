@@ -136,6 +136,7 @@ public class PTMhandler {
 
         ArrayList<String> modPaths = new ArrayList<>();
         modPaths.add("/ptm_resources/modification_alphapeptdeep.tsv");
+        //TODO testing
         if (! Constants.additionalMods.equals("")) {
             modPaths.add(Constants.additionalMods);
         }
@@ -151,7 +152,7 @@ public class PTMhandler {
             String line = ptmFile.readLine(); //header
 
             while ((line = ptmFile.readLine()) != null) {
-                String[] lineSplit = line.split("\t");
+                String[] lineSplit = line.split("\t", -1);
                 String classification = lineSplit[6];
                 if (classification.equals("Other") || classification.equals("AA substitution")) { //may need to exclude more
                     continue;

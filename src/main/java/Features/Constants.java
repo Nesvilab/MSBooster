@@ -88,7 +88,13 @@ public class Constants {
     public static SpectralPredictionMapper spectralPredictionMapper;
 
     //additional modifications for alphapeptdeep
-    public static String additionalMods = "";
+    public static String additionalMods = ""; //this used in python script for common/user_defined_modifications
+    public static Boolean predict = true;
+    public static Boolean transfer = false;
+    public static String AlphaPeptDeep = null; //path to exe
+    public static String yaml = ""; //this used in python script for parameters
+    public static Boolean modelSplit = false;
+    public static Integer modelSplitNum = 2;
 
     ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
     //miscellaneous inner workings

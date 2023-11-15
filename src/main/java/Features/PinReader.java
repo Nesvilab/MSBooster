@@ -232,7 +232,7 @@ public class PinReader {
             if (! pf.stripped.contains("O") && ! pf.stripped.contains("U") &&
                     ! pf.stripped.contains("Z") && ! pf.stripped.contains("B") &&
                     ! pf.stripped.contains("X")) {
-                String NCE = getNCE();
+                String NCE = getNCE(Constants.FragmentationType);
                 peps.add(pf.predfull + "\t" + pf.charge + "\t" + Constants.FragmentationType + "\t" + NCE);
             }
         }
@@ -246,7 +246,7 @@ public class PinReader {
         }
         while (next()) {
             PeptideFormatter pf = getPep();
-            String NCE = getNCE();
+            String NCE = getNCE(Constants.FragmentationType);
             peps.add(pf.prosit + "," + NCE + "," + pf.charge);
         }
         return peps.toArray(new String[0]);
@@ -259,7 +259,7 @@ public class PinReader {
         }
         while (next()) {
             PeptideFormatter pf = getPep();
-            String NCE = getNCE();
+            String NCE = getNCE(Constants.FragmentationType);
             peps.add(pf.prosit + "," + NCE + "," + pf.charge + "," + Constants.FragmentationType);
         }
         return peps.toArray(new String[0]);
@@ -278,7 +278,7 @@ public class PinReader {
         }
         while (next()) {
             PeptideFormatter pf = getPep();
-            String NCE = getNCE();
+            String NCE = getNCE(Constants.FragmentationType);
             peps.add(pf.stripped + "," + pf.alphapeptdeepMods + "," + pf.modPositions + "," + pf.charge + "," +
                     NCE + "," + Constants.instrument + "," + pf.base);
         }
@@ -336,6 +336,12 @@ public class PinReader {
                 NCE = getNCE(fragmentation);
             } else {
                 NCE = Constants.NCE;
+                if (Constants.FragmentationType.equals("")) {
+                    System.out.println("Setting fragmentation type to HCD. " +
+                            "You can specify this with '--FragmentationType' via the command line " +
+                            "or 'FragmentationType=' in the param file.");
+                    Constants.FragmentationType = "HCD";
+                }
                 fragmentation = Constants.FragmentationType;
             }
             String pep = pf.diann.replace("UniMod", "UNIMOD");
@@ -359,18 +365,17 @@ public class PinReader {
         return peps.toArray(new String[0]);
     }
 
-    private String getNCE() {
-        if (Constants.NCE.equals("")) {
-            return String.valueOf(mzml.scanNumberObjects.get(getScanNum()).NCEs.get(Constants.FragmentationType));
-        } else {
-            return Constants.NCE;
-        }
-
-    }
-
     private String getNCE(String frag) {
         if (Constants.NCE.equals("")) {
-            return String.valueOf(mzml.scanNumberObjects.get(getScanNum()).NCEs.get(frag));
+            String nce = String.valueOf(mzml.scanNumberObjects.get(getScanNum()).NCEs.get(frag));
+            if (nce.equals("null")) {
+                //! mzml.scanNumberObjects.get(getScanNum()).NCEs.containsKey(frag)
+                System.out.println("No NCE detected in mzml. Setting to 30. NCE can be specified by '--NCE' via " +
+                        "the command line or 'NCE=' in the param file.");
+                Constants.NCE = "30";
+                return Constants.NCE;
+            }
+            return nce;
         } else {
             return Constants.NCE;
         }
@@ -407,7 +412,9 @@ public class PinReader {
                     return "timsTOF";
                 }
             }
-            System.out.println("Could not detect instrument type. Setting to Lumos");
+            System.out.println("Could not detect instrument type. Setting to Lumos. " +
+                    "If a different instrument was used, specify using '--instrument' via the command line " +
+                    "or 'instrument=' in the param file.");
             return "Lumos"; //default if nothing found
         } else {
             return Constants.instrument;

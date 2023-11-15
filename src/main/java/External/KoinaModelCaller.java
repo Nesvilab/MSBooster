@@ -109,7 +109,7 @@ public class KoinaModelCaller {
                                     System.out.println(filenameArray[i] + " had output that ended in: ");
                                     System.out.println(koinaSb.toString().substring(Math.max(0, koinaSb.toString().length() - 1000)));
                                     System.out.println("Retried calling " + filenameArray[i] + " " + attempts +
-                                            " times. Moving on.");
+                                            " times. Exiting.");
                                     e.printStackTrace();
                                     System.exit(1);
                                     break;
@@ -278,6 +278,10 @@ public class KoinaModelCaller {
             int entries = 0; //in case RT prediction is available but not MS2
             for (int charge = Constants.minPrecursorCharge; charge < Constants.maxPrecursorCharge + 1; charge++) {
                 String peptide = pf.getBase() + "|" + charge;
+                if (modelType.equals("prosit")) {
+                    peptide = peptide.replace("C[" + PTMhandler.carbamidomethylationMass + "]", "C");
+                    peptide = peptide.replace("C", "C[" + PTMhandler.carbamidomethylationMass + "]");
+                }
                 if (preds.containsKey(peptide)) {
                     PredictionEntry pe = preds.get(peptide);
                     pe.setRT(RTs[i]);
@@ -305,6 +309,10 @@ public class KoinaModelCaller {
             PeptideFormatter pf = new PeptideFormatter(peptides[i].split("\\|")[0],
                     peptides[i].split("\\|")[1], "diann");
             String peptide = pf.getBaseCharge();
+            if (modelType.equals("prosit")) {
+                peptide = peptide.replace("C[" + PTMhandler.carbamidomethylationMass + "]", "C");
+                peptide = peptide.replace("C", "C[" + PTMhandler.carbamidomethylationMass + "]");
+            }
             PredictionEntry pe = new PredictionEntry(mzs[i], intensities[i], fragNums[i],
                     charges[i], fragmentIonTypes[i], true);
 
@@ -375,7 +383,7 @@ public class KoinaModelCaller {
                             stripped.contains("X")) {
                         System.out.println("Skipping " + baseCharge);
                     } else {
-                        System.out.println("Missing peptide to transfer prediction onto " + baseCharge);
+                        System.out.println("Missing peptide to transfer prediction onto " + l + ": " + baseCharge);
                         System.out.println("Exiting now.");
                         System.exit(1);
                     }

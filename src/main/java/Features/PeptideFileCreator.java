@@ -198,12 +198,7 @@ public class PeptideFileCreator {
 
         //filter out redundant peptides
         //this step can reduce number of predictions needed to 1/3, decreasing prediction time
-        HashSet<String> hSetHits;
-        if (modelFormat.equals("alphapeptdeep")) {
-            hSetHits = getUniqueHits(allHits, ",");
-        } else {
-            hSetHits = getUniqueHits(allHits);
-        }
+        HashSet<String> hSetHits = getUniqueHits(allHits);
 
         //write to file
         try {

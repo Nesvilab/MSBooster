@@ -261,7 +261,12 @@ public class RTFunctions {
                 RTs.put(mass, thisRTs);
 
             } else {
-                System.out.println("RT regression for mass " + mass + " using " + sizeLimit + " PSMs");
+                System.out.println(mass);
+                if (mass.equals("")) {
+                    System.out.println("RT regression using " + sizeLimit + " PSMs");
+                } else {
+                    System.out.println("RT regression for mass " + mass + " using " + sizeLimit + " PSMs");
+                }
                 double[][] thisRTs = new double[2][];
                 thisRTs[0] = thisExpRTs.stream().mapToDouble(i -> i).toArray();
                 thisRTs[1] = thisPredRTs.stream().mapToDouble(i -> i).toArray();

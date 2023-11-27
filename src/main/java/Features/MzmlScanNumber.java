@@ -30,8 +30,8 @@ import static Features.FloatUtils.doubleToFloat;
 
 public class MzmlScanNumber {
     final int scanNum;
-    public double scanLower;
-    public double scanUpper;
+    public double isolationLower;
+    public double isolationUpper;
     public float[] expMZs;
     public float[] expIntensities;
     public float[] savedExpMZs;
@@ -53,8 +53,10 @@ public class MzmlScanNumber {
     public MzmlScanNumber(IScan scan) throws FileParsingException {
         this.scanNum = scan.getNum();
         PrecursorInfo pi = scan.getPrecursor();
-        this.scanLower = pi.getMzRangeStart();
-        this.scanUpper = pi.getMzRangeEnd();
+        if (pi.getMzRangeStart() != null) {
+            this.isolationLower = pi.getMzRangeStart();
+            this.isolationUpper = pi.getMzRangeEnd();
+        }
         ISpectrum spectrum = scan.fetchSpectrum();
         this.expMZs = doubleToFloat(spectrum.getMZs());
         this.expIntensities = doubleToFloat(spectrum.getIntensities());

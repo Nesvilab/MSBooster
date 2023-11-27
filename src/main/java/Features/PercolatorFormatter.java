@@ -394,10 +394,17 @@ public class PercolatorFormatter {
 
                     if (featuresList.contains("adjacentSimilarity")) {
                         System.out.println("Calculating adjacent similarity");
+                        //check that scan m/z ranges are in mzml
+                        if (mzml.scanNumberObjects.firstEntry().getValue().isolationUpper == 0.0d) {
+                            System.out.println("Adjacent similarity feature requires m/z ranges " +
+                                    "for each scan. This mzml is incompatible. Exiting.");
+                            System.exit(1);
+                        }
+
                         SortedSet<Double> scanNumbers = new TreeSet<>();
                         for (MzmlScanNumber msn : mzml.scanNumberObjects.values()) {
-                            scanNumbers.add(msn.scanLower);
-                            scanNumbers.add(msn.scanUpper);
+                            scanNumbers.add(msn.isolationLower);
+                            scanNumbers.add(msn.isolationUpper);
                         }
                         Double[] scanNumbersList = new Double[scanNumbers.size()];
                         int scanNumberIdx = 0;
@@ -415,7 +422,7 @@ public class PercolatorFormatter {
                         //add scan numbers to ranges with sub range maps?
                         for (MzmlScanNumber msn : mzml.scanNumberObjects.values()) {
                             RangeMap<Double, ArrayList<Integer>> rangemap =
-                                    allMatchedScans.subRangeMap(Range.open(msn.scanLower, msn.scanUpper));
+                                    allMatchedScans.subRangeMap(Range.open(msn.isolationLower, msn.isolationUpper));
                             for (ArrayList<Integer> entry :
                                     rangemap.asMapOfRanges().values()) {
                                 entry.add(msn.scanNum);

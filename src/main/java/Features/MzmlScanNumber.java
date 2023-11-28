@@ -54,8 +54,8 @@ public class MzmlScanNumber {
         this.scanNum = scan.getNum();
         PrecursorInfo pi = scan.getPrecursor();
         if (pi.getMzRangeStart() != null) {
-            this.isolationLower = pi.getMzRangeStart();
-            this.isolationUpper = pi.getMzRangeEnd();
+            this.isolationLower = pi.getMzRangeStart() == 0 ? Double.NaN : pi.getMzRangeStart();
+            this.isolationUpper = pi.getMzRangeEnd() == 0 ? Double.NaN : pi.getMzRangeEnd();
         }
         ISpectrum spectrum = scan.fetchSpectrum();
         this.expMZs = doubleToFloat(spectrum.getMZs());

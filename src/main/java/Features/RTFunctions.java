@@ -78,9 +78,6 @@ public class RTFunctions {
                 continue;
             }
 
-            //add RT until you reach decoy
-            //when doing good regression, decoys don't appear, so once decoy appears, expectation score is already too low
-
             //for (int i = 1; i < scanNumObj.peptideObjects.size() + 1; i++) { //changed so only looking at rank 1
             if (scanNumObj.peptideObjects.size() == 0) {
                 continue;
@@ -109,36 +106,51 @@ public class RTFunctions {
             }
             added += 1;
         }
-        if (expRTs.size() == 0) { //no more e score threshold
-            System.out.println("Not enough high quality PSMs for RT regression. Removing escore cutoff");
-            Constants.RTescoreCutoff = Float.MAX_VALUE;
+
+        if (expRTs.size() < Constants.minRTregressionSize) { //no more e score threshold
+            System.out.println("Not enough high quality PSMs for RT regression with escore cutoff of "
+                    + Constants.RTescoreCutoff + ". Relaxing escore cutoff to 0.01");
+            Constants.RTescoreCutoff = 0.01f;
+            expRTs = new ArrayList<>();
+            predRTs = new ArrayList<>();
+            eScores = new ArrayList<>(); //for sorting
+            peptides = new ArrayList<>();
+            pepIdx = new HashMap<>();
             added = 0;
             for (int scanNum : new TreeSet<Integer>(mzml.scanNumberObjects.keySet())) {
                 MzmlScanNumber scanNumObj = mzml.getScanNumObject(scanNum);
                 float rt = scanNumObj.RT; //experimental RT for this scan
-
-                //add RT until you reach decoy
-                //when doing good regression, decoys don't appear, so once decoy appears, expectation score is already too low
-
-                for (int i = 1; i < scanNumObj.peptideObjects.size() + 1; i++) {
-                    PeptideObj pep = scanNumObj.getPeptideObject(i);
-
-                    float e = Float.parseFloat(pep.escore);
-                    expRTs.add(rt);
-                    predRTs.add(pep.RT);
-                    eScores.add(e);
-                    peptides.add(pep.name);
-                    if (pepIdx.containsKey(pep.name)) {
-                        ArrayList<Integer> tmpList = pepIdx.get(pep.name);
-                        tmpList.add(added);
-                        pepIdx.put(pep.name, tmpList);
-                    } else {
-                        ArrayList<Integer> tmpList = new ArrayList<>();
-                        tmpList.add(added);
-                        pepIdx.put(pep.name, tmpList);
-                    }
-                    added += 1;
+                if (Float.isNaN(rt)) {
+                    continue;
                 }
+
+                //for (int i = 1; i < scanNumObj.peptideObjects.size() + 1; i++) { //changed so only looking at rank 1
+                if (scanNumObj.peptideObjects.size() == 0) {
+                    continue;
+                }
+                PeptideObj pep = scanNumObj.getPeptideObject(1);
+
+                if (pep.spectralSimObj.predIntensities[0] == 0f) { //what it is set to if no entry
+                    continue;
+                }
+                float e = Float.parseFloat(pep.escore);
+                if (e > Constants.RTescoreCutoff) {
+                    continue;
+                }
+                expRTs.add(rt);
+                predRTs.add(pep.RT);
+                eScores.add(e);
+                peptides.add(pep.name);
+                if (pepIdx.containsKey(pep.name)) {
+                    ArrayList<Integer> tmpList = pepIdx.get(pep.name);
+                    tmpList.add(added);
+                    pepIdx.put(pep.name, tmpList);
+                } else {
+                    ArrayList<Integer> tmpList = new ArrayList<>();
+                    tmpList.add(added);
+                    pepIdx.put(pep.name, tmpList);
+                }
+                added += 1;
             }
         }
 
@@ -259,6 +271,9 @@ public class RTFunctions {
                     thisRTs[1][i] = thisPredRTs.get(idx);
                 }
                 RTs.put(mass, thisRTs);
+                System.out.println(Arrays.toString(thisRTs[1]));
+                System.out.println(thisEscores.get(0));
+                System.exit(0);
 
             } else {
                 System.out.println(mass);

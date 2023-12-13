@@ -163,6 +163,7 @@ public class Constants {
     //these constants for RT features
     public static Boolean useRT = null;
     public static Integer RTregressionSize = 5000;
+    public static Integer minRTregressionSize = 1000;
     public static Double uniformPriorPercentile = 10d;
     public static Float RTescoreCutoff = (float) Math.pow(10, -3.5); //PSMs with e score higher than this won't make it into RT regression modeling
     public static Integer RTbinMultiplier = 1;

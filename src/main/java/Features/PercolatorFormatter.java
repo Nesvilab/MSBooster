@@ -116,7 +116,6 @@ public class PercolatorFormatter {
                 allPreds = predictedSpectra.getPreds();
                 totalKeyset.addAll(allPreds.keySet());
                 totalKeyset.addAll(predictedSpectra2.getPreds().keySet());
-                float maxIntensity = Constants.modelMaxIntensity.get(modelSplit[0]);
 
                 //check what fragment ion types have been predicted by model 1
                 HashSet<String> model1FragmentIonTypes = new HashSet<>();
@@ -141,6 +140,7 @@ public class PercolatorFormatter {
                         ArrayList<String> fragTypes = new ArrayList<>();
 
                         if (Constants.addNonYb) {
+                            float maxIntensity = Constants.modelMaxIntensity.get(modelSplit[0]);
                             float maxIntensityMZ = Float.NaN;
 
                             //add original peaks
@@ -210,8 +210,6 @@ public class PercolatorFormatter {
                             }
                             allPreds.put(key, pe);
                         }
-
-                        predictedSpectra2.getPreds().put(key, null);
                     }
                 }
                 predictedSpectra2 = null; //free up memory

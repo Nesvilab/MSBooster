@@ -77,9 +77,8 @@ public class RTFunctions {
             if (Float.isNaN(rt)) {
                 continue;
             }
-
             //for (int i = 1; i < scanNumObj.peptideObjects.size() + 1; i++) { //changed so only looking at rank 1
-            if (scanNumObj.peptideObjects.size() == 0) {
+            if (scanNumObj.peptideObjects.isEmpty()) {
                 continue;
             }
             PeptideObj pep = scanNumObj.getPeptideObject(1);

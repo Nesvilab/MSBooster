@@ -401,6 +401,7 @@ public class PinReader {
         HashSet<String> QEKeys = new HashSet<>(Arrays.asList("QE", "Exactive", "Exploris"));
         HashSet<String> SciexTOFKeys = new HashSet<>(Arrays.asList("Sciex", "TripleTOF"));
         HashSet<String> timsTOFKeys = new HashSet<>(Arrays.asList("flight"));
+        HashSet<String> ThermoTOFKeys = new HashSet<>(Arrays.asList("Astral"));
 
         if (Constants.instrument.equals("")) {
             String model = mzml.scans.getRunInfo().getDefaultInstrument().getModel();
@@ -423,6 +424,11 @@ public class PinReader {
             for (String k : timsTOFKeys) {
                 if (model.contains(k) || analyzer.contains(k)) {
                     return "timsTOF";
+                }
+            }
+            for (String k : ThermoTOFKeys) {
+                if (model.contains(k) || analyzer.contains(k)) {
+                    return "ThermoTOF";
                 }
             }
             System.out.println("Could not detect instrument type. Setting to Lumos. " +

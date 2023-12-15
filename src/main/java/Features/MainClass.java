@@ -527,13 +527,18 @@ public class MainClass {
                 createDetectPredFile2 = true;
             }
 
+            //don't need koina if pred file ready
+            if (Constants.spectraRTPredFile != null) {
+                Constants.useKoina = false;
+            }
             //overriding if intermediate files already made
             if (Constants.spectraRTPredInput != null || Constants.spectraRTPredFile != null) {
                 createSpectraRTPredFile = false;
             }
-            if ((Constants.spectraRTPredModel.contains("DIA-NN")) && !(Constants.spectraRTPredModel.equals("DIA-NN"))) {
-                createSpectraRTPredFile = true;
-            }
+            //if we specify the files, it should just accept it
+//            if ((Constants.spectraRTPredModel.contains("DIA-NN")) && !(Constants.spectraRTPredModel.equals("DIA-NN"))) {
+//                createSpectraRTPredFile = true;
+//            }
             if (Constants.detectPredInput != null || Constants.detectPredFile != null) {
                 createDetectPredFile = false;
             }
@@ -544,6 +549,15 @@ public class MainClass {
 
             //get matched pin files for mzML files
             PinMzmlMatcher pmMatcher = new PinMzmlMatcher(Constants.mzmlDirectory, Constants.pinPepXMLDirectory);
+            List<String> modelsList = Arrays.asList(Constants.spectraRTPredModel.split(","));
+            ArrayList<String> models = new ArrayList<>(modelsList);
+            if (models.get(0).equals(models.get(1))) {
+                models.remove(1);
+                Constants.spectraRTPredModel = models.get(0);
+                if (Constants.spectraRTPredModel.equals("DIA-NN")) {
+                    Constants.useKoina = false;
+                }
+            }
             if (createSpectraRTPredFile || Constants.createPredFileOnly) {
                 //createfull is needed for everything
                 boolean revertToKoina = Constants.useKoina;
@@ -555,7 +569,7 @@ public class MainClass {
                     Constants.useKoina = true;
                 }
                 for (String currentModel : Constants.spectraRTPredModel.split(",")) {
-                    if (Constants.useKoina) {
+                    if (Constants.useKoina && !currentModel.equals("DIA-NN")) {
                         PeptideFileCreator.createPeptideFile(pmMatcher,
                                 Constants.spectraRTPredInput.substring(0, Constants.spectraRTPredInput.length() - 4)
                                         + "_" + currentModel + ".json", currentModel);
@@ -620,22 +634,33 @@ public class MainClass {
             KoinaLibReader klr = new KoinaLibReader();
             KoinaModelCaller kmc = new KoinaModelCaller();
             //this is just so that ms2 is predicted first, and which works for Koina
-            List<String> models = Arrays.asList(Constants.spectraRTPredModel.split(","));
             Collections.reverse(models);
-            for (String currentModel : models) {
-                if ((Constants.spectraRTPredFile == null) && (createSpectraRTPredFile2)) {
-                    if (Constants.useKoina) {
+            boolean onlyUsedKoina = true;
+            String spectraRTPredFile = "";
+            if ((Constants.spectraRTPredFile == null) && (createSpectraRTPredFile2)) {
+                for (String currentModel : models) {
+                    if (Constants.useKoina && !currentModel.equals("DIA-NN")) {
                         kmc.callModel(currentModel, klr);
-                        Constants.spectralPredictionMapper = klr;
+                        spectraRTPredFile = Constants.outputDirectory + File.separator + "spectraRT_koina.mgf" +
+                                spectraRTPredFile;
                     } else {
                         DiannModelCaller.callModel();
+                        onlyUsedKoina = false;
+                        spectraRTPredFile = Constants.spectraRTPredInput.substring(0, Constants.spectraRTPredInput.length() - 4) +
+                                ".predicted.bin" + spectraRTPredFile;
                     }
+                    spectraRTPredFile = "," + spectraRTPredFile;
                 }
             }
-            if (Constants.useKoina && (Constants.spectraRTPredFile == null)) {
+            if (Constants.useKoina) {
                 kmc.assignMissingPeptidePredictions(klr);
                 MgfFileWriter mfw = new MgfFileWriter(klr);
                 mfw.write(Constants.outputDirectory + File.separator + "spectraRT_koina.mgf");
+            }
+            if (onlyUsedKoina) {
+                Constants.spectralPredictionMapper = klr;
+            } else {
+                Constants.spectraRTPredFile = spectraRTPredFile.substring(1);;
             }
 
             //create new pin file with features

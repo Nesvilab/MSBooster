@@ -178,7 +178,9 @@ public class PeptideFileCreator {
                                 "    QEHF: QE\n" +
                                 "    QEHFX: QE\n" +
                                 "    Exploris: QE\n" +
-                                "    Exploris480: QE");
+                                "    Exploris480: QE" +
+                                "    ThermoTOF: ThermoTOF" +
+                                "    Astral: ThermoTOF");
                         Constants.instrument = "Lumos";
                     }
                     if (Constants.NCE.equals("")) {
@@ -188,7 +190,7 @@ public class PeptideFileCreator {
                     hitsToAdd = pin.createAlphapeptdeepList(mzmlf, pmm);
                     break;
             }
-            if (Constants.useKoina) {
+            if (Constants.useKoina && !modelFormat.equals("Diann")) {
                 hitsToAdd = pin.createJSON(mzmlf, pmm, modelFormat);
             }
             pin.close();
@@ -203,7 +205,7 @@ public class PeptideFileCreator {
         //write to file
         try {
             String filename = "";
-            if (Constants.useKoina) {
+            if (Constants.useKoina && !modelFormat.equals("Diann")) {
                 JSONWriter jw = new JSONWriter(modelFormat, hSetHits);
                 if (!Constants.usedKoina) {
                     filename = jw.write(true);
@@ -271,11 +273,11 @@ public class PeptideFileCreator {
             long endTime = System.nanoTime();
             long duration = (endTime - startTime);
             System.out.println(modelFormat + " input file generation took " + duration / 1000000 +" milliseconds");
-            if (!Constants.useKoina) {
-                System.out.println("Input file at  " + outfile);
-            } else {
+            if (Constants.useKoina && !modelFormat.equals("Diann")) {
                 System.out.println("Input files in " + filename);
                 Constants.JsonDirectory = filename;
+            } else {
+                System.out.println("Input file at  " + outfile);
             }
             //return fasta; //save fasta for later
         } catch (IOException | JAXBException e) {

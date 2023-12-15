@@ -23,12 +23,12 @@ import java.util.HashMap;
 import java.util.stream.IntStream;
 
 public class PredictionEntry {
-    float[] mzs;
-    float[] intensities;
-    int[] fragNums;
-    int[] flags;
-    int[] charges;
-    String[] fragmentIonTypes;
+    float[] mzs = new float[0];
+    float[] intensities = new float[0];
+    int[] fragNums = new int[0];
+    int[] flags = new int[0];
+    int[] charges = new int[0];
+    String[] fragmentIonTypes = new String[0];
     float RT;
     float IM;
     float detectability;

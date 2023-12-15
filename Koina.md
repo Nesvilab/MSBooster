@@ -29,4 +29,20 @@ it with a command like this
 ```
 java -Xmx14G -jar MSBooster-1.1.27.jar --paramsList msbooster_params.txt
 ```
-An example parameter file for --paramsList
+An example parameter file for "--paramsList" can be found at
+[msbooster_params.txt](msbooster_params.txt). Add the lines below to the
+parameter file:
+```
+useKoina = true
+rtModel = _____
+spectraModel = _____
+```
+Substitute the blanks with one of the models listed in the tables above.
+You can mix and match, or even use "DIA-NN" for one of them if you want
+to call the DIA-NN prediction model specified by the "DiaNN" parameter
+in paramsList.
+
+## Timing
+
+## General recommendations for models to use by type of experiment
+

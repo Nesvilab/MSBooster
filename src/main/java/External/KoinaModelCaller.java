@@ -309,6 +309,10 @@ public class KoinaModelCaller {
             if (entries == 0) { //RT was predicted but not MS2
                 for (int charge = Constants.minPrecursorCharge; charge < Constants.maxPrecursorCharge + 1; charge++) {
                     String peptide = pf.getBase() + "|" + charge;
+                    if (modelType.equals("prosit")) {
+                        peptide = peptide.replace("C[" + PTMhandler.carbamidomethylationMass + "]", "C");
+                        peptide = peptide.replace("C", "C[" + PTMhandler.carbamidomethylationMass + "]");
+                    }
                     PredictionEntry pe = new PredictionEntry();
                     pe.setRT(RTs[i]);
                     preds.put(peptide, pe);
@@ -400,6 +404,7 @@ public class KoinaModelCaller {
                             stripped.contains("X")) {
                         System.out.println("Skipping " + baseCharge);
                     } else {
+                        e.printStackTrace();
                         System.out.println("Missing peptide to transfer prediction onto " + l + ": " + baseCharge);
                         System.out.println("Exiting now.");
                         System.exit(1);

@@ -551,11 +551,13 @@ public class MainClass {
             PinMzmlMatcher pmMatcher = new PinMzmlMatcher(Constants.mzmlDirectory, Constants.pinPepXMLDirectory);
             List<String> modelsList = Arrays.asList(Constants.spectraRTPredModel.split(","));
             ArrayList<String> models = new ArrayList<>(modelsList);
-            if (models.get(0).equals(models.get(1))) {
-                models.remove(1);
-                Constants.spectraRTPredModel = models.get(0);
-                if (Constants.spectraRTPredModel.equals("DIA-NN")) {
-                    Constants.useKoina = false;
+            if (models.size() != 1) {
+                if (models.get(0).equals(models.get(1))) {
+                    models.remove(1);
+                    Constants.spectraRTPredModel = models.get(0);
+                    if (Constants.spectraRTPredModel.equals("DIA-NN")) {
+                        Constants.useKoina = false;
+                    }
                 }
             }
             if (createSpectraRTPredFile || Constants.createPredFileOnly) {

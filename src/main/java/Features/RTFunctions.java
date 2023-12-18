@@ -111,6 +111,8 @@ public class RTFunctions {
             System.out.println("Not enough high quality PSMs for RT regression with escore cutoff of "
                     + Constants.RTescoreCutoff + ". Relaxing escore cutoff to 0.01");
             Constants.RTescoreCutoff = 0.01f;
+            RTregressionSize = Constants.minRTregressionSize;
+
             expRTs = new ArrayList<>();
             predRTs = new ArrayList<>();
             eScores = new ArrayList<>(); //for sorting
@@ -271,12 +273,7 @@ public class RTFunctions {
                     thisRTs[1][i] = thisPredRTs.get(idx);
                 }
                 RTs.put(mass, thisRTs);
-                System.out.println(Arrays.toString(thisRTs[1]));
-                System.out.println(thisEscores.get(0));
-                System.exit(0);
-
             } else {
-                System.out.println(mass);
                 if (mass.equals("")) {
                     System.out.println("RT regression using " + sizeLimit + " PSMs");
                 } else {

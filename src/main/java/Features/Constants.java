@@ -171,7 +171,7 @@ public class Constants {
     public static Boolean noRTscores = false; //TODO: better handling of this
     public static Integer numRTplot = 5000;
     public static String RTfigure_masses = ""; //separate by comma
-    public static Boolean plotBestPSMPerPeptide = false;
+    public static Boolean plotBestPSMPerPeptide = true;
     public static Integer washGradientBins = 100;
     public static Double rtCutoff = Double.NaN;
     public static Boolean removeWashGradient = false;

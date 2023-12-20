@@ -28,6 +28,7 @@ import java.util.*;
 //this is what I use in the java jar file
 public class MainClass {
     public static void main(String[] args) throws Exception {
+        Locale.setDefault(Locale.US);
         System.out.println("MSBooster v1.1.27");
         try {
             //accept command line inputs

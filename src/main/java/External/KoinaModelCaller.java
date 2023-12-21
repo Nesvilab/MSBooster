@@ -22,10 +22,7 @@ import com.google.gson.Gson;
 import com.google.gson.stream.JsonReader;
 
 import java.io.*;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.HashSet;
-import java.util.List;
+import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -45,7 +42,8 @@ public class KoinaModelCaller {
 
     public KoinaModelCaller(){}
 
-    public void callModel(String model, KoinaLibReader klr) {
+    //TODO: add functions to clean this up
+    public void callModel(String model, KoinaLibReader klr, ExecutorService executorService) {
         this.modelType = model.toLowerCase().split("_")[0];
 
         System.out.println("Calling " + model + " model");
@@ -79,13 +77,14 @@ public class KoinaModelCaller {
 
             Process[] processes = new Process[filenameArray.length];
             BufferedReader[] readers = new BufferedReader[filenameArray.length];
+            String[] commands = new String[filenameArray.length];
             int numProcesses = 0;
 
+            //https://www.baeldung.com/linux/curl-parallel-download#multiple-curl-instances-with-a-for-loop
             for (String fileString : filenameArray) {
-                String command = "curl -s --parallel --parallel-immediate --parallel-max 36 " +
-                        "-H content-type:application/json -d @" + fileString +
+                String command = "curl -s -H content-type:application/json -d @" + fileString +
                         " https://koina.proteomicsdb.org/v2/models/" + model + "/infer";
-
+                commands[numProcesses] = command;
                 ProcessBuilder builder = new ProcessBuilder(command.split(" "));
                 builder.redirectErrorStream(true);
                 processes[numProcesses] = builder.start();
@@ -93,68 +92,70 @@ public class KoinaModelCaller {
                 numProcesses += 1;
             }
 
-            List<Future> futureList = new ArrayList<>(Constants.numThreads);
-            ExecutorService executorService = Executors.newFixedThreadPool(Constants.numThreads);
-            for (int j = 0; j < Constants.numThreads; j++) {
-                int start = (int) (numProcesses * (long) j) / Constants.numThreads;
-                int end = (int) (numProcesses * (long) (j + 1)) / Constants.numThreads;
+            ProgressReporter pr = new ProgressReporter(numProcesses);
+            List<Future> futureList = new ArrayList<>();
+
+            for (int i = 0; i < numProcesses; i++) {
                 String finalProperty = property;
+                int finalI = i;
                 futureList.add(executorService.submit(() -> {
-                    ProgressReporter pr = new ProgressReporter(end - start);
-                    for (int i = start; i < end; i++) {
-                        int attempts = 0;
-                        while (attempts < 3) {
-                            StringBuilder koinaSb = new StringBuilder();
-                            try {
-                                Process p = processes[i];
-                                BufferedReader reader = readers[i];
+                    int attempts = 0;
+                    while (attempts < Constants.numKoinaAttempts) {
+                        StringBuilder koinaSb = new StringBuilder();
+                        try {
+                            Process p = processes[finalI];
+                            BufferedReader reader = readers[finalI];
 
-                                String line = "";
-                                while ((line = reader.readLine()) != null) {
-                                    koinaSb.append(line);
-                                }
-                                reader.close();
-                                p.waitFor();
-                                p.destroy();
-
-                                parseKoinaOutput(filenameArray[i], koinaSb.toString(),
-                                        finalProperty, model, klr);
-                                break;
-                            } catch (Exception e) {
-                                attempts++;
-                                if (attempts == 3) {
-                                    System.out.println(filenameArray[i] + " had output that ended in: ");
-                                    System.out.println(koinaSb.toString().substring(Math.max(0, koinaSb.toString().length() - 1000)));
-                                    System.out.println("Retried calling " + filenameArray[i] + " " + attempts +
-                                            " times. Exiting.");
-                                    e.printStackTrace();
-                                    System.exit(1);
-                                    break;
-                                }
-
-                                //set up again
-                                String command = "curl -s --parallel --parallel-immediate --parallel-max 36 " +
-                                        "-H content-type:application/json -d @" + filenameArray[i] +
-                                        " https://koina.proteomicsdb.org/v2/models/" + model + "/infer";
-
-                                ProcessBuilder builder = new ProcessBuilder(command.split(" "));
-                                builder.redirectErrorStream(true);
-                                try {
-                                    processes[i] = builder.start();
-                                } catch (IOException ioException) {
-                                    ioException.printStackTrace();
-                                }
-                                readers[i] = new BufferedReader(new InputStreamReader(processes[i].getInputStream()));
+                            String line = "";
+                            while ((line = reader.readLine()) != null) {
+                                koinaSb.append(line);
                             }
-                        }
-                        if (start == 0) {
-                            pr.progress();
+                            reader.close();
+                            p.waitFor();
+                            p.destroy();
+
+                            parseKoinaOutput(filenameArray[finalI], koinaSb.toString(),
+                                    finalProperty, model, klr);
+                            break;
+                        } catch (Exception e) {
+                            attempts++;
+                            if (attempts == Constants.numKoinaAttempts) {
+                                System.out.println(commands[finalI]);
+                                System.out.println(filenameArray[finalI] + " had output that ended in: ");
+                                System.out.println(koinaSb.toString().substring(Math.max(0, koinaSb.toString().length() - 1000)));
+                                System.out.println("Retried calling " + filenameArray[finalI] + " " + attempts +
+                                        " times. Exiting.");
+                                e.printStackTrace();
+                                System.exit(1);
+                                break;
+                            }
+
+                            //set up again
+                            String command = "curl -s -H content-type:application/json -d @" + filenameArray[finalI] +
+                                    " https://koina.proteomicsdb.org/v2/models/" + model + "/infer";
+
+                            ProcessBuilder builder = new ProcessBuilder(command.split(" "));
+                            builder.redirectErrorStream(true);
+                            try {
+                                processes[finalI] = builder.start();
+                            } catch (IOException ioException) {
+                                ioException.printStackTrace();
+                            }
+                            readers[finalI] = new BufferedReader(new InputStreamReader(processes[finalI].getInputStream()));
                         }
                     }
+                    pr.progress();
                 }));
             }
-            for (Future future : futureList) {
-                future.get();
+            ConcurrentHashMap<Integer, Integer> completedTasks = new ConcurrentHashMap<>();
+            while (completedTasks.size() < futureList.size()) {
+                for (int i = 0; i < futureList.size(); i++) {
+                    if (!completedTasks.containsKey(i) && futureList.get(i).isDone()) {
+                        futureList.get(i).get();
+                        completedTasks.put(i, 0);
+                    }
+                }
+                Thread.sleep(100);
             }
 
             long endTime = System.currentTimeMillis();

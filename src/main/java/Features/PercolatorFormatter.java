@@ -35,21 +35,9 @@ public class PercolatorFormatter {
     static ConcurrentHashMap<String, PredictionEntry> allPreds;
     static RangeMap<Double, ArrayList<Integer>> allMatchedScans = TreeRangeMap.create();
 
-    //set mgf or detectFile as null if not applicable
-    //baseNames is the part before mzml or pin extensions
-    public static void editPin(String pinDirectory, String mzmlDirectory, String mgf, String detectFile,
-                               String[] features, String outfile)
-            throws IOException, InterruptedException, ExecutionException, FileParsingException, SQLException {
-
-        PinMzmlMatcher pmMatcher = new PinMzmlMatcher(mzmlDirectory, pinDirectory);
-
-        editPin(pmMatcher, mgf, detectFile, features, outfile);
-    }
-
     public static void editPin(PinMzmlMatcher pmMatcher, String mgf, String detectFile,
-                               String[] features, String outfile)
+                               String[] features, String outfile, ExecutorService executorService)
             throws IOException, InterruptedException, ExecutionException, FileParsingException, SQLException {
-        ExecutorService executorService = Executors.newFixedThreadPool(Constants.numThreads);
 
         //defining num threads, in case using this outside of jar file
         Runtime run  = Runtime.getRuntime();
@@ -719,6 +707,5 @@ public class PercolatorFormatter {
             e.printStackTrace();
             System.exit(1);
         }
-        executorService.shutdown();
     }
 }

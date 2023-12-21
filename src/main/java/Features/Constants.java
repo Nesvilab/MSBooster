@@ -88,6 +88,8 @@ public class Constants {
             "Prosit_2020_intensity_TMT"));
     public static SpectralPredictionMapper spectralPredictionMapper;
 
+    public static Integer numKoinaAttempts = 3;
+
     //additional modifications for alphapeptdeep
     public static String additionalMods = ""; //this used in python script for common/user_defined_modifications
     public static Boolean predict = true;

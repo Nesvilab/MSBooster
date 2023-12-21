@@ -277,7 +277,7 @@ public class PeptideFileCreator {
                 System.out.println("Input files in " + filename);
                 Constants.JsonDirectory = filename;
             } else {
-                System.out.println("Input file at  " + outfile);
+                System.out.println("Input file at " + outfile);
             }
             //return fasta; //save fasta for later
         } catch (IOException | JAXBException e) {

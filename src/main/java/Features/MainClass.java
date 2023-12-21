@@ -24,12 +24,15 @@ import java.io.*;
 import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
 import java.util.*;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 //this is what I use in the java jar file
 public class MainClass {
     public static void main(String[] args) throws Exception {
         Locale.setDefault(Locale.US);
-        System.out.println("MSBooster v1.1.30");
+        System.out.println("MSBooster v1.1.28-koina");
+        ExecutorService executorService = null;
         try {
             //accept command line inputs
             HashSet<String> fields = new HashSet<>();
@@ -296,7 +299,7 @@ public class MainClass {
             Constants.intensitiesDifferenceFeatures = Constants.makeintensitiesDifference();
 
             //if different RT and spectra models
-            if (!Constants.rtModel.equals("")  || !Constants.spectraModel.equals("")) {
+            if (!Constants.rtModel.equals("") || !Constants.spectraModel.equals("")) {
                 Constants.spectraRTPredModel = "";
                 if (!Constants.rtModel.equals("")) {
                     Constants.spectraRTPredModel += Constants.rtModel + ",";
@@ -319,10 +322,10 @@ public class MainClass {
             } else if (Constants.divideFragments.equals("3")) { //standard setting of yb vs others
                 Constants.divideFragments = "y_b_y-NL_b-NL;immonium_a_a-NL_internal_internal-NL_unknown";
                 Constants.topFragments = 12;
-            } else if  (Constants.divideFragments.equals("4"))  { //etd
+            } else if (Constants.divideFragments.equals("4")) { //etd
                 Constants.divideFragments = "c_z;zdot_y_unknown";
                 Constants.topFragments = 12;
-            } else if  (Constants.divideFragments.equals("5"))  { //ethcd
+            } else if (Constants.divideFragments.equals("5")) { //ethcd
                 Constants.divideFragments = "b_y_c_z;immonium_a_cdot_zdot_y-NL_b-NL_a-NL_internal_internal-NL_unknown";
                 Constants.topFragments = 12;
             } else if (Constants.divideFragments.equals("0") && Constants.spectraRTPredModel.equals("DIA-NN")) {
@@ -373,7 +376,8 @@ public class MainClass {
                 } else {
                     featureLL.removeIf(Constants.spectraFeatures::contains);
                 }
-            } catch (Exception ignored) {}
+            } catch (Exception ignored) {
+            }
             try {
                 if (Constants.useRT) {
                     Set<String> intersection = new HashSet<>(featureLL);
@@ -384,7 +388,8 @@ public class MainClass {
                 } else {
                     featureLL.removeIf(Constants.rtFeatures::contains);
                 }
-            } catch (Exception ignored) {}
+            } catch (Exception ignored) {
+            }
             try {
                 if (Constants.useDetect) {
                     System.out.println("Detect features not fully tested");
@@ -397,7 +402,8 @@ public class MainClass {
                 } else {
                     featureLL.removeIf(Constants.detectFeatures::contains);
                 }
-            } catch (Exception ignored) {}
+            } catch (Exception ignored) {
+            }
             try {
                 if (Constants.useIM) {
                     Set<String> intersection = new HashSet<>(featureLL);
@@ -412,7 +418,8 @@ public class MainClass {
                         featureLL.remove(feature);
                     }
                 }
-            } catch (Exception ignored) {}
+            } catch (Exception ignored) {
+            }
             try {
                 if (Constants.useMatchedIntensities) {
                     Set<String> intersection = new HashSet<>(featureLL);
@@ -425,7 +432,8 @@ public class MainClass {
                         featureLL.remove(feature);
                     }
                 }
-            } catch (Exception ignored) {}
+            } catch (Exception ignored) {
+            }
 //            try {
 //                if (Constants.usePredIntensities) {
 //                    Set<String> intersection = new HashSet<>(featureLL);
@@ -451,7 +459,8 @@ public class MainClass {
                         featureLL.remove(feature);
                     }
                 }
-            } catch (Exception ignored) {}
+            } catch (Exception ignored) {
+            }
             try {
                 if (Constants.useIndividualSpectralSimilarities) {
                     Set<String> intersection = new HashSet<>(featureLL);
@@ -464,7 +473,8 @@ public class MainClass {
                         featureLL.remove(feature);
                     }
                 }
-            } catch (Exception ignored) {}
+            } catch (Exception ignored) {
+            }
             try {
                 if (Constants.useIntensitiesDifference) {
                     Set<String> intersection = new HashSet<>(featureLL);
@@ -477,16 +487,18 @@ public class MainClass {
                         featureLL.remove(feature);
                     }
                 }
-            } catch (Exception ignored) {}
+            } catch (Exception ignored) {
+            }
             try {
                 if (Constants.useIntensityDistributionSimilarity) {
-                    if (! featureLL.contains("intensity_distribution_similarity")) {
+                    if (!featureLL.contains("intensity_distribution_similarity")) {
                         featureLL.add("intensity_distribution_similarity");
                     }
                 } else {
                     featureLL.remove("intensity_distribution_similarity");
                 }
-            } catch (Exception ignored) {}
+            } catch (Exception ignored) {
+            }
 
             //update features representation
             featuresArray = new String[featureLL.size()];
@@ -632,6 +644,9 @@ public class MainClass {
 //                peptideFileCreator.createPeptideFile(pmMatcher.pinFiles, Constants.detectPredInput, "DeepMSPeptide", "pin");
 //            }
 
+            //executor service for later
+            executorService = Executors.newFixedThreadPool(Constants.numThreads);
+
             //generate predictions
             KoinaLibReader klr = new KoinaLibReader();
             KoinaModelCaller kmc = new KoinaModelCaller();
@@ -642,7 +657,7 @@ public class MainClass {
             if ((Constants.spectraRTPredFile == null) && (createSpectraRTPredFile2)) {
                 for (String currentModel : models) {
                     if (Constants.useKoina && !currentModel.equals("DIA-NN")) {
-                        kmc.callModel(currentModel, klr);
+                        kmc.callModel(currentModel, klr, executorService);
                         spectraRTPredFile = Constants.outputDirectory + File.separator + "spectraRT_koina.mgf" +
                                 spectraRTPredFile;
                     } else {
@@ -662,7 +677,8 @@ public class MainClass {
             if (onlyUsedKoina) {
                 Constants.spectralPredictionMapper = klr;
             } else {
-                Constants.spectraRTPredFile = spectraRTPredFile.substring(1);;
+                Constants.spectraRTPredFile = spectraRTPredFile.substring(1);
+                ;
             }
 
             //create new pin file with features
@@ -671,7 +687,9 @@ public class MainClass {
             if (Constants.spectraRTPredModel.contains("PredFull")) {
                 Constants.matchWithDaltons = true; //they report predictions in bins
             }
-            PercolatorFormatter.editPin(pmMatcher, Constants.spectraRTPredFile, Constants.detectPredFile, featuresArray, Constants.editedPin);
+            PercolatorFormatter.editPin(pmMatcher, Constants.spectraRTPredFile, Constants.detectPredFile,
+                    featuresArray, Constants.editedPin, executorService);
+            executorService.shutdown();
 
             //print parameters to ps
             //printParamsPS();
@@ -692,6 +710,7 @@ public class MainClass {
             System.exit(0);
         } catch (Exception e) {
             e.printStackTrace();
+            executorService.shutdown();
             System.exit(1);
         }
     }

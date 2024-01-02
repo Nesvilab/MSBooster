@@ -706,6 +706,13 @@ public class PercolatorFormatter {
                     pinFiles[i].delete();
                     movedFile.renameTo(pinFiles[i]);
                 }
+
+                //plot hist
+                System.out.println("Generating score histograms");
+                for (String feature : featuresList) {
+                    ScoreHistogram scoreHistogram = new ScoreHistogram(newOutfile,
+                            Constants.camelToUnderscore.get(feature));
+                }
             }
         } catch (Exception e) {
             executorService.shutdown();

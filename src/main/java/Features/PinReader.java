@@ -45,6 +45,8 @@ public class PinReader {
     int pepIdx;
     int eScoreIdx;
     int rtIdx;
+
+    HashMap<String, Integer> idxMap = new HashMap<>();
     private boolean calcEvalue = false;
 
     MzmlReader mzml;
@@ -100,6 +102,17 @@ public class PinReader {
 
     public void attachMzml(MzmlReader mzml) {
         this.mzml = mzml;
+    }
+
+    public String getColumn(String col) {
+        int colNum;
+        if (idxMap.containsKey(col)) {
+            colNum = idxMap.get(col);
+        } else {
+            colNum = ArrayUtils.indexOf(header, col);
+            idxMap.put(col, colNum);
+        }
+        return getRow()[colNum];
     }
 
     public void getLength() throws IOException {

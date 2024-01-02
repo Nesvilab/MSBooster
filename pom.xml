@@ -6,7 +6,7 @@
 
     <groupId>org.example</groupId>
     <artifactId>MSBooster</artifactId>
-    <version>1.1.28</version>
+    <version>1.1.28-hist</version>
 
     <properties>
         <maven.compiler.source>1.8</maven.compiler.source>
@@ -173,7 +173,15 @@
                     </execution>
                 </executions>
             </plugin>
-<!--            <plugin>-->
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-compiler-plugin</artifactId>
+                <configuration>
+                    <source>9</source>
+                    <target>9</target>
+                </configuration>
+            </plugin>
+            <!--            <plugin>-->
 <!--                <artifactId>maven-dependency-plugin</artifactId>-->
 <!--                <version>3.1.2</version>-->
 <!--            </plugin>-->

@@ -29,7 +29,7 @@ import java.util.*;
 public class MainClass {
     public static void main(String[] args) throws Exception {
         Locale.setDefault(Locale.US);
-        System.out.println("MSBooster v1.1.28-hist");
+        System.out.println("MSBooster v1.1.29");
         try {
             //accept command line inputs
             HashSet<String> fields = new HashSet<>();

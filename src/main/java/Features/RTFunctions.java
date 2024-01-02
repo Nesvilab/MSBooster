@@ -83,9 +83,10 @@ public class RTFunctions {
             }
             PeptideObj pep = scanNumObj.getPeptideObject(1);
 
-            if (pep.spectralSimObj.predIntensities[0] == 0f) { //what it is set to if no entry
-                continue;
-            }
+            //need to support if no spectral features
+//                if (pep.spectralSimObj.predIntensities[0] == 0f) { //what it is set to if no entry
+//                    continue;
+//                }
             float e = Float.parseFloat(pep.escore);
             if (e > Constants.RTescoreCutoff) {
                 continue;
@@ -131,9 +132,10 @@ public class RTFunctions {
                 }
                 PeptideObj pep = scanNumObj.getPeptideObject(1);
 
-                if (pep.spectralSimObj.predIntensities[0] == 0f) { //what it is set to if no entry
-                    continue;
-                }
+                //need to support if no spectral features
+//                if (pep.spectralSimObj.predIntensities[0] == 0f) { //what it is set to if no entry
+//                    continue;
+//                }
                 float e = Float.parseFloat(pep.escore);
                 if (e > Constants.RTescoreCutoff) {
                     continue;

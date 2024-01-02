@@ -93,7 +93,8 @@ public class RTCalibrationFigure {
                 PeptideObj pep = scanNumObj.getPeptideObject(i);
                 //only get best ones
                 float currentScore = Float.parseFloat(pep.escore);
-                if (currentScore < Constants.RTescoreCutoff && pep.spectralSimObj.predIntensities[0] != 0f) {
+//                if (currentScore < Constants.RTescoreCutoff && pep.spectralSimObj.predIntensities[0] != 0f) {
+                if (currentScore < Constants.RTescoreCutoff) {
                     if (Constants.plotBestPSMPerPeptide) {
                         if (bestEScore.containsKey(pep.name)) {
                             if (bestEScore.get(pep.name) > currentScore) {
@@ -124,8 +125,8 @@ public class RTCalibrationFigure {
                 PeptideObj pep = scanNumObj.getPeptideObject(i);
                 //only get best ones
                 float parsedScore = Float.parseFloat(pep.escore);
-                if (parsedScore <= maxEScore &&
-                        pep.spectralSimObj.predIntensities[0] != 0f) {
+//                if (parsedScore <= maxEScore && pep.spectralSimObj.predIntensities[0] != 0f) {
+                if (parsedScore <= maxEScore) {
                     if (Constants.plotBestPSMPerPeptide && parsedScore != bestEScore.get(pep.name)) {
                         break;
                     }

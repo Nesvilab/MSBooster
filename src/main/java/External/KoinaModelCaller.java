@@ -421,13 +421,7 @@ public class KoinaModelCaller {
                     newPred.setFlags(tmp.getFlags());
                     preds.put(mc.fullPeptide, newPred);
                 } catch (Exception e) {
-                    if (stripped.contains("O") || stripped.contains("U") ||
-                            stripped.contains("Z") || stripped.contains("B") ||
-                            stripped.contains("X")) {
-                        System.out.println("Skipping " + baseCharge);
-                    } else if (stripped.length() > 30) {
-                        System.out.println("Skipping " + baseCharge);
-                    } else {
+                    if (! PeptideSkipper.skipPeptide(stripped, baseCharge.split("\\|")[1])) {
                         e.printStackTrace();
                         System.out.println("Missing peptide to transfer prediction onto " + l + ": " + baseCharge);
                         System.out.println("Exiting now.");

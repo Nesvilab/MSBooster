@@ -17,6 +17,8 @@
 
 package Features;
 
+import External.PeptideSkipper;
+
 import java.io.*;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -172,18 +174,7 @@ public class MspReader implements SpectralPredictionMapper {
                         PredictionEntry tmp = allPreds.get(pf.baseCharge);
 
                         if (tmp == null) { //valid reasons to be empty
-                            if ((pf.stripped.length() > 20)) {
-                                continue;
-                            }
-                            if ((pf.stripped.length() < 7)) {
-                                continue;
-                            }
-                            if (pf.stripped.contains("O") || pf.stripped.contains("U") ||
-                                    pf.stripped.contains("Z") || pf.stripped.contains("B") ||
-                                    pf.stripped.contains("X")) {
-                                continue;
-                            }
-                            if (Integer.parseInt(pf.charge) > 6) {
+                            if (PeptideSkipper.skipPeptide(pf.stripped, pf.charge)) {
                                 continue;
                             }
                         }

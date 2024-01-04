@@ -275,7 +275,7 @@ public class MzmlReader {
 
     public void setPinEntries(PinReader pin, SpectralPredictionMapper spm) throws AssertionError, Exception {
         //TODO: multithread?
-        System.out.println("Loading pin");
+        System.out.println("Loading pin " + pin.name);
         ConcurrentHashMap<String, PredictionEntry> allPreds = spm.getPreds();
 
         ProgressReporter pr = new ProgressReporter(pin.length);

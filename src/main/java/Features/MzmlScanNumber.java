@@ -17,6 +17,7 @@
 
 package Features;
 
+import External.PeptideSkipper;
 import org.apache.commons.lang3.ArrayUtils;
 import umich.ms.datatypes.scan.IScan;
 import umich.ms.datatypes.scan.props.PrecursorInfo;
@@ -146,17 +147,7 @@ public class MzmlScanNumber {
             //when peptide isn't in predictions, like unsupported amino acids
             //Set to arbitrary 0 vectors so nothing matches, similarity 0
             //may need to adapt this if using percolator imputation
-            if (name.stripped.contains("U") || name.stripped.contains("O") || name.stripped.contains("X") ||
-                    name.stripped.contains("B") || name.stripped.contains("Z") ) {
-                peptideObjects.add(rank - 1, new PeptideObj(this, name.baseCharge, rank, targetORdecoy, escore,
-                        zeroFloatArray, zeroFloatArray, predRT, predIM));
-            } else if (name.stripped.length() > 15) { //TODO: update this when longer ones are supported
-                peptideObjects.add(rank - 1, new PeptideObj(this, name.baseCharge, rank, targetORdecoy, escore,
-                        zeroFloatArray, zeroFloatArray, predRT, predIM));
-            } else if (name.stripped.length() < 7) { //TODO: update this when shorter ones are supported
-                peptideObjects.add(rank - 1, new PeptideObj(this, name.baseCharge, rank, targetORdecoy, escore,
-                        zeroFloatArray, zeroFloatArray, predRT, predIM));
-            } else if (Integer.parseInt(name.charge) > 6) { //TODO: update this for different tools
+            if (PeptideSkipper.skipPeptide(name.stripped, name.charge)) {
                 peptideObjects.add(rank - 1, new PeptideObj(this, name.baseCharge, rank, targetORdecoy, escore,
                         zeroFloatArray, zeroFloatArray, predRT, predIM));
             } else {

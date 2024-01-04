@@ -17,6 +17,7 @@
 
 package Features;
 
+import External.PeptideSkipper;
 import umich.ms.fileio.exceptions.FileParsingException;
 
 import java.io.BufferedReader;
@@ -79,15 +80,7 @@ public class PredFullSpeclibReader extends MgfFileReader {
             PredictionEntry pe = this.allPredsHashMap.get(peptideToSearch.baseCharge);
 
             if (pe == null) { //valid reasons to be empty
-                if ((peptideToSearch.stripped.length() > 20)) {
-                    continue;
-                }
-                if (peptideToSearch.stripped.contains("O") || peptideToSearch.stripped.contains("U") ||
-                        peptideToSearch.stripped.contains("Z") || peptideToSearch.stripped.contains("B") ||
-                        peptideToSearch.stripped.contains("X")) {
-                    continue;
-                }
-                if (Integer.parseInt(peptideToSearch.charge) > 6) {
+                if (PeptideSkipper.skipPeptide(peptideToSearch.stripped, peptideToSearch.charge)) {
                     continue;
                 }
             }

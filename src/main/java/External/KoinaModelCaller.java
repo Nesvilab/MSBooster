@@ -25,8 +25,8 @@ import java.io.*;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
+import java.util.concurrent.atomic.AtomicInteger;
 
 public class KoinaModelCaller {
     private final int AlphaPeptDeepMzIdx = 1;
@@ -39,6 +39,7 @@ public class KoinaModelCaller {
     private final int ms2pipIntIdx = 2;
     private final int ms2pipFragIdx = 0;
     private String modelType;
+    private final int maxJobs = Math.min(150, Constants.numThreads * 2); //stable up to 700, according to Koina
 
     public KoinaModelCaller(){}
 
@@ -85,19 +86,25 @@ public class KoinaModelCaller {
                 String command = "curl -s -H content-type:application/json -d @" + fileString +
                         " https://koina.proteomicsdb.org/v2/models/" + model + "/infer";
                 commands[numProcesses] = command;
-                ProcessBuilder builder = new ProcessBuilder(command.split(" "));
-                builder.redirectErrorStream(true);
-                processes[numProcesses] = builder.start();
-                readers[numProcesses] = new BufferedReader(new InputStreamReader(processes[numProcesses].getInputStream()));
+
+                //modified so that there are only 2 active jobs per thread at once
+                if (numProcesses < maxJobs) {
+                    ProcessBuilder builder = new ProcessBuilder(command.split(" "));
+                    builder.redirectErrorStream(true);
+                    processes[numProcesses] = builder.start();
+                    readers[numProcesses] = new BufferedReader(new InputStreamReader(processes[numProcesses].getInputStream()));
+                }
                 numProcesses += 1;
             }
 
             ProgressReporter pr = new ProgressReporter(numProcesses);
             List<Future> futureList = new ArrayList<>();
+            AtomicInteger jobIdx = new AtomicInteger(maxJobs);
 
             for (int i = 0; i < numProcesses; i++) {
                 String finalProperty = property;
                 int finalI = i;
+                int finalNumProcesses = numProcesses;
                 futureList.add(executorService.submit(() -> {
                     int attempts = 0;
                     while (attempts < Constants.numKoinaAttempts) {
@@ -145,11 +152,25 @@ public class KoinaModelCaller {
                         }
                     }
                     pr.progress();
+
+                    int stoppingPoint = jobIdx.get();
+                    if (stoppingPoint < finalNumProcesses) {
+                        ProcessBuilder builder = new ProcessBuilder(commands[stoppingPoint].split(" "));
+                        builder.redirectErrorStream(true);
+                        try {
+                            processes[stoppingPoint] = builder.start();
+                        } catch (IOException e) {
+                            throw new RuntimeException(e);
+                        }
+                        readers[stoppingPoint] = new BufferedReader(new InputStreamReader(processes[stoppingPoint].getInputStream()));
+
+                        jobIdx.incrementAndGet();
+                    }
                 }));
             }
             ConcurrentHashMap<Integer, Integer> completedTasks = new ConcurrentHashMap<>();
             while (completedTasks.size() < futureList.size()) {
-                for (int i = 0; i < futureList.size(); i++) {
+                for (int i = 0; i < jobIdx.get(); i++) {
                     if (!completedTasks.containsKey(i) && futureList.get(i).isDone()) {
                         futureList.get(i).get();
                         completedTasks.put(i, 0);
@@ -403,6 +424,8 @@ public class KoinaModelCaller {
                     if (stripped.contains("O") || stripped.contains("U") ||
                             stripped.contains("Z") || stripped.contains("B") ||
                             stripped.contains("X")) {
+                        System.out.println("Skipping " + baseCharge);
+                    } else if (stripped.length() > 30) {
                         System.out.println("Skipping " + baseCharge);
                     } else {
                         e.printStackTrace();

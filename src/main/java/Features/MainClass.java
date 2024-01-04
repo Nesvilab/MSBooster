@@ -29,10 +29,19 @@ import java.util.concurrent.Executors;
 
 //this is what I use in the java jar file
 public class MainClass {
+    public static ExecutorService executorService;
     public static void main(String[] args) throws Exception {
         Locale.setDefault(Locale.US);
-        System.out.println("MSBooster v1.1.28-koina");
-        ExecutorService executorService = null;
+        System.out.println("MSBooster v1.1.30-koina");
+
+        //defining num threads
+        if (Constants.numThreads <= 0) {
+            Runtime run = Runtime.getRuntime();
+            Constants.numThreads = run.availableProcessors() - 1;
+        } //otherwise use user-defined
+        System.out.println("Using " + Constants.numThreads + " threads");
+        executorService = Executors.newFixedThreadPool(Constants.numThreads);
+
         try {
             //accept command line inputs
             HashSet<String> fields = new HashSet<>();
@@ -331,14 +340,6 @@ public class MainClass {
             } else if (Constants.divideFragments.equals("0") && Constants.spectraRTPredModel.equals("DIA-NN")) {
                 //Constants.topFragments = 12; //may update in future
             }
-
-            //defining num threads
-            if (Constants.numThreads <= 0) {
-                Runtime run = Runtime.getRuntime();
-                Constants.numThreads = run.availableProcessors() - 1;
-                //run.exit(0);
-            } //otherwise use user-defined
-            System.out.println("Using " + Constants.numThreads + " threads");
 
             //check that at least pinPepXMLDirectory and mzmlDirectory are provided
             if (Constants.pinPepXMLDirectory == null) {
@@ -644,8 +645,6 @@ public class MainClass {
 //                peptideFileCreator.createPeptideFile(pmMatcher.pinFiles, Constants.detectPredInput, "DeepMSPeptide", "pin");
 //            }
 
-            //executor service for later
-            executorService = Executors.newFixedThreadPool(Constants.numThreads);
 
             //generate predictions
             KoinaLibReader klr = new KoinaLibReader();

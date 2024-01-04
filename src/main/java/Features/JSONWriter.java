@@ -122,7 +122,7 @@ public class JSONWriter {
         String fileName = "";
         if (numFiles > 1) {
             futureList.clear();
-            ExecutorService executorService = Executors.newFixedThreadPool(Constants.numThreads);
+            ExecutorService executorService = MainClass.executorService;
             for (int i = 0; i < Constants.numThreads; i++) {
                 int start = (int) (numFiles * (long) i) / Constants.numThreads;
                 int end = (int) (numFiles * (long) (i + 1)) / Constants.numThreads;
@@ -140,7 +140,6 @@ public class JSONWriter {
             for (Future future : futureList) {
                 future.get();
             }
-            executorService.shutdown();
         } else {
             switch (model) {
                 case "alphapept":

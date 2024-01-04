@@ -118,4 +118,6 @@ uncheck the MSFragger and MSBooster checkboxes.
 - DeepLC, APD_rt and ms2 did change predictions with added phospho on T
     - Not ms2pip, prosit
     - need to check DIANN
+- ms2pip could not predict longer than 30
+  - Prosit is fine, but maybe not for TMT?
 

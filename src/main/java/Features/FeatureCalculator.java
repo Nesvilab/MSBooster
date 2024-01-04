@@ -22,7 +22,6 @@ import org.apache.commons.math3.stat.correlation.PearsonsCorrelation;
 import java.io.IOException;
 import java.util.*;
 import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
 
 public class FeatureCalculator {
 
@@ -44,11 +43,10 @@ public class FeatureCalculator {
         this.mzml = mzml;
     }
 
-    public void calculate() throws IOException {
+    public void calculate(ExecutorService executorService) throws IOException {
         PeptideObj pepObj = null;
         HashMap<Integer, StatMethods> hm;
         StatMethods sm;
-        ExecutorService executorService = Executors.newFixedThreadPool(Constants.numThreads);
 
         ProgressReporter pr = new ProgressReporter(pin.length);
         while (pin.next()) {

@@ -679,7 +679,7 @@ public class PercolatorFormatter {
                 //TODO: multithread?
                 System.out.println("Calculating features");
                 FeatureCalculator fc = new FeatureCalculator(pin, featuresList, mzml);
-                fc.calculate();
+                fc.calculate(executorService);
 
                 System.out.println("Writing features");
                 PinWriter pw = new PinWriter(newOutfile, pin, featuresList, mzml, fc.featureStats);

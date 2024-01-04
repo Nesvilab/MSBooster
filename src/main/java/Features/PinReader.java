@@ -235,10 +235,14 @@ public class PinReader {
         return peps.toArray(new String[0]);
     }
 
-    public String[] createPredFullList(File mzmlFile) throws IOException, InterruptedException, ExecutionException, FileParsingException {
+    public String[] createPredFullList(File mzmlFile, PinMzmlMatcher pmm) throws IOException, InterruptedException, ExecutionException, FileParsingException {
         ArrayList<String> peps = new ArrayList<String>();
-        if (Constants.NCE.equals("")) {
+        int fileI = 0;
+        if (Constants.NCE.equals("") && pmm.mzmlReaders[fileI] == null) {
             mzml = new MzmlReader(mzmlFile.getCanonicalPath());
+            pmm.mzmlReaders[fileI] = mzml;
+        } else if (pmm.mzmlReaders[fileI] != null) {
+            mzml = pmm.mzmlReaders[fileI];
         }
         while (next()) {
             PeptideFormatter pf = getPep();
@@ -252,10 +256,14 @@ public class PinReader {
         return peps.toArray(new String[0]);
     }
 
-    public String[] createPrositList(File mzmlFile) throws IOException, InterruptedException, ExecutionException, FileParsingException {
+    public String[] createPrositList(File mzmlFile, PinMzmlMatcher pmm) throws IOException, InterruptedException, ExecutionException, FileParsingException {
         ArrayList<String> peps = new ArrayList<String>();
-        if (Constants.NCE.equals("")) {
+        int fileI = 0;
+        if (Constants.NCE.equals("") && pmm.mzmlReaders[fileI] == null) {
             mzml = new MzmlReader(mzmlFile.getCanonicalPath());
+            pmm.mzmlReaders[fileI] = mzml;
+        } else if (pmm.mzmlReaders[fileI] != null) {
+            mzml = pmm.mzmlReaders[fileI];
         }
         while (next()) {
             PeptideFormatter pf = getPep();
@@ -265,10 +273,14 @@ public class PinReader {
         return peps.toArray(new String[0]);
     }
 
-    public String[] createPrositTMTList(File mzmlFile) throws IOException, InterruptedException, ExecutionException, FileParsingException {
+    public String[] createPrositTMTList(File mzmlFile, PinMzmlMatcher pmm) throws IOException, InterruptedException, ExecutionException, FileParsingException {
         ArrayList<String> peps = new ArrayList<String>();
-        if (Constants.NCE.equals("")) {
+        int fileI = 0;
+        if (Constants.NCE.equals("") && pmm.mzmlReaders[fileI] == null) {
             mzml = new MzmlReader(mzmlFile.getCanonicalPath());
+            pmm.mzmlReaders[fileI] = mzml;
+        } else if (pmm.mzmlReaders[fileI] != null) {
+            mzml = pmm.mzmlReaders[fileI];
         }
         while (next()) {
             PeptideFormatter pf = getPep();
@@ -283,6 +295,7 @@ public class PinReader {
         int fileI = 0;
         if (Constants.NCE.equals("") && pmm.mzmlReaders[fileI] == null) {
             mzml = new MzmlReader(mzmlFile.getCanonicalPath());
+            pmm.mzmlReaders[fileI] = mzml;
         } else if (pmm.mzmlReaders[fileI] != null) {
             mzml = pmm.mzmlReaders[fileI];
         }

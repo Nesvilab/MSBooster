@@ -25,43 +25,14 @@ import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutionException;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Future;
 
 import static org.apache.commons.io.FileUtils.listFiles;
 
 public class PeptideFileCreator {
-    //private static String[] acceptableFormats = new String[] {"pDeep2", "pDeep3", "prosit"};
-
-    public static HashSet<String> getUniqueHits(String[] allHits) {
-        //remove duplicates from allHits
-        //can reduce number of hits to a third
-        HashSet<String> hSetHits = new HashSet<>();
-        Collections.addAll(hSetHits, allHits);
-        System.out.println(hSetHits.size() + " unique peptides from " + allHits.length + " PSMs");
-        return hSetHits;
-    }
-
-    //this version when removing scan_num
-    public static HashSet<String> getUniqueHits(String[] allHits, String sep) {
-        HashSet<String> hSetHits = new HashSet<>();
-        HashMap<String, String> rowToScanNum = new HashMap<>();
-        //for string in allHits, separate string from scan_num
-        for (String hit : allHits) {
-            String[] hitSplit = hit.split(sep);
-            String newHit = String.join(sep, Arrays.copyOfRange(hitSplit, 0, hitSplit.length - 1));
-            hSetHits.add(newHit);
-            //create hashmap that will map string back to scan_num
-            rowToScanNum.put(newHit, hitSplit[hitSplit.length - 1]);
-        }
-        //add scan_nums back
-        HashSet<String> finalHSetHits = new HashSet<>();
-        for (String hit : hSetHits) {
-            finalHSetHits.add(hit + sep + rowToScanNum.get(hit));
-        }
-        System.out.println(finalHSetHits.size() + " unique peptides from " + allHits.length + " PSMs");
-        return finalHSetHits;
-    }
-
     //infile is pepXML file locations
 //    public static void createPeptideFile(String infile, String outfile, String modelFormat, String psmFormat)
 //            throws IOException { //pepXML or pin
@@ -94,113 +65,140 @@ public class PeptideFileCreator {
         File[] pinFiles = pmm.pinFiles;
         File[] mzmlFiles = pmm.mzmlFiles;
 
-        //read in pin files
-        String[] allHits = new String[0];
-
-        for (int i = 0; i < pinFiles.length; i++) {
-            File f = pinFiles[i];
-            File mzmlf = mzmlFiles[i];
-
-            String fileName = f.getCanonicalPath();
-            PinReader pin = new PinReader(fileName);
-            String[] hitsToAdd = new String[0];
-            switch (modelFormat) {
-                case "pDeep2":
-                    hitsToAdd = pin.createPDeep2List();
-                    break;
-                case "pDeep3":
-                    hitsToAdd = pin.createPDeep3List();
-                    break;
-                case "DeepMSPeptide": //ignores charge and mods
-                    hitsToAdd = pin.createDeepMSPeptideList();
-                    break;
-                case "DeepMSPeptideAll": //ignores charge and mods
-                    hitsToAdd = pin.createDeepMSPeptideList();
-                    break;
-                case "Diann":
-                    hitsToAdd = pin.createDiannList();
-                    break;
-                case "Prosit":
-                    if (Constants.NCE.equals("")) {
-                        System.out.println("If mzml file is available, will read in NCE from there");
-                        Constants.FragmentationType = "HCD";
-                    }
-                    hitsToAdd = pin.createPrositList(mzmlf);
-                    break;
-                case "PrositTMT":
-                    if (Constants.FragmentationType.equals("")) {
-                        System.out.println("Missing information for Prosit file generation. " +
-                                "Please provide FragmentationType (HCD or CID) in " +
-                                "parameter file via --paramsList or as arguments on command line." +
-                                "For now, setting as HCD.");
-                        Constants.FragmentationType = "HCD";
-                    }
-                    if (Constants.NCE.equals("")) {
-                        System.out.println("If mzml file is available, will read in NCE from there");
-                    }
-                    hitsToAdd = pin.createPrositTMTList(mzmlf);
-                    break;
-                case "createFull":
-                    hitsToAdd = pin.createFull();
-                    break;
-                case "PredFull":
-                    if (Constants.FragmentationType.equals("")) {
-                        System.out.println("Missing fragmentation type for PredFull file generation. " +
-                                "You can provide FragmentationType (HCD or ETD) in the " +
-                                "parameter file via --paramsList or as arguments on command line. " +
-                                "For now, setting as HCD");
-                        Constants.FragmentationType = "HCD";
-                    }
-                    if (Constants.NCE.equals("")) {
-                        System.out.println("If mzml file is available, will read in NCE from there");
-                    }
-                    hitsToAdd = pin.createPredFullList(mzmlf);
-                    break;
-                case "alphapeptdeep":
-                    if (Constants.instrument.equals("")) {
-                        System.out.println("Missing instrument for alphapeptdeep file generation. " +
-                                "You can provide an instrument in the " +
-                                "parameter file via --paramsList or as arguments on command line. " +
-                                "For now, automatically setting it based on mzml metadata. " +
-                                "The following instruments are allowed, along with the model mode that " +
-                                "alphapeptdeep converts them to (user input: alphapeptdeep mode):\n" +
-                                "    Lumos: Lumos\n" +
-                                "    QE: QE\n" +
-                                "    timsTOF: timsTOF\n" +
-                                "    SciexTOF: SciexTOF\n" +
-                                "    Fusion: Lumos\n" +
-                                "    Eclipse: Lumos\n" +
-                                "    Velos: Lumos\n" +
-                                "    Elite: Lumos\n" +
-                                "    OrbitrapTribrid: Lumos\n" +
-                                "    ThermoTribrid: Lumos\n" +
-                                "    QE+: QE\n" +
-                                "    QEHF: QE\n" +
-                                "    QEHFX: QE\n" +
-                                "    Exploris: QE\n" +
-                                "    Exploris480: QE" +
-                                "    ThermoTOF: ThermoTOF" +
-                                "    Astral: ThermoTOF");
-                        Constants.instrument = "Lumos";
-                    }
-                    if (Constants.NCE.equals("")) {
-                        System.out.println("If mzml file is available, will read in NCE from there");
-                        Constants.FragmentationType = "HCD";
-                    }
-                    hitsToAdd = pin.createAlphapeptdeepList(mzmlf, pmm);
-                    break;
+        //read in mzml files if needed
+        if ((Constants.useKoina && !modelFormat.equals("Diann")) || modelFormat.contains("Prosit") ||
+                modelFormat.equals("PredFull") || modelFormat.equals("alphapeptdeep")) {
+            for (int i = 0; i < mzmlFiles.length; i++) {
+                if (Constants.NCE.equals("") && pmm.mzmlReaders[i] == null) {
+                    pmm.mzmlReaders[i] = new MzmlReader(mzmlFiles[i].getCanonicalPath());
+                }
             }
-            if (Constants.useKoina && !modelFormat.equals("Diann")) {
-                hitsToAdd = pin.createJSON(mzmlf, pmm, modelFormat);
-            }
-            pin.close();
-
-            allHits = ArrayUtils.addAll(allHits, hitsToAdd);
         }
 
+        //read in pin files
         //filter out redundant peptides
         //this step can reduce number of predictions needed to 1/3, decreasing prediction time
-        HashSet<String> hSetHits = getUniqueHits(allHits);
+        ConcurrentHashMap<String, Integer> allHits = new ConcurrentHashMap<>();
+
+        System.out.println("Creating input file for " + modelFormat);
+        List<Future> futureList = new ArrayList<>();
+        ExecutorService executorService = MainClass.executorService;
+        for (int i = 0; i < pinFiles.length; i++) {
+            int finalI = i;
+            futureList.add(executorService.submit(() -> {
+                try {
+                    File f = pinFiles[finalI];
+                    File mzmlf = mzmlFiles[finalI];
+
+                    String fileName = f.getCanonicalPath();
+                    PinReader pin = new PinReader(fileName);
+                    String[] hitsToAdd = new String[0];
+                    switch (modelFormat) {
+                        case "pDeep2":
+                            hitsToAdd = pin.createPDeep2List();
+                            break;
+                        case "pDeep3":
+                            hitsToAdd = pin.createPDeep3List();
+                            break;
+                        case "DeepMSPeptide": //ignores charge and mods
+                            hitsToAdd = pin.createDeepMSPeptideList();
+                            break;
+                        case "DeepMSPeptideAll": //ignores charge and mods
+                            hitsToAdd = pin.createDeepMSPeptideList();
+                            break;
+                        case "Diann":
+                            hitsToAdd = pin.createDiannList();
+                            break;
+                        case "Prosit":
+                            if (Constants.NCE.equals("")) {
+                                System.out.println("If mzml file is available, will read in NCE from there");
+                                Constants.FragmentationType = "HCD";
+                            }
+                            hitsToAdd = pin.createPrositList(mzmlf, pmm);
+                            break;
+                        case "PrositTMT":
+                            if (Constants.FragmentationType.equals("")) {
+                                System.out.println("Missing information for Prosit file generation. " +
+                                        "Please provide FragmentationType (HCD or CID) in " +
+                                        "parameter file via --paramsList or as arguments on command line." +
+                                        "For now, setting as HCD.");
+                                Constants.FragmentationType = "HCD";
+                            }
+                            if (Constants.NCE.equals("")) {
+                                System.out.println("If mzml file is available, will read in NCE from there");
+                            }
+                            hitsToAdd = pin.createPrositTMTList(mzmlf, pmm);
+                            break;
+                        case "createFull":
+                            hitsToAdd = pin.createFull();
+                            break;
+                        case "PredFull":
+                            if (Constants.FragmentationType.equals("")) {
+                                System.out.println("Missing fragmentation type for PredFull file generation. " +
+                                        "You can provide FragmentationType (HCD or ETD) in the " +
+                                        "parameter file via --paramsList or as arguments on command line. " +
+                                        "For now, setting as HCD");
+                                Constants.FragmentationType = "HCD";
+                            }
+                            if (Constants.NCE.equals("")) {
+                                System.out.println("If mzml file is available, will read in NCE from there");
+                            }
+                            hitsToAdd = pin.createPredFullList(mzmlf, pmm);
+                            break;
+                        case "alphapeptdeep":
+                            if (Constants.instrument.equals("")) {
+                                System.out.println("Missing instrument for alphapeptdeep file generation. " +
+                                        "You can provide an instrument in the " +
+                                        "parameter file via --paramsList or as arguments on command line. " +
+                                        "For now, automatically setting it based on mzml metadata. " +
+                                        "The following instruments are allowed, along with the model mode that " +
+                                        "alphapeptdeep converts them to (user input: alphapeptdeep mode):\n" +
+                                        "    Lumos: Lumos\n" +
+                                        "    QE: QE\n" +
+                                        "    timsTOF: timsTOF\n" +
+                                        "    SciexTOF: SciexTOF\n" +
+                                        "    Fusion: Lumos\n" +
+                                        "    Eclipse: Lumos\n" +
+                                        "    Velos: Lumos\n" +
+                                        "    Elite: Lumos\n" +
+                                        "    OrbitrapTribrid: Lumos\n" +
+                                        "    ThermoTribrid: Lumos\n" +
+                                        "    QE+: QE\n" +
+                                        "    QEHF: QE\n" +
+                                        "    QEHFX: QE\n" +
+                                        "    Exploris: QE\n" +
+                                        "    Exploris480: QE" +
+                                        "    ThermoTOF: ThermoTOF" +
+                                        "    Astral: ThermoTOF");
+                                Constants.instrument = "Lumos";
+                            }
+                            if (Constants.NCE.equals("")) {
+                                System.out.println("If mzml file is available, will read in NCE from there");
+                                Constants.FragmentationType = "HCD";
+                            }
+                            hitsToAdd = pin.createAlphapeptdeepList(mzmlf, pmm);
+                            break;
+                    }
+                    if (Constants.useKoina && !modelFormat.equals("Diann")) {
+                        hitsToAdd = pin.createJSON(mzmlf, pmm, modelFormat);
+                    }
+                    pin.close();
+
+                    for (String hit : hitsToAdd) {
+                        allHits.put(hit, 0);
+                    }
+                } catch (Exception e) {
+                    e.printStackTrace();
+                    System.exit(1);
+                }
+            }));
+        }
+        for (Future future : futureList) {
+            future.get();
+        }
+
+        HashSet<String> hSetHits = new HashSet<>(allHits.keySet());
+        System.out.println(hSetHits.size() + " PSMs for prediction");
 
         //write to file
         try {

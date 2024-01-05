@@ -698,20 +698,22 @@ public class PercolatorFormatter {
                 System.out.println("Writing features");
                 PinWriter pw = new PinWriter(newOutfile, pin, featuresList, mzml, fc.featureStats);
                 pw.write();
+                String histFile;
                 if (Constants.renamePin == 1) {
                     System.out.println("Edited pin file at " + newOutfile);
+                    histFile = newOutfile;
                 } else { //really should be 0
                     //move file at newOutfile to pinFiles[i] canonical name
                     File movedFile = new File(newOutfile);
                     pinFiles[i].delete();
                     movedFile.renameTo(pinFiles[i]);
+                    histFile = pinFiles[i].getCanonicalPath();
                 }
 
                 //plot hist
                 System.out.println("Generating score histograms");
                 for (String feature : featuresList) {
-                    ScoreHistogram scoreHistogram = new ScoreHistogram(newOutfile,
-                            Constants.camelToUnderscore.get(feature));
+                    new ScoreHistogram(histFile, Constants.camelToUnderscore.get(feature));
                 }
             }
         } catch (Exception e) {

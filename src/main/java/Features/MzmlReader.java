@@ -213,7 +213,7 @@ public class MzmlReader {
 //        }
 //    }
 
-    public void createScanNumObjects() throws FileParsingException, ExecutionException, InterruptedException {
+    public void createScanNumObjects() throws FileParsingException {
         //for checking resolution
         boolean hasFTMS = false;
         boolean hasITMS = false;

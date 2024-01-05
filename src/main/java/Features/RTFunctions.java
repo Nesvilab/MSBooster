@@ -110,7 +110,6 @@ public class RTFunctions {
         if (expRTs.size() < Constants.minRTregressionSize) { //no more e score threshold
             System.out.println("Not enough high quality PSMs for RT regression with escore cutoff of "
                     + Constants.RTescoreCutoff + ". Relaxing escore cutoff to 0.01");
-            Constants.RTescoreCutoff = 0.01f;
             RTregressionSize = Constants.minRTregressionSize;
 
             expRTs = new ArrayList<>();
@@ -137,7 +136,7 @@ public class RTFunctions {
 //                    continue;
 //                }
                 float e = Float.parseFloat(pep.escore);
-                if (e > Constants.RTescoreCutoff) {
+                if (e > 0.01f) {
                     continue;
                 }
                 expRTs.add(rt);

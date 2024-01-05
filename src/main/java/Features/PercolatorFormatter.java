@@ -323,7 +323,7 @@ public class PercolatorFormatter {
                 if (Constants.removeWashGradient) {
                     if (Constants.rtCutoff.isNaN()) {
                         pin.attachMzml(mzml);
-                        pin.findWashGradientCutoff(predictedSpectra.getPreds());
+                        pin.findWashGradientCutoff();
                     } else {
                         pin.rtCutoff = Constants.rtCutoff;
                     }

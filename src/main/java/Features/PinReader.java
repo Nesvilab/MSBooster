@@ -154,14 +154,20 @@ public class PinReader {
 
     public float getRT() {return Float.parseFloat(row[rtIdx]);}
 
-    public void findWashGradientCutoff(ConcurrentHashMap<String, PredictionEntry> preds) throws IOException {
+    //TODO: new algorithm?
+    public void findWashGradientCutoff() throws IOException {
         int bins = Constants.washGradientBins;
         //TODO read in RT directly from pin
         next();
         float minRT = getRT();
         float maxRT = 0;
         while (next()) {
-            maxRT = getRT();
+            if (getRT() > maxRT) {
+                maxRT = getRT();
+            }
+            if (getRT() < minRT) {
+                minRT = getRT();
+            }
         }
         reset();
         float RTrange = maxRT - minRT;

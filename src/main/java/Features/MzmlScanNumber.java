@@ -67,22 +67,42 @@ public class MzmlScanNumber {
         if (Constants.useIM) {
             this.IM = scan.getIm().floatValue();
         }
-        if (nceModels.contains(Constants.spectraRTPredModel) || Constants.useKoina) {
-            String[] nceInfo = scan.getFilterString().split("@");
-            if (nceInfo.length > 1) {
-                for (String s : Arrays.copyOfRange(nceInfo, 1, nceInfo.length)) {
-                    String fragmentationInfo = s.split(" ")[0];
-                    StringBuilder fragmentationType = new StringBuilder();
-                    for (int i = 0; i < fragmentationInfo.length(); i++) {
-                        char myChar = fragmentationInfo.charAt(i);
-                        if (Character.isDigit(myChar)) {
-                            NCEs.put(fragmentationType.toString().toUpperCase(),
-                                    Float.parseFloat(fragmentationInfo.substring(i)));
-                            break;
-                        } else {
-                            fragmentationType.append(myChar);
+        if (! Constants.NCE.equals("") && ! Constants.FragmentationType.equals("")) {
+            NCEs.put(Constants.FragmentationType, Float.parseFloat(Constants.NCE));
+        } else {
+            //decide if we read in NCE and fragment info
+            boolean read = false;
+            for (String substring : nceModels) {
+                if (Constants.spectraRTPredModel.contains(substring)) {
+                    read = true;
+                    break;
+                }
+            }
+            if (read || Constants.useKoina) {
+                try {
+                    String[] nceInfo = scan.getFilterString().split("@");
+                    if (nceInfo.length > 1) {
+                        for (String s : Arrays.copyOfRange(nceInfo, 1, nceInfo.length)) {
+                            String fragmentationInfo = s.split(" ")[0];
+                            StringBuilder fragmentationType = new StringBuilder();
+                            for (int i = 0; i < fragmentationInfo.length(); i++) {
+                                char myChar = fragmentationInfo.charAt(i);
+                                if (Character.isDigit(myChar)) {
+                                    NCEs.put(fragmentationType.toString().toUpperCase(),
+                                            Float.parseFloat(fragmentationInfo.substring(i)));
+                                    break;
+                                } else {
+                                    fragmentationType.append(myChar);
+                                }
+                            }
                         }
                     }
+                } catch (NullPointerException e) { //like in DIA-Umpire, there is no filter string
+                    System.out.println("mzml file does not contain filter string. Setting NCE to 25 and " +
+                            "FragmentationType to HCD. If other values are desired, please set them in " +
+                            "the parameter file with NCE and FragmentationType.");
+                    Constants.NCE = "25";
+                    Constants.FragmentationType = "HCD";
                 }
             }
         }

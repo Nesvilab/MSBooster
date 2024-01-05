@@ -248,6 +248,16 @@ public class StatMethods {
                             weights[i] = Math.pow(mean(Arrays.copyOfRange(y, Math.max(i - y.length / 100, 0),
                                     Math.min(i + y.length / 100, y.length))), 2);
                         }
+                        //check for outliers
+                        float meanDiff = mean(y);
+                        float stdDiff = (float) Math.sqrt(variance(y));
+                        for (int i = 0; i < y.length; i++) {
+                            if (zscore((float) y[i], meanDiff, stdDiff) > 3) {
+                                weights[i] = 0;
+                            }
+                        }
+
+                        //redo loess with weights
                         y = loessInterpolator.smooth(newX, newY, weights); //weighting so ends become better fit
                     }
                     ArrayList<Integer> nanIdx = new ArrayList<>();
@@ -286,6 +296,15 @@ public class StatMethods {
                         weights[i] = Math.pow(mean(Arrays.copyOfRange(y, Math.max(i - y.length/100, 0),
                                 Math.min(i + y.length/100, y.length))), 2);
                     }
+
+                    float meanDiff = mean(y);
+                    float stdDiff = (float) Math.sqrt(variance(y));
+                    for (int i = 0; i < y.length; i++) {
+                        if (zscore((float) y[i], meanDiff, stdDiff) > 3) {
+                            weights[i] = 0;
+                        }
+                    }
+
                     y = loessInterpolator.smooth(newX, newY, weights); //weighting so ends become better fit
                     for (double yval : y) {
                         if (Double.isNaN(yval)) {

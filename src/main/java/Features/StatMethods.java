@@ -227,105 +227,111 @@ public class StatMethods {
         }
 
         //fit loess
-        //may not need if sanity version uses spline
-        LoessInterpolator loessInterpolator = null;
-        double[] y = null;
-
         if (newX.length < 50) {
             bandwidth = 1d;
         }
-        while (loessInterpolator == null) {
-            try {
-                if (bandwidth == 1d) {
-                    loessInterpolator = new LoessInterpolator(bandwidth, robustIters);
-                    y = loessInterpolator.smooth(newX, newY);
-                    if (y.length > 100) {
-                        for (int i = 0; i < y.length; i++) {
-                            y[i] = y[i] - newY[i];
-                        }
-                        double[] weights = new double[y.length];
-                        for (int i = 0; i < y.length; i++) {
-                            weights[i] = Math.pow(mean(Arrays.copyOfRange(y, Math.max(i - y.length / 100, 0),
-                                    Math.min(i + y.length / 100, y.length))), 2);
-                        }
-                        //check for outliers
-                        float meanDiff = mean(y);
-                        float stdDiff = (float) Math.sqrt(variance(y));
-                        for (int i = 0; i < y.length; i++) {
-                            if (zscore((float) y[i], meanDiff, stdDiff) > 3) {
-                                weights[i] = 0;
-                            }
-                        }
 
-                        //redo loess with weights
-                        y = loessInterpolator.smooth(newX, newY, weights); //weighting so ends become better fit
-                    }
-                    ArrayList<Integer> nanIdx = new ArrayList<>();
-                    int i = 0;
-                    for (double yval : y) {
-                        if (Double.isNaN(yval)) {
-                            nanIdx.add(i);
-                        }
-                        i += 1;
-                    }
+        LoessInterpolator loessInterpolator = new LoessInterpolator(bandwidth, robustIters);
+        double[][] results = fittingRound(loessInterpolator, newX, newY, null, false);
+        double[] fittedY = results[0];
+        newX = results[1];
+        newY = results[2];
 
-                    if (nanIdx.size() > 0) {
-                        ArrayList<Double> newnewX = new ArrayList<>();
-                        ArrayList<Double> newnewY = new ArrayList<>();
-                        for (int j = 0; j < newX.length; j++) {
-                            if (! nanIdx.contains(j)) {
-                                newnewX.add(newX[j]);
-                                newnewY.add(newY[j]);
-                            }
-                        }
-                        newX = new double[newnewX.size()];
-                        y = new double[newnewX.size()];
-                        for (int j = 0; j < newnewX.size(); j++) {
-                            newX[j] = newnewX.get(j);
-                            y[j] = newnewY.get(j);
-                        }
-                    }
-                } else {
-                    loessInterpolator = new LoessInterpolator(bandwidth, robustIters);
-                    y = loessInterpolator.smooth(newX, newY);
-                    for (int i = 0; i < y.length; i++) {
-                        y[i] = y[i] - newY[i];
-                    }
-                    double[] weights = new double[y.length];
-                    for (int i = 0; i < y.length; i++) {
-                        weights[i] = Math.pow(mean(Arrays.copyOfRange(y, Math.max(i - y.length/100, 0),
-                                Math.min(i + y.length/100, y.length))), 2);
-                    }
-
-                    float meanDiff = mean(y);
-                    float stdDiff = (float) Math.sqrt(variance(y));
-                    for (int i = 0; i < y.length; i++) {
-                        if (zscore((float) y[i], meanDiff, stdDiff) > 3) {
-                            weights[i] = 0;
-                        }
-                    }
-
-                    y = loessInterpolator.smooth(newX, newY, weights); //weighting so ends become better fit
-                    for (double yval : y) {
-                        if (Double.isNaN(yval)) {
-                            throw new Exception(bandwidth + " bandwidth is too small");
-                        }
-                    }
-                }
-            } catch (Exception e) {
-                loessInterpolator = null;
-                bandwidth = Math.min(bandwidth * 2d, 1);
+        //remove Nan
+        ArrayList<Integer> nanIdx = new ArrayList<>();
+        int i = 0;
+        for (double yval : fittedY) {
+            if (Double.isNaN(yval)) {
+                nanIdx.add(i);
             }
+            i += 1;
         }
 
-        //isotonic regression
+        fittedY = removeIdx(fittedY, nanIdx);
+        newX = removeIdx(newX, nanIdx);
+        newY = removeIdx(newY, nanIdx);
+
+        Function1<Double, Double> ir = isotonicRegressor(newX, fittedY);
+        for (i = 0; i < fittedY.length; i++) {
+            fittedY[i] = ir.invoke(newX[i]);
+        }
+        results = fittingRound(loessInterpolator, newX, newY, fittedY, true);
+        fittedY = results[0];
+        newX = results[1];
+        newY = results[2];
+
+        return isotonicRegressor(newX, fittedY);
+    }
+
+    private static Function1<Double, Double> isotonicRegressor(double[] x, double[] y) {
         List<Point> points = new LinkedList<>();
         for (int i = 0; i < y.length; i++) {
-            points.add(new Point(newX[i], y[i]));
+            points.add(new Point(x[i], y[i]));
         }
         PairAdjacentViolators pav = new PairAdjacentViolators(points);
 
         return pav.interpolator(); //extrapolationStrategy can use flat or tangent (default tangent)
+    }
+
+    private static double[][] fittingRound(LoessInterpolator lr, double[] newX, double[] newY, double[] smoothedY,
+                                           boolean extra) {
+        double[] y;
+        if (smoothedY != null) {
+            y = smoothedY;
+        } else {
+            y = lr.smooth(newX, newY);
+        }
+        if (y.length > 100) {
+            if (extra) {
+                for (int i = 0; i < y.length; i++) {
+                    y[i] = y[i] - newY[i];
+                }
+
+                //remove outliers
+                float meanDiff = mean(y);
+                float stdDiff = (float) Math.sqrt(variance(y));
+                ArrayList<Integer> outliersIdx = new ArrayList<>();
+
+                for (int i = 0; i < y.length; i++) {
+                    if (zscore((float) y[i], meanDiff, stdDiff) > 2) {
+                        outliersIdx.add(i);
+                    }
+                }
+                y = removeIdx(y, outliersIdx);
+                newX = removeIdx(newX, outliersIdx);
+                newY = removeIdx(newY, outliersIdx);
+            }
+
+            double[] weights = new double[y.length];
+            for (int i = 0; i < y.length; i++) {
+                weights[i] = Math.abs(median(Arrays.copyOfRange(y, Math.max(i - y.length/100, 0),
+                        Math.min(i + y.length/100, y.length))));
+            }
+
+            //redo loess with weights
+            y = lr.smooth(newX, newY, weights); //weighting so ends become better fit
+        }
+        double[][] results = new double[3][];
+        results[0] = y;
+        results[1] = newX;
+        results[2] = newY;
+        return results;
+    }
+
+    private static double[] removeIdx(double[] array, ArrayList<Integer> idx) {
+        if (!idx.isEmpty()) {
+            ArrayList<Double> newX = new ArrayList<>();
+            for (int i = 0; i < array.length; i++) {
+                if (! idx.contains(i)) {
+                    newX.add(array[i]);
+                }
+            }
+            array = new double[newX.size()];
+            for (int i = 0; i < newX.size(); i++) {
+                array[i] = newX.get(i);
+            }
+        }
+        return array;
     }
 
     public static double residualSumOfSquares(double[] x, double[] y) {
@@ -403,8 +409,7 @@ public class StatMethods {
         }
     }
 
-    public static float probabilityWithUniformPrior(int unifPriorSize, float unifProb,
-                                                      int binSize, float empiricalProb) {
+    public static float probabilityWithUniformPrior(int unifPriorSize, float unifProb, int binSize, float empiricalProb) {
         float w1 = (float) unifPriorSize / (float) (unifPriorSize + binSize);
         float w2 = (float) binSize / (float) (unifPriorSize + binSize);
 
@@ -414,6 +419,21 @@ public class StatMethods {
     public static float median(ArrayList<Float> alist) {
         Collections.sort(alist);
         float median;
+        if (alist.size() % 2 == 0)
+            median = (alist.get(alist.size() / 2 - 1) + alist.get(alist.size() / 2)) / 2;
+        else
+            median = alist.get(alist.size() / 2);
+        return median;
+    }
+
+    public static double median(double[] array) {
+        ArrayList<Double> alist = new ArrayList<>();
+        for (double f : array) {
+            alist.add(f);
+        }
+
+        Collections.sort(alist);
+        double median;
         if (alist.size() % 2 == 0)
             median = (alist.get(alist.size() / 2 - 1) + alist.get(alist.size() / 2)) / 2;
         else

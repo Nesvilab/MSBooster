@@ -17,34 +17,34 @@
 
 package Features;
 
+import java.util.concurrent.atomic.AtomicInteger;
+
 public class ProgressReporter {
-    int linesRead = 1;
-    int currentPercent;
-    int iterations;
-    long startTime;
+    AtomicInteger linesRead = new AtomicInteger(1);
+    AtomicInteger currentPercent = new AtomicInteger(Constants.loadingPercent);
+    final int iterations;
+
+    private static final Object lock = new Object(); // Create a lock object for synchronization
 
     public ProgressReporter(int iterations) {
         this.iterations = iterations;
-        currentPercent = Constants.loadingPercent;
-//        startTime = System.nanoTime();
     }
 
-    public int progress() {
-        linesRead += 1;
-        while (linesRead > iterations * currentPercent / 100 && currentPercent <= 100) {
-//            long endTime = System.nanoTime();
-//            System.out.print("..." + currentPercent + "% (" + (endTime - startTime) / 1000000000 + "sec)");
-            if (currentPercent == 100) {
-                System.out.println("..." + currentPercent + "%");
-                currentPercent++;
-                break;
-            } else {
-                System.out.print("..." + currentPercent + "%");
+    public void progress() {
+        synchronized (lock) {
+            linesRead.incrementAndGet();
+            while (linesRead.get() > iterations * currentPercent.get() / 100 &&
+                    currentPercent.get() <= 100) {
+                if (currentPercent.get() == 100) {
+                    System.out.println("..." + currentPercent.get() + "%");
+                    currentPercent.getAndIncrement();
+                    break;
+                } else {
+                    System.out.print("..." + currentPercent.get() + "%");
+                }
+                currentPercent.addAndGet(Constants.loadingPercent);
+                currentPercent.set(Math.min(currentPercent.get(), 100));
             }
-//            startTime = System.nanoTime();
-            currentPercent += Constants.loadingPercent;
-            currentPercent = Math.min(currentPercent, 100);
         }
-        return currentPercent;
     }
 }

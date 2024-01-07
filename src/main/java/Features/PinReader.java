@@ -53,6 +53,8 @@ public class PinReader {
     int length;
     Double rtCutoff = Double.NaN;
 
+    private static final Object lock = new Object(); // Create a lock object for synchronization
+
     public PinReader(String pin) throws IOException {
         name = pin;
         in = new BufferedReader(new FileReader(name));
@@ -368,11 +370,13 @@ public class PinReader {
                 NCE = getNCE(fragmentation);
             } else {
                 NCE = Constants.NCE;
-                if (Constants.FragmentationType.equals("")) {
-                    System.out.println("Setting fragmentation type to HCD. " +
-                            "You can specify this with '--FragmentationType' via the command line " +
-                            "or 'FragmentationType=' in the param file.");
-                    Constants.FragmentationType = "HCD";
+                synchronized (lock) {
+                    if (Constants.FragmentationType.isEmpty()) {
+                        System.out.println("Setting fragmentation type to HCD. " +
+                                "You can specify this with '--FragmentationType' via the command line " +
+                                "or 'FragmentationType=' in the param file.");
+                        Constants.FragmentationType = "HCD";
+                    }
                 }
                 fragmentation = Constants.FragmentationType;
             }

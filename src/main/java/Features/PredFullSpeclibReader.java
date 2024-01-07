@@ -17,7 +17,6 @@
 
 package Features;
 
-import External.PeptideSkipper;
 import umich.ms.fileio.exceptions.FileParsingException;
 
 import java.io.BufferedReader;

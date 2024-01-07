@@ -17,8 +17,6 @@
 
 package Features;
 
-import External.PeptideSkipper;
-
 import java.io.*;
 import java.util.ArrayList;
 import java.util.HashMap;

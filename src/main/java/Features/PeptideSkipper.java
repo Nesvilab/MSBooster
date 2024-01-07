@@ -1,4 +1,4 @@
-package External;
+package Features;
 
 public class PeptideSkipper {
     //provide peptide and see if it may be problematic

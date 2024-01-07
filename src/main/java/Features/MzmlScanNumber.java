@@ -17,7 +17,6 @@
 
 package Features;
 
-import External.PeptideSkipper;
 import org.apache.commons.lang3.ArrayUtils;
 import umich.ms.datatypes.scan.IScan;
 import umich.ms.datatypes.scan.props.PrecursorInfo;

@@ -24,6 +24,8 @@ import com.google.gson.stream.JsonReader;
 import java.io.*;
 import java.util.*;
 import java.util.concurrent.*;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicLong;
 
 public class KoinaModelCaller {
     private final int AlphaPeptDeepMzIdx = 1;
@@ -86,6 +88,13 @@ public class KoinaModelCaller {
             }
 
             ProgressReporter pr = new ProgressReporter(numProcesses);
+            AtomicLong waitTime;
+            if (property.equals("rt")) {
+                waitTime = new AtomicLong(Constants.initialKoinaMillisecondsToWaitRt);
+            } else {
+                waitTime = new AtomicLong(Constants.initialKoinaMillisecondsToWaitMs2);
+            }
+            AtomicInteger numTimes = new AtomicInteger(10);
             List<Future> futureList = new ArrayList<>();
 
             for (int i = 0; i < numProcesses; i++) {
@@ -93,9 +102,14 @@ public class KoinaModelCaller {
                 int finalI = i;
                 futureList.add(executorService.submit(() -> {
                     int attempts = 0;
-                    while (attempts < Constants.numKoinaAttempts) {
+                    int failedAttempts = 0;
+                    while (true) {
                         StringBuilder koinaSb = new StringBuilder();
                         try {
+                            //delay so we don't overwhelm server
+                            Thread.sleep(Math.max((Constants.numThreads - finalI) * 100, 100));
+
+                            long start = System.currentTimeMillis();
                             ProcessBuilder builder = new ProcessBuilder(commands[finalI].split(" "));
                             builder.redirectErrorStream(true);
                             processes[finalI] = builder.start();
@@ -112,7 +126,7 @@ public class KoinaModelCaller {
                                     processes[finalI].destroy();
                                 }
                             };
-                            timer.schedule(timerTask, Constants.KoinaMillisecondsToWait);
+                            timer.schedule(timerTask, waitTime.get() * (attempts + 1));
 
                             String line = "";
                             while ((line = reader.readLine()) != null) {
@@ -125,18 +139,25 @@ public class KoinaModelCaller {
                             parseKoinaOutput(filenameArray[finalI], koinaSb.toString(),
                                     finalProperty, model, klr);
                             timer.cancel();
+                            long timeDiff = System.currentTimeMillis() - start;
+                            long currentWaitTime = waitTime.get();
+                            waitTime.set(currentWaitTime + ((2 * timeDiff - currentWaitTime) /
+                                    (Math.min(Constants.numThreads, numTimes.getAndIncrement())))); //local mean
                             break;
                         } catch (Exception e) {
-                            attempts++;
-                            if (attempts == Constants.numKoinaAttempts) {
-                                System.out.println(commands[finalI]);
-                                System.out.println(filenameArray[finalI] + " had output that ended in: ");
-                                System.out.println(koinaSb.toString().substring(Math.max(0, koinaSb.toString().length() - 1000)));
-                                System.out.println("Retried calling " + filenameArray[finalI] + " " + attempts +
-                                        " times. Exiting.");
-                                e.printStackTrace();
-                                System.exit(1);
-                                break;
+                            String ending = koinaSb.toString().substring(Math.max(0, koinaSb.toString().length() - 1000));
+                            if (ending.isEmpty()) {
+                                attempts++;
+                            } else {
+                                failedAttempts++;
+                                if (failedAttempts == Constants.numKoinaAttempts) {
+                                    System.out.println(commands[finalI]);
+                                    System.out.println(filenameArray[finalI] + " had output that ended in: ");
+                                    System.out.println(ending);
+                                    System.out.println("Retried calling " + filenameArray[finalI] + " " + attempts +
+                                            " times. Exiting.");
+                                    System.exit(1);
+                                }
                             }
 
                             //set up again

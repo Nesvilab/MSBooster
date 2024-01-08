@@ -23,10 +23,7 @@ import com.google.gson.stream.JsonReader;
 
 import java.io.*;
 import java.util.*;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Future;
-import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.*;
 
 public class KoinaModelCaller {
     private final int AlphaPeptDeepMzIdx = 1;
@@ -39,7 +36,6 @@ public class KoinaModelCaller {
     private final int ms2pipIntIdx = 2;
     private final int ms2pipFragIdx = 0;
     private String modelType;
-    private final int maxJobs = Math.min(150, Constants.numThreads * 2); //stable up to 700, according to Koina
 
     public KoinaModelCaller(){}
 
@@ -86,32 +82,37 @@ public class KoinaModelCaller {
                 String command = "curl -s -H content-type:application/json -d @" + fileString +
                         " https://koina.proteomicsdb.org/v2/models/" + model + "/infer";
                 commands[numProcesses] = command;
-
-                //modified so that there are only 2 active jobs per thread at once
-                if (numProcesses < maxJobs) {
-                    ProcessBuilder builder = new ProcessBuilder(command.split(" "));
-                    builder.redirectErrorStream(true);
-                    processes[numProcesses] = builder.start();
-                    readers[numProcesses] = new BufferedReader(new InputStreamReader(processes[numProcesses].getInputStream()));
-                }
                 numProcesses += 1;
             }
 
             ProgressReporter pr = new ProgressReporter(numProcesses);
             List<Future> futureList = new ArrayList<>();
-            AtomicInteger jobIdx = new AtomicInteger(maxJobs);
 
             for (int i = 0; i < numProcesses; i++) {
                 String finalProperty = property;
                 int finalI = i;
-                int finalNumProcesses = numProcesses;
                 futureList.add(executorService.submit(() -> {
                     int attempts = 0;
                     while (attempts < Constants.numKoinaAttempts) {
                         StringBuilder koinaSb = new StringBuilder();
                         try {
+                            ProcessBuilder builder = new ProcessBuilder(commands[finalI].split(" "));
+                            builder.redirectErrorStream(true);
+                            processes[finalI] = builder.start();
+                            readers[finalI] = new BufferedReader(new InputStreamReader(processes[finalI].getInputStream()));
+
                             Process p = processes[finalI];
                             BufferedReader reader = readers[finalI];
+
+                            //give it 10s to run. Goal is to cut off 504 error early
+                            Timer timer = new Timer();
+                            TimerTask timerTask = new TimerTask() {
+                                @Override
+                                public void run() {
+                                    processes[finalI].destroy();
+                                }
+                            };
+                            timer.schedule(timerTask, Constants.KoinaMillisecondsToWait);
 
                             String line = "";
                             while ((line = reader.readLine()) != null) {
@@ -123,6 +124,7 @@ public class KoinaModelCaller {
 
                             parseKoinaOutput(filenameArray[finalI], koinaSb.toString(),
                                     finalProperty, model, klr);
+                            timer.cancel();
                             break;
                         } catch (Exception e) {
                             attempts++;
@@ -152,31 +154,11 @@ public class KoinaModelCaller {
                         }
                     }
                     pr.progress();
-
-                    int stoppingPoint = jobIdx.get();
-                    if (stoppingPoint < finalNumProcesses) {
-                        ProcessBuilder builder = new ProcessBuilder(commands[stoppingPoint].split(" "));
-                        builder.redirectErrorStream(true);
-                        try {
-                            processes[stoppingPoint] = builder.start();
-                        } catch (IOException e) {
-                            throw new RuntimeException(e);
-                        }
-                        readers[stoppingPoint] = new BufferedReader(new InputStreamReader(processes[stoppingPoint].getInputStream()));
-
-                        jobIdx.incrementAndGet();
-                    }
                 }));
             }
-            ConcurrentHashMap<Integer, Integer> completedTasks = new ConcurrentHashMap<>();
-            while (completedTasks.size() < futureList.size()) {
-                for (int i = 0; i < jobIdx.get(); i++) {
-                    if (!completedTasks.containsKey(i) && futureList.get(i).isDone()) {
-                        futureList.get(i).get();
-                        completedTasks.put(i, 0);
-                    }
-                }
-                Thread.sleep(100);
+
+            for (Future future : futureList) {
+                future.get();
             }
 
             long endTime = System.currentTimeMillis();
@@ -184,7 +166,6 @@ public class KoinaModelCaller {
             System.out.println("cURL and parse time in milliseconds: " + elapsedTime);
 
         } catch (Exception e) {
-//            System.out.println(); //TODO print error message from bufferedreader
             e.printStackTrace();
         }
     }

@@ -32,7 +32,7 @@ public class MainClass {
     public static ExecutorService executorService;
     public static void main(String[] args) throws Exception {
         Locale.setDefault(Locale.US);
-        System.out.println("MSBooster v1.1.31-koina");
+        System.out.println("MSBooster v1.1.32-koina");
 
         try {
             //accept command line inputs

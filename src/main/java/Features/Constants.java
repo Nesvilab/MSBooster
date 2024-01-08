@@ -89,6 +89,7 @@ public class Constants {
     public static SpectralPredictionMapper spectralPredictionMapper;
 
     public static Integer numKoinaAttempts = 3;
+    public static Integer KoinaMillisecondsToWait = 10000;
 
     //additional modifications for alphapeptdeep
     public static String additionalMods = ""; //this used in python script for common/user_defined_modifications

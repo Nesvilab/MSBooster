@@ -198,7 +198,7 @@ public class PeptideFileCreator {
         }
 
         HashSet<String> hSetHits = new HashSet<>(allHits.keySet());
-        System.out.println(hSetHits.size() + " PSMs for prediction");
+        System.out.println(hSetHits.size() + " peptides for prediction");
 
         //write to file
         try {

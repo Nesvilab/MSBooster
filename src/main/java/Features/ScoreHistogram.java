@@ -57,10 +57,14 @@ public class ScoreHistogram {
 
         String pinPath = new File(pinFile).getParent();
         String name = new File(pinFile).getName();
-        if (! new File(pinPath + File.separator + "MSBooster_histograms").exists()) {
-            new File(pinPath + File.separator + "MSBooster_histograms").mkdirs();
+        String dir = pinPath + File.separator + "MSBooster_plots";
+        if (! new File(dir).exists()) {
+            new File(dir).mkdirs();
         }
-        BitmapEncoder.saveBitmap(chart, pinPath + File.separator + "MSBooster_histograms" + File.separator +
+        if (! new File(dir + File.separator + "score_histograms").exists()) {
+            new File(dir + File.separator + "score_histograms").mkdirs();
+        }
+        BitmapEncoder.saveBitmap(chart, dir + File.separator + "score_histograms" + File.separator +
                         name.substring(0, name.length() - 4) + "_" + feature,
                 BitmapEncoder.BitmapFormat.PNG);
     }

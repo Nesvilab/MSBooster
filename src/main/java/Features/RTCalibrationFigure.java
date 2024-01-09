@@ -36,8 +36,12 @@ public class RTCalibrationFigure {
         String pinPath = new File(outFile).getParent();
         String pinName = new File(outFile).getName();
 
-        if (! new File(pinPath + File.separator + "MSBooster_RTplots").exists()) {
-            new File(pinPath + File.separator + "MSBooster_RTplots").mkdirs();
+        String dir = pinPath + File.separator + "MSBooster_plots";
+        if (! new File(dir).exists()) {
+            new File(dir).mkdirs();
+        }
+        if (! new File(dir + File.separator + "RT_calibration_curves").exists()) {
+            new File(dir + File.separator + "RT_calibration_curves").mkdirs();
         }
 
         XYChart chart = new XYChartBuilder().width(1000).height(1000).build();
@@ -218,8 +222,8 @@ public class RTCalibrationFigure {
             j += 2;
         }
 
-        BitmapEncoder.saveBitmap(chart, pinPath + File.separator + "MSBooster_RTplots" + File.separator +
-                        pinName.substring(0, pinName.length() - 4),
+        BitmapEncoder.saveBitmap(chart, pinPath + File.separator + "MSBooster_plots" + File.separator +
+                        "RT_calibration_curves" + File.separator + pinName.substring(0, pinName.length() - 4),
                 BitmapEncoder.BitmapFormat.PNG);
     }
 }

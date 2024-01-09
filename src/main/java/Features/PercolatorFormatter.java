@@ -697,7 +697,6 @@ public class PercolatorFormatter {
                 }
 
                 //plot hist
-                System.out.println("Generating score histograms");
                 for (String feature : featuresList) {
                     new ScoreHistogram(histFile, Constants.camelToUnderscore.get(feature));
                 }

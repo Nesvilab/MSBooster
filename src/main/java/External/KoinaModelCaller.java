@@ -20,6 +20,9 @@ package External;
 import Features.*;
 import com.google.gson.Gson;
 import com.google.gson.stream.JsonReader;
+import org.knowm.xchart.*;
+import org.knowm.xchart.internal.chartpart.Chart;
+import org.knowm.xchart.style.Styler;
 
 import java.io.*;
 import java.util.*;
@@ -95,8 +98,10 @@ public class KoinaModelCaller {
                 waitTime = new AtomicLong(Constants.initialKoinaMillisecondsToWaitMs2);
             }
             AtomicInteger numTimes = new AtomicInteger(10);
+            ConcurrentHashMap<Integer, Long> completionTimes = new ConcurrentHashMap<>();
             List<Future> futureList = new ArrayList<>();
 
+            long jobStart = System.currentTimeMillis();
             for (int i = 0; i < numProcesses; i++) {
                 String finalProperty = property;
                 int finalI = i;
@@ -107,7 +112,7 @@ public class KoinaModelCaller {
                         StringBuilder koinaSb = new StringBuilder();
                         try {
                             //delay so we don't overwhelm server
-                            Thread.sleep(Math.max((Constants.numThreads - finalI) * 100, 100));
+                            Thread.sleep(Math.max((Constants.numThreads - finalI) * 100, 0));
 
                             long start = System.currentTimeMillis();
                             ProcessBuilder builder = new ProcessBuilder(commands[finalI].split(" "));
@@ -175,6 +180,7 @@ public class KoinaModelCaller {
                         }
                     }
                     pr.progress();
+                    completionTimes.put(finalI + 1, System.currentTimeMillis() - jobStart);
                 }));
             }
 
@@ -186,6 +192,31 @@ public class KoinaModelCaller {
             long elapsedTime = endTime - startTime;
             System.out.println("cURL and parse time in milliseconds: " + elapsedTime);
 
+            //create plot
+            double[] xData = new double[numProcesses + 1];
+            double[] yData = new double[numProcesses + 1];
+            xData[0] = 0;
+            yData[0] = 0;
+
+            for (int i = 1; i < numProcesses + 1; i++) {
+                xData[i] = completionTimes.get(i) / 1000d;
+                yData[i] = i;
+            }
+            Arrays.sort(xData);
+            XYChart chart = new XYChartBuilder().width(1000).height(1000).build();
+            chart.setTitle("Koina timing");
+            chart.setXAxisTitle("Time (sec)");
+            chart.setYAxisTitle("Peptides predicted in " + JSONWriter.maxJsonLength + "'s");
+            chart.getStyler().setLegendPosition(Styler.LegendPosition.InsideNW);
+            chart.getStyler().setYAxisDecimalPattern("0");
+            chart.addSeries(model, xData, yData);
+
+            String dir = Constants.outputDirectory + File.separator + "MSBooster_plots";
+            if (! new File(dir).exists()) {
+                new File(dir).mkdirs();
+            }
+            BitmapEncoder.saveBitmap(chart, dir + File.separator + "Koina_timing.png",
+                    BitmapEncoder.BitmapFormat.PNG);
         } catch (Exception e) {
             e.printStackTrace();
         }

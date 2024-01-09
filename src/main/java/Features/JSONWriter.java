@@ -47,7 +47,7 @@ public class JSONWriter {
     int iteration = -1;
     public List<Future> futureList = new ArrayList<>(Constants.numThreads);
 
-    private final int maxJsonLength = 1000;
+    public static final int maxJsonLength = 1000;
 
     public JSONWriter(String url, HashSet<String> entries) {
         this.url = url;

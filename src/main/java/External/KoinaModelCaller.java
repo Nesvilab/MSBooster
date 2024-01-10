@@ -285,24 +285,24 @@ public class KoinaModelCaller {
             }
 
             //mz
-            msInfo = dataResults[mzIdx].split("data\":\\[")[1];
-            msInfo = msInfo.substring(0, msInfo.length() - 1);
-            results = msInfo.split(",");
-            float[][] allMZs = new float[numPeptides][];
-            for (int i = 0; i < numPeptides; i++) {
-                ArrayList<Float> mz = new ArrayList<>();
-                for (int j = i * vectorLength; j < (i + 1) * vectorLength; j++) {
-                    String result = results[j];
-                    if (acceptedIdx[i].contains(j)) {
-                        mz.add(Float.parseFloat(result));
-                    }
-                }
-                float[] mzArray = new float[mz.size()];
-                for (int j = 0; j < mz.size(); j++) {
-                    mzArray[j] = mz.get(j);
-                }
-                allMZs[i] = mzArray;
-            }
+//            msInfo = dataResults[mzIdx].split("data\":\\[")[1];
+//            msInfo = msInfo.substring(0, msInfo.length() - 1);
+//            results = msInfo.split(",");
+//            float[][] allMZs = new float[numPeptides][];
+//            for (int i = 0; i < numPeptides; i++) {
+//                ArrayList<Float> mz = new ArrayList<>();
+//                for (int j = i * vectorLength; j < (i + 1) * vectorLength; j++) {
+//                    String result = results[j];
+//                    if (acceptedIdx[i].contains(j)) {
+//                        mz.add(Float.parseFloat(result));
+//                    }
+//                }
+//                float[] mzArray = new float[mz.size()];
+//                for (int j = 0; j < mz.size(); j++) {
+//                    mzArray[j] = mz.get(j);
+//                }
+//                allMZs[i] = mzArray;
+//            }
 
             //fragment annotations
             msInfo = dataResults[fragIdx].split("data\":\\[")[1];
@@ -338,7 +338,7 @@ public class KoinaModelCaller {
                 allCharges[i] = chargesArray;
             }
 
-            assignMS2(fileName, allMZs, allIntensities, allFragmentIonTypes, allFragNums, allCharges, klr);
+            assignMS2(fileName, allIntensities, allFragmentIonTypes, allFragNums, allCharges, klr);
         }
     }
 
@@ -376,10 +376,10 @@ public class KoinaModelCaller {
         }
     }
 
-    private void assignMS2(String fileName, float[][] mzs, float[][] intensities,
+    private void assignMS2(String fileName, float[][] intensities,
                            String[][] fragmentIonTypes, int[][] fragNums, int[][] charges, KoinaLibReader klr)
             throws IOException {
-        String[] peptides = readJSON(fileName, mzs.length);
+        String[] peptides = readJSON(fileName, intensities.length);
         ConcurrentHashMap<String, PredictionEntry> preds = klr.getPreds();
         for (int i = 0; i < peptides.length; i++) {
             PeptideFormatter pf = new PeptideFormatter(peptides[i].split("\\|")[0],
@@ -389,7 +389,16 @@ public class KoinaModelCaller {
                 peptide = peptide.replace("C[" + PTMhandler.carbamidomethylationMass + "]", "C");
                 peptide = peptide.replace("C", "C[" + PTMhandler.carbamidomethylationMass + "]");
             }
-            PredictionEntry pe = new PredictionEntry(mzs[i], intensities[i], fragNums[i],
+
+            //problem with Koina not including PTM mass in m/z. Need to calculate here
+            String[] pepSplit = peptide.split("\\|");
+            MassCalculator mc = new MassCalculator(pepSplit[0], pepSplit[1]);
+            float[] mzs = new float[intensities[i].length];
+            for (int j = 0; j < intensities[i].length; j++) {
+                mzs[j] = mc.calcMass(fragNums[i][j], fragmentIonTypes[i][j], charges[i][j]);
+            }
+
+            PredictionEntry pe = new PredictionEntry(mzs, intensities[i], fragNums[i],
                     charges[i], fragmentIonTypes[i], true);
 
             if (preds.containsKey(peptide)) {

@@ -92,6 +92,7 @@ public class Constants {
     public static Integer initialKoinaMillisecondsToWaitRt = 30000;
     public static Integer initialKoinaMillisecondsToWaitMs2 = 60000;
     public static Float minIntensityToWriteToMgf = 0.01f;
+    public static Boolean calibrateNCE = true;
 
     //additional modifications for alphapeptdeep
     public static String additionalMods = ""; //this used in python script for common/user_defined_modifications

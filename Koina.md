@@ -120,4 +120,15 @@ uncheck the MSFragger and MSBooster checkboxes.
     - need to check DIANN
 - ms2pip could not predict longer than 30
   - Prosit is fine, but maybe not for TMT?
+- ms2pip has other models on web server, but one on Koina is only HCD
+- for TOF, use APD and Prosit
+  - for comparison, use APD with Lumos and Prosit HCD
+- for TMT, use DIA-NN, APD, Prosit
+- TMT phospho, DIANN and APD
+- C57 changes with deeplc+ms2pip, APD
+  - not prosit
+  - check DIANN
+
+- figure for percent of peptides in testing data that overlap with model 
+training?
 

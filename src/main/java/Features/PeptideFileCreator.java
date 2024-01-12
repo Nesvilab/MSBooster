@@ -33,29 +33,6 @@ import java.util.concurrent.Future;
 import static org.apache.commons.io.FileUtils.listFiles;
 
 public class PeptideFileCreator {
-    //infile is pepXML file locations
-//    public static void createPeptideFile(String infile, String outfile, String modelFormat, String psmFormat)
-//            throws IOException { //pepXML or pin
-//        //long startTime = System.nanoTime();
-//
-//        //file or directory
-//        Collection<File> x = new ArrayList<File>();
-//        File newFile = new File(infile);
-//        if (newFile.isFile()) {
-//            x.add(newFile);
-//        } else { //directory
-//            x = listFiles(new File(infile), new String[]{psmFormat}, false);
-//        }
-//
-//        File[] infileArray = new File[x.size()];
-//        int i = 0;
-//        for (File f : x) {
-//            infileArray[i] = f;
-//            i++;
-//        }
-//
-//        createPeptideFile(infileArray, outfile, modelFormat);
-//    }
 
     //TODO: remove psmFormat
     public static void createPeptideFile(PinMzmlMatcher pmm, String outfile, String modelFormat)

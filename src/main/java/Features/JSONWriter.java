@@ -73,7 +73,7 @@ public class JSONWriter {
             this.peptides[i] = info[0];
             this.charges[i] = Integer.parseInt(info[1]);
             this.nces[i] = Float.parseFloat(info[2]);
-            this.instruments[i] = info[3];
+            this.instruments[i] = info[3].toUpperCase();
             this.fragmentations[i] = info[4];
             i++;
         }

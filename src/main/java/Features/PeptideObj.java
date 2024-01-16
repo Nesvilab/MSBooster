@@ -65,7 +65,7 @@ public class PeptideObj {
     HashMap<String, Float> peakCounts = baseMap;
     HashMap<String, Float> individualSpectralSimilarities = baseMap;
 
-    SpectrumComparison spectralSimObj;
+    public SpectrumComparison spectralSimObj;
     double intensity_distribution_similarity;
 
     public PeptideObj(MzmlScanNumber scanNumObj, String name, int rank, int targetORdecoy, String escore,

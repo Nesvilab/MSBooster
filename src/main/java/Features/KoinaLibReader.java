@@ -20,7 +20,7 @@ package Features;
 import java.util.concurrent.ConcurrentHashMap;
 
 public class KoinaLibReader implements SpectralPredictionMapper {
-    ConcurrentHashMap<String, PredictionEntry> allPreds = new ConcurrentHashMap<>();
+    public ConcurrentHashMap<String, PredictionEntry> allPreds = new ConcurrentHashMap<>();
 
     public KoinaLibReader() {}
 

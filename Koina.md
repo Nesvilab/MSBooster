@@ -132,3 +132,5 @@ uncheck the MSFragger and MSBooster checkboxes.
 - figure for percent of peptides in testing data that overlap with model 
 training?
 
+- supported peptides
+  - HCD vs CID (fragmentation)

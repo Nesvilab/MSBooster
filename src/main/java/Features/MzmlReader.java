@@ -48,7 +48,7 @@ public class MzmlReader {
                       //similarity measures might be calculated using different weights. If you want to use different
                       //weights, just make new mzmlReader object
 
-    TreeMap<Integer, MzmlScanNumber> scanNumberObjects = new TreeMap<>();
+    public TreeMap<Integer, MzmlScanNumber> scanNumberObjects = new TreeMap<>();
     List<Integer> scanNums;
     private float[] betas;
     public ArrayList<Float>[] RTbins = null;
@@ -281,8 +281,8 @@ public class MzmlReader {
         ProgressReporter pr = new ProgressReporter(pin.length);
         while (pin.next()) {
             try {
-                scanNumberObjects.get(pin.getScanNum()).setPeptideObject(pin.getPep(), pin.getRank(), pin.getTD(), pin.getEScore(),
-                        allPreds);
+                scanNumberObjects.get(pin.getScanNum()).setPeptideObject(pin.getPep(), pin.getRank(), pin.getTD(),
+                        pin.getEScore(), allPreds, true);
 
                 pr.progress();
             } catch (Exception e) {

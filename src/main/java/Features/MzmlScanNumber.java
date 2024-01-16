@@ -42,7 +42,7 @@ public class MzmlScanNumber {
     float normalizedRT;
     Float IM;
     int IMbinSize;
-    HashMap<String, Float> NCEs = new HashMap<>();
+    public HashMap<String, Float> NCEs = new HashMap<>();
     ArrayList<PeptideObj> peptideObjects = new ArrayList<>();
     //double[] mzFreqs;
     public static float[] zeroFloatArray = new float[]{0};
@@ -75,7 +75,7 @@ public class MzmlScanNumber {
                     break;
                 }
             }
-            if (read) {
+            if (read || Constants.useKoina) {
                 try {
                     String[] nceInfo = scan.getFilterString().split("@");
                     if (nceInfo.length > 1) {
@@ -117,20 +117,20 @@ public class MzmlScanNumber {
     public float[] getExpMZs() { return expMZs; }
     public float[] getExpIntensities() { return expIntensities; }
 
-    public void setPeptideObject(PeptideFormatter name, int rank, int targetORdecoy, String escore,
-                                 ConcurrentHashMap<String, PredictionEntry> allPreds) {
+    public PeptideObj setPeptideObject(PeptideFormatter name, int rank, int targetORdecoy, String escore,
+                                 ConcurrentHashMap<String, PredictionEntry> allPreds, boolean set) {
 
-        if (rank != peptideObjects.size() + 1) { //need to add entries in order
-            throw new AssertionError("must add next rank");
-        }
+//        if (rank != peptideObjects.size() + 1) { //need to add entries in order
+//            throw new AssertionError("must add next rank");
+//        }
         PredictionEntry predictionEntry = allPreds.get(name.baseCharge);
+        PeptideObj newPepObj = null;
         try {
             float[] predMZs = predictionEntry.mzs;
             float[] predIntensities = predictionEntry.intensities;
             float predRT = predictionEntry.RT;
             float predIM = predictionEntry.IM;
 
-            PeptideObj newPepObj;
             if (predMZs.length > 1) {
                 if (Constants.divideFragments.equals("0")) {
                     newPepObj = new PeptideObj(this, name.baseCharge, rank, targetORdecoy, escore, predMZs,
@@ -143,7 +143,9 @@ public class MzmlScanNumber {
                 newPepObj = new PeptideObj(this, name.baseCharge, rank, targetORdecoy, escore, zeroFloatArray,
                         zeroFloatArray, predRT, predIM);
             }
-            peptideObjects.add(rank - 1, newPepObj);
+            if (set) {
+                peptideObjects.add(rank - 1, newPepObj);
+            }
 
             //remove higher ranked peaks
             //TODO: base off fragger.params topN?
@@ -179,6 +181,7 @@ public class MzmlScanNumber {
                 }
             }
         }
+        return newPepObj;
     }
 
     public PeptideObj getPeptideObject(int rank) {

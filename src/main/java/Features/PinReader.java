@@ -441,9 +441,9 @@ public class PinReader {
             String nce = String.valueOf(mzml.scanNumberObjects.get(getScanNum()).NCEs.get(frag));
             if (nce.equals("null")) {
                 //! mzml.scanNumberObjects.get(getScanNum()).NCEs.containsKey(frag)
-                System.out.println("No NCE detected in mzml. Setting to 30. NCE can be specified by '--NCE' via " +
+                System.out.println("No NCE detected in mzml. Setting to 25. NCE can be specified by '--NCE' via " +
                         "the command line or 'NCE=' in the param file.");
-                Constants.NCE = "30";
+                Constants.NCE = "25";
                 return Constants.NCE;
             }
             return nce;
@@ -454,7 +454,7 @@ public class PinReader {
     }
 
     //TODO: support for astral model?
-    String getInstrument() {
+    public String getInstrument() {
         HashSet<String> LumosKeys = new HashSet<>(Arrays.asList("LTQ", "Lumos", "Fusion", "Elite", "Velos", "Eclipse", "Tribrid"));
         HashSet<String> QEKeys = new HashSet<>(Arrays.asList("QE", "Exactive", "Exploris"));
         HashSet<String> SciexTOFKeys = new HashSet<>(Arrays.asList("Sciex", "TripleTOF"));

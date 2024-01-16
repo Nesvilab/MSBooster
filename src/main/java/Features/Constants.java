@@ -86,6 +86,10 @@ public class Constants {
             "Prosit_2023_intensity_TOF"));
     public static HashSet<String> KoinaTMTmodels = new HashSet<>(Arrays.asList("Prosit_2020_irt_TMT",
             "Prosit_2020_intensity_TMT"));
+    public static HashSet<String> nceModels =
+            new HashSet<>(Arrays.asList("PredFull", "Prosit", "PrositTMT", "alphapeptdeep",
+                    "AlphaPept_ms2_generic", "Prosit_2019_intensity", "Prosit_2023_intensity_timsTOF",
+                    "Prosit_2020_intensity_TMT", "Prosit_2020_intensity_HCD"));
     public static SpectralPredictionMapper spectralPredictionMapper;
 
     public static Integer numKoinaAttempts = 3;
@@ -93,6 +97,9 @@ public class Constants {
     public static Integer initialKoinaMillisecondsToWaitMs2 = 60000;
     public static Float minIntensityToWriteToMgf = 0.01f;
     public static Boolean calibrateNCE = true;
+    public static Integer numPSMsToCalibrateNCE = 1000;
+    public static Integer minNCE = 20;
+    public static Integer maxNCE = 40;
 
     //additional modifications for alphapeptdeep
     public static String additionalMods = ""; //this used in python script for common/user_defined_modifications

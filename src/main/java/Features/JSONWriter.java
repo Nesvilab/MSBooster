@@ -109,12 +109,16 @@ public class JSONWriter {
                 Math.min(start + maxJsonLength, parent.peptides.length));
     }
 
-    public String write(boolean createDir) throws IOException, ExecutionException, InterruptedException {
-        String jsonOutFolder = Constants.outputDirectory + File.separator + "jsonFiles";
+    public String write(boolean createDir, String folder) throws IOException, ExecutionException, InterruptedException {
+        String jsonOutFolder = Constants.outputDirectory + File.separator + folder;
         if (createDir) {
             if (Files.exists(Paths.get(jsonOutFolder))) {
                 FileUtils.cleanDirectory(new File(jsonOutFolder));
             } else {
+                Files.createDirectories(Paths.get(jsonOutFolder));
+            }
+        } else {
+            if (! Files.exists(Paths.get(jsonOutFolder))) {
                 Files.createDirectories(Paths.get(jsonOutFolder));
             }
         }
@@ -130,7 +134,7 @@ public class JSONWriter {
                     for (int rep = start; rep < end; rep ++) {
                         JSONWriter jw = new JSONWriter(this, rep);
                         try {
-                            jw.write(false);
+                            jw.write(false, folder);
                         } catch (IOException | ExecutionException | InterruptedException e) {
                             e.printStackTrace();
                         }

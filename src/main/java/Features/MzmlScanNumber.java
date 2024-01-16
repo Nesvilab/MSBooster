@@ -46,8 +46,6 @@ public class MzmlScanNumber {
     ArrayList<PeptideObj> peptideObjects = new ArrayList<>();
     //double[] mzFreqs;
     public static float[] zeroFloatArray = new float[]{0};
-    private static final HashSet<String> nceModels =
-            new HashSet<>(Arrays.asList("PredFull", "Prosit", "PrositTMT", "alphapeptdeep"));
 
     //this version if creating from mzml scan number
     public MzmlScanNumber(IScan scan) throws FileParsingException {
@@ -66,18 +64,18 @@ public class MzmlScanNumber {
         if (Constants.useIM) {
             this.IM = scan.getIm().floatValue();
         }
-        if (! Constants.NCE.equals("") && ! Constants.FragmentationType.equals("")) {
+        if (!Constants.NCE.isEmpty() && !Constants.FragmentationType.isEmpty()) {
             NCEs.put(Constants.FragmentationType, Float.parseFloat(Constants.NCE));
         } else {
             //decide if we read in NCE and fragment info
             boolean read = false;
-            for (String substring : nceModels) {
+            for (String substring : Constants.nceModels) {
                 if (Constants.spectraRTPredModel.contains(substring)) {
                     read = true;
                     break;
                 }
             }
-            if (read || Constants.useKoina) {
+            if (read) {
                 try {
                     String[] nceInfo = scan.getFilterString().split("@");
                     if (nceInfo.length > 1) {

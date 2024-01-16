@@ -45,10 +45,13 @@ public class KoinaModelCaller {
     public KoinaModelCaller(){}
 
     //TODO: add functions to clean this up
-    public void callModel(String model, KoinaLibReader klr, ExecutorService executorService) {
+    public void callModel(String model, KoinaLibReader klr, String jsonFolder, ExecutorService executorService,
+                          boolean verbose, boolean makeFigure) {
         this.modelType = model.toLowerCase().split("_")[0];
 
-        System.out.println("Calling " + model + " model");
+        if (verbose) {
+            System.out.println("Calling " + model + " model");
+        }
         long startTime = System.currentTimeMillis();
 
         String property = null;
@@ -64,7 +67,7 @@ public class KoinaModelCaller {
 
         try {
             //pass json files to curl http request
-            File[] fileArray = new File(Constants.JsonDirectory).listFiles();
+            File[] fileArray = new File(jsonFolder).listFiles();
             ArrayList<String> filenameArraylist = new ArrayList<>();
             for (File f : fileArray) {
                 String fname = f.toString();
@@ -112,7 +115,9 @@ public class KoinaModelCaller {
                         StringBuilder koinaSb = new StringBuilder();
                         try {
                             //delay so we don't overwhelm server
-                            Thread.sleep(Math.max((Constants.numThreads - finalI) * 100, 0));
+                            if (finalI < Constants.numThreads) {
+                                Thread.sleep(finalI * 100L);
+                            }
 
                             long start = System.currentTimeMillis();
                             ProcessBuilder builder = new ProcessBuilder(commands[finalI].split(" "));
@@ -179,7 +184,9 @@ public class KoinaModelCaller {
                             readers[finalI] = new BufferedReader(new InputStreamReader(processes[finalI].getInputStream()));
                         }
                     }
-                    pr.progress();
+                    if (verbose) {
+                        pr.progress();
+                    }
                     completionTimes.put(finalI + 1, System.currentTimeMillis() - jobStart);
                 }));
             }
@@ -190,33 +197,37 @@ public class KoinaModelCaller {
 
             long endTime = System.currentTimeMillis();
             long elapsedTime = endTime - startTime;
-            System.out.println("cURL and parse time in milliseconds: " + elapsedTime);
+            if (verbose) {
+                System.out.println("cURL and parse time in milliseconds: " + elapsedTime);
+            }
 
             //create plot
-            double[] xData = new double[numProcesses + 1];
-            double[] yData = new double[numProcesses + 1];
-            xData[0] = 0;
-            yData[0] = 0;
+            if (makeFigure) {
+                double[] xData = new double[numProcesses + 1];
+                double[] yData = new double[numProcesses + 1];
+                xData[0] = 0;
+                yData[0] = 0;
 
-            for (int i = 1; i < numProcesses + 1; i++) {
-                xData[i] = completionTimes.get(i) / 1000d;
-                yData[i] = i;
-            }
-            Arrays.sort(xData);
-            XYChart chart = new XYChartBuilder().width(1000).height(1000).build();
-            chart.setTitle("Koina timing");
-            chart.setXAxisTitle("Time (sec)");
-            chart.setYAxisTitle("Peptides predicted in " + JSONWriter.maxJsonLength + "'s");
-            chart.getStyler().setLegendPosition(Styler.LegendPosition.InsideNW);
-            chart.getStyler().setYAxisDecimalPattern("0");
-            chart.addSeries(model, xData, yData);
+                for (int i = 1; i < numProcesses + 1; i++) {
+                    xData[i] = completionTimes.get(i) / 1000d;
+                    yData[i] = i;
+                }
+                Arrays.sort(xData);
+                XYChart chart = new XYChartBuilder().width(1000).height(1000).build();
+                chart.setTitle("Koina timing");
+                chart.setXAxisTitle("Time (sec)");
+                chart.setYAxisTitle("Peptides predicted in " + JSONWriter.maxJsonLength + "'s");
+                chart.getStyler().setLegendPosition(Styler.LegendPosition.InsideNW);
+                chart.getStyler().setYAxisDecimalPattern("0");
+                chart.addSeries(model, xData, yData);
 
-            String dir = Constants.outputDirectory + File.separator + "MSBooster_plots";
-            if (! new File(dir).exists()) {
-                new File(dir).mkdirs();
+                String dir = Constants.outputDirectory + File.separator + "MSBooster_plots";
+                if (!new File(dir).exists()) {
+                    new File(dir).mkdirs();
+                }
+                BitmapEncoder.saveBitmap(chart, dir + File.separator + "Koina_timing_" +
+                        model + ".png", BitmapEncoder.BitmapFormat.PNG);
             }
-            BitmapEncoder.saveBitmap(chart, dir + File.separator + "Koina_timing.png",
-                    BitmapEncoder.BitmapFormat.PNG);
         } catch (Exception e) {
             e.printStackTrace();
         }
@@ -408,9 +419,8 @@ public class KoinaModelCaller {
         }
     }
 
-    public void assignMissingPeptidePredictions(KoinaLibReader klr) throws IOException {
-        BufferedReader TSVReader = new BufferedReader(new FileReader(
-                Constants.spectraRTPredInput.substring(0, Constants.spectraRTPredInput.length() - 4) + "_full.tsv"));
+    public void assignMissingPeptidePredictions(KoinaLibReader klr, String fulltsv) throws IOException {
+        BufferedReader TSVReader = new BufferedReader(new FileReader(fulltsv));
         String l;
         String[] line;
         ConcurrentHashMap<String, PredictionEntry> preds = klr.getPreds();

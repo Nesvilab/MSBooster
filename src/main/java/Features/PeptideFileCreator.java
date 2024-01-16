@@ -175,7 +175,7 @@ public class PeptideFileCreator {
         }
 
         HashSet<String> hSetHits = new HashSet<>(allHits.keySet());
-        System.out.println(hSetHits.size() + " peptides for prediction");
+        System.out.println(hSetHits.size() + " PSMs for prediction");
 
         //write to file
         try {
@@ -183,10 +183,10 @@ public class PeptideFileCreator {
             if (Constants.useKoina && !modelFormat.equals("Diann")) {
                 JSONWriter jw = new JSONWriter(modelFormat, hSetHits);
                 if (!Constants.usedKoina) {
-                    filename = jw.write(true);
+                    filename = jw.write(true, "jsonFiles");
                     Constants.usedKoina = true;
                 } else {
-                    filename = jw.write(false);
+                    filename = jw.write(false, "jsonFiles");
                 }
             } else {
                 //TODO: outfile name with prediction model in name

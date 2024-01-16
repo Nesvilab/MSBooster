@@ -401,6 +401,41 @@ public class PinReader {
         return peps.toArray(new String[0]);
     }
 
+    public LinkedList[] getTopPSMs(int num) throws IOException {
+        LinkedList<String> PSMs = new LinkedList<>();
+        LinkedList<Float> escores = new LinkedList<>();
+        LinkedList<Integer> scanNums = new LinkedList<>();
+
+        while (next()) {
+            float escore = Float.parseFloat(getEScore());
+            if (escore < Constants.RTescoreCutoff) {
+                PSMs.add(getPep().getBaseCharge() + "," + getPep().getDiann() + "," + getPep().getStripped());
+                escores.add(escore);
+                scanNums.add(getScanNum());
+            }
+        }
+
+        if (PSMs.size() > num) {
+            LinkedList<String> PSMs1 = new LinkedList<>();
+            LinkedList<Integer> scanNums1 = new LinkedList<>();
+
+            List<Integer> indices = new ArrayList<>();
+            for (int i = 0; i < escores.size(); i++) {
+                indices.add(i);
+            }
+            indices.sort(Comparator.comparing(escores::get));
+
+            for (int i = 0; i < num; i++) {
+                PSMs1.add(PSMs.get(indices.get(i)));
+                scanNums1.add(scanNums.get(indices.get(i)));
+            }
+            reset();
+            return new LinkedList[]{PSMs1, scanNums1};
+        }
+        reset();
+        return new LinkedList[]{PSMs, scanNums};
+    }
+
     private String getNCE(String frag) {
         if (Constants.NCE.equals("")) {
             String nce = String.valueOf(mzml.scanNumberObjects.get(getScanNum()).NCEs.get(frag));
@@ -419,7 +454,7 @@ public class PinReader {
     }
 
     //TODO: support for astral model?
-    private String getInstrument() {
+    String getInstrument() {
         HashSet<String> LumosKeys = new HashSet<>(Arrays.asList("LTQ", "Lumos", "Fusion", "Elite", "Velos", "Eclipse", "Tribrid"));
         HashSet<String> QEKeys = new HashSet<>(Arrays.asList("QE", "Exactive", "Exploris"));
         HashSet<String> SciexTOFKeys = new HashSet<>(Arrays.asList("Sciex", "TripleTOF"));

@@ -19,11 +19,15 @@ package Features;
 
 import External.DiannModelCaller;
 import External.KoinaModelCaller;
+import org.knowm.xchart.*;
+
+import org.knowm.xchart.style.BoxStyler;
 
 import java.io.*;
 import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
 import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
@@ -310,6 +314,10 @@ public class MainClass {
                 }
                 Constants.spectraRTPredModel = Constants.spectraRTPredModel.substring(0,
                         Constants.spectraRTPredModel.length() - 1);
+            } else {
+                String[] models = Constants.spectraRTPredModel.split(",");
+                Constants.rtModel = models[0];
+                Constants.spectraModel = models[1];
             }
 
             if (Constants.adaptiveFragmentNum) {
@@ -585,6 +593,206 @@ public class MainClass {
                 }
                 for (String currentModel : Constants.spectraRTPredModel.split(",")) {
                     if (Constants.useKoina && !currentModel.equals("DIA-NN")) {
+                        if (Constants.KoinaMS2models.contains(currentModel) && Constants.calibrateNCE) {
+                            //first load mzml files
+                            for (int j = 0; j < pmMatcher.mzmlReaders.length; j++) {
+                                if (pmMatcher.mzmlReaders[j] == null) {
+                                    MzmlReader mzml = new MzmlReader(pmMatcher.mzmlFiles[j].getCanonicalPath());
+                                    pmMatcher.mzmlReaders[j] = mzml;
+                                }
+
+                                if (Constants.FragmentationType.isEmpty()) {
+                                    try {
+                                        Set<String> fragTypes = pmMatcher.mzmlReaders[j]
+                                                .scanNumberObjects.firstEntry().getValue().NCEs.keySet();
+                                        if (fragTypes.contains("CID")) {
+                                            Constants.FragmentationType = "CID";
+                                        } else {
+                                            Constants.FragmentationType = "HCD";
+                                        }
+                                    } catch (Exception e) {
+                                        System.out.println("Setting fragmentation type to HCD. " +
+                                                "You can specify this with '--FragmentationType' via the command line " +
+                                                "or 'FragmentationType=' in the param file.");
+                                        Constants.FragmentationType = "HCD";
+                                    }
+                                }
+                            }
+
+                            if (Constants.FragmentationType.equals("CID") &&
+                                    Constants.spectraRTPredModel.contains("Prosit_2020_intensity_HCD")) {
+                                String oldModel = Constants.spectraModel;
+                                Constants.spectraRTPredModel =
+                                        Constants.spectraRTPredModel.replace("Prosit_2020_intensity_HCD",
+                                        "Prosit_2020_intensity_CID");
+                                Constants.spectraModel =
+                                        Constants.spectraModel.replace("Prosit_2020_intensity_HCD",
+                                        "Prosit_2020_intensity_CID");
+                                if (!oldModel.equals(Constants.spectraModel)) {
+                                    System.out.println("Replacing Prosit_2020_intensity_HCD with " +
+                                            "Prosit_2020_intensity_CID");
+                                    currentModel = "Prosit_2020_intensity_CID";
+                                    modelsList = Arrays.asList(Constants.spectraRTPredModel.split(","));
+                                    models = new ArrayList<>(modelsList);
+                                    if (models.size() != 1) {
+                                        if (models.get(0).equals(models.get(1))) {
+                                            models.remove(1);
+                                            Constants.spectraRTPredModel = models.get(0);
+                                            if (Constants.spectraRTPredModel.equals("DIA-NN")) {
+                                                Constants.useKoina = false;
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+
+                            if (Constants.nceModels.contains(Constants.spectraModel)) {
+                                System.out.println("Calibrating NCE");
+
+                                //need to collect top 1000 peptides for calibration
+                                //approximate by doing a subset per pin
+                                int numTopPSMs = (int) Math.ceil((float) Constants.numPSMsToCalibrateNCE /
+                                        (float) pmMatcher.pinFiles.length);
+                                HashSet<String> peptideSet = new HashSet<>();
+                                HashMap<String, LinkedList<Integer>> scanNums = new HashMap<>();
+                                HashMap<String, LinkedList<String>> peptides = new HashMap<>();
+                                for (int j = 0; j < pmMatcher.pinFiles.length; j++) {
+                                    File pinFile = pmMatcher.pinFiles[j];
+                                    PinReader pinReader = new PinReader(pinFile.getAbsolutePath());
+                                    LinkedList[] topPSMs = pinReader.getTopPSMs(numTopPSMs);
+                                    peptideSet.addAll(topPSMs[0]);
+                                    scanNums.put(pmMatcher.mzmlFiles[j].getName(), topPSMs[1]);
+                                    peptides.put(pmMatcher.mzmlFiles[j].getName(), topPSMs[0]);
+                                    if (Constants.instrument.isEmpty()) {
+                                        Constants.instrument = pinReader.getInstrument();
+                                    }
+                                }
+
+                                //write to file
+                                String jsonFolder = "";
+                                HashSet<String> allHits = new HashSet<>();
+                                FileWriter myWriter = new FileWriter(Constants.outputDirectory + File.separator +
+                                        "NCE_calibration_full.tsv");
+                                for (String peptide : peptideSet) {
+                                    String[] peptFormats = peptide.split(",");
+
+                                    String stripped = peptFormats[2];
+
+                                    if ((currentModel.contains("Prosit") || currentModel.contains("ms2pip") || currentModel.contains("Deeplc"))
+                                            && stripped.contains("U")) { // no peptides with U
+                                        continue;
+                                    }
+                                    if (currentModel.contains("ms2pip") && stripped.length() > 30) { //peptide has length limit
+                                        continue;
+                                    }
+
+                                    String pep = peptFormats[1].replace("UniMod", "UNIMOD"); //need diann here
+                                    if (pep.contains("[TMT]")) {
+                                        pep = pep.replace("[TMT]", "[UNIMOD:737]");
+                                    }
+
+                                    if (pep.startsWith("[")) { //this is the case for all n term mods //TODO deal with c term mods
+                                        int splitpoint = pep.indexOf("]");
+                                        if (currentModel.contains("Prosit")) {
+                                            pep = pep.substring(splitpoint + 1);
+                                        } else {
+                                            pep = pep.substring(0, splitpoint + 1) + "-" + pep.substring(splitpoint + 1);
+                                        }
+                                    }
+                                    String[] baseCharge = peptFormats[0].split("\\|");
+                                    allHits.add(pep + "," + baseCharge[1]);
+
+                                    //need to generate full.tsv
+                                    myWriter.write(baseCharge[0] + "\t" + baseCharge[1] + "\n");
+                                }
+                                myWriter.close();
+
+
+                                //iterate through every NCE
+                                TreeMap<Integer, ArrayList<Double>> similarities = new TreeMap<>();
+                                double bestMedian = 0d;
+                                for (int NCE = Constants.minNCE; NCE < Constants.maxNCE + 1; NCE++) {
+                                    HashSet<String> NCEhits = new HashSet<>();
+                                    for (String s : allHits) {
+                                        NCEhits.add(s + "," + NCE + "," + Constants.instrument + "," + Constants.FragmentationType);
+                                    }
+
+                                    JSONWriter jw = new JSONWriter(currentModel, NCEhits);
+                                    if (NCE == Constants.minNCE) {
+                                        jsonFolder = jw.write(true, "NCE_calibration");
+                                    } else {
+                                        jsonFolder = jw.write(false, "NCE_calibration");
+                                    }
+
+                                    //send predictions to Koina
+                                    KoinaLibReader klr = new KoinaLibReader();
+                                    KoinaModelCaller kmc = new KoinaModelCaller();
+                                    kmc.callModel(currentModel, klr, jsonFolder, executorService, false, false);
+                                    kmc.assignMissingPeptidePredictions(klr, Constants.outputDirectory +
+                                            File.separator + "NCE_calibration_full.tsv");
+                                    ConcurrentHashMap<String, PredictionEntry> allPreds = klr.allPreds;
+
+                                    //compare pred and exp and set NCE
+                                    //make mzmlsscannumber objects and set peptide objects and calculate similarities
+                                    //can move this after reading in mzml files
+                                    ArrayList<Double> similarity = new ArrayList<>();
+                                    Constants.removeRankPeaks = false;
+                                    for (int j = 0; j < pmMatcher.mzmlReaders.length; j++) {
+                                        MzmlReader mzmlReader = pmMatcher.mzmlReaders[j];
+                                        LinkedList<Integer> thisScanNums = scanNums.get(pmMatcher.mzmlFiles[j].getName());
+                                        LinkedList<String> thisPeptides = peptides.get(pmMatcher.mzmlFiles[j].getName());
+
+                                        for (int k = 0; k < thisScanNums.size(); k++) {
+                                            int scanNum = thisScanNums.get(k);
+                                            MzmlScanNumber msn = mzmlReader.getScanNumObject(scanNum);
+
+                                            String peptide = thisPeptides.get(k).split(",")[0];
+                                            String[] baseCharge = peptide.split("\\|");
+
+                                            msn.setPeptideObject(
+                                                    new PeptideFormatter(baseCharge[0], baseCharge[1], "base"),
+                                                    1, 1, "0", allPreds);
+                                            similarity.add(msn.getPeptideObject(1).spectralSimObj.unweightedSpectralEntropy());
+                                            msn.peptideObjects.remove(0);
+                                        }
+                                    }
+                                    Constants.removeRankPeaks = true; //should be whatever it was before
+
+                                    //calculate median
+                                    similarities.put(NCE, similarity);
+                                    double median = StatMethods.medianDouble(similarity);
+                                    if (median > bestMedian) {
+                                        bestMedian = median;
+                                        Constants.NCE = String.valueOf(NCE);
+                                    }
+                                }
+                                System.out.println("Best NCE after calibration is " + Constants.NCE);
+                                if (Constants.NCE.equals(String.valueOf(Constants.minNCE))) {
+                                    System.out.println("Consider lowering minNCE below " + Constants.minNCE);
+                                } else if (Constants.NCE.equals(String.valueOf(Constants.maxNCE))) {
+                                    System.out.println("Consider increasing maxNCE above " + Constants.maxNCE);
+                                }
+
+                                //create figure
+                                BoxChart chart = new BoxChartBuilder().title("NCE calibration").
+                                        width(200 * (Constants.maxNCE - Constants.minNCE)).height(1000).
+                                        yAxisTitle("unweightedSpectralEntropy").build(); //TODO: adapt to any MS2 feature?
+                                chart.getStyler().setBoxplotCalCulationMethod(BoxStyler.BoxplotCalCulationMethod.N_LESS_1);
+
+                                for (Map.Entry<Integer, ArrayList<Double>> entry : similarities.entrySet()) {
+                                    chart.addSeries(String.valueOf(entry.getKey()), entry.getValue());
+                                }
+
+                                try {
+                                    BitmapEncoder.saveBitmap(chart, Constants.outputDirectory + File.separator +
+                                                    "NCE_calibration" + File.separator + "calibration.png",
+                                            BitmapEncoder.BitmapFormat.PNG);
+                                } catch (IOException e) {
+                                    e.printStackTrace();
+                                }
+                            }
+                        }
+
                         PeptideFileCreator.createPeptideFile(pmMatcher,
                                 Constants.spectraRTPredInput.substring(0, Constants.spectraRTPredInput.length() - 4)
                                         + "_" + currentModel + ".json", currentModel);
@@ -656,7 +864,7 @@ public class MainClass {
             if ((Constants.spectraRTPredFile == null) && (createSpectraRTPredFile2)) {
                 for (String currentModel : models) {
                     if (Constants.useKoina && !currentModel.equals("DIA-NN")) {
-                        kmc.callModel(currentModel, klr, executorService);
+                        kmc.callModel(currentModel, klr, Constants.JsonDirectory, executorService, true, true);
                         spectraRTPredFile = Constants.outputDirectory + File.separator + "spectraRT_koina.mgf" +
                                 spectraRTPredFile;
                     } else {
@@ -669,7 +877,8 @@ public class MainClass {
                 }
             }
             if (Constants.useKoina) {
-                kmc.assignMissingPeptidePredictions(klr);
+                kmc.assignMissingPeptidePredictions(klr,
+                        Constants.spectraRTPredInput.substring(0, Constants.spectraRTPredInput.length() - 4) + "_full.tsv");
                 MgfFileWriter mfw = new MgfFileWriter(klr);
                 mfw.write(Constants.outputDirectory + File.separator + "spectraRT_koina.mgf");
             }

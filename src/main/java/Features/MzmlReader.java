@@ -290,7 +290,7 @@ public class MzmlReader {
                 System.exit(1);
             }
         }
-        System.out.println("");
+        //System.out.println("");
         pin.close();
         pin.reset();
     }

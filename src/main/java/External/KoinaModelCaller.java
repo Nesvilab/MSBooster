@@ -136,7 +136,7 @@ public class KoinaModelCaller {
                                     processes[finalI].destroy();
                                 }
                             };
-                            timer.schedule(timerTask, waitTime.get() * (attempts + 1));
+                            timer.schedule(timerTask, waitTime.get() * (attempts + failedAttempts + 1));
 
                             String line = "";
                             while ((line = reader.readLine()) != null) {
@@ -164,7 +164,7 @@ public class KoinaModelCaller {
                                     System.out.println(commands[finalI]);
                                     System.out.println(filenameArray[finalI] + " had output that ended in: ");
                                     System.out.println(ending);
-                                    System.out.println("Retried calling " + filenameArray[finalI] + " " + attempts +
+                                    System.out.println("Retried calling " + filenameArray[finalI] + " " + failedAttempts +
                                             " times. Exiting.");
                                     System.exit(1);
                                 }

@@ -100,7 +100,11 @@ public class NCEcalibrator {
             HashSet<String> allHits = new HashSet<>();
             String jsonOutFolder = Constants.outputDirectory + File.separator + "NCE_calibration";
             if (Files.exists(Paths.get(jsonOutFolder))) {
-                FileUtils.cleanDirectory(new File(jsonOutFolder));
+                try {
+                    FileUtils.cleanDirectory(new File(jsonOutFolder));
+                } catch (IOException e) {
+                    System.out.println(e.getMessage());
+                }
             } else {
                 Files.createDirectories(Paths.get(jsonOutFolder));
             }

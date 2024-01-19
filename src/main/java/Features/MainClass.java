@@ -20,29 +20,20 @@ package Features;
 import External.DiannModelCaller;
 import External.KoinaModelCaller;
 import External.NCEcalibrator;
-import com.google.common.util.concurrent.AtomicDouble;
-import org.apache.commons.io.FileUtils;
-import org.knowm.xchart.*;
-
-import org.knowm.xchart.style.BoxStyler;
 
 import java.io.*;
 import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
-import java.nio.file.Files;
-import java.nio.file.Paths;
 import java.util.*;
-import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
-import java.util.concurrent.Future;
 
 //this is what I use in the java jar file
 public class MainClass {
     public static ExecutorService executorService;
     public static void main(String[] args) throws Exception {
         Locale.setDefault(Locale.US);
-        System.out.println("MSBooster v1.1.34-koina");
+        System.out.println("MSBooster v1.1.35-koina");
 
         try {
             //accept command line inputs

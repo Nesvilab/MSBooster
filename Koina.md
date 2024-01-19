@@ -90,6 +90,7 @@ uncheck the MSFragger and MSBooster checkboxes.
         - Use mass shifts for AA substitutions?
         - no C+57
     - [DDA Class I and II timsTOF](https://www.mcponline.org/article/S1535-9476(23)00073-7/fulltext)
+    - [DDA Class I stepped HCD](https://www.sciencedirect.com/science/article/pii/S2666166721000927)
     - [DIA](https://www.mcponline.org/article/S1535-9476(21)00053-0/fulltext)
 - [timsTOF-Pro machine](https://www.ncbi.nlm.nih.gov/pmc/articles/PMC6283298/)
     - Prosit already has a model for comparison
@@ -134,3 +135,4 @@ training?
 
 - supported peptides
   - HCD vs CID (fragmentation)
+- table for info needed by each model

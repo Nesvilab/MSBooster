@@ -33,7 +33,7 @@ public class MainClass {
     public static ExecutorService executorService;
     public static void main(String[] args) throws Exception {
         Locale.setDefault(Locale.US);
-        System.out.println("MSBooster v1.1.35-koina");
+        System.out.println("MSBooster v1.1.36-koina");
 
         try {
             //accept command line inputs
@@ -314,7 +314,11 @@ public class MainClass {
             } else {
                 String[] models = Constants.spectraRTPredModel.split(",");
                 Constants.rtModel = models[0];
-                Constants.spectraModel = models[1];
+                if (models.length == 1) {
+                    Constants.spectraModel = models[0];
+                } else {
+                    Constants.spectraModel = models[1];
+                }
             }
 
             if (Constants.adaptiveFragmentNum) {

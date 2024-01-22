@@ -42,6 +42,8 @@ public class MzmlScanNumber {
     float normalizedRT;
     Float IM;
     int IMbinSize;
+    Double lowerLimit;
+    Double upperLimit;
     public HashMap<String, Float> NCEs = new HashMap<>();
     ArrayList<PeptideObj> peptideObjects = new ArrayList<>();
     //double[] mzFreqs;
@@ -64,6 +66,9 @@ public class MzmlScanNumber {
         if (Constants.useIM) {
             this.IM = scan.getIm().floatValue();
         }
+        lowerLimit = scan.getScanMzWindowLower();
+        upperLimit = scan.getScanMzWindowUpper();
+
         if (!Constants.NCE.isEmpty() && !Constants.FragmentationType.isEmpty()) {
             NCEs.put(Constants.FragmentationType, Float.parseFloat(Constants.NCE));
         } else {
@@ -130,6 +135,22 @@ public class MzmlScanNumber {
             float[] predIntensities = predictionEntry.intensities;
             float predRT = predictionEntry.RT;
             float predIM = predictionEntry.IM;
+
+            //filter out predicted fragments if not in range
+            ArrayList<Float> tmpMZs = new ArrayList<>();
+            ArrayList<Float> tmpIntensities = new ArrayList<>();
+            for (int i = 0; i < predMZs.length; i++) {
+                if ((predMZs[i] >= lowerLimit) & (predMZs[i] <= upperLimit)) {
+                    tmpMZs.add(predMZs[i]);
+                    tmpIntensities.add(predIntensities[i]);
+                }
+            }
+            predMZs = new float[tmpMZs.size()];
+            predIntensities = new float[tmpIntensities.size()];
+            for (int i = 0; i < tmpMZs.size(); i++) {
+                predMZs[i] = tmpMZs.get(i);
+                predIntensities[i] = tmpIntensities.get(i);
+            }
 
             if (predMZs.length > 1) {
                 if (Constants.divideFragments.equals("0")) {

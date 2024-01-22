@@ -6,7 +6,7 @@
 
     <groupId>org.example</groupId>
     <artifactId>MSBooster</artifactId>
-    <version>1.1.35-koina</version>
+    <version>1.1.36-koina</version>
 
     <properties>
         <maven.compiler.source>1.8</maven.compiler.source>

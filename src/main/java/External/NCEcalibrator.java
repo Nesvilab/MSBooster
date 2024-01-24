@@ -15,9 +15,7 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.*;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.Future;
+import java.util.concurrent.*;
 
 public class NCEcalibrator {
     public static Object[] calibrateNCE(PinMzmlMatcher pmMatcher, String currentModel, ArrayList<String> models)
@@ -102,9 +100,7 @@ public class NCEcalibrator {
             if (Files.exists(Paths.get(jsonOutFolder))) {
                 try {
                     FileUtils.cleanDirectory(new File(jsonOutFolder));
-                } catch (IOException e) {
-                    System.out.println(e.getMessage());
-                }
+                } catch (IOException e) {}
             } else {
                 Files.createDirectories(Paths.get(jsonOutFolder));
             }
@@ -156,6 +152,8 @@ public class NCEcalibrator {
             for (int NCE = Constants.minNCE; NCE < Constants.maxNCE + 1; NCE++) {
                 int finalNCE = NCE;
                 futureList.add(MainClass.executorService.submit(() -> {
+                    ExecutorService executorService = Executors.newSingleThreadExecutor();
+
                     HashSet<String> NCEhits = new HashSet<>();
                     for (String s : allHits) {
                         NCEhits.add(s + "," + finalNCE + "," + Constants.instrument + "," + Constants.FragmentationType);
@@ -164,7 +162,8 @@ public class NCEcalibrator {
                     JSONWriter jw = new JSONWriter(finalCurrentModel, NCEhits);
                     String jsonFolder = "";
                     try {
-                        jsonFolder = jw.write(true, "NCE_calibration" + File.separator + finalNCE);
+                        jsonFolder = jw.write(true, "NCE_calibration" + File.separator + finalNCE,
+                                executorService);
                     } catch (Exception e) {
                         e.printStackTrace();
                         System.exit(1);
@@ -173,7 +172,8 @@ public class NCEcalibrator {
                     //send predictions to Koina
                     KoinaLibReader klr = new KoinaLibReader();
                     KoinaModelCaller kmc = new KoinaModelCaller();
-                    kmc.callModel(finalCurrentModel, klr, jsonFolder, MainClass.executorService, false, false);
+                    kmc.callModel(finalCurrentModel, klr, jsonFolder, executorService, false, false);
+                    executorService.shutdown();
                     try {
                         kmc.assignMissingPeptidePredictions(klr, jsonOutFolder +
                                 File.separator + "NCE_calibration_full.tsv");

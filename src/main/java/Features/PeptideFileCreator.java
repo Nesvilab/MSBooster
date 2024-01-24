@@ -183,10 +183,10 @@ public class PeptideFileCreator {
             if (Constants.useKoina && !modelFormat.equals("Diann")) {
                 JSONWriter jw = new JSONWriter(modelFormat, hSetHits);
                 if (!Constants.usedKoina) {
-                    filename = jw.write(true, "jsonFiles");
+                    filename = jw.write(true, "jsonFiles", MainClass.executorService);
                     Constants.usedKoina = true;
                 } else {
-                    filename = jw.write(false, "jsonFiles");
+                    filename = jw.write(false, "jsonFiles", MainClass.executorService);
                 }
             } else {
                 //TODO: outfile name with prediction model in name

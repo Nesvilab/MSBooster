@@ -25,15 +25,14 @@ import java.io.*;
 import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
 import java.util.*;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
+import java.util.concurrent.*;
 
 //this is what I use in the java jar file
 public class MainClass {
     public static ExecutorService executorService;
     public static void main(String[] args) throws Exception {
         Locale.setDefault(Locale.US);
-        System.out.println("MSBooster v1.1.36-koina");
+        System.out.println("MSBooster v1.1.37-koina");
 
         try {
             //accept command line inputs

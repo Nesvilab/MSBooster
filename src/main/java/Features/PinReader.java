@@ -403,34 +403,28 @@ public class PinReader {
 
     public LinkedList[] getTopPSMs(int num) throws IOException {
         LinkedList<String> PSMs = new LinkedList<>();
-        LinkedList<Float> escores = new LinkedList<>();
         LinkedList<Integer> scanNums = new LinkedList<>();
 
+        //quicker way of getting top NCE
+        PriorityQueue<Float> topEscores = new PriorityQueue<>(num, (a, b) -> Float.compare(b, a));
         while (next()) {
             float escore = Float.parseFloat(getEScore());
-            if (escore < Constants.RTescoreCutoff) {
-                PSMs.add(getPep().getBaseCharge() + "," + getPep().getDiann() + "," + getPep().getStripped());
-                escores.add(escore);
-                scanNums.add(getScanNum());
+            if (topEscores.size() < num) {
+                topEscores.offer(escore);
+            } else if (escore < topEscores.peek()) {
+                topEscores.poll();
+                topEscores.offer(escore);
             }
         }
+        reset();
+        float eScoreCutoff = topEscores.peek();
 
-        if (PSMs.size() > num) {
-            LinkedList<String> PSMs1 = new LinkedList<>();
-            LinkedList<Integer> scanNums1 = new LinkedList<>();
-
-            List<Integer> indices = new ArrayList<>();
-            for (int i = 0; i < escores.size(); i++) {
-                indices.add(i);
+        while (next() && PSMs.size() < num) {
+            float escore = Float.parseFloat(getEScore());
+            if (escore <= eScoreCutoff) {
+                PSMs.add(getPep().getBaseCharge() + "," + getPep().getDiann() + "," + getPep().getStripped());
+                scanNums.add(getScanNum());
             }
-            indices.sort(Comparator.comparing(escores::get));
-
-            for (int i = 0; i < num; i++) {
-                PSMs1.add(PSMs.get(indices.get(i)));
-                scanNums1.add(scanNums.get(indices.get(i)));
-            }
-            reset();
-            return new LinkedList[]{PSMs1, scanNums1};
         }
         reset();
         return new LinkedList[]{PSMs, scanNums};

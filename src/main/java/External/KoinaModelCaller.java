@@ -20,6 +20,7 @@ package External;
 import Features.*;
 import com.google.gson.Gson;
 import com.google.gson.stream.JsonReader;
+import org.checkerframework.checker.units.qual.A;
 import org.knowm.xchart.*;
 import org.knowm.xchart.internal.chartpart.Chart;
 import org.knowm.xchart.style.Styler;
@@ -31,21 +32,27 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 
 public class KoinaModelCaller {
-    private final int AlphaPeptDeepMzIdx = 1;
-    private final int AlphaPeptDeepIntIdx = 0;
-    private final int AlphaPeptDeepFragIdx = 2;
-    private final int PrositMzIdx = 1;
-    private final int PrositIntIdx = 2;
-    private final int PrositFragIdx = 0;
-    private final int ms2pipMzIdx = 1;
-    private final int ms2pipIntIdx = 2;
-    private final int ms2pipFragIdx = 0;
-    private String modelType;
+    private static final int AlphaPeptDeepMzIdx = 1;
+    private static final int AlphaPeptDeepIntIdx = 0;
+    private static final int AlphaPeptDeepFragIdx = 2;
+    private static final int PrositMzIdx = 1;
+    private static final int PrositIntIdx = 2;
+    private static final int PrositFragIdx = 0;
+    private static final int ms2pipMzIdx = 1;
+    private static final int ms2pipIntIdx = 2;
+    private static final int ms2pipFragIdx = 0;
+    private static String modelType;
+    private static final HashMap<String, Integer> recommendedThreads = makeRecommendedThreads();
+    private static HashMap<String, Integer> makeRecommendedThreads() {
+        HashMap<String, Integer> map = new HashMap<>();
+        map.put("AlphaPept_ms2_generic", 30);
+        return map;
+    }
 
     public KoinaModelCaller(){}
 
     //TODO: add functions to clean this up
-    public void callModel(String model, KoinaLibReader klr, String jsonFolder, ExecutorService executorService,
+    public void callModel(String model, KoinaLibReader klr, String jsonFolder, ScheduledThreadPoolExecutor executorService,
                           boolean verbose, boolean makeFigure) {
         this.modelType = model.toLowerCase().split("_")[0];
 
@@ -75,23 +82,7 @@ public class KoinaModelCaller {
                     filenameArraylist.add(fname);
                 }
             }
-            String[] filenameArray = new String[filenameArraylist.size()];
-            for (int i = 0; i < filenameArray.length; i++) {
-                filenameArray[i] = filenameArraylist.get(i);
-            }
-
-            Process[] processes = new Process[filenameArray.length];
-            BufferedReader[] readers = new BufferedReader[filenameArray.length];
-            String[] commands = new String[filenameArray.length];
-            int numProcesses = 0;
-
-            //https://www.baeldung.com/linux/curl-parallel-download#multiple-curl-instances-with-a-for-loop
-            for (String fileString : filenameArray) {
-                String command = "curl -s -H content-type:application/json -d @" + fileString +
-                        " https://koina.proteomicsdb.org/v2/models/" + model + "/infer";
-                commands[numProcesses] = command;
-                numProcesses += 1;
-            }
+            int numProcesses = filenameArraylist.size();
 
             ProgressReporter pr = new ProgressReporter(numProcesses);
             AtomicLong waitTime;
@@ -102,97 +93,67 @@ public class KoinaModelCaller {
             }
             AtomicInteger numTimes = new AtomicInteger(10);
             ConcurrentHashMap<Integer, Long> completionTimes = new ConcurrentHashMap<>();
+            ArrayList<KoinaTask> tasks = new ArrayList<>();
             List<Future> futureList = new ArrayList<>();
 
-            long jobStart = System.currentTimeMillis();
             for (int i = 0; i < numProcesses; i++) {
-                String finalProperty = property;
-                int finalI = i;
-                futureList.add(executorService.submit(() -> {
-                    int attempts = 0;
-                    int failedAttempts = 0;
-                    while (true) {
-                        StringBuilder koinaSb = new StringBuilder();
-                        try {
-                            //delay so we don't overwhelm server
-                            if (finalI < Constants.numThreads) {
-                                Thread.sleep(finalI * 100L);
-                            }
-
-                            long start = System.currentTimeMillis();
-                            ProcessBuilder builder = new ProcessBuilder(commands[finalI].split(" "));
-                            builder.redirectErrorStream(true);
-                            processes[finalI] = builder.start();
-                            readers[finalI] = new BufferedReader(new InputStreamReader(processes[finalI].getInputStream()));
-
-                            Process p = processes[finalI];
-                            BufferedReader reader = readers[finalI];
-
-                            //give it 10s to run. Goal is to cut off 504 error early
-                            Timer timer = new Timer();
-                            TimerTask timerTask = new TimerTask() {
-                                @Override
-                                public void run() {
-                                    processes[finalI].destroy();
-                                }
-                            };
-                            timer.schedule(timerTask, waitTime.get() * (attempts + failedAttempts + 1));
-
-                            String line = "";
-                            while ((line = reader.readLine()) != null) {
-                                koinaSb.append(line);
-                            }
-                            reader.close();
-                            p.waitFor();
-                            p.destroy();
-
-                            parseKoinaOutput(filenameArray[finalI], koinaSb.toString(),
-                                    finalProperty, model, klr);
-                            timer.cancel();
-                            long timeDiff = System.currentTimeMillis() - start;
-                            long currentWaitTime = waitTime.get();
-                            waitTime.set(currentWaitTime + ((2 * timeDiff - currentWaitTime) /
-                                    (Math.min(Constants.numThreads, numTimes.getAndIncrement())))); //local mean
-                            break;
-                        } catch (Exception e) {
-                            String ending = koinaSb.toString().substring(Math.max(0, koinaSb.toString().length() - 1000));
-                            if (ending.isEmpty()) {
-                                attempts++;
-                            } else {
-                                failedAttempts++;
-                                if (failedAttempts == Constants.numKoinaAttempts) {
-                                    System.out.println(commands[finalI]);
-                                    System.out.println(filenameArray[finalI] + " had output that ended in: ");
-                                    System.out.println(ending);
-                                    System.out.println("Retried calling " + filenameArray[finalI] + " " + failedAttempts +
-                                            " times. Exiting.");
-                                    System.exit(1);
-                                }
-                            }
-
-                            //set up again
-                            String command = "curl -s -H content-type:application/json -d @" + filenameArray[finalI] +
-                                    " https://koina.proteomicsdb.org/v2/models/" + model + "/infer";
-
-                            ProcessBuilder builder = new ProcessBuilder(command.split(" "));
-                            builder.redirectErrorStream(true);
-                            try {
-                                processes[finalI] = builder.start();
-                            } catch (IOException ioException) {
-                                ioException.printStackTrace();
-                            }
-                            readers[finalI] = new BufferedReader(new InputStreamReader(processes[finalI].getInputStream()));
-                        }
-                    }
-                    if (verbose) {
-                        pr.progress();
-                    }
-                    completionTimes.put(finalI + 1, System.currentTimeMillis() - jobStart);
-                }));
+                String command = "curl -s -H content-type:application/json -d @" + filenameArraylist.get(i) +
+                        " https://koina.proteomicsdb.org/v2/models/" + model + "/infer";
+                KoinaTask task = new KoinaTask(filenameArraylist.get(i), command, property, model, i,
+                        klr, waitTime, numTimes);
+                tasks.add(task);
+                futureList.add(executorService.submit(task));
             }
 
-            for (Future future : futureList) {
-                future.get();
+            AtomicInteger finishedJobs = new AtomicInteger(1);
+            int ogSize = executorService.getCorePoolSize();
+
+            //hardcoded limitation of some models, until proven that Koina can handle more
+            for (Map.Entry<String, Integer> entry : recommendedThreads.entrySet()) {
+                if (entry.getKey().equals(model)) {
+                    if (entry.getValue() < ogSize) {
+                        executorService.setCorePoolSize(entry.getValue());
+                        executorService.setMaximumPoolSize(entry.getValue());
+                    }
+                    break;
+                }
+            }
+
+            int newSize = executorService.getCorePoolSize();
+            long jobStart = System.currentTimeMillis();
+            while (finishedJobs.get() < tasks.size() + 1) {
+                for (int i = 0; i < tasks.size(); i++) {
+                    KoinaTask task = tasks.get(i);
+                    Future future = futureList.get(i);
+                    if (!task.completed && future.isDone()) {
+                        boolean success = (boolean) future.get();
+                        if (success) {
+                            if (verbose) {
+                                pr.progress();
+                            }
+                            completionTimes.put(finishedJobs.getAndIncrement(), System.currentTimeMillis() - jobStart);
+                            task.completed = true;
+
+                            //put threads back in
+                            if (finishedJobs.get() % 10 == 0) {
+                                if (newSize < ogSize) {
+                                    newSize++;
+                                    executorService.setMaximumPoolSize(newSize);
+                                    executorService.setCorePoolSize(newSize);
+                                }
+                            }
+                        } else {
+                            if (newSize > 1) {
+                                newSize--;
+                                executorService.setCorePoolSize(newSize);
+                                executorService.setMaximumPoolSize(newSize);
+                            }
+                            waitTime.addAndGet(5000);
+                            futureList.set(i, executorService.submit(task));
+                        }
+                    }
+                }
+                Thread.sleep(100);
             }
 
             long endTime = System.currentTimeMillis();
@@ -200,6 +161,9 @@ public class KoinaModelCaller {
             if (verbose) {
                 System.out.println("cURL and parse time in milliseconds: " + elapsedTime);
             }
+
+            executorService.setMaximumPoolSize(ogSize);
+            executorService.setCorePoolSize(ogSize);
 
             //create plot
             if (makeFigure) {
@@ -233,7 +197,7 @@ public class KoinaModelCaller {
         }
     }
 
-    public void parseKoinaOutput(String fileName, String koinaString, String property, String model,
+    public static void parseKoinaOutput(String fileName, String koinaString, String property, String model,
                                         KoinaLibReader klr) throws IOException {
         if (property.toLowerCase().equals("rt")) {
             String rts = koinaString.split("data")[2];
@@ -353,7 +317,7 @@ public class KoinaModelCaller {
         }
     }
 
-    private void assignRTs(String fileName, float[] RTs, KoinaLibReader klr) throws IOException {
+    private static void assignRTs(String fileName, float[] RTs, KoinaLibReader klr) throws IOException {
         String[] peptides = readJSON(fileName, RTs.length);
         ConcurrentHashMap<String, PredictionEntry> preds = klr.getPreds();
         for (int i = 0; i < peptides.length; i++) {
@@ -387,8 +351,8 @@ public class KoinaModelCaller {
         }
     }
 
-    private void assignMS2(String fileName, float[][] intensities,
-                           String[][] fragmentIonTypes, int[][] fragNums, int[][] charges, KoinaLibReader klr)
+    private static void assignMS2(String fileName, float[][] intensities,
+                                  String[][] fragmentIonTypes, int[][] fragNums, int[][] charges, KoinaLibReader klr)
             throws IOException {
         String[] peptides = readJSON(fileName, intensities.length);
         ConcurrentHashMap<String, PredictionEntry> preds = klr.getPreds();
@@ -484,7 +448,7 @@ public class KoinaModelCaller {
         }
     }
 
-    private String[] readJSON(String fileName, int length) throws IOException {
+    private static String[] readJSON(String fileName, int length) throws IOException {
         String[] peptides = new String[length];
         String[] charges = new String[length];
         ArrayList<String> names = new ArrayList<>();

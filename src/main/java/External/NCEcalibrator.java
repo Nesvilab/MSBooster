@@ -152,7 +152,7 @@ public class NCEcalibrator {
             for (int NCE = Constants.minNCE; NCE < Constants.maxNCE + 1; NCE++) {
                 int finalNCE = NCE;
                 futureList.add(MainClass.executorService.submit(() -> {
-                    ExecutorService executorService = Executors.newSingleThreadExecutor();
+                    ScheduledThreadPoolExecutor executorService = new ScheduledThreadPoolExecutor(1);
 
                     HashSet<String> NCEhits = new HashSet<>();
                     for (String s : allHits) {

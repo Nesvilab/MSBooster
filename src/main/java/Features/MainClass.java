@@ -29,7 +29,7 @@ import java.util.concurrent.*;
 
 //this is what I use in the java jar file
 public class MainClass {
-    public static ExecutorService executorService;
+    public static ScheduledThreadPoolExecutor executorService;
     public static void main(String[] args) throws Exception {
         Locale.setDefault(Locale.US);
         System.out.println("MSBooster v1.1.37-koina");
@@ -347,7 +347,7 @@ public class MainClass {
                 Constants.numThreads = run.availableProcessors() - 1;
             } //otherwise use user-defined
             System.out.println("Using " + Constants.numThreads + " threads");
-            executorService = Executors.newFixedThreadPool(Constants.numThreads);
+            executorService = new ScheduledThreadPoolExecutor(Constants.numThreads);
 
             //check that at least pinPepXMLDirectory and mzmlDirectory are provided
             if (Constants.pinPepXMLDirectory == null) {

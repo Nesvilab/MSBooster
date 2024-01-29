@@ -118,6 +118,9 @@ public class NCEcalibrator {
                 if (currentModel.contains("ms2pip") && stripped.length() > 30) { //peptide has length limit
                     continue;
                 }
+                if (currentModel.contains("Prosit") && currentModel.contains("TMT") && stripped.length() > 30) {
+                    continue;
+                }
 
                 String pep = peptFormats[1].replace("UniMod", "UNIMOD"); //need diann here
                 if (pep.contains("[TMT]")) {
@@ -127,9 +130,19 @@ public class NCEcalibrator {
                 if (pep.startsWith("[")) { //this is the case for all n term mods //TODO deal with c term mods
                     int splitpoint = pep.indexOf("]");
                     if (currentModel.contains("Prosit")) {
-                        pep = pep.substring(splitpoint + 1);
+                        if (currentModel.contains("TMT") && pep.startsWith("[UNIMOD:737]")) {
+                            pep = pep.substring(0, splitpoint + 1) + "-" + pep.substring(splitpoint + 1);
+                        } else {
+                            pep = pep.substring(splitpoint + 1);
+                        }
                     } else {
                         pep = pep.substring(0, splitpoint + 1) + "-" + pep.substring(splitpoint + 1);
+                    }
+                }
+                if (currentModel.contains("Prosit") && currentModel.contains("TMT")) {
+                    pep = pep.replace("S[UNIMOD:737]", "S");
+                    if (!pep.startsWith("[")) {
+                        pep = "[UNIMOD:737]-" + pep;
                     }
                 }
                 String[] baseCharge = peptFormats[0].split("\\|");

@@ -89,7 +89,9 @@ public class KoinaTask implements Callable<Boolean> {
                 System.out.println(filename + " had output that ended in: ");
                 System.out.println(ending);
                 System.out.println("Retried calling " + filename + " " + failedAttempts +
-                        " times. Exiting.");
+                        " times. This many be fixable by sending prediction requests to Koina at a slower rate " +
+                        "by lowering the --numThreads parameter in the parameter file.");
+                System.out.println("Exiting");
                 System.exit(1);
             }
 

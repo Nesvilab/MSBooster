@@ -357,6 +357,9 @@ public class PinReader {
             if (modelFormat.contains("ms2pip") && pf.stripped.length() > 30) { //peptide has length limit
                 continue;
             }
+            if (modelFormat.contains("Prosit") && modelFormat.contains("TMT") && pf.stripped.length() > 30) {
+                continue;
+            }
 
             String NCE;
             String fragmentation;
@@ -388,9 +391,19 @@ public class PinReader {
             if (pep.startsWith("[")) { //this is the case for all n term mods //TODO deal with c term mods
                 int splitpoint = pep.indexOf("]");
                 if (modelFormat.contains("Prosit")) {
-                    pep = pep.substring(splitpoint + 1);
+                    if (modelFormat.contains("TMT") && pep.startsWith("[UNIMOD:737]")) {
+                        pep = pep.substring(0, splitpoint + 1) + "-" + pep.substring(splitpoint + 1);
+                    } else {
+                        pep = pep.substring(splitpoint + 1);
+                    }
                 } else {
                     pep = pep.substring(0, splitpoint + 1) + "-" + pep.substring(splitpoint + 1);
+                }
+            }
+            if (modelFormat.contains("Prosit") && modelFormat.contains("TMT")) {
+                pep = pep.replace("S[UNIMOD:737]", "S");
+                if (!pep.startsWith("[")) {
+                    pep = "[UNIMOD:737]-" + pep;
                 }
             }
             StringBuilder sb = new StringBuilder();

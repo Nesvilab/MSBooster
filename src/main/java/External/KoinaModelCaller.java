@@ -42,10 +42,12 @@ public class KoinaModelCaller {
     private static final int ms2pipIntIdx = 2;
     private static final int ms2pipFragIdx = 0;
     private static String modelType;
+    private static String finalModel;
     private static final HashMap<String, Integer> recommendedThreads = makeRecommendedThreads();
     private static HashMap<String, Integer> makeRecommendedThreads() {
         HashMap<String, Integer> map = new HashMap<>();
         map.put("AlphaPept_ms2_generic", 30);
+        map.put("Prosit_2020_intensity_TMT", 30);
         return map;
     }
 
@@ -55,6 +57,7 @@ public class KoinaModelCaller {
     public void callModel(String model, KoinaLibReader klr, String jsonFolder, ScheduledThreadPoolExecutor executorService,
                           boolean verbose, boolean makeFigure) {
         this.modelType = model.toLowerCase().split("_")[0];
+        this.finalModel = model;
 
         if (verbose) {
             System.out.println("Calling " + model + " model");
@@ -408,8 +411,13 @@ public class KoinaModelCaller {
                         stripped = pf.getStripped();
                         break;
                     case "prosit":
-                        pf = new PeptideFormatter(
-                                new PeptideFormatter(line[0], line[1], "base").getProsit(), line[1], "prosit");
+                        if (finalModel.contains("TMT")) {
+                            pf = new PeptideFormatter(
+                                    new PeptideFormatter(line[0], line[1], "base").getPrositTMT(), line[1], "prosit");
+                        } else {
+                            pf = new PeptideFormatter(
+                                    new PeptideFormatter(line[0], line[1], "base").getProsit(), line[1], "prosit");
+                        }
                         baseCharge = pf.getBaseCharge();
                         tmp = preds.get(baseCharge);
                         stripped = pf.getStripped();

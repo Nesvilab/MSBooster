@@ -32,7 +32,7 @@ public class MainClass {
     public static ScheduledThreadPoolExecutor executorService;
     public static void main(String[] args) throws Exception {
         Locale.setDefault(Locale.US);
-        System.out.println("MSBooster v1.1.37-koina");
+        System.out.println("MSBooster v1.1.39-koina");
 
         try {
             //accept command line inputs

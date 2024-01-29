@@ -75,11 +75,13 @@ uncheck the MSFragger and MSBooster checkboxes.
         - "micro-flow LC–MS/MS system using a modified Vanquish pump (Thermo Fisher
           Scientific) coupled to a Q Exactive Orbitrap HF-X (Thermo Fisher Scientific)"
         - /storage/yangkl/fasta/2023-12-19-decoys-reviewed-isoforms-contam-UP000000589.fas
+        - 21 PDAC lines
     - [Arabidopsis](https://www.nature.com/articles/s41586-020-2094-2)
         - 24 fractions
         - "Nanoflow LC-MS/MS was performed by coupling a Dionex 3000 (Thermo Fisher
           Scientific) to a QExactive Orbitrap HF (Thermo Fisher Scientific)"
         - 110 min gradient
+        - 12th fraction of 30 tissues
 - HLA
     - [DDA Class I and II](https://jitc.bmj.com/content/9/4/e002071)
         - "90,428 HLA-I and 142,625 HLA-II peptides"
@@ -124,8 +126,10 @@ uncheck the MSFragger and MSBooster checkboxes.
 - ms2pip has other models on web server, but one on Koina is only HCD
 - for TOF, use APD and Prosit
   - for comparison, use APD with Lumos and Prosit HCD
-- for TMT, use DIA-NN, APD, Prosit
-- TMT phospho, DIANN and APD
+- for TMT, use DIA-NN, Prosit
+  - Prosit assumes nterm must be labeled
+  - less than 31 long for prosit
+- TMT phospho, DIANN
 - C57 changes with deeplc+ms2pip, APD
   - not prosit
   - check DIANN
@@ -136,3 +140,6 @@ training?
 - supported peptides
   - HCD vs CID (fragmentation)
 - table for info needed by each model
+- subsection for TMT
+  - does Prosit do better for peptides with n-term TMT?
+- TMT analysis uses 1 group of 11 samples

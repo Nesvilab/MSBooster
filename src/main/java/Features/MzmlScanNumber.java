@@ -188,13 +188,17 @@ public class MzmlScanNumber {
             //Set to arbitrary 0 vectors so nothing matches, similarity 0
             //may need to adapt this if using percolator imputation
             if (PeptideSkipper.skipPeptide(name.stripped, name.charge)) {
-                peptideObjects.add(rank - 1, new PeptideObj(this, name.baseCharge, rank, targetORdecoy, escore,
-                        zeroFloatArray, zeroFloatArray, predRT, predIM));
+                newPepObj = new PeptideObj(this, name.baseCharge, rank, targetORdecoy, escore,
+                        zeroFloatArray, zeroFloatArray, predRT, predIM);
+                if (set) {
+                    peptideObjects.add(rank - 1, newPepObj);
+                }
             } else {
                 String[] periodSplit = Constants.spectraRTPredFile.split("\\.");
                 if (periodSplit[periodSplit.length - 1].equals("dlib")) { //won't always include every entry
-                    peptideObjects.add(rank - 1, new PeptideObj(this, name.baseCharge, rank, targetORdecoy, escore,
-                            zeroFloatArray, zeroFloatArray, predRT, predIM));
+                    newPepObj = new PeptideObj(this, name.baseCharge, rank, targetORdecoy, escore,
+                            zeroFloatArray, zeroFloatArray, predRT, predIM);
+                    peptideObjects.add(rank - 1, newPepObj);
                 } else {
                     System.out.println("Prediction missing in file for " + name.baseCharge);
                     e.printStackTrace();

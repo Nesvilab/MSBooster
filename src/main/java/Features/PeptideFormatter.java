@@ -217,15 +217,40 @@ public class PeptideFormatter {
         }
     }
 
-    private void predfullTOprosit() {
-        prosit = predfull.replace("M(O)", "M(ox)");
+    private void baseTOprosit() {
+        prosit = base;
+
+        //PredFull only supports oxM and assumes C is carbamidomethylated. Below, we format it this way, but also keep on other PTM masses so m/z values for fragments can be adjusted
+        for (int i = starts.size() - 1; i > -1; i--) {
+            double reportedMass = Double.parseDouble(prosit.substring(starts.get(i) + 1, ends.get(i)));
+            if (starts.get(i) - 1 > -1) { //no changes to nterm mod
+                if (Math.abs(PTMhandler.oxidationMass - reportedMass) < 0.01 &&
+                        prosit.charAt(starts.get(i) - 1) == 'M') {
+                    prosit = prosit.substring(0, starts.get(i)) + "(ox)" + prosit.substring(ends.get(i) + 1);
+                } else if (Math.abs(PTMhandler.tmtMass - reportedMass) < 0.01) {
+                    continue;
+                } else { //mod unsupported, remove for now. Or C carbamidomethylation
+                    prosit = prosit.substring(0, starts.get(i)) + prosit.substring(ends.get(i) + 1);
+                }
+            } else { //deal with nterm mod by deleting
+                if (!prosit.substring(starts.get(i), ends.get(i) + 1).contains(String.valueOf(PTMhandler.tmtMass))) {
+                    prosit = prosit.substring(0, starts.get(i)) + prosit.substring(ends.get(i) + 1);
+                }
+            }
+        }
     }
 
     private void prositTOprositTMT() {
-        //Prosit TMT assumes n-term and all lysines are TMT-labeled
-        String tmtLabel = "[" + PTMhandler.tmtMass + "]";
-        String intermediate = tmtLabel + prosit;
-        prositTMT = intermediate.replace("K", "K" + tmtLabel);
+        //Prosit TMT assumes n-term are TMT-labeled
+        if (!prosit.startsWith("[")) {
+            String tmtLabel = "[" + PTMhandler.tmtMass + "]";
+            prositTMT = tmtLabel + prosit;
+        } else {
+            prositTMT = prosit;
+        }
+
+        //S are not labeled
+        prositTMT = prositTMT.replace("S[" + PTMhandler.tmtMass + "]", "S");
     }
 
     private void strippedTOdlib() { dlib = stripped.replace("C", "C[" + PTMhandler.carbamidomethylationMass + "]") + "|" + charge;
@@ -318,7 +343,7 @@ public class PeptideFormatter {
             baseTOdiann();
             baseTOstripped();
             baseTOpredfull();
-            predfullTOprosit();
+            baseTOprosit();
             strippedTOdlib();
             if (Constants.spectraRTPredModel.contains("pDeep") ||
             Constants.spectraRTPredModel.contains("alphapeptdeep")) {
@@ -332,7 +357,7 @@ public class PeptideFormatter {
             diannTObase(peptide);
             baseTOstripped();
             baseTOpredfull();
-            predfullTOprosit();
+            baseTOprosit();
             baseCharge = base + "|" + charge;
         }
 
@@ -351,7 +376,7 @@ public class PeptideFormatter {
             baseTOstripped();
             baseTOpredfull();
             baseTOdiann();
-            predfullTOprosit();
+            baseTOprosit();
             prositTOprositTMT();
             baseCharge = base + "|" + charge;
         }
@@ -361,7 +386,7 @@ public class PeptideFormatter {
             predfullTObase(peptide);
             baseTOstripped();
             baseTOdiann();
-            predfullTOprosit();
+            baseTOprosit();
             baseCharge = base + "|" + charge;
         }
 
@@ -370,7 +395,7 @@ public class PeptideFormatter {
             baseTOstripped();
             baseTOpredfull();
             baseTOdiann();
-            predfullTOprosit();
+            baseTOprosit();
             baseCharge = base + "|" + charge;
         }
 
@@ -405,4 +430,6 @@ public class PeptideFormatter {
     public String getStripped() {
         return stripped;
     }
+
+    public String getPrositTMT() { return prositTMT; }
 }

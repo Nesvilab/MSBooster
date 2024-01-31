@@ -156,7 +156,7 @@ public class Constants {
     public static Float DaTolerance = 0.05f;
 
     //for limiting number of fragments used
-    public static Boolean useSpectra = null;
+    public static Boolean useSpectra = true;
     public static Boolean useTopFragments = true;
     public static Integer topFragments = 20;
     public static Boolean adaptiveFragmentNum = false;
@@ -174,7 +174,7 @@ public class Constants {
     public static final Integer fineTuneSize = 100; //for generating a finetune file for pDeep3
 
     //these constants for RT features
-    public static Boolean useRT = null;
+    public static Boolean useRT = true;
     public static Integer RTregressionSize = 5000;
     public static Integer minRTregressionSize = 1000;
     public static Double uniformPriorPercentile = 10d;

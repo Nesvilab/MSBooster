@@ -32,7 +32,7 @@ public class MainClass {
     public static ScheduledThreadPoolExecutor executorService;
     public static void main(String[] args) throws Exception {
         Locale.setDefault(Locale.US);
-        System.out.println("MSBooster v1.2.0");
+        System.out.println("MSBooster v1.2.1");
 
         try {
             //accept command line inputs
@@ -300,12 +300,18 @@ public class MainClass {
             Constants.intensitiesDifferenceFeatures = Constants.makeintensitiesDifference();
 
             //if different RT and spectra models
-            if (!Constants.rtModel.equals("") || !Constants.spectraModel.equals("")) {
+            if (Constants.rtModel.isEmpty() && Constants.useRT) {
+                Constants.rtModel = "DIA-NN";
+            }
+            if (Constants.spectraModel.isEmpty() && Constants.useSpectra) {
+                Constants.spectraModel = "DIA-NN";
+            }
+            if (!Constants.rtModel.isEmpty() || !Constants.spectraModel.isEmpty()) {
                 Constants.spectraRTPredModel = "";
-                if (!Constants.rtModel.equals("")) {
+                if (!Constants.rtModel.isEmpty()) {
                     Constants.spectraRTPredModel += Constants.rtModel + ",";
                 }
-                if (!Constants.spectraModel.equals("")) {
+                if (!Constants.spectraModel.isEmpty()) {
                     Constants.spectraRTPredModel += Constants.spectraModel + ",";
                 }
                 Constants.spectraRTPredModel = Constants.spectraRTPredModel.substring(0,
@@ -318,6 +324,12 @@ public class MainClass {
                 } else {
                     Constants.spectraModel = models[1];
                 }
+            }
+
+            //set useKoina based on model
+            if (Constants.KoinaRTmodels.contains(Constants.rtModel) ||
+            Constants.KoinaMS2models.contains(Constants.spectraModel)) {
+                Constants.useKoina = true;
             }
 
             if (Constants.adaptiveFragmentNum) {

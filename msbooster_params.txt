@@ -3,5 +3,4 @@ numThreads = 11
 renamePin = 1
 deletePreds = false
 mzmlDirectory = 
-pinPepXMLDirectory = 
-spectraRTPredModel = DIA-NN
+pinPepXMLDirectory =

@@ -1,107 +1,96 @@
 # MSBooster
-MSBooster allows users to add deep learning-based features to .pin files before Percolator PSM rescoring. 
 
-Example pin files before and after ("_edited.pin") MSBooster annotation are included in the example_before_and_after_files.zip. Within FragPipe, there are individual checkboxes to enable calculation of MS2 spectral and retention time similarity scores, notated as "unweighted_spectral_entropy" and "delta_RT_loess", respectively, in the edited pin file. Appropriately formatted pin files are automatically generated in most loadable workflows within FragPipe.
+## Overview
+MSBooster is a tool for incorporating spectral libary predictions into peptide-spectrum match (PSM) 
+rescoring in bottom-up tandem liquid chromatography mass spectrometry proteomics data. It is roughly
+broken into 4 steps:
+1. Peptide extraction from PSMs in search results, and formatting for machine/deep learning (ML/DL) 
+predictors' input files
+2. Calling the prediction model(s) and saving the output
+3. Feature calculation
+4. Addition of new features to the search results file
 
-## System requirements
-### All software dependencies and OS
-• FragPipe, either version 17 or 18 (Download at https://github.com/Nesvilab/FragPipe/releases)
-### Versions the software has been tested on
-•	Windows
+MSBooster is compatible with many types of database searches, including HLA immunopeptidomics, DDA and
+DIA, and single cell proteomics. It is incorporated into [FragPipe](https://fragpipe.nesvilab.org/) 
+and is included in many of its workflows. MSBooster was developed with other FragPipe tools in mind, 
+such as FragPipe-PDV.
 
-	• v10/11
-	• Java(TM) SE Runtime Environment (build 16.0.1+9-24)
-• Linux, Architecture: amd64
+![Alt text](README_imgs/manuscript1_workflow.png)
 
-	• Java 11.0.16.1, OpenJDK 64-Bit Server VM, Red Hat, Inc.
-      
-## Installation guide
-### Instructions
-•	If using MSBooster in FragPipe, follow the instructions from the download link above. In this example, we use FragPipe-jre-18.0.zip. Extract it from the zip file and place the FragPipe-fre-18.0 folder in the “software” folder
+## Accepted inputs and models
+MSBooster is equipped to handle multiple input file formats and models:
 
-![Alt text](README_imgs/Picture1.png?raw=true)
+| Mass spectrometer output |
+| --- |
+| .mzML |
+| .mgf |
 
-•	If running standalone MSBooster, the instructions above to download FragPipe must still be followed. While standalone MSBooster does not need FragPipe, it requires the DIA-NN prediction tool in this tutorial which can be found at fragpipe/tools/diann/1.8.1/win/DiaNN.exe
+| PSM file |
+| --- |
+| .pin |
+| .pepXML (in progress) |
 
-![Alt text](README_imgs/Picture2.png?raw=true)
- 
-### Typical install time
-•	FragPipe: Less than 2 minutes
-  
-## Demo
-**NOTE**: The 2 mzML files and MSBooster standalone jar file are at https://www.dropbox.com/sh/zr69smrov3qhgm2/AACgiJPMjp2erSMgyBqyBBmQa?dl=0. Please download and place in the “software” folder
+| Prediction model |
+| --- |
+| [DIA-NN](https://github.com/vdemichev/DiaNN) |
 
-### Instructions to run on demo data (Windows)
-#### FragPipe GUI
-•	If running in FragPipe, MSBooster is already available and loaded
+## Installation and running guide
+### In FragPipe
+MSBooster can be run in Windows and Linux systems. If using FragPipe, no other installation steps are
+needed besides installing FragPipe. MSBooster is located in the "Validation" tab. Choose to enable 
+retention time features with "Predict RT" and MS/MS spectral features with "Predict spectra". "Use 
+correlated features" calculates multiple linearly correlated features, such as dot product and spectral 
+entropy, to add to your output file. This may increase or decrease your peptide IDs, as noted in the 
+[MSBooster manuscript](https://www.nature.com/articles/s41467-023-40129-9). Please refer to the 
+[FragPipe](https://fragpipe.nesvilab.org/) documentation for how to run an analysis.
+![Alt text](README_imgs/Picture7.png)
 
-•	In the Workflow tab, select the Default workflow and click “Load workflow”
+### On the command line
+If using standalone MSBooster to run in the command line, please download the latest jar file from 
+Releases. MSBooster also requires DIA-NN for MS/MS and RT prediction. Please install 
+[DIA-NN](https://github.com/vdemichev/DiaNN) and take note of the path to the DIA-NN executable 
+(ex. DiaNN.exe for Windows, diann-1.8.1.8 for Linux).
 
-![Alt text](README_imgs/Picture3.png?raw=true)
- 
-•	Load the two mzML files under the Workflow tab using “Add files”
+You can run MSBooster using a command similar to the following: 
 
-![Alt text](README_imgs/Picture4.png?raw=true)
- 
-•	Pin files from the MSFragger search are already available in this demo folder, so uncheck “Run MSFragger” in the MSFragger tab
+    java -jar MSBooster-1.2.1.jar --paramsList msbooster_params.txt
+    
+The minimum parameters needing to be passed are:
 
-![Alt text](README_imgs/Picture5.png?raw=true)
- 
-•	Although not used by MSBooster, FragPipe requires a fasta file. It is provided in the “software” folder (2022-03-18-decoys-reviewed-contam-UP000005640.fas)
+    - DiaNN: path to DIA-NN executable
+    - mzmlDirectory: path to mzML/mgf files. Accepts multiple space-separated folder and files
+    - pinPepXMLDirectory: path to pin files. Accepts multiple space-separated folder and files.
+      If using in FragPipe, place the pin and pepXML files in the same folder
 
-![Alt text](README_imgs/Picture6.png?raw=true)
- 
-•	In the Validation tab, uncheck all boxes except for “Run Validation Tools” and “Run MSBooster”. To uncheck other tools such as ProteinProphet, “Run Validation Tools” may need to be unchecked and checked again to allow interaction with other checkboxes. “Predict RT” and “Predict spectra” are also checked by default, but either one can be turned off. “Use correlated features” is unchecked by default, but is demonstrated in the manuscript and you can also test it
+While you can individually pass these parameters, it is easier to place one 
+on each line of the paramsList file. Please refer to [msbooster_params.txt](msbooster_params.txt)
+for a template.
 
-![Alt text](README_imgs/Picture7.png?raw=true)
- 
-•	In the Run tab, set “Output dir” to the location of your demo folder (contains mzml, pin, pepxml files; fragger.params). Then click “RUN”
 
-![Alt text](README_imgs/Picture8.png?raw=true)
- 
-•	On a normal desktop (Intel(R) Core(TM) i7-8700 CPU @ 3.20GHz   3.19 GHz, 32.0 GB), MSBooster in FragPipe took 0.3 minutes to annotate the 2 pin files provided
+## Optional parameters
 
-#### MSBooster command line
-•	Make sure the MSBooster-1.1.6-jar-with-dependencies.jar file and two mzML files are in the “software” folder, or at least the same folder as the two pin files (download link at beginning of Demo section). The FragPipe-jre-18.0 folder should be in the same folder so that DiaNN.exe is available for predictions
+## Output files
+ - .pin file with new features. By default, new pin files will be produced ending in "_edited.pin". The
+ default features used are "unweighted_spectral_entropy" and "delta_RT_loess"
+ - spectraRT.tsv and spectraRT_full.tsv: input files for DIA-NN prediction model
+ - spectraRT.predicted.bin: a binary file with predictions from DIA-NN to be used by MSBooster for 
+feature calculation. If using FragPipe-PDV, these files are used to generate mirror plots of experimental
+and predicted spectra
 
-•	Open the command line by typing “cmd” in the Windows search bar
-
-•	Navigate to the folder of this demo with the “cd” command
-
-•	Optional: open “msbooster_params_template.txt”. There are various parameters to change, such as file locations
-
-![Alt text](README_imgs/Picture9.png?raw=true)
- 
-•	Enter “java -jar MSBooster-1.1.6-jar-with-dependencies.jar --paramsList msbooster_params_template.txt”
-
-•	In the parameter file, parameters can be customized
-
-	•	numThreads ishow many threads you want to use on the computer to run MSBooster (default: available threads minus 1)
-	•	renamePin = 1 ensures the original pin files are not overwritten; instead, new ones with the “_edited” suffix are added. Setting this to 0 will rewrite the old pin files
-	•	mzmlDirectory is where the mzml files are stored. If running MSBooster from the demo folder, “.” designates they are in the same folder
-	•	pinPepXMLDirectory is where the pin/pepxml files are stored. This could be set as a folder name, or individual pin file name separated by spaces. While on the first run of MSBooster in the demo this could be set as “.” like mzmlDirectory is, it will produced “_edited” pin files. Upon running MSBooster a second time, MSBooster will search for mzml files that include “_edited” in the name and will fail because they are nonexistent. Therefore, it is safer to have the pin files listed out.
-	•	If information on other parameters is needed, run “java -jar MSBooster-1.1.6-jar-with-dependencies.jar --help”
-	
-## Expected output
-### MSBooster
-•	MSBooster-annotated pin files with the suffixed “_edited.pin”
-
-•	spectraRT.tsv and spectraRT_full.tsv: input files for DIA-NN prediction model
-
-•	spectraRT.predicted.bin: predictions from DIA-NN to be used by MSBooster for feature calculation. Not in human readable format
-	
-### FragPipe-specific output
-•	Log*.txt: whatever is printed by FragPipe when run 
-
-•	Lcms-files*.fp-manifest: lists which mzml files were used
-
-•	msbooster_params.txt: input parameters for MSBooster
-
-### Expected run time for “demo”
-•	Less than 30 seconds
-
-## Instructions for use
-### How to run the software on your data
-•	If running through FragPipe, MSBooster is automatically given the correct parameters to work within the pipeline. Please refer to https://fragpipe.nesvilab.org/docs/tutorial_fragpipe.html 
-
-•	If running on the command line, change the parameter file (in the demo) to use new file locations or customizable parameters. They are listed and described in the –help section. They can also be individually written on the command line, but it may be easier to organize by writing them in the parameter file and passing it with “—paramsList”.
+## Graphical output files
+MSBooster produces multiple graphs that can be used to further examine how your data compares to model
+predictions.
+ - MSBooster_plots folder:
+    - RT_calibration_curves: up to the top 5000 PSMs will be used for calibration between the 
+    experimental and predicted RT scales. These top PSMs are presented in the graph, not all PSMs. 
+    One graph will be produced per pin file
+    ![Alt text](README_imgs/rt_calibration.png?raw=true)
+    - score_histograms: overlayed histograms of all target and decoy PSMs for each pin file. Some 
+    features are plotted here on a log scale for better visualization of the bimodal distribution of
+    true and false positives, but the original value is what is used in the pin files, not the log-scaled
+    version.
+    ![Alt text](README_imgs/entropy_hist.png?raw=true)
+    ![Alt text](README_imgs/delta_RT_loess_hist.png?raw=true)
+    
+## How to cite
+- Please cite the following when using MSBooster: https://www.nature.com/articles/s41467-023-40129-9 

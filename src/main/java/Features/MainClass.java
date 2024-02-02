@@ -32,7 +32,7 @@ public class MainClass {
     public static ScheduledThreadPoolExecutor executorService;
     public static void main(String[] args) throws Exception {
         Locale.setDefault(Locale.US);
-        System.out.println("MSBooster v1.2.1");
+        System.out.println("MSBooster v1.2.2");
 
         try {
             //accept command line inputs
@@ -300,30 +300,35 @@ public class MainClass {
             Constants.intensitiesDifferenceFeatures = Constants.makeintensitiesDifference();
 
             //if different RT and spectra models
-            if (Constants.rtModel.isEmpty() && Constants.useRT) {
-                Constants.rtModel = "DIA-NN";
-            }
-            if (Constants.spectraModel.isEmpty() && Constants.useSpectra) {
-                Constants.spectraModel = "DIA-NN";
-            }
-            if (!Constants.rtModel.isEmpty() || !Constants.spectraModel.isEmpty()) {
-                Constants.spectraRTPredModel = "";
-                if (!Constants.rtModel.isEmpty()) {
-                    Constants.spectraRTPredModel += Constants.rtModel + ",";
+            Constants.spectraRTPredModel = "";
+            if (Constants.useRT) {
+                if (Constants.rtModel.isEmpty()) {
+                    Constants.rtModel = "DIA-NN";
                 }
-                if (!Constants.spectraModel.isEmpty()) {
-                    Constants.spectraRTPredModel += Constants.spectraModel + ",";
+                for (String model : Constants.KoinaRTmodels) {
+                    if (model.toLowerCase().equals(Constants.rtModel)) {
+                        Constants.rtModel = model;
+                    }
                 }
-                Constants.spectraRTPredModel = Constants.spectraRTPredModel.substring(0,
-                        Constants.spectraRTPredModel.length() - 1);
+                Constants.spectraRTPredModel += Constants.rtModel;
             } else {
-                String[] models = Constants.spectraRTPredModel.split(",");
-                Constants.rtModel = models[0];
-                if (models.length == 1) {
-                    Constants.spectraModel = models[0];
-                } else {
-                    Constants.spectraModel = models[1];
+                Constants.rtModel = "";
+            }
+            if (Constants.useSpectra) {
+                if (Constants.spectraModel.isEmpty()) {
+                    Constants.spectraModel = "DIA-NN";
                 }
+                for (String model : Constants.KoinaMS2models) {
+                    if (model.toLowerCase().equals(Constants.spectraModel)) {
+                        Constants.spectraModel = model;
+                    }
+                }
+                if (!Constants.spectraRTPredModel.isEmpty()) {
+                    Constants.spectraRTPredModel += ",";
+                }
+                Constants.spectraRTPredModel += Constants.spectraModel;
+            } else {
+                Constants.spectraModel = "";
             }
 
             //set useKoina based on model

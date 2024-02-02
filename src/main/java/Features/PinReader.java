@@ -363,6 +363,7 @@ public class PinReader {
 
             String NCE;
             String fragmentation;
+            // && (Constants.NCE.isEmpty() || Constants.FragmentationType.isEmpty())
             if (mzml != null) {
                 Set<String> fragTypes = mzml.scanNumberObjects.get(getScanNum()).NCEs.keySet();
                 if (fragTypes.contains("CID")) {
@@ -469,37 +470,44 @@ public class PinReader {
         HashSet<String> ThermoTOFKeys = new HashSet<>(Arrays.asList("Astral"));
 
         if (Constants.instrument.equals("")) {
-            String model = mzml.scans.getRunInfo().getDefaultInstrument().getModel();
-            String analyzer = mzml.scans.getRunInfo().getDefaultInstrument().getAnalyzer();
-            for (String k : LumosKeys) {
-                if (model.contains(k) || analyzer.contains(k)) {
-                    return "Lumos";
+            try {
+                String model = mzml.scans.getRunInfo().getDefaultInstrument().getModel();
+                String analyzer = mzml.scans.getRunInfo().getDefaultInstrument().getAnalyzer();
+                for (String k : LumosKeys) {
+                    if (model.contains(k) || analyzer.contains(k)) {
+                        return "Lumos";
+                    }
                 }
-            }
-            for (String k : QEKeys) {
-                if (model.contains(k) || analyzer.contains(k)) {
-                    return "QE";
+                for (String k : QEKeys) {
+                    if (model.contains(k) || analyzer.contains(k)) {
+                        return "QE";
+                    }
                 }
-            }
-            for (String k : SciexTOFKeys) {
-                if (model.contains(k) || analyzer.contains(k)) {
-                    return "SciexTOF";
+                for (String k : SciexTOFKeys) {
+                    if (model.contains(k) || analyzer.contains(k)) {
+                        return "SciexTOF";
+                    }
                 }
-            }
-            for (String k : timsTOFKeys) {
-                if (model.contains(k) || analyzer.contains(k)) {
-                    return "timsTOF";
+                for (String k : timsTOFKeys) {
+                    if (model.contains(k) || analyzer.contains(k)) {
+                        return "timsTOF";
+                    }
                 }
-            }
-            for (String k : ThermoTOFKeys) {
-                if (model.contains(k) || analyzer.contains(k)) {
-                    return "ThermoTOF";
+                for (String k : ThermoTOFKeys) {
+                    if (model.contains(k) || analyzer.contains(k)) {
+                        return "ThermoTOF";
+                    }
                 }
+                System.out.println("Could not detect instrument type. Setting to Lumos. " +
+                        "If a different instrument was used, specify using '--instrument' via the command line " +
+                        "or 'instrument=' in the param file.");
+                return "Lumos"; //default if nothing found
+            } catch (NullPointerException e) {
+                System.out.println("Could not detect instrument type. Setting to Lumos. " +
+                        "If a different instrument was used, specify using '--instrument' via the command line " +
+                        "or 'instrument=' in the param file.");
+                return "Lumos"; //default if nothing found
             }
-            System.out.println("Could not detect instrument type. Setting to Lumos. " +
-                    "If a different instrument was used, specify using '--instrument' via the command line " +
-                    "or 'instrument=' in the param file.");
-            return "Lumos"; //default if nothing found
         } else {
             return Constants.instrument;
         }

@@ -55,6 +55,7 @@ public class SpectrumComparison {
                               boolean filterTop, boolean filterBase) {
         predMZs = pMZs;
         predIntensities = pIntensities;
+        sortArrays(eMZs, eIntensities);
 
 //        if (Constants.sqrtPredIntensities) {
 //            this.squareRootPredIntensities();
@@ -99,6 +100,7 @@ public class SpectrumComparison {
                               boolean filterTop, boolean filterBase, String[] fragmentIonTypes) {
         predMZs = pMZs;
         predIntensities = pIntensities;
+        sortArrays(eMZs, eIntensities);
 
         if (Constants.divideFragments.equals("0")) {
 //            if (Constants.sqrtPredIntensities) {
@@ -189,6 +191,7 @@ public class SpectrumComparison {
         pepObj = peptideObj;
         predMZs = pMZs;
         predIntensities = pIntensities;
+        sortArrays(eMZs, eIntensities);
 
         if (filterBase) {
             this.filterIntensitiesByPercentage(Constants.percentBasePeak);
@@ -221,6 +224,26 @@ public class SpectrumComparison {
         }
     }
     public SpectrumComparison() {}
+
+    public static void sortArrays(float[] eMZs, float[] eIntensities) {
+        int n = eMZs.length;
+        float[][] pairs = new float[n][2];
+
+        // Create pairs of eMZs and corresponding eIntensities
+        for (int i = 0; i < n; i++) {
+            pairs[i][0] = eMZs[i];
+            pairs[i][1] = eIntensities[i];
+        }
+
+        // Sort the pairs based on eMZs
+        Arrays.sort(pairs, (a, b) -> Float.compare(a[0], b[0]));
+
+        // Update eMZs and eIntensities based on sorted pairs
+        for (int i = 0; i < n; i++) {
+            eMZs[i] = pairs[i][0];
+            eIntensities[i] = pairs[i][1];
+        }
+    }
 
     //get new scan read in
     public void reload(PeptideObj pobj, float[] eMZs, float[] eIntensities) {

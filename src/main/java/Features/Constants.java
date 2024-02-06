@@ -194,7 +194,7 @@ public class Constants {
     public static String massDiffToVariableMod = "0";
 
     //LOESS
-    public static Double bandwidth = 0.05;
+    public static Double bandwidth = 0.05; //"0.01,0.05,0.1,0.2"
     public static Integer robustIters = 2;
 
     //detect

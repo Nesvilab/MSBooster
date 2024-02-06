@@ -604,6 +604,11 @@ public class MzmlReader {
             }
             for (String mass : masses) {
                 RTLOESS.put(mass, LOESS(expAndPredRTs.get(mass), bandwidth, robustIters));
+
+                //for bandwidth in grid search
+                //get the loess model
+                //calculate MSE by comparing calibrated expRT to predRT
+                //choose best model
             }
         } else if (mode.equals("IM")) {
             double[][][] expAndPredIMs = IMFunctions.getIMarrays(this, regressionSize);

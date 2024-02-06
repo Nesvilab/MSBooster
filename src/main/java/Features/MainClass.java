@@ -32,7 +32,7 @@ public class MainClass {
     public static ScheduledThreadPoolExecutor executorService;
     public static void main(String[] args) throws Exception {
         Locale.setDefault(Locale.US);
-        System.out.println("MSBooster v1.2.3");
+        System.out.println("MSBooster v1.2.4");
 
         try {
             //accept command line inputs

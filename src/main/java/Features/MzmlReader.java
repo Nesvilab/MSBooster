@@ -643,12 +643,15 @@ public class MzmlReader {
                         double finalDelta = Double.MAX_VALUE;
                         boolean isNone = true;
                         for (String mass : LOESSRT.keySet()) {
-                            if (pep.name.contains(mass)) {
-                                isNone = false;
-                                double delta = Math.abs(LOESSRT.get(mass) - pep.RT);
-                                if (delta < finalDelta) {
-                                    finalDelta = delta;
-                                    pep.calibratedRT = LOESSRT.get(mass);
+                            String[] masses = mass.split("/");
+                            for (String minimass : masses) {
+                                if (pep.name.contains(minimass)) {
+                                    isNone = false;
+                                    double delta = Math.abs(LOESSRT.get(mass) - pep.RT);
+                                    if (delta < finalDelta) {
+                                        finalDelta = delta;
+                                        pep.calibratedRT = LOESSRT.get(mass);
+                                    }
                                 }
                             }
                         }

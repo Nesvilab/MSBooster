@@ -184,12 +184,14 @@ public class Constants {
     public static Boolean noRTscores = false; //TODO: better handling of this
     public static Integer numRTplot = 5000;
     public static String RTfigure_masses = ""; //separate by comma
-    public static Boolean plotBestPSMPerPeptide = true;
     public static Integer washGradientBins = 100;
     public static Double rtCutoff = Double.NaN;
     public static Boolean removeWashGradient = false;
     public static Boolean writeCalibration = false;
     public static String RTmassesForCalibration = "";
+    public static String massOffsets = "";
+    public static String massOffsetsDetailed = "";
+    public static String massDiffToVariableMod = "0";
 
     //LOESS
     public static Double bandwidth = 0.05;

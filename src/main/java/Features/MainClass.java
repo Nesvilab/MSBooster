@@ -32,7 +32,7 @@ public class MainClass {
     public static ScheduledThreadPoolExecutor executorService;
     public static void main(String[] args) throws Exception {
         Locale.setDefault(Locale.US);
-        System.out.println("MSBooster v1.2.2");
+        System.out.println("MSBooster v1.2.3");
 
         try {
             //accept command line inputs
@@ -240,6 +240,42 @@ public class MainClass {
                                 params.put("minPrecursorCharge", vals[0]);
                                 params.put("maxPrecursorCharge", vals[1]);
                                 break;
+                            case "mass_offsets":
+                                if (!val.isEmpty()) {
+                                    vals = val.split("/");
+                                    String final_vals = "";
+                                    for (String v : vals) {
+                                        float fv = Float.parseFloat(v);
+                                        if (fv != 0) {
+                                            if (!final_vals.isEmpty()) {
+                                                final_vals += "/";
+                                            }
+                                            final_vals += String.format("%.4f", fv);
+                                        }
+                                    }
+                                    params.put("massOffsets", final_vals);
+                                }
+                                break;
+                            case "mass_offsets_detailed":
+                                if (!val.isEmpty()) {
+                                    vals = val.split(";");
+                                    String final_vals = "";
+                                    for (String v : vals) {
+                                        v = v.split("\\(")[0];
+                                        float fv = Float.parseFloat(v);
+                                        if (fv != 0) {
+                                            if (!final_vals.isEmpty()) {
+                                                final_vals += "/";
+                                            }
+                                            final_vals += v;
+                                        }
+                                    }
+                                    params.put("massOffsetsDetailed", final_vals);
+                                }
+                                break;
+                            case "mass_diff_to_variable_mod":
+                                params.put("massDiffToVariableMod", val);
+                                break;
                         }
                     }
 
@@ -286,6 +322,16 @@ public class MainClass {
 
                     //parse to appropriate type
                     field.set(c, myClass.getConstructor(String.class).newInstance(entry.getValue()));
+                }
+            }
+            if (!Objects.equals(Constants.massDiffToVariableMod, "0")) {
+                if (!Constants.RTmassesForCalibration.isEmpty()) {
+                    Constants.RTmassesForCalibration += ",";
+                }
+                if (!Constants.massOffsetsDetailed.isEmpty()) {
+                    Constants.RTmassesForCalibration += Constants.massOffsetsDetailed;
+                } else if (!Constants.massOffsets.isEmpty()) {
+                    Constants.RTmassesForCalibration += Constants.massOffsets;
                 }
             }
 

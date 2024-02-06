@@ -17,6 +17,7 @@
 
 package Features;
 
+import org.checkerframework.checker.units.qual.A;
 import umontreal.ssj.probdist.EmpiricalDist;
 
 import java.io.IOException;
@@ -59,17 +60,10 @@ public class RTFunctions {
         return StatMethods.linearRegression(RTs[0], RTs[1]);
     }
 
-    //utility for getBetas and LOESS
-    //returns exp and pred RT arrays
-    //if speed is issue, don't need extra steps for regular regression
-    public static HashMap<String, double[][]> getRTarrays(MzmlReader mzml, int RTregressionSize) {
-        ArrayList<Float> expRTs = new ArrayList<>();
-        ArrayList<Float> predRTs = new ArrayList<>();
-        ArrayList<Float> eScores = new ArrayList<>(); //for sorting
-        ArrayList<String> peptides = new ArrayList<>();
-        HashMap<String, ArrayList<Integer>> pepIdx = new HashMap<>();
-        //collect RTs and escores. Collect peptide IDs for selecting best PSM for each
-
+    private static void getPSMs(MzmlReader mzml,
+                         ArrayList<Float> expRTs, ArrayList<Float> predRTs, ArrayList<Float> eScores,
+                         ArrayList<String> peptides, HashMap<String, ArrayList<Integer>> pepIdx,
+                         float escoreThreshold) {
         int added = 0;
         for (int scanNum : new TreeSet<Integer>(mzml.scanNumberObjects.keySet())) {
             MzmlScanNumber scanNumObj = mzml.getScanNumObject(scanNum);
@@ -77,18 +71,14 @@ public class RTFunctions {
             if (Float.isNaN(rt)) {
                 continue;
             }
-            //for (int i = 1; i < scanNumObj.peptideObjects.size() + 1; i++) { //changed so only looking at rank 1
+
             if (scanNumObj.peptideObjects.isEmpty()) {
                 continue;
             }
             PeptideObj pep = scanNumObj.getPeptideObject(1);
 
-            //need to support if no spectral features
-//                if (pep.spectralSimObj.predIntensities[0] == 0f) { //what it is set to if no entry
-//                    continue;
-//                }
             float e = Float.parseFloat(pep.escore);
-            if (e > Constants.RTescoreCutoff) {
+            if (e > escoreThreshold) {
                 continue;
             }
             expRTs.add(rt);
@@ -106,6 +96,18 @@ public class RTFunctions {
             }
             added += 1;
         }
+    }
+
+    //utility for getBetas and LOESS
+    //returns exp and pred RT arrays
+    //if speed is issue, don't need extra steps for regular regression
+    public static HashMap<String, double[][]> getRTarrays(MzmlReader mzml, int RTregressionSize) {
+        ArrayList<Float> expRTs = new ArrayList<>();
+        ArrayList<Float> predRTs = new ArrayList<>();
+        ArrayList<Float> eScores = new ArrayList<>(); //for sorting
+        ArrayList<String> peptides = new ArrayList<>();
+        HashMap<String, ArrayList<Integer>> pepIdx = new HashMap<>();
+        getPSMs(mzml, expRTs, predRTs, eScores, peptides, pepIdx, Constants.RTescoreCutoff);
 
         if (expRTs.size() < Constants.minRTregressionSize) { //no more e score threshold
             System.out.println("Not enough high quality PSMs for RT regression with escore cutoff of "
@@ -117,43 +119,7 @@ public class RTFunctions {
             eScores = new ArrayList<>(); //for sorting
             peptides = new ArrayList<>();
             pepIdx = new HashMap<>();
-            added = 0;
-            for (int scanNum : new TreeSet<Integer>(mzml.scanNumberObjects.keySet())) {
-                MzmlScanNumber scanNumObj = mzml.getScanNumObject(scanNum);
-                float rt = scanNumObj.RT; //experimental RT for this scan
-                if (Float.isNaN(rt)) {
-                    continue;
-                }
-
-                //for (int i = 1; i < scanNumObj.peptideObjects.size() + 1; i++) { //changed so only looking at rank 1
-                if (scanNumObj.peptideObjects.size() == 0) {
-                    continue;
-                }
-                PeptideObj pep = scanNumObj.getPeptideObject(1);
-
-                //need to support if no spectral features
-//                if (pep.spectralSimObj.predIntensities[0] == 0f) { //what it is set to if no entry
-//                    continue;
-//                }
-                float e = Float.parseFloat(pep.escore);
-                if (e > 0.01f) {
-                    continue;
-                }
-                expRTs.add(rt);
-                predRTs.add(pep.RT);
-                eScores.add(e);
-                peptides.add(pep.name);
-                if (pepIdx.containsKey(pep.name)) {
-                    ArrayList<Integer> tmpList = pepIdx.get(pep.name);
-                    tmpList.add(added);
-                    pepIdx.put(pep.name, tmpList);
-                } else {
-                    ArrayList<Integer> tmpList = new ArrayList<>();
-                    tmpList.add(added);
-                    pepIdx.put(pep.name, tmpList);
-                }
-                added += 1;
-            }
+            getPSMs(mzml, expRTs, predRTs, eScores, peptides, pepIdx, 0.01f);
         }
 
         //remove duplicate PSMs from same peptide
@@ -167,10 +133,19 @@ public class RTFunctions {
                 escores.add(eScores.get(escoreIdx));
             }
             int bestScore = 0;
+            ArrayList<Integer> indicesBestScores = new ArrayList<>();
+            indicesBestScores.add(0);
             for (int i = 1; i < escores.size(); i++) {
                 if (escores.get(i) < escores.get(bestScore)) {
                     bestScore = i;
+                    indicesBestScores.clear();
+                    indicesBestScores.add(i);
+                } else if (Objects.equals(escores.get(i), escores.get(bestScore))) {
+                    indicesBestScores.add(i);
                 }
+            }
+            if (indicesBestScores.size() > 1) {
+                bestScore = indicesBestScores.get(indicesBestScores.size() / 2);
             }
             for (int i = 0; i < escores.size(); i++) {
                 if (i != bestScore) {
@@ -189,7 +164,7 @@ public class RTFunctions {
 
         //get masses that need to be calibrated
         HashMap<String, double[][]> RTs = new HashMap<>();
-        if (! Constants.RTmassesForCalibration.equals("")) {
+        if (!Constants.RTmassesForCalibration.isEmpty()) {
             String[] masses = Constants.RTmassesForCalibration.split(",");
             for (String mass : masses) {
                 RTs.put(mass, new double[2][]);
@@ -204,7 +179,7 @@ public class RTFunctions {
             ArrayList<Float> thisPredRTs = new ArrayList<>();
             ArrayList<Float> thisEscores = new ArrayList<>();
             //get PSMs specific to this mass
-            if (mass.equals("")) {
+            if (mass.isEmpty()) {
                 thisExpRTs = expRTs;
                 thisPredRTs = predRTs;
                 thisEscores = eScores;
@@ -212,9 +187,12 @@ public class RTFunctions {
                 for (int i = 0; i < peptides.size(); i++) {
                     boolean peptideContains = false;
                     for (String m : RTs.keySet()) {
-                        if (peptides.get(i).contains(m)) {
-                            peptideContains = true;
-                            break;
+                        String[] masses = m.split("/");
+                        for (String minimass : masses) {
+                            if (peptides.get(i).contains(minimass)) {
+                                peptideContains = true;
+                                break;
+                            }
                         }
                     }
 
@@ -225,11 +203,15 @@ public class RTFunctions {
                     }
                 }
             } else {
+                String[] masses = mass.split("/");
                 for (int i = 0; i < peptides.size(); i++) {
-                    if (peptides.get(i).contains(mass)) {
-                        thisExpRTs.add(expRTs.get(i));
-                        thisPredRTs.add(predRTs.get(i));
-                        thisEscores.add(eScores.get(i));
+                    for (String minimass : masses) {
+                        if (peptides.get(i).contains(minimass)) {
+                            thisExpRTs.add(expRTs.get(i));
+                            thisPredRTs.add(predRTs.get(i));
+                            thisEscores.add(eScores.get(i));
+                            break;
+                        }
                     }
                 }
             }
@@ -255,7 +237,7 @@ public class RTFunctions {
             }
 
             if (RTregressionSize > 0 && RTregressionSize <= sizeLimit) {
-                if (mass.equals("")) {
+                if (mass.isEmpty()) {
                     System.out.println("RT regression using " + RTregressionSize + " PSMs");
                 } else {
                     System.out.println("RT regression for mass " + mass + " using " + RTregressionSize + " PSMs");
@@ -274,7 +256,7 @@ public class RTFunctions {
                 }
                 RTs.put(mass, thisRTs);
             } else {
-                if (mass.equals("")) {
+                if (mass.isEmpty()) {
                     System.out.println("RT regression using " + sizeLimit + " PSMs");
                 } else {
                     System.out.println("RT regression for mass " + mass + " using " + sizeLimit + " PSMs");

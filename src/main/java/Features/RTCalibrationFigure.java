@@ -64,8 +64,6 @@ public class RTCalibrationFigure {
         //for PTMs besides oxM and C57
         List<List<Float>> xDataMod = new ArrayList<>();
         List<List<Float>> yDataMod = new ArrayList<>();
-        float minRT = Float.MAX_VALUE;
-        float maxRT = Float.MIN_VALUE;
 
         ArrayList<String> massesList = new ArrayList<>();
         massesList.addAll(Arrays.asList(Constants.RTmassesForCalibration.split(",")));
@@ -83,81 +81,117 @@ public class RTCalibrationFigure {
         }
 
         HashMap<String, Float> bestEScore = new HashMap<>();
-        for (int scanNum : new TreeSet<Integer>(mzml.scanNumberObjects.keySet())) {
-            MzmlScanNumber scanNumObj = mzml.getScanNumObject(scanNum);
-            float rt = scanNumObj.RT; //experimental RT for this scan
-            if (rt < minRT) {
-                minRT = rt;
-            }
-            if (rt > maxRT) {
-                maxRT = rt;
-            }
-
-            for (int i = 1; i < scanNumObj.peptideObjects.size() + 1; i++) {
-                PeptideObj pep = scanNumObj.getPeptideObject(i);
-                //only get best ones
-                float currentScore = Float.parseFloat(pep.escore);
-//                if (currentScore < Constants.RTescoreCutoff && pep.spectralSimObj.predIntensities[0] != 0f) {
-                if (currentScore < Constants.RTescoreCutoff) {
-                    if (Constants.plotBestPSMPerPeptide) {
-                        if (bestEScore.containsKey(pep.name)) {
-                            if (bestEScore.get(pep.name) > currentScore) {
-                                bestEScore.put(pep.name, currentScore);
-                            }
-                        } else {
-                            bestEScore.put(pep.name, currentScore);
-                        }
-                    } else {
-                        eScores.add(Float.parseFloat(pep.escore));
-                    }
-                } else {
-                    break;
-                }
-            }
-        }
-        if (Constants.plotBestPSMPerPeptide) {
-            eScores.addAll(bestEScore.values());
-        }
-
-        eScores.sort(Comparator.naturalOrder());
-        //this will plot more than numRTplot if PSMs are tied
-        float maxEScore = eScores.get(Math.min(Constants.numRTplot, eScores.size()) - 1);
-        for (int scanNum : new TreeSet<Integer>(mzml.scanNumberObjects.keySet())) {
-            MzmlScanNumber scanNumObj = mzml.getScanNumObject(scanNum);
-            float rt = scanNumObj.RT; //experimental RT for this scan
-            for (int i = 1; i < scanNumObj.peptideObjects.size() + 1; i++) {
-                PeptideObj pep = scanNumObj.getPeptideObject(i);
-                //only get best ones
-                float parsedScore = Float.parseFloat(pep.escore);
-//                if (parsedScore <= maxEScore && pep.spectralSimObj.predIntensities[0] != 0f) {
-                if (parsedScore <= maxEScore) {
-                    if (Constants.plotBestPSMPerPeptide && parsedScore != bestEScore.get(pep.name)) {
-                        break;
-                    }
-                    boolean containsMod = false;
-                    int modIndex = 0;
-                    for (int j = 0; j < massesList.size(); j++) {
-                        String mass = massesList.get(j);
-                        if (pep.name.contains(mass)) {
-                            containsMod = true;
-                            modIndex = j;
-                            break;
-                        }
-                    }
-                    if (! containsMod) {
-                        xData.add(rt);
-                        yData.add(pep.RT);
-                    } else {
-                        xDataMod.get(modIndex).add(rt);
-                        yDataMod.get(modIndex).add(pep.RT);
-                    }
-                } else {
-                    break;
-                }
-            }
-        }
+//        for (int scanNum : new TreeSet<Integer>(mzml.scanNumberObjects.keySet())) {
+//            MzmlScanNumber scanNumObj = mzml.getScanNumObject(scanNum);
+//            float rt = scanNumObj.RT; //experimental RT for this scan
+//            if (rt < minRT) {
+//                minRT = rt;
+//            }
+//            if (rt > maxRT) {
+//                maxRT = rt;
+//            }
+//
+//            for (int i = 1; i < scanNumObj.peptideObjects.size() + 1; i++) {
+//                PeptideObj pep = scanNumObj.getPeptideObject(i);
+//                //only get best ones
+//                float currentScore = Float.parseFloat(pep.escore);
+////                if (currentScore < Constants.RTescoreCutoff && pep.spectralSimObj.predIntensities[0] != 0f) {
+//                if (currentScore < Constants.RTescoreCutoff) {
+//                    if (Constants.plotBestPSMPerPeptide) {
+//                        if (bestEScore.containsKey(pep.name)) {
+//                            if (bestEScore.get(pep.name) > currentScore) {
+//                                bestEScore.put(pep.name, currentScore);
+//                            }
+//                        } else {
+//                            bestEScore.put(pep.name, currentScore);
+//                        }
+//                    } else {
+//                        eScores.add(Float.parseFloat(pep.escore));
+//                    }
+//                } else {
+//                    break;
+//                }
+//            }
+//        }
+//        if (Constants.plotBestPSMPerPeptide) {
+//            eScores.addAll(bestEScore.values());
+//        }
+//
+//        eScores.sort(Comparator.naturalOrder());
+//        //this will plot more than numRTplot if PSMs are tied
+//        float maxEScore = eScores.get(Math.min(Constants.numRTplot, eScores.size()) - 1);
+//        for (int scanNum : new TreeSet<Integer>(mzml.scanNumberObjects.keySet())) {
+//            MzmlScanNumber scanNumObj = mzml.getScanNumObject(scanNum);
+//            float rt = scanNumObj.RT; //experimental RT for this scan
+//            for (int i = 1; i < scanNumObj.peptideObjects.size() + 1; i++) {
+//                PeptideObj pep = scanNumObj.getPeptideObject(i);
+//                //only get best ones
+//                float parsedScore = Float.parseFloat(pep.escore);
+////                if (parsedScore <= maxEScore && pep.spectralSimObj.predIntensities[0] != 0f) {
+//                if (parsedScore <= maxEScore) {
+//                    if (Constants.plotBestPSMPerPeptide && parsedScore != bestEScore.get(pep.name)) {
+//                        break;
+//                    }
+//                    boolean containsMod = false;
+//                    int modIndex = 0;
+//                    for (int j = 0; j < massesList.size(); j++) {
+//                        String[] masses = massesList.get(j).split("/");
+//                        for (String mass : masses) {
+//                            if (pep.name.contains(mass)) {
+//                                containsMod = true;
+//                                modIndex = j;
+//                                break;
+//                            }
+//                        }
+//                    }
+//                    if (! containsMod) {
+//                        xData.add(rt);
+//                        yData.add(pep.RT);
+//                    } else {
+//                        xDataMod.get(modIndex).add(rt);
+//                        yDataMod.get(modIndex).add(pep.RT);
+//                    }
+//                } else {
+//                    break;
+//                }
+//            }
+//        }
 
         //set y lim
+        int modIdx = 0;
+        float minRT = Float.MAX_VALUE;
+        float maxRT = Float.MIN_VALUE;
+        for (Map.Entry<String, double[][]> entry : mzml.expAndPredRTs.entrySet()) {
+            if (entry.getKey().isEmpty() || entry.getKey().equals("others")) {
+                for (double d : entry.getValue()[0]) {
+                    xData.add((float) d);
+                    if (d < minRT) {
+                        minRT = (float) d;
+                    }
+                    if (d > maxRT) {
+                        maxRT = (float) d;
+                    }
+                }
+                for (double d : entry.getValue()[1]) {
+                    yData.add((float) d);
+                }
+            } else {
+                for (double d : entry.getValue()[0]) {
+                    xDataMod.get(modIdx).add((float) d);
+                    if (d < minRT) {
+                        minRT = (float) d;
+                    }
+                    if (d > maxRT) {
+                        maxRT = (float) d;
+                    }
+                }
+                for (double d : entry.getValue()[1]) {
+                    yDataMod.get(modIdx).add((float) d);
+                }
+                modIdx++;
+            }
+        }
+
         double ymax = 0;
         for (float f : yData) {
             if (f > ymax) {
@@ -183,7 +217,7 @@ public class RTCalibrationFigure {
             List<Float> iy = yDataMod.get(i);
             if (ix.size() > 0) {
                 XYSeries seriesMod = chart.addSeries("scatterMods - " + massesList.get(i), ix, iy);
-                seriesMod.setMarkerColor(new Color(65 * i % 255, 105 * i % 255, 225 * i % 255));
+                seriesMod.setMarkerColor(new Color(65 * (i + 1) % 255, 105 * (i + 1) % 255, 225 * (i + 1) % 255));
             }
         }
 

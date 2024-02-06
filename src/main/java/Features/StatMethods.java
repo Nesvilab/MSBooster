@@ -293,7 +293,7 @@ public class StatMethods {
                 ArrayList<Integer> outliersIdx = new ArrayList<>();
 
                 for (int i = 0; i < y.length; i++) {
-                    if (zscore((float) y[i], meanDiff, stdDiff) > 2) { //TODO: remove outliers that are at beginning too
+                    if (Math.abs(zscore((float) y[i], meanDiff, stdDiff)) > 2) {
                         outliersIdx.add(i);
                     }
                 }

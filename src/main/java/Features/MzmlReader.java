@@ -36,9 +36,8 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Future;
 
-import static Features.StatMethods.LOESS;
-import static Features.StatMethods.movingAverage;
 import static Features.FloatUtils.doubleToFloat;
+import static Features.StatMethods.*;
 
 public class MzmlReader {
     //final Path path;
@@ -592,7 +591,7 @@ public class MzmlReader {
         }
     }
 
-    public void setLOESS(int regressionSize, double bandwidth, int robustIters, String mode) {
+    public void setLOESS(int regressionSize, String bandwidth, int robustIters, String mode) {
         if (mode.equals("RT")) {
             expAndPredRTs = RTFunctions.getRTarrays(this, regressionSize);
             ArrayList<String> masses = new ArrayList<>();
@@ -603,12 +602,49 @@ public class MzmlReader {
                 masses.add("others");
             }
             for (String mass : masses) {
-                RTLOESS.put(mass, LOESS(expAndPredRTs.get(mass), bandwidth, robustIters));
+                String[] bandwidths = bandwidth.split(",");
+                float[] bestBandwidths = new float[Constants.regressionSplits];
+                double[][] rts = expAndPredRTs.get(mass);
 
-                //for bandwidth in grid search
-                //get the loess model
-                //calculate MSE by comparing calibrated expRT to predRT
-                //choose best model
+                //divide into train and test sets
+                ArrayList<double[][][]> splits = trainTestSplit(rts);
+
+                for (int Nsplit = 0; Nsplit < splits.size(); Nsplit++) {
+                    double bestMSE = Double.MAX_VALUE;
+                    float bestBandwidth = 1f;
+
+                    double[][][] split = splits.get(Nsplit);
+                    double[][] train = split[0];
+                    double[][] test = split[1];
+
+                    for (String b : bandwidths) { //for bandwidth in grid search
+                        float floatb = Float.valueOf(b);
+
+                        //get the loess model
+                        Function1<Double, Double> loess = LOESS(train, floatb, robustIters);
+
+                        //calculate MSE by comparing calibrated expRT to predRT
+                        double[] calibratedRTs = new double[test[0].length];
+                        for (int i = 0; i < calibratedRTs.length; i++) {
+                            double rt = test[0][i];
+                            calibratedRTs[i] = loess.invoke(rt);
+                        }
+                        double mse = meanSquaredError(calibratedRTs, test[1]);
+
+                        //choose best model
+                        if (mse < bestMSE) {
+                            bestMSE = mse;
+                            bestBandwidth = floatb;
+                        }
+                    }
+                    bestBandwidths[Nsplit] = bestBandwidth;
+                }
+                float finalBandwidth = Float.parseFloat(String.format("%.4f", mean(bestBandwidths)));
+                System.out.println("Best average bandwidth for mass " + mass + " from grid search of " +
+                        Constants.rtBandwidth + " after " + Constants.regressionSplits + " iterations is " + finalBandwidth);
+
+                //final model trained on all data
+                RTLOESS.put(mass, LOESS(rts, finalBandwidth, robustIters));
             }
         } else if (mode.equals("IM")) {
             double[][][] expAndPredIMs = IMFunctions.getIMarrays(this, regressionSize);
@@ -616,7 +652,7 @@ public class MzmlReader {
                 if (bins[0] == null) {
                     continue;
                 }
-                IMLOESS.add(LOESS(bins, bandwidth * 2, robustIters)); //needs more smoothing?
+                IMLOESS.add(LOESS(bins, Float.parseFloat(bandwidth), robustIters)); //needs more smoothing?
             }
         } else {
             throw new IllegalArgumentException("only choose RT or IM");

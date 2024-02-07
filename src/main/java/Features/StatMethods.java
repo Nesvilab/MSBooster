@@ -471,4 +471,47 @@ public class StatMethods {
 
         return maxConsecutive;
     }
+
+    public static double meanSquaredError(double[] a, double[] b) {
+        double mse = 0f;
+        for(int i = 0; i < a.length; i++) {
+            mse += Math.pow(a[i] - b[i], 2);
+        }
+        return mse / a.length;
+    }
+
+    public static ArrayList<double[][][]> trainTestSplit(double[][] expAndPred) {
+        //arraylist of N splits
+        //train-test,exp-pred,data
+        double[] exp = expAndPred[0];
+        double[] pred = expAndPred[1];
+
+        ArrayList<double[][][]> splits = new ArrayList<>();
+
+        for (int rep = 0; rep < Constants.regressionSplits; rep++) {
+            //sort into train and test
+            List<Double> trainExpList = new ArrayList<>();
+            List<Double> trainPredList = new ArrayList<>();
+            List<Double> testExpList = new ArrayList<>();
+            List<Double> testPredList = new ArrayList<>();
+
+            for (int i = 0; i < exp.length; i++) {
+                if (i % Constants.regressionSplits != rep) {
+                    trainExpList.add(exp[i]);
+                    trainPredList.add(pred[i]);
+                } else {
+                    testExpList.add(exp[i]);
+                    testPredList.add(pred[i]);
+                }
+            }
+
+            double[][][] split = new double[2][2][];
+            split[0][0] = trainExpList.stream().mapToDouble(Double::doubleValue).toArray();
+            split[0][1] = trainPredList.stream().mapToDouble(Double::doubleValue).toArray();
+            split[1][0] = testExpList.stream().mapToDouble(Double::doubleValue).toArray();
+            split[1][1] = testPredList.stream().mapToDouble(Double::doubleValue).toArray();
+            splits.add(split);
+        }
+        return splits;
+    }
 }

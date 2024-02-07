@@ -182,7 +182,6 @@ public class Constants {
     public static Integer RTbinMultiplier = 1;
     public static Float RTIQR = 50f;
     public static Boolean noRTscores = false; //TODO: better handling of this
-    public static Integer numRTplot = 5000;
     public static String RTfigure_masses = ""; //separate by comma
     public static Integer washGradientBins = 100;
     public static Double rtCutoff = Double.NaN;
@@ -194,8 +193,9 @@ public class Constants {
     public static String massDiffToVariableMod = "0";
 
     //LOESS
-    public static Double bandwidth = 0.05; //"0.01,0.05,0.1,0.2"
+    public static String rtBandwidth = "0.01,0.05,0.1,0.2";
     public static Integer robustIters = 2;
+    public static Integer regressionSplits = 5;
 
     //detect
     public static Boolean useDetect = false;
@@ -206,6 +206,7 @@ public class Constants {
     //ion mobility
     public static Boolean useIM = null;
     public static Integer IMregressionSize = 5000;
+    public static String imBandwidth = "0.1";
     public static Float IMescoreCutoff = (float) Math.pow(10, -3.5);
     public static Integer IMbinMultiplier = 100;
     public static final Float IMIQR = 50f;

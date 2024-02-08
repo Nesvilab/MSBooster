@@ -20,10 +20,13 @@ package Features;
 import External.DiannModelCaller;
 import External.KoinaModelCaller;
 import External.NCEcalibrator;
+import org.apache.commons.io.FileUtils;
 
 import java.io.*;
 import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.util.*;
 import java.util.concurrent.*;
 
@@ -32,7 +35,7 @@ public class MainClass {
     public static ScheduledThreadPoolExecutor executorService;
     public static void main(String[] args) throws Exception {
         Locale.setDefault(Locale.US);
-        System.out.println("MSBooster v1.2.5");
+        System.out.println("MSBooster v1.2.6");
 
         try {
             //accept command line inputs
@@ -750,12 +753,20 @@ public class MainClass {
                         Constants.spectraRTPredInput.substring(0, Constants.spectraRTPredInput.length() - 4) + "_full.tsv");
                 MgfFileWriter mfw = new MgfFileWriter(klr);
                 mfw.write(Constants.outputDirectory + File.separator + "spectraRT_koina.mgf");
+                try {
+                    FileUtils.cleanDirectory(new File(Constants.JsonDirectory));
+                    Files.deleteIfExists(Paths.get(Constants.JsonDirectory));
+                } catch (Exception e) {
+                    try {
+                        FileUtils.cleanDirectory(new File(Constants.JsonDirectory));
+                        Files.deleteIfExists(Paths.get(Constants.JsonDirectory));
+                    } catch (Exception e2) {}
+                }
             }
             if (onlyUsedKoina) {
                 Constants.spectralPredictionMapper = klr;
             } else {
                 Constants.spectraRTPredFile = spectraRTPredFile.substring(1);
-                ;
             }
 
             //create new pin file with features

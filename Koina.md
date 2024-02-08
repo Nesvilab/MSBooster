@@ -75,7 +75,8 @@ uncheck the MSFragger and MSBooster checkboxes.
         - "micro-flow LC–MS/MS system using a modified Vanquish pump (Thermo Fisher
           Scientific) coupled to a Q Exactive Orbitrap HF-X (Thermo Fisher Scientific)"
         - /storage/yangkl/fasta/2023-12-19-decoys-reviewed-isoforms-contam-UP000000589.fas
-        - 21 PDAC lines
+        - 66 PDAC lines
+        - 8 phospho files
     - [Arabidopsis](https://www.nature.com/articles/s41586-020-2094-2)
         - 24 fractions
         - "Nanoflow LC-MS/MS was performed by coupling a Dionex 3000 (Thermo Fisher

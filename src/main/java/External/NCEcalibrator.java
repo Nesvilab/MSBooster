@@ -13,6 +13,7 @@ import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.nio.file.Files;
+import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.*;
 import java.util.concurrent.*;
@@ -254,10 +255,19 @@ public class NCEcalibrator {
 
             try {
                 BitmapEncoder.saveBitmap(chart, Constants.outputDirectory + File.separator +
-                                "NCE_calibration" + File.separator + "calibration.png",
+                                "MSBooster_plots" + File.separator + "calibration.png",
                         BitmapEncoder.BitmapFormat.PNG);
             } catch (IOException e) {
                 e.printStackTrace();
+            }
+            try {
+                FileUtils.cleanDirectory(new File(Constants.outputDirectory + File.separator + "NCE_calibration"));
+                Files.deleteIfExists(Paths.get(Constants.outputDirectory + File.separator + "NCE_calibration"));
+            } catch (Exception e) {
+                try {
+                    FileUtils.cleanDirectory(new File(Constants.outputDirectory + File.separator + "NCE_calibration"));
+                    Files.deleteIfExists(Paths.get(Constants.outputDirectory + File.separator + "NCE_calibration"));
+                } catch (Exception e2) {}
             }
         }
         return new Object[]{currentModel, models};

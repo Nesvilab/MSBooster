@@ -33,6 +33,7 @@ public class ScoreHistogram {
         PinReader pinReader = new PinReader(pinFile);
         ArrayList<Double> targetScores = new ArrayList<>();
         ArrayList<Double> decoyScores = new ArrayList<>();
+        ArrayList<Double> allScores = new ArrayList<>();
         while (pinReader.next()) {
             //collect score values
             Double score = Double.valueOf(pinReader.getColumn(feature));
@@ -41,19 +42,26 @@ public class ScoreHistogram {
             }
             if (pinReader.getTD() == 1) {
                 targetScores.add(score);
+                allScores.add(score);
             } else {
                 decoyScores.add(score);
+                allScores.add(score);
             }
         }
 
-        //plot histogram
-        double scoreMin = Math.min(Collections.min(targetScores), Collections.min(decoyScores));
-        double scoreMax = Math.max(Collections.max(targetScores), Collections.max(decoyScores));
 
-        Histogram histT = new Histogram(targetScores, 100, scoreMin, scoreMax);
-        Histogram histD = new Histogram(decoyScores, 100, scoreMin, scoreMax);
-        chart.addSeries("targets", histT.getxAxisData(), histT.getyAxisData());
-        chart.addSeries("decoys", histD.getxAxisData(), histD.getyAxisData());
+        //plot histogram
+        double scoreMin = Collections.min(allScores);
+        double scoreMax = Collections.max(allScores);
+
+        try {
+            Histogram histT = new Histogram(targetScores, 100, scoreMin, scoreMax);
+            chart.addSeries("targets", histT.getxAxisData(), histT.getyAxisData());
+        } catch (Exception e) {}
+        try {
+            Histogram histD = new Histogram(decoyScores, 100, scoreMin, scoreMax);
+            chart.addSeries("decoys", histD.getxAxisData(), histD.getyAxisData());
+        } catch (Exception e) {}
 
         String pinPath = new File(pinFile).getParent();
         String name = new File(pinFile).getName();

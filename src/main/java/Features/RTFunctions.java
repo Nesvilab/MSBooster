@@ -224,19 +224,21 @@ public class RTFunctions {
             //if negative, use all
             //can consider e score cutoff in constants
             int sizeLimit = thisExpRTs.size();
-            if (sizeLimit < 2) {
-                System.out.println("Warning: not enough target PSMs are available for regression, " +
-                        "setting RT scores equal to 0");
-                Constants.noRTscores = true;
+            if (sizeLimit < 2) { //hard coded
+                if (mass.isEmpty()) {
+                    System.out.println("Warning: not enough target PSMs (" + sizeLimit + ") are available for regression" +
+                            ", setting RT scores equal to 0");
+                } else {
+                    System.out.println("Warning: not enough target PSMs (" + sizeLimit + ") are available for regression" +
+                            " for mass " + mass + ", will use RT calibration curve for regular peptides if available");
+                }
 
                 //just so that there's an output
                 double[][] thisRTs = new double[2][2];
                 thisRTs[0] = new double[2];
                 thisRTs[1] = new double[2];
                 RTs.put(mass, thisRTs);
-            }
-
-            if (RTregressionSize > 0 && RTregressionSize <= sizeLimit) {
+            } else if (RTregressionSize > 0 && RTregressionSize <= sizeLimit) {
                 if (mass.isEmpty()) {
                     System.out.println("RT regression using " + RTregressionSize + " PSMs");
                 } else {

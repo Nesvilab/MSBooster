@@ -59,7 +59,6 @@ public class RTCalibrationFigure {
         // Series
         List<Float> xData = new ArrayList<Float>();
         List<Float> yData = new ArrayList<Float>();
-        List<Float> eScores = new ArrayList<Float>();
 
         //for PTMs besides oxM and C57
         List<List<Float>> xDataMod = new ArrayList<>();
@@ -67,7 +66,7 @@ public class RTCalibrationFigure {
 
         ArrayList<String> massesList = new ArrayList<>();
         massesList.addAll(Arrays.asList(Constants.RTmassesForCalibration.split(",")));
-        if (! Constants.RTfigure_masses.equals("")) {
+        if (!Constants.RTfigure_masses.isEmpty()) {
             for (String mass : Constants.RTfigure_masses.split(",")) {
                 if (! massesList.contains(mass)) {
                     massesList.add(mass);
@@ -81,81 +80,6 @@ public class RTCalibrationFigure {
         }
 
         HashMap<String, Float> bestEScore = new HashMap<>();
-//        for (int scanNum : new TreeSet<Integer>(mzml.scanNumberObjects.keySet())) {
-//            MzmlScanNumber scanNumObj = mzml.getScanNumObject(scanNum);
-//            float rt = scanNumObj.RT; //experimental RT for this scan
-//            if (rt < minRT) {
-//                minRT = rt;
-//            }
-//            if (rt > maxRT) {
-//                maxRT = rt;
-//            }
-//
-//            for (int i = 1; i < scanNumObj.peptideObjects.size() + 1; i++) {
-//                PeptideObj pep = scanNumObj.getPeptideObject(i);
-//                //only get best ones
-//                float currentScore = Float.parseFloat(pep.escore);
-////                if (currentScore < Constants.RTescoreCutoff && pep.spectralSimObj.predIntensities[0] != 0f) {
-//                if (currentScore < Constants.RTescoreCutoff) {
-//                    if (Constants.plotBestPSMPerPeptide) {
-//                        if (bestEScore.containsKey(pep.name)) {
-//                            if (bestEScore.get(pep.name) > currentScore) {
-//                                bestEScore.put(pep.name, currentScore);
-//                            }
-//                        } else {
-//                            bestEScore.put(pep.name, currentScore);
-//                        }
-//                    } else {
-//                        eScores.add(Float.parseFloat(pep.escore));
-//                    }
-//                } else {
-//                    break;
-//                }
-//            }
-//        }
-//        if (Constants.plotBestPSMPerPeptide) {
-//            eScores.addAll(bestEScore.values());
-//        }
-//
-//        eScores.sort(Comparator.naturalOrder());
-//        //this will plot more than numRTplot if PSMs are tied
-//        float maxEScore = eScores.get(Math.min(Constants.numRTplot, eScores.size()) - 1);
-//        for (int scanNum : new TreeSet<Integer>(mzml.scanNumberObjects.keySet())) {
-//            MzmlScanNumber scanNumObj = mzml.getScanNumObject(scanNum);
-//            float rt = scanNumObj.RT; //experimental RT for this scan
-//            for (int i = 1; i < scanNumObj.peptideObjects.size() + 1; i++) {
-//                PeptideObj pep = scanNumObj.getPeptideObject(i);
-//                //only get best ones
-//                float parsedScore = Float.parseFloat(pep.escore);
-////                if (parsedScore <= maxEScore && pep.spectralSimObj.predIntensities[0] != 0f) {
-//                if (parsedScore <= maxEScore) {
-//                    if (Constants.plotBestPSMPerPeptide && parsedScore != bestEScore.get(pep.name)) {
-//                        break;
-//                    }
-//                    boolean containsMod = false;
-//                    int modIndex = 0;
-//                    for (int j = 0; j < massesList.size(); j++) {
-//                        String[] masses = massesList.get(j).split("/");
-//                        for (String mass : masses) {
-//                            if (pep.name.contains(mass)) {
-//                                containsMod = true;
-//                                modIndex = j;
-//                                break;
-//                            }
-//                        }
-//                    }
-//                    if (! containsMod) {
-//                        xData.add(rt);
-//                        yData.add(pep.RT);
-//                    } else {
-//                        xDataMod.get(modIndex).add(rt);
-//                        yDataMod.get(modIndex).add(pep.RT);
-//                    }
-//                } else {
-//                    break;
-//                }
-//            }
-//        }
 
         //set y lim
         int modIdx = 0;
@@ -207,7 +131,7 @@ public class RTCalibrationFigure {
         }
         chart.getStyler().setYAxisMax(ymax);
 
-        if (xData.size() > 0) {
+        if (!xData.isEmpty()) {
             XYSeries series = chart.addSeries("scatter", xData, yData);
             series.setMarkerColor(new Color(0, 0, 0, opacity));
         }
@@ -215,7 +139,7 @@ public class RTCalibrationFigure {
         for (int i = 0; i < xDataMod.size(); i++) {
             List<Float> ix = xDataMod.get(i);
             List<Float> iy = yDataMod.get(i);
-            if (ix.size() > 0) {
+            if (!ix.isEmpty()) {
                 XYSeries seriesMod = chart.addSeries("scatterMods - " + massesList.get(i), ix, iy);
                 seriesMod.setMarkerColor(new Color(65 * (i + 1) % 255, 105 * (i + 1) % 255, 225 * (i + 1) % 255));
             }
@@ -225,6 +149,9 @@ public class RTCalibrationFigure {
         // generates Log data
         int j = 1;
         for (String mass : mzml.RTLOESS.keySet()) {
+            if (mzml.RTLOESS.get(mass) == null) {
+                continue;
+            }
             BufferedWriter calibrationPoints = null;
             if (Constants.writeCalibration) {
                 calibrationPoints = new BufferedWriter(new FileWriter(
@@ -237,7 +164,7 @@ public class RTCalibrationFigure {
             List<Double> y1Data = new ArrayList<Double>();
             for (float i = minRT; i < maxRT; i = i + (maxRT - minRT) / 1000f) {
                 x1Data.add(i);
-                double y = mzml.RTLOESS.get(mass).invoke((double) i); //TODO adapt
+                double y = mzml.RTLOESS.get(mass).invoke((double) i);
                 y1Data.add(y);
                 if (Constants.writeCalibration) {
                     calibrationPoints.write(i + "," + y + "\n");
@@ -247,7 +174,7 @@ public class RTCalibrationFigure {
                 calibrationPoints.close();
             }
             XYSeries series1;
-            if (mass.equals("")) {
+            if (mass.isEmpty()) {
                 series1 = chart.addSeries("regression", x1Data, y1Data);
             } else {
                 series1 = chart.addSeries("regression - " + mass, x1Data, y1Data);

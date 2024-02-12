@@ -603,7 +603,7 @@ public class PercolatorFormatter {
 
                     //generate calibration figure, need mzml and loess
                     if (! Constants.noRTscores) {
-                        RTCalibrationFigure rtfc = new RTCalibrationFigure(mzml, pinFiles[i].getCanonicalPath(), 0.2f);
+                        new RTCalibrationFigure(mzml, pinFiles[i].getCanonicalPath(), 0.2f);
                     }
                 }
                 if (featuresList.contains("deltaRTlinear")) {

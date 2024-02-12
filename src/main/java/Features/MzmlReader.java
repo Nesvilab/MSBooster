@@ -595,7 +595,7 @@ public class MzmlReader {
         if (mode.equals("RT")) {
             expAndPredRTs = RTFunctions.getRTarrays(this, regressionSize);
             ArrayList<String> masses = new ArrayList<>();
-            if (Constants.RTmassesForCalibration.equals("")) {
+            if (Constants.RTmassesForCalibration.isEmpty()) {
                 masses.add("");
             } else {
                 masses.addAll(Arrays.asList(Constants.RTmassesForCalibration.split(",")));
@@ -605,11 +605,16 @@ public class MzmlReader {
                 String[] bandwidths = bandwidth.split(",");
                 float[] bestBandwidths = new float[Constants.regressionSplits];
                 double[][] rts = expAndPredRTs.get(mass);
+                if (rts[0].length < 50) {
+                    RTLOESS.put(mass, null);
+                    continue;
+                }
 
                 //divide into train and test sets
                 ArrayList<double[][][]> splits = trainTestSplit(rts);
 
                 for (int Nsplit = 0; Nsplit < splits.size(); Nsplit++) {
+                    System.out.println("Iteration " + (Nsplit + 1));
                     double bestMSE = Double.MAX_VALUE;
                     float bestBandwidth = 1f;
 
@@ -621,21 +626,25 @@ public class MzmlReader {
                         float floatb = Float.valueOf(b);
 
                         //get the loess model
-                        Function1<Double, Double> loess = LOESS(train, floatb, robustIters);
+                        try {
+                            Function1<Double, Double> loess = LOESS(train, floatb, robustIters);
 
-                        //calculate MSE by comparing calibrated expRT to predRT
-                        double[] calibratedRTs = new double[test[0].length];
-                        for (int i = 0; i < calibratedRTs.length; i++) {
-                            double rt = test[0][i];
-                            calibratedRTs[i] = loess.invoke(rt);
-                        }
-                        double mse = meanSquaredError(calibratedRTs, test[1]);
+                            //calculate MSE by comparing calibrated expRT to predRT
+                            double[] calibratedRTs = new double[test[0].length];
+                            for (int i = 0; i < calibratedRTs.length; i++) {
+                                double rt = test[0][i];
+                                calibratedRTs[i] = loess.invoke(rt);
+                            }
+                            double mse = meanSquaredError(calibratedRTs, test[1]);
 
-                        //choose best model
-                        if (mse < bestMSE) {
-                            bestMSE = mse;
-                            bestBandwidth = floatb;
-                        }
+                            //choose best model
+                            if (mse < bestMSE) {
+                                bestMSE = mse;
+                                bestBandwidth = floatb;
+                            }
+                        } catch (Exception e) {
+                            System.out.println("Bandwidth " + floatb + " failed. Moving on");
+                        } //bandwidth too small?
                     }
                     bestBandwidths[Nsplit] = bestBandwidth;
                 }
@@ -644,7 +653,20 @@ public class MzmlReader {
                         Constants.rtBandwidth + " after " + Constants.regressionSplits + " iterations is " + finalBandwidth);
 
                 //final model trained on all data
-                RTLOESS.put(mass, LOESS(rts, finalBandwidth, robustIters));
+                while (true) {
+                    try {
+                        RTLOESS.put(mass, LOESS(rts, finalBandwidth, robustIters));
+                        break;
+                    } catch (Exception e) {
+                        if (finalBandwidth == 1) {
+                            System.out.println("Regression still not possible with bandwidth 1. Setting RT score to 0");
+                            RTLOESS.put(mass, null);
+                            break;
+                        }
+                        finalBandwidth = Math.min(finalBandwidth * 2, 1);
+                        System.out.println("Regression failed, retrying with double the bandwidth: " + finalBandwidth);
+                    }
+                }
             }
         } else if (mode.equals("IM")) {
             double[][][] expAndPredIMs = IMFunctions.getIMarrays(this, regressionSize);
@@ -673,8 +695,12 @@ public class MzmlReader {
                 for (int j = start; j < end; j++) {
                     MzmlScanNumber msn = getScanNumObject(scanNums.get(j));
                     for (String mass : RTLOESS.keySet()) {
+                        //if null
+                        if (RTLOESS.get(mass) == null) {
+                            continue;
+                        }
                         LOESSRT.put(mass, RTLOESS.get(mass).invoke((double) msn.RT));
-                    } //TODO: change for unmodified peptides
+                    }
                     for (PeptideObj pep : msn.peptideObjects) {
                         double finalDelta = Double.MAX_VALUE;
                         boolean isNone = true;
@@ -692,8 +718,12 @@ public class MzmlReader {
                             }
                         }
                         if (isNone) {
-                            pep.calibratedRT = LOESSRT.get("others");
-                            finalDelta = Math.abs(pep.calibratedRT - pep.RT);
+                            if (LOESSRT.isEmpty()) {
+                                finalDelta = 0;
+                            } else {
+                                pep.calibratedRT = LOESSRT.get("others");
+                                finalDelta = Math.abs(pep.calibratedRT - pep.RT);
+                            }
                         }
                         pep.deltaRTLOESS = finalDelta;
                     }

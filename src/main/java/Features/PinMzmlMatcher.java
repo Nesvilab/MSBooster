@@ -19,11 +19,13 @@ package Features;
 
 import java.io.File;
 import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.HashMap;
-
-import static org.apache.commons.io.FileUtils.listFiles;
+import java.util.List;
+import java.util.stream.Collectors;
 
 public class PinMzmlMatcher {
     public File[] mzmlFiles;
@@ -40,7 +42,10 @@ public class PinMzmlMatcher {
                     pinFileList.add(directory);
                 }
             } else { //directory, but not recursive
-                Collection<File> pinFilesCollection = listFiles(new File(directory), new String[]{"pin"}, false);
+                List<File> pinFilesCollection = Files.walk(Paths.get(directory))
+                    .filter(Files::isRegularFile)
+                    .filter(p -> p.getFileName().toString().toLowerCase().endsWith(".pin"))
+                    .map(Path::toFile).collect(Collectors.toList());
                 for (File file : pinFilesCollection) {
                     if (! file.getCanonicalPath().contains("_" + Constants.editedPin)) {
                         pinFileList.add(file.getCanonicalPath());
@@ -67,27 +72,25 @@ public class PinMzmlMatcher {
                     mzmlFileMap.put(f.getName().substring(0, f.getName().length() - 4), f);
                 }
             } else { //directory
-                Collection<File> mzmlFilesCollection = listFiles(f, new String[]{"mzML"}, false);
+                List<File> mzmlFilesCollection = Files.walk(f.toPath())
+                    .filter(Files::isRegularFile)
+                    .filter(p -> p.getFileName().toString().toLowerCase().endsWith(".mzml"))
+                    .map(Path::toFile).collect(Collectors.toList());
                 for (File file : mzmlFilesCollection) {
-                    if (file.getName().contains("_uncalibrated.mzML")) {
+                    if (file.getName().toLowerCase().contains("_uncalibrated.mzml")) {
                         mzmlFileMap.put(file.getName().substring(0, file.getName().length() - 18), file);
                     }
                     mzmlFileMap.put(file.getName().substring(0, file.getName().length() - 5), file);
                 }
 
-                mzmlFilesCollection = listFiles(f, new String[]{"mzml"}, false);
-                for (File file : mzmlFilesCollection) {
-                    if (file.getName().contains("_uncalibrated.mzml")) {
-                        mzmlFileMap.put(file.getName().substring(0, file.getName().length() - 18), file);
-                    }
-                    mzmlFileMap.put(file.getName().substring(0, file.getName().length() - 5), file);
-                }
-
-                mzmlFilesCollection = listFiles(f, new String[]{"mgf"}, false);
+                mzmlFilesCollection = Files.walk(f.toPath())
+                    .filter(Files::isRegularFile)
+                    .filter(p -> p.getFileName().toString().toLowerCase().endsWith(".mgf"))
+                    .map(Path::toFile).collect(Collectors.toList());
                 for (File file : mzmlFilesCollection) {
                     //editing if calibrated or uncalibrated in name
                     String mgfName = file.getName();
-                    if (mgfName.contains("_uncalibrated.mgf")) {
+                    if (mgfName.toLowerCase().contains("_uncalibrated.mgf")) {
                         mgfName = mgfName.substring(0, mgfName.length() - 17);
                     }
                     if (! mzmlFileMap.containsKey(mgfName.substring(0, mgfName.length() - 4))) { //only want mzml

@@ -37,8 +37,10 @@ public class PeptideObj {
     float RTzscore;
     double RTprob;
     double deltaRTLOESS;
+    double deltaRTLOESS_real;
     double deltaRTLOESSnormalized;
     double calibratedRT;
+    double predRTrealUnits;
     double deltaIMLOESS;
     double deltaIMLOESSnormalized;
     double IMprobabilityUnifPrior;

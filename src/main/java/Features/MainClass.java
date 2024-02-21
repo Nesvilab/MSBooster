@@ -35,7 +35,7 @@ public class MainClass {
     public static ScheduledThreadPoolExecutor executorService;
     public static void main(String[] args) throws Exception {
         Locale.setDefault(Locale.US);
-        System.out.println("MSBooster v1.2.7");
+        System.out.println("MSBooster v1.2.8_beta");
 
         try {
             //accept command line inputs
@@ -794,7 +794,8 @@ public class MainClass {
 
             long end = System.nanoTime();
             long duration = (end - start);
-            System.out.println("Feature calculation and edited pin writing done in " + duration / 1000000 + " ms");
+            System.out.println("Feature calculation, edited pin writing, and QC plot generation done in " +
+                    duration / 1000000 + " ms");
             System.exit(0);
         } catch (Exception e) {
             e.printStackTrace();

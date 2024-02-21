@@ -196,6 +196,8 @@ public class Constants {
     public static String rtBandwidth = "0.01,0.05,0.1,0.2";
     public static Integer robustIters = 2;
     public static Integer regressionSplits = 5;
+    public static Float realMinuteFilter = 10000f;
+    public static Float percentRTgradientFilter = 100f;
 
     //detect
     public static Boolean useDetect = false;
@@ -302,7 +304,7 @@ public class Constants {
     //use single string sep by comma delimiter
     //should include parameter to calculate correlation and then choose
     //default auto, everything, or all? Or a combination I figure out empirically
-    public static String features = "unweightedSpectralEntropy,deltaRTLOESS";
+    public static String features = "predRTrealUnits,unweightedSpectralEntropy,deltaRTLOESS";
     public static Boolean useMultipleCorrelatedFeatures = false;
     //public static String features = "auto";
 
@@ -315,7 +317,7 @@ public class Constants {
             "pearsonCorr", "weightedPearsonCorr", "spearmanCorr", "dotProduct", "weightedDotProduct", "unweightedSpectralEntropy",
             "deltaRTlinear", "deltaRTbins", "deltaRTLOESS", "RTzscore", "RTprobability", "RTprobabilityUnifPrior",
             "deltaRTLOESSnormalized", "calibratedRT", "predictedRT", "numMatchedFragments", "hypergeometricProbability",
-            "intersection", "adjacentSimilarity", "bestScan", "bootstrapSimilarity"));
+            "intersection", "adjacentSimilarity", "bestScan", "bootstrapSimilarity", "deltaRTLOESSreal", "predRTrealUnits"));
     public static final HashSet<String> spectraFeatures = new HashSet<>(Arrays.asList(
             "cosineSimilarity", "weightedCosineSimilarity", "spectralContrastAngle", "weightedSpectralContrastAngle",
             "euclideanDistance", "weightedEuclideanDistance", "brayCurtis", "weightedBrayCurtis", "unweightedSpectralEntropy",
@@ -323,7 +325,7 @@ public class Constants {
             "hypergeometricProbability", "intersection", "adjacentSimilarity", "bestScan", "bootstrapSimilarity"));
     public static final HashSet<String> rtFeatures = new HashSet<>(Arrays.asList(
             "deltaRTlinear", "deltaRTbins", "deltaRTLOESS", "RTzscore", "RTprobability", "RTprobabilityUnifPrior",
-            "deltaRTLOESSnormalized", "calibratedRT", "predictedRT"));
+            "deltaRTLOESSnormalized", "calibratedRT", "predictedRT", "deltaRTLOESSreal", "predRTrealUnits"));
     public static final HashSet<String> imFeatures =
             new HashSet<>(Arrays.asList("deltaIMLOESS", "deltaIMLOESSnormalized", "IMprobabilityUnifPrior", "predictedIM",
                     "ionmobility"));
@@ -398,9 +400,11 @@ public class Constants {
         map.put("unweightedSpectralEntropy", "unweighted_spectral_entropy");
         map.put("numMatchedFragments", "num_matched_fragments");
         map.put("deltaRTLOESS", "delta_RT_loess");
+        map.put("deltaRTLOESSreal", "delta_RT_loess_real");
         map.put("deltaRTLOESSnormalized", "delta_RT_loess_normalized");
         map.put("RTprobabilityUnifPrior", "RT_probability_unif_prior");
         map.put("calibratedRT", "calibrated_RT");
+        map.put("predRTrealUnits", "pred_RT_real_units");
         map.put("predictedRT", "predicted_RT");
         map.put("deltaIMLOESS", "delta_IM_loess");
         map.put("deltaIMLOESSnormalized", "delta_IM_loess_normalized");

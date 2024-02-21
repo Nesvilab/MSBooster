@@ -53,6 +53,7 @@ public class MzmlReader {
     public ArrayList<Float>[] RTbins = null;
     public float[][] RTbinStats;
     public HashMap<String, Function1<Double, Double>> RTLOESS = new HashMap<>();
+    public HashMap<String, Function1<Double, Double>> RTLOESS_realUnits = new HashMap<>();
     public int unifPriorSize;
     public float unifProb;
     public int[] unifPriorSizeIM;
@@ -289,9 +290,18 @@ public class MzmlReader {
                 System.exit(1);
             }
         }
-        //System.out.println("");
+        //set RT filter
+        float maxRT = pin.getRT();
         pin.close();
         pin.reset();
+
+        if (Constants.realMinuteFilter == 10000f) {
+            if (Constants.percentRTgradientFilter != 100f) {
+                Constants.realMinuteFilter = Constants.percentRTgradientFilter / 100 *
+                        maxRT;
+                System.out.println("Setting minute filter to " + Constants.realMinuteFilter);
+            }
+        }
     }
 
     public void setBetas(SpectralPredictionMapper preds, int RTregressionSize) throws IOException {
@@ -607,6 +617,7 @@ public class MzmlReader {
                 double[][] rts = expAndPredRTs.get(mass);
                 if (rts[0].length < 50) {
                     RTLOESS.put(mass, null);
+                    RTLOESS_realUnits.put(mass, null);
                     continue;
                 }
 
@@ -656,11 +667,16 @@ public class MzmlReader {
                 while (true) {
                     try {
                         RTLOESS.put(mass, LOESS(rts, finalBandwidth, robustIters));
+                        double[][] reverseRts = new double[2][];
+                        reverseRts[0] = rts[1];
+                        reverseRts[1] = rts[0];
+                        RTLOESS_realUnits.put(mass, LOESS(reverseRts, finalBandwidth, robustIters));
                         break;
                     } catch (Exception e) {
                         if (finalBandwidth == 1) {
                             System.out.println("Regression still not possible with bandwidth 1. Setting RT score to 0");
                             RTLOESS.put(mass, null);
+                            RTLOESS_realUnits.put(mass, null);
                             break;
                         }
                         finalBandwidth = Math.min(finalBandwidth * 2, 1);
@@ -709,10 +725,13 @@ public class MzmlReader {
                             for (String minimass : masses) {
                                 if (pep.name.contains(minimass)) {
                                     isNone = false;
-                                    double delta = Math.abs(LOESSRT.get(mass) - pep.RT);
+                                    double rt = LOESSRT.get(minimass);
+                                    double delta = Math.abs(rt - pep.RT);
                                     if (delta < finalDelta) {
                                         finalDelta = delta;
-                                        pep.calibratedRT = LOESSRT.get(mass);
+                                        pep.calibratedRT = rt;
+                                        pep.predRTrealUnits = RTLOESS_realUnits.get(minimass).invoke((double) pep.RT);
+                                        pep.deltaRTLOESS_real = Math.abs(msn.RT - pep.predRTrealUnits);
                                     }
                                 }
                             }
@@ -720,9 +739,12 @@ public class MzmlReader {
                         if (isNone) {
                             if (LOESSRT.isEmpty()) {
                                 finalDelta = 0;
+                                pep.deltaRTLOESS_real = 0;
                             } else {
                                 pep.calibratedRT = LOESSRT.get("others");
                                 finalDelta = Math.abs(pep.calibratedRT - pep.RT);
+                                pep.predRTrealUnits = RTLOESS_realUnits.get("others").invoke((double) pep.RT);
+                                pep.deltaRTLOESS_real = Math.abs(msn.RT - pep.predRTrealUnits);
                             }
                         }
                         pep.deltaRTLOESS = finalDelta;
@@ -733,9 +755,6 @@ public class MzmlReader {
         for (Future future : futureList) {
             future.get();
         }
-        //long endTime = System.nanoTime();
-        //long duration = (endTime - startTime);
-        //System.out.println("Calculating deltaRTLOESS took " + duration / 1000000 +" milliseconds");
     }
 
     public void predictIMLOESS(ExecutorService executorService) throws ExecutionException, InterruptedException {

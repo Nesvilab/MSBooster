@@ -17,7 +17,6 @@
 
 package Features;
 
-import com.ctc.wstx.shaded.msv_core.verifier.jarv.Const;
 import com.univocity.parsers.tsv.TsvWriter;
 import com.univocity.parsers.tsv.TsvWriterSettings;
 
@@ -89,6 +88,13 @@ public class PinWriter {
             ProgressReporter pr = new ProgressReporter(pin.length);
             while (pin.next()) {
                 pr.progress();
+                String pep = pin.getPep().baseCharge;
+                pepObj = mzml.scanNumberObjects.get(pin.getScanNum()).getPeptideObject(pep);
+
+                //RT filter
+                if (pepObj.deltaRTLOESS_real > Constants.realMinuteFilter) {
+                    continue;
+                }
 
                 //write everything we already have, not including extra protein columns
                 String[] row = pin.getRow();
@@ -101,10 +107,6 @@ public class PinWriter {
                         writer.addValue(header.size(), row[j]);
                     }
                 }
-
-                String pep = pin.getPep().baseCharge;
-
-                pepObj = mzml.scanNumberObjects.get(pin.getScanNum()).getPeptideObject(pep);
 
                 //switch case
                 for (String feature : featuresList) {
@@ -277,6 +279,10 @@ public class PinWriter {
                         case "deltaRTLOESS":
                             formattedWrite("delta_RT_loess", pepObj.deltaRTLOESS);
                             break;
+                        case "deltaRTLOESSreal":
+                            formattedWrite("delta_RT_loess_real",
+                                    pepObj.deltaRTLOESS_real);
+                            break;
                         case "deltaRTLOESSnormalized":
                             formattedWrite("delta_RT_loess_normalized", pepObj.deltaRTLOESSnormalized);
                             break;
@@ -291,6 +297,9 @@ public class PinWriter {
                             break;
                         case "calibratedRT":
                             formattedWrite("calibrated_RT", pepObj.calibratedRT);
+                            break;
+                        case "predRTrealUnits":
+                            formattedWrite("pred_RT_real_units", pepObj.predRTrealUnits);
                             break;
                         case "predictedRT":
                             formattedWrite("predicted_RT", pepObj.RT);
@@ -754,12 +763,6 @@ public class PinWriter {
                             formattedWrite("intensity_distribution_similarity", pepObj.intensity_distribution_similarity);
                             break;
                     }
-                }
-                //RT filter
-                if (pepObj.deltaRTLOESS > Constants.RTfilter) {
-                    writer.discardValues();
-                    pepObj.spectralSimObj = null;
-                    continue;
                 }
 
                 //flush values to output

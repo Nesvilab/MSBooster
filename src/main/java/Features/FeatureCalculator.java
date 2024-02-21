@@ -51,10 +51,13 @@ public class FeatureCalculator {
         ProgressReporter pr = new ProgressReporter(pin.length);
         while (pin.next()) {
             pr.progress();
-
             String pep = pin.getPep().baseCharge;
-
             pepObj = mzml.scanNumberObjects.get(pin.getScanNum()).getPeptideObject(pep);
+
+            //RT filter
+            if (pepObj.deltaRTLOESS_real > Constants.realMinuteFilter) {
+                continue;
+            }
 
             //switch case
             for (String feature : featuresList) {
@@ -233,6 +236,11 @@ public class FeatureCalculator {
                             pepObj.deltaRTLOESS = 0;
                         }
                         break;
+                    case "deltaRTLOESSreal":
+                        if (Constants.noRTscores) {
+                            pepObj.deltaRTLOESS_real = 0;
+                        }
+                        break;
                     case "deltaRTLOESSnormalized":
                         if (Constants.noRTscores) {
                             pepObj.deltaRTLOESSnormalized = 0;
@@ -257,6 +265,8 @@ public class FeatureCalculator {
                         }
                         break;
                     case "calibratedRT":
+                        break;
+                    case "predRTrealUnits":
                         break;
                     case "predictedRT":
                         break;

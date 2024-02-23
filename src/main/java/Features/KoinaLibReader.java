@@ -25,6 +25,9 @@ public class KoinaLibReader implements SpectralPredictionMapper {
     public KoinaLibReader() {}
 
     public ConcurrentHashMap<String, PredictionEntry> getPreds() {return allPreds;}
+    public void setPreds(ConcurrentHashMap<String, PredictionEntry> preds) {
+        allPreds = preds;
+    }
 
     public void clear() {
         allPreds.clear();

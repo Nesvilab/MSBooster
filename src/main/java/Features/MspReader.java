@@ -197,6 +197,9 @@ public class MspReader implements SpectralPredictionMapper {
     }
 
     public ConcurrentHashMap<String, PredictionEntry> getPreds() { return allPreds; }
+    public void setPreds(ConcurrentHashMap<String, PredictionEntry> preds) {
+        allPreds = preds;
+    }
 
     public float getMaxPredRT() {
         float maxRT = 0f;

@@ -202,6 +202,8 @@ public class PercolatorFormatter {
                 predictedSpectra2 = null; //free up memory
             }
         }
+        predictedSpectra.setPreds(predictedSpectra.filterTopFragments(executorService));
+
         //create detectMap to store detectabilities for base sequence peptides
         //store peptide detectabilities in PredictionEntry
         DetectMap dm = null;
@@ -539,7 +541,7 @@ public class PercolatorFormatter {
                                             sc = new SpectrumComparison(pobj,
                                                     msn.getExpMZs(), msn.getExpIntensities(),
                                                     predictionEntry.mzs, predictionEntry.intensities, pobj.length,
-                                                    Constants.useTopFragments, Constants.useBasePeak, true);
+                                                    true);
                                         }
                                         float score = (float) sc.unweightedSpectralEntropy();
 //                                        if (score > maxScore) {

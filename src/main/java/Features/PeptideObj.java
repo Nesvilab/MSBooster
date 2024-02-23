@@ -87,7 +87,7 @@ public class PeptideObj {
         //this.predMZs = predMZs;
         //this.predInts = predIntensities;
         this.spectralSimObj = new SpectrumComparison(this, scanNumObj.getExpMZs(), scanNumObj.getExpIntensities(),
-                predMZs, predIntensities, length, Constants.useTopFragments, Constants.useBasePeak); //calculate similarity with subset of fragments
+                predMZs, predIntensities, length); //calculate similarity with subset of fragments
         this.RT = predRT;
         this.IM = predIM;
         if (Constants.useMatchedIntensities || Constants.usePeakCounts || Constants.useIntensitiesDifference ||
@@ -117,7 +117,7 @@ public class PeptideObj {
         //this.predInts = predIntensities;
         this.fragmentIonTypes = fragmentIonTypes;
         this.spectralSimObj = new SpectrumComparison(this, scanNumObj.getExpMZs(), scanNumObj.getExpIntensities(),
-                predMZs, predIntensities, length, Constants.useTopFragments, Constants.useBasePeak, fragmentIonTypes); //calculate similarity with subset of fragments
+                predMZs, predIntensities, length, fragmentIonTypes); //calculate similarity with subset of fragments
         this.RT = predRT;
         this.IM = predIM;
         if (Constants.useMatchedIntensities || Constants.usePeakCounts || Constants.useIntensitiesDifference ||
@@ -244,8 +244,7 @@ public class PeptideObj {
 
                 individualSpectralSimilarities.put(entry.getKey(),
                         (float) new SpectrumComparison(this, expMZs, expIntensities,
-                                subsetPredMZsArray, subsetPredIntsArray, this.length,//doesn't really make sense to use hypergeo here
-                                Constants.useTopFragments, false).unweightedSpectralEntropy()); //already did base peak intensity filtering
+                                subsetPredMZsArray, subsetPredIntsArray, this.length).unweightedSpectralEntropy());
             }
         }
     }

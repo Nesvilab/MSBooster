@@ -268,6 +268,9 @@ public class DlibReader implements SpectralPredictionMapper{
     public ConcurrentHashMap<String, PredictionEntry> getPreds() throws IOException {
         return allPreds;
     }
+    public void setPreds(ConcurrentHashMap<String, PredictionEntry> preds) {
+        allPreds = preds;
+    }
 
     public void clear() {
         allPreds.clear();

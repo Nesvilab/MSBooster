@@ -31,7 +31,12 @@ public class RandomThings {
     }
 
     public static void main(String[] args) {
-        System.out.println(5f / 2f);
+        float[] a = new float[1];
+        a[0] = 1f;
+        float[] b = a;
+        b[0] = 2f;
+        System.out.println(Arrays.toString(a));
+        System.out.println(Arrays.toString(b));
     }
 }
 

@@ -445,11 +445,14 @@ public class MgfFileReader implements SpectralPredictionMapper{
     }
 
     public ConcurrentHashMap<String, PredictionEntry> getPreds() {
-        if (allPredsHashMap.size() == 0) {
+        if (allPredsHashMap.isEmpty()) {
             allPredsHashMap = new ConcurrentHashMap<>(allPreds);
             allPreds = null; //no longer need concurrency
         }
         return allPredsHashMap;
+    }
+    public void setPreds(ConcurrentHashMap<String, PredictionEntry> preds) {
+        allPreds = preds;
     }
 
     public float getMaxPredRT() {

@@ -35,7 +35,7 @@ public class MainClass {
     public static ScheduledThreadPoolExecutor executorService;
     public static void main(String[] args) throws Exception {
         Locale.setDefault(Locale.US);
-        System.out.println("MSBooster v1.2.8_beta");
+        System.out.println("MSBooster v1.2.10");
 
         try {
             //accept command line inputs
@@ -242,6 +242,9 @@ public class MainClass {
                                 vals = val.split(" ");
                                 params.put("minPrecursorCharge", vals[0]);
                                 params.put("maxPrecursorCharge", vals[1]);
+                                break;
+                            case "output_report_topN":
+                                params.put("maxRank", val);
                                 break;
                             case "mass_offsets":
                                 if (!val.isEmpty()) {

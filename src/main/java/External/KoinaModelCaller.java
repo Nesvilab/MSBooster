@@ -377,7 +377,7 @@ public class KoinaModelCaller {
             }
 
             PredictionEntry pe = new PredictionEntry(mzs, intensities[i], fragNums[i],
-                    charges[i], fragmentIonTypes[i], true);
+                    charges[i], fragmentIonTypes[i]);
 
             if (preds.containsKey(peptide)) {
                 pe.setRT(preds.get(peptide).getRT());
@@ -397,7 +397,7 @@ public class KoinaModelCaller {
             if (!preds.containsKey(line[0] + "|" + line[1])) {
                 //get predictionEntry
                 PeptideFormatter pf;
-                PredictionEntry tmp = new PredictionEntry();
+                PredictionEntry tmp = null;
                 String stripped = "";
                 String baseCharge = "";
                 switch (modelType) {
@@ -435,14 +435,10 @@ public class KoinaModelCaller {
                     }
 
                     //add to hashmap
-                    PredictionEntry newPred = new PredictionEntry();
-                    newPred.setMzs(newMZs);
-                    newPred.setIntensities(tmp.getIntensities());
+                    PredictionEntry newPred = new PredictionEntry(newMZs, tmp.getIntensities(),
+                            tmp.getFragNums(), tmp.getCharges(), tmp.getFragmentIonTypes());
                     newPred.setRT(tmp.getRT());
                     newPred.setIM(tmp.getIM());
-                    newPred.setFragmentIonTypes(tmp.getFragmentIonTypes());
-                    newPred.setFragNums(tmp.getFragNums());
-                    newPred.setFlags(tmp.getFlags());
                     preds.put(mc.fullPeptide, newPred);
                 } catch (Exception e) {
                     if (! PeptideSkipper.skipPeptide(stripped, baseCharge.split("\\|")[1])) {

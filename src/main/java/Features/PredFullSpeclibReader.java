@@ -210,7 +210,6 @@ public class PredFullSpeclibReader extends MgfFileReader {
             }
 
             //now can assign new PredictionEntry
-            PredictionEntry newPred = new PredictionEntry();
             float[] mzArray = new float[finalMZs.size()];
             float[] intArray = new float[finalMZs.size()];
             String[] fragmentArray = new String[finalMZs.size()];
@@ -219,11 +218,11 @@ public class PredFullSpeclibReader extends MgfFileReader {
                 intArray[i] = finalIntensities.get(i);
                 fragmentArray[i] = finalFragmentIonTypes.get(i);
             }
-            newPred.setMzs(mzArray);
-            newPred.setIntensities(intArray);
+
+            PredictionEntry newPred = new PredictionEntry(mzArray, intArray,
+                    new int[0], new int[0], fragmentArray);
             newPred.setRT(pe.RT);
             newPred.setIM(pe.IM);
-            newPred.setFragmentIonTypes(fragmentArray);
             this.allPredsHashMap.put(lSplit[0] + "|" + lSplit[1], newPred);
         }
     }

@@ -16,7 +16,7 @@ public class ScoreHistogram {
     Set<String> logScaleFeatures = Set.of("delta_RT_loess", "delta_RT_loess_normalized", "RT_probability_unif_prior",
             "hypergeometric_probability");
 
-    public ScoreHistogram(String pinFile, String feature) throws IOException {
+    public ScoreHistogram(PinReader pinReader, String feature) throws IOException {
         String xAxisLabel = feature;
         if (logScaleFeatures.contains(feature)) {
             xAxisLabel = "log(" + xAxisLabel + " + 0.01)";
@@ -30,7 +30,6 @@ public class ScoreHistogram {
         chart.getStyler().setXAxisLabelRotation(45);
         chart.getStyler().setXAxisDecimalPattern("#.##");
 
-        PinReader pinReader = new PinReader(pinFile);
         ArrayList<Double> targetScores = new ArrayList<>();
         ArrayList<Double> decoyScores = new ArrayList<>();
         ArrayList<Double> allScores = new ArrayList<>();
@@ -48,7 +47,7 @@ public class ScoreHistogram {
                 allScores.add(score);
             }
         }
-
+        pinReader.reset();
 
         //plot histogram
         double scoreMin = Collections.min(allScores);
@@ -63,8 +62,8 @@ public class ScoreHistogram {
             chart.addSeries("decoys", histD.getxAxisData(), histD.getyAxisData());
         } catch (Exception e) {}
 
-        String pinPath = new File(pinFile).getParent();
-        String name = new File(pinFile).getName();
+        String pinPath = new File(pinReader.name).getParent();
+        String name = new File(pinReader.name).getName();
         String dir = pinPath + File.separator + "MSBooster_plots";
         if (! new File(dir).exists()) {
             new File(dir).mkdirs();

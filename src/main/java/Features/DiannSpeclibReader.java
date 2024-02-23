@@ -108,15 +108,11 @@ public class DiannSpeclibReader implements SpectralPredictionMapper{
                     }
 
                     //add to hashmap
-                    PredictionEntry newPred = new PredictionEntry();
-                    newPred.setMzs(mzs);
-                    newPred.setIntensities(intensities);
-                    newPred.setFragNums(fragNums);
-                    newPred.setFlags(flags);
-                    newPred.setCharges(charges);
+                    PredictionEntry newPred = new PredictionEntry(mzs, intensities,
+                            fragNums, charges, new String[0]);
                     newPred.setRT(iRT);
                     newPred.setIM(IM);
-                    newPred.setFragmentIonTypes();
+                    newPred.setFlags(flags);
                     allPreds.put(mc.fullPeptide, newPred);
                 }
                 is.close();
@@ -149,14 +145,10 @@ public class DiannSpeclibReader implements SpectralPredictionMapper{
                         }
 
                         //add to hashmap
-                        PredictionEntry newPred = new PredictionEntry();
-                        newPred.setMzs(newMZs);
-                        newPred.setIntensities(tmp.intensities);
+                        PredictionEntry newPred = new PredictionEntry(newMZs, tmp.intensities,
+                                tmp.fragNums, tmp.charges, tmp.fragmentIonTypes);
                         newPred.setRT(tmp.RT);
                         newPred.setIM(tmp.IM);
-                        newPred.setFragmentIonTypes(tmp.fragmentIonTypes);
-                        newPred.setFragNums(tmp.fragNums);
-                        newPred.setFlags(tmp.flags);
                         allPreds.put(mc.fullPeptide, newPred);
                     }
                 }

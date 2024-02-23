@@ -39,52 +39,33 @@ public class PredictionEntry {
 
     public PredictionEntry() {}
 
-    public PredictionEntry(float[] mzs, float[] intensities, boolean needToSort) {
-        if (needToSort) {
-            this.mzs = new float[mzs.length];
-            this.intensities = new float[intensities.length];
+    public PredictionEntry(float[] mzs, float[] intensities, int[] fragNums, int[] charges,
+                           String[] fragmentIonTypes) {
 
-            int[] sortedIndices = IntStream.range(0, mzs.length)
-                    .boxed().sorted((k, j) -> Float.compare(mzs[k], mzs[j]))
-                    .mapToInt(ele -> ele).toArray();
+        this.mzs = new float[mzs.length];
+        this.intensities = new float[intensities.length];
+        this.fragNums = new int[fragNums.length];
+        this.charges = new int[charges.length];
+        this.fragmentIonTypes = new String[fragmentIonTypes.length];
 
-            for (int i = 0; i < sortedIndices.length; i++) {
-                this.mzs[i] = mzs[sortedIndices[i]];
-                this.intensities[i] = intensities[sortedIndices[i]];
-            }
-        } else {
-            setMzs(mzs);
-            setIntensities(intensities);
-        }
-    }
+        int[] sortedIndices = IntStream.range(0, mzs.length)
+                .boxed().sorted((k, j) -> Float.compare(mzs[k], mzs[j]))
+                .mapToInt(ele -> ele).toArray();
 
-    public PredictionEntry(float[] mzs, float[] intensities, int[] fragNums, int[] charges, String[] fragmentIonTypes,
-                           boolean needToSort) {
-        if (needToSort) {
-            this.mzs = new float[mzs.length];
-            this.intensities = new float[intensities.length];
-            this.fragNums = new int[fragNums.length];
-            this.charges = new int[charges.length];
-            this.fragmentIonTypes = new String[fragmentIonTypes.length];
-
-            int[] sortedIndices = IntStream.range(0, mzs.length)
-                    .boxed().sorted((k, j) -> Float.compare(mzs[k], mzs[j]))
-                    .mapToInt(ele -> ele).toArray();
-
-            for (int i = 0; i < sortedIndices.length; i++) {
-                this.mzs[i] = mzs[sortedIndices[i]];
-                this.intensities[i] = intensities[sortedIndices[i]];
+        for (int i = 0; i < sortedIndices.length; i++) {
+            this.mzs[i] = mzs[sortedIndices[i]];
+            this.intensities[i] = intensities[sortedIndices[i]];
+            if (fragNums.length != 0) {
                 this.fragNums[i] = fragNums[sortedIndices[i]];
+            }
+            if (charges.length != 0) {
                 this.charges[i] = charges[sortedIndices[i]];
+            }
+            if (fragmentIonTypes.length != 0) {
                 this.fragmentIonTypes[i] = fragmentIonTypes[sortedIndices[i]];
             }
-            setFlags();
-        } else {
-            setMzs(mzs);
-            setIntensities(intensities);
-            setFragNums(fragNums);
-            setCharges(charges);
-            setFragmentIonTypes(fragmentIonTypes);
+        }
+        if (fragmentIonTypes.length != 0) {
             setFlags();
         }
     }

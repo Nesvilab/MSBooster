@@ -23,10 +23,7 @@ import org.checkerframework.checker.units.qual.N;
 import umich.ms.fileio.exceptions.FileParsingException;
 import umontreal.ssj.probdist.EmpiricalDist;
 
-import java.io.BufferedReader;
-import java.io.File;
-import java.io.FileReader;
-import java.io.IOException;
+import java.io.*;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutionException;
@@ -75,7 +72,8 @@ public class PinReader {
             calcEvalue = true;
         }
 
-        getLength();
+        length = getLength();
+        System.out.println(length + " PSMs");
     }
 
     //reload from start
@@ -117,12 +115,56 @@ public class PinReader {
         return getRow()[colNum];
     }
 
-    public void getLength() throws IOException {
-        length = 0;
-        while (next()) {
-            length += 1;
+    public int getLength() throws IOException {
+        if (Constants.maxRank == 0) {
+            int mylength = 0;
+            while (next()) {
+                mylength++;
+                int rank = getRank();
+                if (rank > Constants.maxRank) {
+                    Constants.maxRank = rank;
+                }
+            }
+            reset();
+            return mylength;
+        } else {
+            //https://stackoverflow.com/questions/453018/number-of-lines-in-a-file-in-java
+            InputStream is = new BufferedInputStream(new FileInputStream(name));
+            try {
+                byte[] c = new byte[1024];
+
+                int readChars = is.read(c);
+                if (readChars == -1) {
+                    // bail out if nothing to read
+                    return 0;
+                }
+
+                // make it easy for the optimizer to tune this loop
+                int count = -1;
+                while (readChars == 1024) {
+                    for (int i=0; i<1024;) {
+                        if (c[i++] == '\n') {
+                            ++count;
+                        }
+                    }
+                    readChars = is.read(c);
+                }
+
+                // count remaining characters
+                while (readChars != -1) {
+                    for (int i=0; i<readChars; ++i) {
+                        if (c[i] == '\n') {
+                            ++count;
+                        }
+                    }
+                    readChars = is.read(c);
+                }
+
+                return count == 0 ? 1 : count;
+            } finally {
+                is.close();
+            }
         }
-        reset();
     }
 
     public String[] getRow() {return row;}
@@ -204,7 +246,7 @@ public class PinReader {
         System.out.println("Setting RT cutoff at " + rtCutoff);
 
         //edit length
-        getLength();
+        length = getLength();
     }
 
     public String[] createPDeep2List() throws IOException {

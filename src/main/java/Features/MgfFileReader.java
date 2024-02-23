@@ -287,13 +287,10 @@ public class MgfFileReader implements SpectralPredictionMapper{
                                             scanNumberObjects.put(scanNum, new MzmlScanNumber(scanNum, sortedMzArray, sortedIntArray, RT, IM));
                                         }
                                     } else { //act as predictions
-                                        PredictionEntry newPred = new PredictionEntry();
-                                        newPred.setMzs(mzArray);
-                                        newPred.setIntensities(intArray);
+                                        PredictionEntry newPred = new PredictionEntry(mzArray, intArray,
+                                                new int[0], new int[0], fragmentArray);
                                         newPred.setRT(RT);
                                         newPred.setIM(IM);
-                                        newPred.setFragmentIonTypes(fragmentArray);
-                                        newPred.setFlags();
                                         //convert title to base format
                                         String basePep = sb.toString();
                                         if (model.equals("PredFull")) {
@@ -411,13 +408,10 @@ public class MgfFileReader implements SpectralPredictionMapper{
                                 scanNumberObjects.put(scanNum, new MzmlScanNumber(scanNum, sortedMzArray, sortedIntArray, RT, IM));
                             }
                         } else { //act as predictions
-                            PredictionEntry newPred = new PredictionEntry();
-                            newPred.setMzs(mzArray);
-                            newPred.setIntensities(intArray);
+                            PredictionEntry newPred = new PredictionEntry(mzArray, intArray,
+                                    new int[0], new int[0], fragmentArray);
                             newPred.setRT(RT);
                             newPred.setIM(IM);
-                            newPred.setFragmentIonTypes(fragmentArray);
-                            newPred.setFlags();
                             if (mzArray.length != 0) {
                                 //convert title to base format
                                 String basePep = sb.toString();

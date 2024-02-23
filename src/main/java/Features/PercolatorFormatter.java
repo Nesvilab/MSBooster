@@ -184,17 +184,16 @@ public class PercolatorFormatter {
                                 typeArray[i] = fragTypes.get(i);
                             }
 
-                            pe.setMzs(mzArray);
-                            pe.setIntensities(intArray);
-                            pe.setFragmentIonTypes(typeArray);
-                            allPreds.put(key, pe);
+                            PredictionEntry newPe = new PredictionEntry(mzArray, intArray,
+                                    pe.getFragNums(), pe.getCharges(), typeArray);
+                            allPreds.put(key, newPe);
                         } else { //retain predfull intensities, just add RT from other model
                             //but if predfull has missing entry, use other model instead
                             PredictionEntry pe2 = predictedSpectra2.getPreds().get(key);
                             if (!Objects.isNull(pe2)) {
-                                pe.setMzs(pe2.mzs);
-                                pe.setIntensities(pe2.intensities);
-                                pe.setFragmentIonTypes(pe2.fragmentIonTypes);
+                                PredictionEntry newPe = new PredictionEntry(pe2.mzs, pe2.intensities,
+                                        pe.getFragNums(), pe.getCharges(), pe2.fragmentIonTypes);
+                                pe = newPe;
                             }
                             allPreds.put(key, pe);
                         }
@@ -425,6 +424,9 @@ public class PercolatorFormatter {
                         //TODO: make less clunky
                         for (MzmlScanNumber msn : mzml.scanNumberObjects.values()) {
                             for (PeptideObj pobj : msn.peptideObjects) {
+                                if (pobj == null) {
+                                    break;
+                                }
                                 PredictionEntry pe = allPreds.get(pobj.name);
                                 double mz = pobj.precursorMz;
                                 if (pe.precursorMz != 0d) {
@@ -697,8 +699,9 @@ public class PercolatorFormatter {
                 }
 
                 //plot hist
+                PinReader pinReader = new PinReader(histFile);
                 for (String feature : featuresList) {
-                    new ScoreHistogram(histFile, Constants.camelToUnderscore.get(feature));
+                    new ScoreHistogram(pinReader, Constants.camelToUnderscore.get(feature));
                 }
             }
         } catch (Exception e) {

@@ -45,8 +45,11 @@ public class IMFunctions {
             MzmlScanNumber scanNumObj = mzml.getScanNumObject(scanNum);
             float im = scanNumObj.IM; //experimental RT for this scan
 
-            for (int i = 1; i < scanNumObj.peptideObjects.size() + 1; i++) {
+            for (int i = 1; i < scanNumObj.peptideObjects.length + 1; i++) {
                 PeptideObj pep = scanNumObj.getPeptideObject(i);
+                if (pep == null) {
+                    break;
+                }
                 int charge = pep.charge - 1;
                 float e = Float.parseFloat(pep.escore);
                 if (e > Constants.IMescoreCutoff) {
@@ -136,8 +139,11 @@ public class IMFunctions {
             int round = (int) (scanNumObj.IM * Constants.IMbinMultiplier); //experimental RT for this scan, assume in minutes
 
             //iterate through PSMs
-            for (int i = 1; i < scanNumObj.peptideObjects.size() + 1; i++) {
+            for (int i = 1; i < scanNumObj.peptideObjects.length + 1; i++) {
                 PeptideObj pep = scanNumObj.getPeptideObject(i);
+                if (pep == null) {
+                    break;
+                }
                 int charge = pep.charge - 1;
 
                 int instances = Math.max(1, -1 * (int) Math.ceil(Math.log10(Double.parseDouble(pep.escore)))); //this version avoids empty bins

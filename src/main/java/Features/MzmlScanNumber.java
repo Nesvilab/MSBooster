@@ -37,7 +37,6 @@ public class MzmlScanNumber {
     public float[] savedExpMZs;
     public float[] savedExpIntensities;
     float RT;
-    Double calibratedRT;
     int RTbinSize;
     float normalizedRT;
     Float IM;
@@ -45,7 +44,7 @@ public class MzmlScanNumber {
     Double lowerLimit;
     Double upperLimit;
     public HashMap<String, Float> NCEs = new HashMap<>();
-    ArrayList<PeptideObj> peptideObjects = new ArrayList<>();
+    PeptideObj[] peptideObjects = new PeptideObj[Constants.maxRank];
     //double[] mzFreqs;
     public static float[] zeroFloatArray = new float[]{0};
 
@@ -60,6 +59,7 @@ public class MzmlScanNumber {
         ISpectrum spectrum = scan.fetchSpectrum();
         this.expMZs = doubleToFloat(spectrum.getMZs());
         this.expIntensities = doubleToFloat(spectrum.getIntensities());
+        sortArrays(this.expMZs, this.expIntensities);
         this.savedExpMZs = this.expMZs;
         this.savedExpIntensities = this.expIntensities;
         this.RT = scan.getRt().floatValue();
@@ -115,8 +115,29 @@ public class MzmlScanNumber {
         this.scanNum = scanNum;
         this.expMZs = expMZs;
         this.expIntensities = expInts;
+        sortArrays(this.expMZs, this.expIntensities);
         this.RT = RT;
         this.IM = IM;
+    }
+
+    public static void sortArrays(float[] eMZs, float[] eIntensities) {
+        int n = eMZs.length;
+        float[][] pairs = new float[n][2];
+
+        // Create pairs of eMZs and corresponding eIntensities
+        for (int i = 0; i < n; i++) {
+            pairs[i][0] = eMZs[i];
+            pairs[i][1] = eIntensities[i];
+        }
+
+        // Sort the pairs based on eMZs
+        Arrays.sort(pairs, (a, b) -> Float.compare(a[0], b[0]));
+
+        // Update eMZs and eIntensities based on sorted pairs
+        for (int i = 0; i < n; i++) {
+            eMZs[i] = pairs[i][0];
+            eIntensities[i] = pairs[i][1];
+        }
     }
 
     public float[] getExpMZs() { return expMZs; }
@@ -125,9 +146,6 @@ public class MzmlScanNumber {
     public PeptideObj setPeptideObject(PeptideFormatter name, int rank, int targetORdecoy, String escore,
                                  ConcurrentHashMap<String, PredictionEntry> allPreds, boolean set) {
 
-//        if (rank != peptideObjects.size() + 1) { //need to add entries in order
-//            throw new AssertionError("must add next rank");
-//        }
         PredictionEntry predictionEntry = allPreds.get(name.baseCharge);
         PeptideObj newPepObj = null;
         try {
@@ -165,7 +183,7 @@ public class MzmlScanNumber {
                         zeroFloatArray, predRT, predIM);
             }
             if (set) {
-                peptideObjects.add(rank - 1, newPepObj);
+                peptideObjects[rank - 1] = newPepObj;
             }
 
             //remove higher ranked peaks
@@ -191,14 +209,14 @@ public class MzmlScanNumber {
                 newPepObj = new PeptideObj(this, name.baseCharge, rank, targetORdecoy, escore,
                         zeroFloatArray, zeroFloatArray, predRT, predIM);
                 if (set) {
-                    peptideObjects.add(rank - 1, newPepObj);
+                    peptideObjects[rank - 1] = newPepObj;
                 }
             } else {
                 String[] periodSplit = Constants.spectraRTPredFile.split("\\.");
                 if (periodSplit[periodSplit.length - 1].equals("dlib")) { //won't always include every entry
                     newPepObj = new PeptideObj(this, name.baseCharge, rank, targetORdecoy, escore,
                             zeroFloatArray, zeroFloatArray, predRT, predIM);
-                    peptideObjects.add(rank - 1, newPepObj);
+                    peptideObjects[rank - 1] = newPepObj;
                 } else {
                     System.out.println("Prediction missing in file for " + name.baseCharge);
                     e.printStackTrace();
@@ -210,7 +228,7 @@ public class MzmlScanNumber {
     }
 
     public PeptideObj getPeptideObject(int rank) {
-        return peptideObjects.get(rank - 1);
+        return peptideObjects[rank - 1];
     } //arraylist now, not hashmap
 
     public PeptideObj getPeptideObject(String name) {

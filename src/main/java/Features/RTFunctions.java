@@ -72,10 +72,10 @@ public class RTFunctions {
                 continue;
             }
 
-            if (scanNumObj.peptideObjects.isEmpty()) {
+            PeptideObj pep = scanNumObj.getPeptideObject(1);
+            if (pep == null) {
                 continue;
             }
-            PeptideObj pep = scanNumObj.getPeptideObject(1);
 
             float e = Float.parseFloat(pep.escore);
             if (e > escoreThreshold) {
@@ -296,8 +296,11 @@ public class RTFunctions {
             int round = (int) (scanNumObj.RT *  Constants.RTbinMultiplier); //experimental RT for this scan, assume in minutes
 
             //iterate through PSMs
-            for (int i = 1; i < scanNumObj.peptideObjects.size() + 1; i++) {
+            for (int i = 1; i < Constants.maxRank + 1; i++) {
                 PeptideObj pep = scanNumObj.getPeptideObject(i);
+                if (pep == null) {
+                    continue;
+                }
 
                 int instances = Math.max(1, -1 * (int) Math.ceil(Math.log10(Double.parseDouble(pep.escore)))); //this version avoids empty bins
                 for (int j = 0; j < instances; j++) {

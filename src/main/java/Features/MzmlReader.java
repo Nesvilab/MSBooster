@@ -290,6 +290,7 @@ public class MzmlReader {
                 System.exit(1);
             }
         }
+        System.out.println("done");
         //set RT filter
         float maxRT = pin.getRT();
         pin.close();
@@ -333,6 +334,9 @@ public class MzmlReader {
 
                     //now calculate deltaRTs
                     for (PeptideObj pep : msn.peptideObjects) {
+                        if (pep == null) {
+                            break;
+                        }
                         pep.deltaRT = Math.abs(msn.normalizedRT - pep.RT);
                     }
                 }
@@ -437,6 +441,9 @@ public class MzmlReader {
 
                     //now calculate deltaRTs
                     for (PeptideObj pep : msn.peptideObjects) {
+                        if (pep == null) {
+                            break;
+                        }
                         pep.deltaRTbin = Math.abs(binMean - pep.RT);
                         pep.RTzscore = Math.abs(StatMethods.zscore(pep.RT, binMean, binStd));
                     }
@@ -470,6 +477,9 @@ public class MzmlReader {
                         LOESSRT.put(mass, RTLOESS.get(mass).invoke((double) msn.RT));
                     }
                     for (PeptideObj pep : msn.peptideObjects) {
+                        if (pep == null) {
+                            break;
+                        }
                         double finalDelta = Double.MAX_VALUE;
                         for (String mass : LOESSRT.keySet()) {
                             if (pep.name.contains(mass)) {
@@ -502,7 +512,7 @@ public class MzmlReader {
 
                     //also set bin size, for use with uniform prior prob
                     int idx = (int) (msn.IM * Constants.IMbinMultiplier);
-                    if (msn.peptideObjects.size() > 0) {
+                    if (msn.peptideObjects[0] != null) {
                         msn.IMbinSize = IMbins[msn.getPeptideObject(1).charge - 1][idx].size();
                     }
                 }
@@ -529,6 +539,9 @@ public class MzmlReader {
 
                     //now calculate deltaRTs
                     for (PeptideObj pep : msn.peptideObjects) {
+                        if (pep == null) {
+                            break;
+                        }
                         float binIqr = IMbinStats[pep.charge - 1][idx][2];
                         double LOESSIM = IMLOESS.get(pep.charge - 1).invoke((double) msn.IM);
                         //pep.deltaIMLOESSnormalized = Math.abs(LOESSIM - pep.IM) / binStd;
@@ -558,6 +571,9 @@ public class MzmlReader {
                         MzmlScanNumber msn = getScanNumObject(scanNums.get(j));
 
                         for (PeptideObj pep : msn.peptideObjects) {
+                            if (pep == null) {
+                                break;
+                            }
                             pep.RTprob = StatMethods.probability(msn.RT * Constants.RTbinMultiplier, pep.RT, kernelDensities);
                         }
                     }
@@ -587,6 +603,9 @@ public class MzmlReader {
                         MzmlScanNumber msn = getScanNumObject(scanNums.get(j));
 
                         for (PeptideObj pep : msn.peptideObjects) {
+                            if (pep == null) {
+                                break;
+                            }
                             pep.IMprob = StatMethods.probability(msn.IM * Constants.IMbinMultiplier, pep.IM, kernelDensities[pep.charge - 1]);
                         }
                     }
@@ -718,6 +737,9 @@ public class MzmlReader {
                         LOESSRT.put(mass, RTLOESS.get(mass).invoke((double) msn.RT));
                     }
                     for (PeptideObj pep : msn.peptideObjects) {
+                        if (pep == null) {
+                            break;
+                        }
                         double finalDelta = Double.MAX_VALUE;
                         boolean isNone = true;
                         for (String mass : LOESSRT.keySet()) {
@@ -770,6 +792,9 @@ public class MzmlReader {
                     MzmlScanNumber msn = getScanNumObject(scanNums.get(j));
 
                     for (PeptideObj pep : msn.peptideObjects) {
+                        if (pep == null) {
+                            break;
+                        }
                         double LOESSIM = IMLOESS.get(pep.charge - 1).invoke((double) msn.IM);
                         pep.deltaIMLOESS = Math.abs(LOESSIM - pep.IM);
 

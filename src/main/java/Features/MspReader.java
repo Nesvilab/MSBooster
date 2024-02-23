@@ -137,14 +137,11 @@ public class MspReader implements SpectralPredictionMapper {
                         charges[i] = chargesList.get(i);
                     }
 
-                    PredictionEntry newPred = new PredictionEntry();
-                    newPred.setMzs(mzs);
-                    newPred.setIntensities(ints);
+                    PredictionEntry newPred = new PredictionEntry(mzs, ints,
+                            fragNums, charges, new String[0]);
                     newPred.setRT(RT);
                     newPred.setIM(0f);
-                    newPred.setFragNums(fragNums);
                     newPred.setFlags(flags);
-                    newPred.setCharges(charges);
                     allPreds.put(pep, newPred);
                 }
 
@@ -184,9 +181,8 @@ public class MspReader implements SpectralPredictionMapper {
                         }
 
                         //add to hashmap
-                        PredictionEntry newPred = new PredictionEntry();
-                        newPred.setMzs(newMZs);
-                        newPred.setIntensities(tmp.intensities);
+                        PredictionEntry newPred = new PredictionEntry(newMZs, tmp.intensities,
+                                tmp.fragNums, tmp.charges, new String[0]);
                         newPred.setFlags(tmp.flags);
                         newPred.setRT(tmp.RT);
                         newPred.setIM(0f);

@@ -33,7 +33,7 @@ public class ProgressReporter {
     public void progress() {
         synchronized (lock) {
             linesRead.incrementAndGet();
-            while (linesRead.get() > iterations * currentPercent.get() / 100 &&
+            while (linesRead.get() > (float) currentPercent.get() / 100f * (float) iterations &&
                     currentPercent.get() <= 100) {
                 if (currentPercent.get() == 100) {
                     System.out.println("..." + currentPercent.get() + "%");
@@ -41,6 +41,7 @@ public class ProgressReporter {
                     break;
                 } else {
                     System.out.print("..." + currentPercent.get() + "%");
+                    System.out.println(linesRead.get());
                 }
                 currentPercent.addAndGet(Constants.loadingPercent);
                 currentPercent.set(Math.min(currentPercent.get(), 100));

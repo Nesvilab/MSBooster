@@ -47,8 +47,6 @@ public class PeptideObj {
     double RTprobabilityUnifPrior;
     Float IM;
     double IMprob;
-    //float[] predMZs;
-    //float[] predInts;
     String[] fragmentIonTypes;
     int chromatogramWindowQuery;
 

@@ -133,6 +133,7 @@ public class SpectrumComparison {
         matchedIntensities = getMatchedIntensities(eMZs, eIntensities, predMZs, predIntensities);
     }
 
+    //TODO sort
     public SpectrumComparison pickedPredicted() {
         SpectrumComparison sc = new SpectrumComparison();
 

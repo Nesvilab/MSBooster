@@ -60,8 +60,12 @@ public class MzmlScanNumber {
         this.expMZs = doubleToFloat(spectrum.getMZs());
         this.expIntensities = doubleToFloat(spectrum.getIntensities());
         sortArrays(this.expMZs, this.expIntensities);
-        this.savedExpMZs = this.expMZs;
-        this.savedExpIntensities = this.expIntensities;
+        if (Constants.removeRankPeaks && (Constants.features.contains("hypergeometricProbability") ||
+                Constants.features.contains("intersection") ||
+                Constants.features.contains("adjacentSimilarity"))) {
+            this.savedExpMZs = this.expMZs;
+            this.savedExpIntensities = this.expIntensities;
+        }
         this.RT = scan.getRt().floatValue();
         if (Constants.useIM) {
             this.IM = scan.getIm().floatValue();
@@ -155,6 +159,7 @@ public class MzmlScanNumber {
             float predIM = predictionEntry.IM;
 
             //filter out predicted fragments if not in range
+            //TODO can make this faster by only comparing beginning and end
             ArrayList<Float> tmpMZs = new ArrayList<>();
             ArrayList<Float> tmpIntensities = new ArrayList<>();
             for (int i = 0; i < predMZs.length; i++) {

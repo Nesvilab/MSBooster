@@ -108,9 +108,7 @@ public class MzmlReader {
 
         //Constants.useIM = true;
         //scanNumberObjects = mgf.scanNumberObjects;
-        for (Map.Entry<Integer, MzmlScanNumber> entry : mgf.scanNumberObjects.entrySet()) {
-            scanNumberObjects.put(entry.getKey(), entry.getValue());
-        }
+        scanNumberObjects.putAll(mgf.scanNumberObjects);
         mgf.clear();
 
         scanNums = new ArrayList<>(scanNumberObjects.size());
@@ -119,30 +117,6 @@ public class MzmlReader {
     }
 
     //get experimental spectra
-    public float[] getIntensity(int scanNum) throws FileParsingException {
-        IScan scan = scans.getScanByNum(scanNum);
-//        if (Constants.basePeakNormalization) { //for getting average matched fragment intensity for DIANN-MSFragger comparison
-//            double[] intensities = scan.fetchSpectrum().getIntensities();
-//
-//            //get max intensity
-//            double maxInt = 0.0;
-//            for (double d : intensities) {
-//                if (d > maxInt) {
-//                    maxInt = d;
-//                }
-//            }
-//
-//            for (int i = 0; i < intensities.length; i++) {
-//                intensities[i] = intensities[i] / maxInt * 100000.0; //arbitrary base peak intensity of 100000
-//            }
-//        }
-        return doubleToFloat(scan.fetchSpectrum().getIntensities());
-    }
-
-    public float[] getMZ(int scanNum) throws FileParsingException {
-        IScan scan = scans.getScanByNum(scanNum);
-        return doubleToFloat(scan.fetchSpectrum().getMZs());
-    }
 
     //getting fragment frequency distribution
     //final output might be edited to optionally add something to multiply at the end

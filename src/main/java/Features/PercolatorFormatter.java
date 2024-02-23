@@ -331,21 +331,20 @@ public class PercolatorFormatter {
                 }
 
                 //Special preparations dependent on features we require
-                if (predictedSpectra != null) {
-                    mzml.setPinEntries(pin, predictedSpectra);
-                    //these require all experimental peaks before removing higher rank peaks
-                    if (Constants.removeRankPeaks &&
-                            (featuresList.contains("hypergeometricProbability") ||
-                                    featuresList.contains("intersection") ||
-                                    featuresList.contains("adjacentSimilarity"))) {
-                        for (MzmlScanNumber msn : mzml.scanNumberObjects.values()) {
-                            msn.expMZs = msn.savedExpMZs;
-                            msn.expIntensities = msn.savedExpIntensities;
-                            msn.savedExpMZs = null;
-                            msn.savedExpIntensities = null;
-                        }
-                        Constants.removeRankPeaks = false;
+                mzml.setPinEntries(pin, predictedSpectra);
+                //these require all experimental peaks before removing higher rank peaks
+                if (Constants.removeRankPeaks &&
+                        (featuresList.contains("hypergeometricProbability") ||
+                                featuresList.contains("intersection") ||
+                                featuresList.contains("adjacentSimilarity"))) {
+                    for (MzmlScanNumber msn : mzml.scanNumberObjects.values()) {
+                        msn.expMZs = msn.savedExpMZs;
+                        msn.expIntensities = msn.savedExpIntensities;
+                        msn.savedExpMZs = null;
+                        msn.savedExpIntensities = null;
                     }
+                    Constants.removeRankPeaks = false;
+                }
 
 //                    if (featuresList.contains("adjacentSimilarity")) {
 //                        //use rangemap from guava
@@ -379,194 +378,194 @@ public class PercolatorFormatter {
 //                        }
 //                    }
 
-                    if (featuresList.contains("adjacentSimilarity")) {
-                        System.out.println("Calculating adjacent similarity");
-                        //check that scan m/z ranges are in mzml
-                        if (mzml.scanNumberObjects.firstEntry().getValue().isolationUpper == 0.0d) {
-                            System.out.println("Adjacent similarity feature requires m/z ranges " +
-                                    "for each scan. This mzml is incompatible. Exiting.");
-                            System.exit(1);
-                        }
+                if (featuresList.contains("adjacentSimilarity")) {
+                    System.out.println("Calculating adjacent similarity");
+                    //check that scan m/z ranges are in mzml
+                    if (mzml.scanNumberObjects.firstEntry().getValue().isolationUpper == 0.0d) {
+                        System.out.println("Adjacent similarity feature requires m/z ranges " +
+                                "for each scan. This mzml is incompatible. Exiting.");
+                        System.exit(1);
+                    }
 
-                        SortedSet<Double> scanNumbers = new TreeSet<>();
-                        for (MzmlScanNumber msn : mzml.scanNumberObjects.values()) {
-                            scanNumbers.add(msn.isolationLower);
-                            scanNumbers.add(msn.isolationUpper);
-                        }
-                        Double[] scanNumbersList = new Double[scanNumbers.size()];
-                        int scanNumberIdx = 0;
-                        for (Double d : scanNumbers) {
-                            scanNumbersList[scanNumberIdx] = d;
-                            scanNumberIdx += 1;
-                        }
+                    SortedSet<Double> scanNumbers = new TreeSet<>();
+                    for (MzmlScanNumber msn : mzml.scanNumberObjects.values()) {
+                        scanNumbers.add(msn.isolationLower);
+                        scanNumbers.add(msn.isolationUpper);
+                    }
+                    Double[] scanNumbersList = new Double[scanNumbers.size()];
+                    int scanNumberIdx = 0;
+                    for (Double d : scanNumbers) {
+                        scanNumbersList[scanNumberIdx] = d;
+                        scanNumberIdx += 1;
+                    }
 
-                        //initialize
-                        for (int j = 0; j < scanNumbersList.length - 1; j++) {
-                            allMatchedScans.put(Range.open(scanNumbersList[j], scanNumbersList[j + 1]),
-                                    new ArrayList<>());
-                        }
+                    //initialize
+                    for (int j = 0; j < scanNumbersList.length - 1; j++) {
+                        allMatchedScans.put(Range.open(scanNumbersList[j], scanNumbersList[j + 1]),
+                                new ArrayList<>());
+                    }
 
-                        //add scan numbers to ranges with sub range maps?
-                        for (MzmlScanNumber msn : mzml.scanNumberObjects.values()) {
-                            RangeMap<Double, ArrayList<Integer>> rangemap =
-                                    allMatchedScans.subRangeMap(Range.open(msn.isolationLower, msn.isolationUpper));
-                            for (ArrayList<Integer> entry :
-                                    rangemap.asMapOfRanges().values()) {
-                                entry.add(msn.scanNum);
+                    //add scan numbers to ranges with sub range maps?
+                    for (MzmlScanNumber msn : mzml.scanNumberObjects.values()) {
+                        RangeMap<Double, ArrayList<Integer>> rangemap =
+                                allMatchedScans.subRangeMap(Range.open(msn.isolationLower, msn.isolationUpper));
+                        for (ArrayList<Integer> entry :
+                                rangemap.asMapOfRanges().values()) {
+                            entry.add(msn.scanNum);
+                        }
+                    }
+
+                    String[] precursors = new String[allPreds.size()];
+                    int precursorNum = 0;
+                    for (String s : allPreds.keySet()) {
+                        precursors[precursorNum] = s;
+                        precursorNum += 1;
+                    }
+
+                    //TODO: make less clunky
+                    for (MzmlScanNumber msn : mzml.scanNumberObjects.values()) {
+                        for (PeptideObj pobj : msn.peptideObjects) {
+                            if (pobj == null) {
+                                break;
                             }
-                        }
+                            PredictionEntry pe = allPreds.get(pobj.name);
+                            double mz = pobj.precursorMz;
+                            if (pe.precursorMz != 0d) {
+                                mz = pe.precursorMz;
+                            }
 
-                        String[] precursors = new String[allPreds.size()];
-                        int precursorNum = 0;
-                        for (String s : allPreds.keySet()) {
-                            precursors[precursorNum] = s;
-                            precursorNum += 1;
-                        }
+                            ArrayList<Integer> scans = allMatchedScans.get(mz);
+                            if (scans.size() == 0) {
+                                mz -= 0.0001;
+                                scans = allMatchedScans.get(mz);
+                            }
 
-                        //TODO: make less clunky
-                        for (MzmlScanNumber msn : mzml.scanNumberObjects.values()) {
-                            for (PeptideObj pobj : msn.peptideObjects) {
-                                if (pobj == null) {
-                                    break;
-                                }
-                                PredictionEntry pe = allPreds.get(pobj.name);
-                                double mz = pobj.precursorMz;
-                                if (pe.precursorMz != 0d) {
-                                    mz = pe.precursorMz;
-                                }
+                            //adjacent windows where one has more scans than other
+                            if (allMatchedScans.get(mz + 0.0002).size() > scans.size() &&
+                                    allMatchedScans.get(mz + 0.0002).contains(scans.get(0))) {
+                                mz += 0.0002;
+                                scans = allMatchedScans.get(mz);
+                            }
 
-                                ArrayList<Integer> scans = allMatchedScans.get(mz);
-                                if (scans.size() == 0) {
-                                    mz -= 0.0001;
-                                    scans = allMatchedScans.get(mz);
-                                }
+                            int scanIdx = scans.indexOf(msn.scanNum);
+                            if (scanIdx == -1) {
+                                mz += 0.0002;
+                                scans = allMatchedScans.get(mz);
+                                scanIdx = scans.indexOf(msn.scanNum);
 
-                                //adjacent windows where one has more scans than other
-                                if (allMatchedScans.get(mz + 0.0002).size() > scans.size() &&
-                                        allMatchedScans.get(mz + 0.0002).contains(scans.get(0))) {
-                                    mz += 0.0002;
-                                    scans = allMatchedScans.get(mz);
-                                }
-
-                                int scanIdx = scans.indexOf(msn.scanNum);
                                 if (scanIdx == -1) {
-                                    mz += 0.0002;
+                                    mz -= 0.0004;
                                     scans = allMatchedScans.get(mz);
                                     scanIdx = scans.indexOf(msn.scanNum);
-
-                                    if (scanIdx == -1) {
-                                        mz -= 0.0004;
-                                        scans = allMatchedScans.get(mz);
-                                        scanIdx = scans.indexOf(msn.scanNum);
-                                    }
                                 }
-
-                                if (pe.times.size() == 0) {
-                                    pobj.chromatogramWindowQuery = Math.min(Constants.chromatogramWindow, scanIdx);
-                                } else {
-                                    pobj.chromatogramWindowQuery = scanIdx - pe.times.get(0) +
-                                            Math.min(Constants.chromatogramWindow, pe.times.get(0));
-                                }
-                                pe.times.add(scanIdx);
-                                pe.precursorMz = mz;
-                                allPreds.put(pobj.name, pe);
                             }
-                        }
 
-                        mzml.futureList.clear();
-                        for (int j = 0; j < Constants.numThreads; j++) {
-                            int start = (int) (allPreds.size() * (long) j) / Constants.numThreads;
-                            int end = (int) (allPreds.size() * (long) (j + 1)) / Constants.numThreads;
-                            mzml.futureList.add(executorService.submit(() -> {
-                                ProgressReporter pr = new ProgressReporter(end - start);
-                                PredictionEntry predictionEntry;
+                            if (pe.times.size() == 0) {
+                                pobj.chromatogramWindowQuery = Math.min(Constants.chromatogramWindow, scanIdx);
+                            } else {
+                                pobj.chromatogramWindowQuery = scanIdx - pe.times.get(0) +
+                                        Math.min(Constants.chromatogramWindow, pe.times.get(0));
+                            }
+                            pe.times.add(scanIdx);
+                            pe.precursorMz = mz;
+                            allPreds.put(pobj.name, pe);
+                        }
+                    }
+
+                    mzml.futureList.clear();
+                    for (int j = 0; j < Constants.numThreads; j++) {
+                        int start = (int) (allPreds.size() * (long) j) / Constants.numThreads;
+                        int end = (int) (allPreds.size() * (long) (j + 1)) / Constants.numThreads;
+                        mzml.futureList.add(executorService.submit(() -> {
+                            ProgressReporter pr = new ProgressReporter(end - start);
+                            PredictionEntry predictionEntry;
 //                                String[] entrySplit;
 //                                MassCalculator mc;
-                                ArrayList<Integer> scans;
-                                MzmlScanNumber msn;
-                                Float[] scores;
-                                for (int k = start; k < end; k++) {
-                                    pr.progress();
+                            ArrayList<Integer> scans;
+                            MzmlScanNumber msn;
+                            Float[] scores;
+                            for (int k = start; k < end; k++) {
+                                pr.progress();
 
-                                    SpectrumComparison sc = null;
+                                SpectrumComparison sc = null;
 
-                                    String precursor = precursors[k];
-                                    precursors[k] = null;
-                                    predictionEntry = allPreds.get(precursor);
+                                String precursor = precursors[k];
+                                precursors[k] = null;
+                                predictionEntry = allPreds.get(precursor);
 
 //                                    entrySplit = precursor.split("\\|");
 //                                    int charge = Integer.parseInt(entrySplit[1]);
 //                                    mc = new MassCalculator(entrySplit[0], entrySplit[1]);
 //                                    double precursorMz = (mc.mass + charge * mc.proton) / charge;
 
-                                    scans = allMatchedScans.get(predictionEntry.precursorMz);
+                                scans = allMatchedScans.get(predictionEntry.precursorMz);
 //                                    if (scans.size() == 0) {
 //                                        scans = allMatchedScans.get(precursorMz - 0.0001);
 //                                        scans.addAll(allMatchedScans.get(precursorMz + 0.0001));
 //                                        scans.sort(Comparator.naturalOrder());
 //                                    }
-                                    List<Integer> scansList = scans.subList(Math.max(0, predictionEntry.times.get(0) - Constants.chromatogramWindow),
-                                                Math.min(scans.size(), predictionEntry.times.get(predictionEntry.times.size() - 1) + Constants.chromatogramWindow));
+                                List<Integer> scansList = scans.subList(Math.max(0, predictionEntry.times.get(0) - Constants.chromatogramWindow),
+                                            Math.min(scans.size(), predictionEntry.times.get(predictionEntry.times.size() - 1) + Constants.chromatogramWindow));
 
 //                                    double maxScore = 0d;
 //                                    int bestScan = 0;
-                                    predictionEntry.scores.put("entropy", new Float[scansList.size()]);
-                                    predictionEntry.scores.put("hypergeom", new Float[scansList.size()]);
-                                    predictionEntry.scores.put("spearman", new Float[scansList.size()]);
-                                    int scoreIdx = 0;
+                                predictionEntry.scores.put("entropy", new Float[scansList.size()]);
+                                predictionEntry.scores.put("hypergeom", new Float[scansList.size()]);
+                                predictionEntry.scores.put("spearman", new Float[scansList.size()]);
+                                int scoreIdx = 0;
 //                                    double minDeltaRT = Double.MAX_VALUE;
 //
 //                                    int RTidx = 0;
-                                    for (int scan : scansList) {
-                                        msn = mzml.scanNumberObjects.get(scan);
+                                for (int scan : scansList) {
+                                    msn = mzml.scanNumberObjects.get(scan);
 //                                        double deltaRT = Math.abs(msn.calibratedRT - predictionEntry.RT);
 //                                        if (deltaRT < minDeltaRT) {
 //                                            minDeltaRT = deltaRT;
 //                                            predictionEntry.bestScanIdx = RTidx;
 //                                        }
-                                        PeptideObj pobj = new PeptideObj();
-                                        pobj.name = precursor;
-                                        pobj.charge = Integer.parseInt(precursor.split("\\|")[1]);
-                                        pobj.scanNumObj = msn;
-                                        pobj.length = 0;
-                                        for (int l = 0; l < pobj.name.length() - 2; l++) {
-                                            if (Character.isAlphabetic(pobj.name.charAt(l))) {
-                                                pobj.length += 1;
-                                            }
+                                    PeptideObj pobj = new PeptideObj();
+                                    pobj.name = precursor;
+                                    pobj.charge = Integer.parseInt(precursor.split("\\|")[1]);
+                                    pobj.scanNumObj = msn;
+                                    pobj.length = 0;
+                                    for (int l = 0; l < pobj.name.length() - 2; l++) {
+                                        if (Character.isAlphabetic(pobj.name.charAt(l))) {
+                                            pobj.length += 1;
                                         }
+                                    }
 
-                                        if (sc != null) {
-                                            sc.reload(pobj, msn.getExpMZs(), msn.getExpIntensities());
-                                        } else {
-                                            sc = new SpectrumComparison(pobj,
-                                                    msn.getExpMZs(), msn.getExpIntensities(),
-                                                    predictionEntry.mzs, predictionEntry.intensities, pobj.length,
-                                                    true);
-                                        }
-                                        float score = (float) sc.unweightedSpectralEntropy();
+                                    if (sc != null) {
+                                        sc.reload(pobj, msn.getExpMZs(), msn.getExpIntensities());
+                                    } else {
+                                        sc = new SpectrumComparison(pobj,
+                                                msn.getExpMZs(), msn.getExpIntensities(),
+                                                predictionEntry.mzs, predictionEntry.intensities, pobj.length,
+                                                true);
+                                    }
+                                    float score = (float) sc.unweightedSpectralEntropy();
 //                                        if (score > maxScore) {
 //                                            maxScore = score;
 //                                            bestScan = scan;
 //                                        }
-                                        scores = predictionEntry.scores.get("entropy");
-                                        scores[scoreIdx] = score;
-                                        predictionEntry.scores.put("entropy", scores);
+                                    scores = predictionEntry.scores.get("entropy");
+                                    scores[scoreIdx] = score;
+                                    predictionEntry.scores.put("entropy", scores);
 
-                                        score = (float) sc.hyperGeometricProbability();
-                                        scores = predictionEntry.scores.get("hypergeom");
-                                        scores[scoreIdx] = score;
-                                        predictionEntry.scores.put("hypergeom", scores);
+                                    score = (float) sc.hyperGeometricProbability();
+                                    scores = predictionEntry.scores.get("hypergeom");
+                                    scores[scoreIdx] = score;
+                                    predictionEntry.scores.put("hypergeom", scores);
 
-                                        score = (float) sc.spearmanCorr();
-                                        scores = predictionEntry.scores.get("spearman");
-                                        scores[scoreIdx] = score;
-                                        predictionEntry.scores.put("spearman", scores);
+                                    score = (float) sc.spearmanCorr();
+                                    scores = predictionEntry.scores.get("spearman");
+                                    scores[scoreIdx] = score;
+                                    predictionEntry.scores.put("spearman", scores);
 
-                                        scoreIdx += 1;
+                                    scoreIdx += 1;
 //                                        RTidx += 1;
-                                    }
-                                    //predictionEntry.bestScan = bestScan;
-                                    //TODO: what if repeated scans? Longer than other arrays
+                                }
+                                //predictionEntry.bestScan = bestScan;
+                                //TODO: what if repeated scans? Longer than other arrays
 //                                    scores = predictionEntry.scores.get("entropy");
 //
 //                                    int startShift = 0;
@@ -593,12 +592,11 @@ public class PercolatorFormatter {
 //                                            arrayEnd + endShift + 1);
 //                                    predictionEntry.scores.put("hypergeom", newScores2);
 //                                    allPreds.put(precursor, predictionEntry);
-                                }
-                            }));
-                        }
-                        for (Future future : mzml.futureList) {
-                            future.get();
-                        }
+                            }
+                        }));
+                    }
+                    for (Future future : mzml.futureList) {
+                        future.get();
                     }
                 }
                 if (featuresList.contains("deltaRTLOESS") || featuresList.contains("deltaRTLOESSnormalized")) {

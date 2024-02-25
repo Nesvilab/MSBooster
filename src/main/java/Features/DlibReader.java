@@ -110,7 +110,7 @@ public class DlibReader implements SpectralPredictionMapper{
             PinReader pin = new PinReader(f.getCanonicalPath());
 
             //for row in pin
-            while (pin.next()) {
+            while (pin.next(true)) {
                 int td = pin.getTD();
                 if (td == 0) { //decoy
                     PeptideFormatter pfDecoy = pin.getPep();

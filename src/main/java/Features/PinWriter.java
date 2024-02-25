@@ -86,7 +86,7 @@ public class PinWriter {
         try {
             PeptideObj pepObj = null;
             ProgressReporter pr = new ProgressReporter(pin.length);
-            while (pin.next()) {
+            while (pin.next(true)) {
                 pr.progress();
                 String pep = pin.getPep().baseCharge;
                 pepObj = mzml.scanNumberObjects.get(pin.getScanNum()).getPeptideObject(pep);

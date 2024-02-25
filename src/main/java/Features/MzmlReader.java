@@ -18,6 +18,7 @@
 package Features;
 
 import kotlin.jvm.functions.Function1;
+import org.checkerframework.checker.units.qual.A;
 import umich.ms.datatypes.LCMSDataSubset;
 import umich.ms.datatypes.scan.IScan;
 import umich.ms.datatypes.scan.StorageStrategy;
@@ -248,26 +249,57 @@ public class MzmlReader {
 //    }
 
     class setScanNumPepObj implements Runnable {
+        private ArrayList<String> lines = new ArrayList<>();
         private int scanNum;
         private ArrayList<PeptideFormatter> peps = new ArrayList<>();
         private ArrayList<Integer> ranks = new ArrayList<>();
         private ArrayList<Integer> tds = new ArrayList<>();
         private ArrayList<String> escores = new ArrayList<>();
         private final ConcurrentHashMap<String, PredictionEntry> allPreds;
-        public setScanNumPepObj(int scanNum, ConcurrentHashMap<String, PredictionEntry> allPreds) {
-            this.scanNum = scanNum;
+        private int specIdx;
+        private int pepIdx;
+        private int rankIdx;
+        private int labelIdx;
+        private int eScoreIdx;
+        private boolean calcEvalue;
+        public setScanNumPepObj(String scanNum, ConcurrentHashMap<String, PredictionEntry> allPreds,
+                                int specIdx, int pepIdx, int rankIdx, int labelIdx, int eScoreIdx, boolean calcEvalue) {
+            this.scanNum = Integer.parseInt(scanNum);
             this.allPreds = allPreds;
+            this.specIdx = specIdx;
+            this.pepIdx = pepIdx;
+            this.rankIdx = rankIdx;
+            this.labelIdx = labelIdx;
+            this.eScoreIdx = eScoreIdx;
+            this.calcEvalue = calcEvalue;
         }
 
-        public void add(PeptideFormatter pep, int rank, int td, String escore) {
-            peps.add(pep);
-            ranks.add(rank);
-            tds.add(td);
-            escores.add(escore);
+        //TODO move this to parallel part
+        public void add(String line) {
+            lines.add(line);
         }
 
         @Override
         public void run() {
+            for (String line : lines) {
+                String[] row = line.split("\t");
+                String[] periodSplit = row[specIdx].split("\\.");
+                peps.add(new PeptideFormatter(row[pepIdx],
+                        periodSplit[periodSplit.length - 1].split("_")[0], "pin"));
+                try {
+                    ranks.add(Integer.parseInt(row[rankIdx]));
+                } catch (Exception e) {
+                    String[] specIdxSplit = row[specIdx].split("_");
+                    ranks.add(Integer.parseInt(specIdxSplit[specIdxSplit.length - 1]));
+                }
+                tds.add(Math.max(0, Integer.parseInt(row[labelIdx])));
+                if (calcEvalue) {
+                    escores.add(String.valueOf(Math.exp(15.0 - Double.parseDouble(row[eScoreIdx]))));
+                } else {
+                    escores.add(String.valueOf(Math.pow(10, Double.parseDouble(row[eScoreIdx]))));
+                }
+            }
+
             for (int i = 0; i < peps.size(); i++) {
                 scanNumberObjects.get(scanNum).setPeptideObject(peps.get(i), ranks.get(i),
                         tds.get(i), escores.get(i), allPreds, true);
@@ -277,28 +309,31 @@ public class MzmlReader {
     public void setPinEntries(PinReader pin, SpectralPredictionMapper spm, ExecutorService executorService)
             throws AssertionError, Exception {
         //TODO: multithread?
-        System.out.println("Loading pin " + pin.name);
         ConcurrentHashMap<String, PredictionEntry> allPreds = spm.getPreds();
         ProgressReporter pr = new ProgressReporter(pin.length);
         futureList.clear();
 
-        int currentScanNum = 0;
+        String currentScanNum = "0";
         setScanNumPepObj task = null;
-        while (pin.next()) {
+        int limit = pin.scanNumIdx + 2;
+        while (pin.next(false)) {
             try {
                 pr.progress();
-                if (pin.getScanNum() != currentScanNum) {
+                //get scanNum as string
+                String scanNum = pin.line.split("\t", limit)[pin.scanNumIdx];
+                if (!Objects.equals(scanNum, currentScanNum)) {
                     //send previous setScanNumPepObj
                     if (task != null) {
                         executorService.execute(task);
                     }
 
                     //make new setScanNumPepObj
-                    currentScanNum = pin.getScanNum();
-                    task = new setScanNumPepObj(currentScanNum, allPreds);
+                    currentScanNum = scanNum;
+                    task = new setScanNumPepObj(currentScanNum, allPreds,
+                            pin.specIdx, pin.pepIdx, pin.rankIdx, pin.labelIdx, pin.eScoreIdx, pin.calcEvalue);
                 }
                 //add to it
-                task.add(pin.getPep(), pin.getRank(), pin.getTD(), pin.getEScore());
+                task.add(pin.line);
             } catch (Exception e) {
                 e.printStackTrace();
                 System.exit(1);

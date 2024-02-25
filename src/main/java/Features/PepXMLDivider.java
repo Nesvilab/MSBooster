@@ -154,7 +154,7 @@ public class PepXMLDivider {
     public void loadPin(String pinFile) throws IOException {
         pinMap.clear();
         PinReader pr = new PinReader(pinFile);
-        while (pr.next()) {
+        while (pr.next(true)) {
             PeptideFormatter pf = pr.getPep();
             pinMap.put(pr.getScanNum() + "|" + pr.getRank(), pf.baseCharge);
         }

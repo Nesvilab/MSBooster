@@ -230,7 +230,7 @@ public class PercolatorFormatter {
                 PinReader pin = new PinReader(pinFile.getCanonicalPath());
 
                 //add to counter
-                while (pin.next()) {
+                while (pin.next(true)) {
                     String pep = pin.getPep().base;
                     if (pepCounter.containsKey(pep)) {
                         pepCounter.put(pep, pepCounter.get(pep) + 1);
@@ -321,6 +321,7 @@ public class PercolatorFormatter {
 
                 //load pin file, which already includes all ranks
                 PinReader pin = new PinReader(pinFiles[i].getCanonicalPath());
+                System.out.println("Processing pin " + pin.name);
                 if (Constants.removeWashGradient) {
                     if (Constants.rtCutoff.isNaN()) {
                         pin.attachMzml(mzml);

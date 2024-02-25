@@ -41,7 +41,7 @@ public class PredFullSpeclibReader extends MgfFileReader {
             PinReader pin = new PinReader(pinFile.getCanonicalPath());
 
             //add to counter
-            while (pin.next()) {
+            while (pin.next(true)) {
                 peptides.add(pin.getPep().baseCharge);
             }
             pin.close();

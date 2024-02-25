@@ -33,7 +33,7 @@ public class ScoreHistogram {
         ArrayList<Double> targetScores = new ArrayList<>();
         ArrayList<Double> decoyScores = new ArrayList<>();
         ArrayList<Double> allScores = new ArrayList<>();
-        while (pinReader.next()) {
+        while (pinReader.next(true)) {
             //collect score values
             Double score = Double.valueOf(pinReader.getColumn(feature));
             if (logScaleFeatures.contains(feature)) {

@@ -48,9 +48,12 @@ public class FeatureCalculator {
         String pep;
         int scanNum;
         final ExecutorService executorService = Executors.newFixedThreadPool(2);
-        public calcFeat(String pep, int scanNum) {
-            this.pep = pep;
-            this.scanNum = scanNum;
+        public calcFeat(String line, int specIdx, int pepIdx, int scanNumIdx) {
+            String[] row = line.split("\t");
+            String[] periodSplit = row[specIdx].split("\\.");
+            this.pep = new PeptideFormatter(row[pepIdx],
+                    periodSplit[periodSplit.length - 1].split("_")[0], "pin").baseCharge;
+            this.scanNum = Integer.parseInt(row[scanNumIdx]);
         }
 
         @Override
@@ -652,8 +655,8 @@ public class FeatureCalculator {
     public void calculate(ExecutorService executorService) throws IOException {
         ProgressReporter pr = new ProgressReporter(pin.length);
         mzml.futureList.clear();
-        while (pin.next()) {
-            calcFeat task = new calcFeat(pin.getPep().baseCharge, pin.getScanNum());
+        while (pin.next(false)) {
+            calcFeat task = new calcFeat(pin.line, pin.specIdx, pin.pepIdx, pin.scanNumIdx);
             executorService.execute(task);
             pr.progress();
         }

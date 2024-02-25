@@ -33,18 +33,19 @@ public class PinReader {
     String name; //used for resetting
     BufferedReader in;
     String[] header;
+    String line;
     private String[] row;
 
-    int scanNumIdx;
-    int labelIdx;
-    int rankIdx;
-    int specIdx;
-    int pepIdx;
-    int eScoreIdx;
-    int rtIdx;
+    final int scanNumIdx;
+    final int labelIdx;
+    final int rankIdx;
+    final int specIdx;
+    final int pepIdx;
+    final int eScoreIdx;
+    final int rtIdx;
 
     HashMap<String, Integer> idxMap = new HashMap<>();
-    private boolean calcEvalue = false;
+    boolean calcEvalue = false;
 
     MzmlReader mzml;
     int length;
@@ -83,16 +84,20 @@ public class PinReader {
     }
 
     //get next row ready
-    public boolean next() throws IOException {
-        String line = in.readLine();
-        if (line != null) {
-            row = line.split("\t");
+    //do not split line for parallel processes
+    public boolean next(boolean splitLine) throws IOException {
+        String l = in.readLine();
+        if (l != null) {
+            line = l;
+            if (splitLine) {
+                row = line.split("\t");
+            }
             if (! rtCutoff.isNaN()) {
                 return !(getRT() > rtCutoff);
             }
             return true;
         }
-        //in.close();
+        row = line.split("\t");
         return false;
     }
 
@@ -118,7 +123,7 @@ public class PinReader {
     public int getLength() throws IOException {
         if (Constants.maxRank == 0) {
             int mylength = 0;
-            while (next()) {
+            while (next(true)) {
                 mylength++;
                 int rank = getRank();
                 if (rank > Constants.maxRank) {
@@ -202,10 +207,10 @@ public class PinReader {
     public void findWashGradientCutoff() throws IOException {
         int bins = Constants.washGradientBins;
         //TODO read in RT directly from pin
-        next();
+        next(true);
         float minRT = getRT();
         float maxRT = 0;
-        while (next()) {
+        while (next(true)) {
             if (getRT() > maxRT) {
                 maxRT = getRT();
             }
@@ -217,7 +222,7 @@ public class PinReader {
         float RTrange = maxRT - minRT;
 
         int[] counts = new int[bins];
-        while (next()) {
+        while (next(true)) {
             int bin = Math.min(bins-1,Math.round(((mzml.scanNumberObjects.get(getScanNum()).RT - minRT) / RTrange * bins)));
             counts[bin] += 1;
         }
@@ -251,7 +256,7 @@ public class PinReader {
 
     public String[] createPDeep2List() throws IOException {
         ArrayList<String> peps = new ArrayList<String>();
-        while (next()) {
+        while (next(true)) {
             PeptideFormatter pf = getPep();
             peps.add(pf.stripped + "\t" + pf.mods + "\t" + pf.charge);
         }
@@ -260,7 +265,7 @@ public class PinReader {
 
     public String[] createPDeep3List() throws IOException {
         ArrayList<String> peps = new ArrayList<String>();
-        while (next()) {
+        while (next(true)) {
             PeptideFormatter pf = getPep();
             peps.add("." + "\t" + "." + "\t" + pf.stripped + "\t" + pf.mods + "\t" + pf.charge);
         }
@@ -269,7 +274,7 @@ public class PinReader {
 
     public String[] createDeepMSPeptideList() throws IOException {
         ArrayList<String> peps = new ArrayList<String>();
-        while (next()) {
+        while (next(true)) {
             peps.add(getPep().stripped);
         }
         return peps.toArray(new String[0]);
@@ -278,7 +283,7 @@ public class PinReader {
     public String[] createDiannList() throws IOException {
         ArrayList<String> peps = new ArrayList<String>();
         //TreeMap<Integer, Integer> modMap = new TreeMap<>(); //sorted for future use
-        while (next()) {
+        while (next(true)) {
             PeptideFormatter pf = getPep();
             peps.add(pf.diann + "\t" + pf.charge);
         }
@@ -294,7 +299,7 @@ public class PinReader {
         } else if (pmm.mzmlReaders[fileI] != null) {
             mzml = pmm.mzmlReaders[fileI];
         }
-        while (next()) {
+        while (next(true)) {
             PeptideFormatter pf = getPep();
             if (! pf.stripped.contains("O") && ! pf.stripped.contains("U") &&
                     ! pf.stripped.contains("Z") && ! pf.stripped.contains("B") &&
@@ -315,7 +320,7 @@ public class PinReader {
         } else if (pmm.mzmlReaders[fileI] != null) {
             mzml = pmm.mzmlReaders[fileI];
         }
-        while (next()) {
+        while (next(true)) {
             PeptideFormatter pf = getPep();
             String NCE = getNCE(Constants.FragmentationType);
             peps.add(pf.prosit + "," + NCE + "," + pf.charge);
@@ -332,7 +337,7 @@ public class PinReader {
         } else if (pmm.mzmlReaders[fileI] != null) {
             mzml = pmm.mzmlReaders[fileI];
         }
-        while (next()) {
+        while (next(true)) {
             PeptideFormatter pf = getPep();
             String NCE = getNCE(Constants.FragmentationType);
             peps.add(pf.prosit + "," + NCE + "," + pf.charge + "," + Constants.FragmentationType);
@@ -352,7 +357,7 @@ public class PinReader {
         if (Constants.instrument.equals("")) {
             Constants.instrument = getInstrument();
         }
-        while (next()) {
+        while (next(true)) {
             PeptideFormatter pf = getPep();
             String NCE = getNCE(Constants.FragmentationType);
             peps.add(pf.stripped + "," + pf.alphapeptdeepMods + "," + pf.modPositions + "," + pf.charge + "," +
@@ -364,7 +369,7 @@ public class PinReader {
     public String[] createFull() throws IOException {
         ArrayList<String> peps = new ArrayList<String>();
         //TreeMap<Integer, Integer> modMap = new TreeMap<>(); //sorted for future use
-        while (next()) {
+        while (next(true)) {
             PeptideFormatter pf = getPep();
             peps.add(pf.base + "\t" + pf.charge);
         }
@@ -390,7 +395,7 @@ public class PinReader {
         if (Constants.instrument.equals("")) {
             Constants.instrument = getInstrument();
         }
-        while (next()) {
+        while (next(true)) {
             PeptideFormatter pf = getPep();
             if ((modelFormat.contains("Prosit") || modelFormat.contains("ms2pip") || modelFormat.contains("Deeplc"))
                     && pf.stripped.contains("U")) { // no peptides with U
@@ -463,7 +468,7 @@ public class PinReader {
 
         //quicker way of getting top NCE
         PriorityQueue<Float> topEscores = new PriorityQueue<>(num, (a, b) -> Float.compare(b, a));
-        while (next()) {
+        while (next(true)) {
             float escore = Float.parseFloat(getEScore());
             if (topEscores.size() < num) {
                 topEscores.offer(escore);
@@ -475,7 +480,7 @@ public class PinReader {
         reset();
         float eScoreCutoff = topEscores.peek();
 
-        while (next() && PSMs.size() < num) {
+        while (next(true) && PSMs.size() < num) {
             float escore = Float.parseFloat(getEScore());
             if (escore <= eScoreCutoff) {
                 PSMs.add(getPep().getBaseCharge() + "," + getPep().getDiann() + "," + getPep().getStripped());

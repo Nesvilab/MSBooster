@@ -20,9 +20,10 @@ package Features;
 import java.util.concurrent.atomic.AtomicInteger;
 
 public class ProgressReporter {
-    AtomicInteger linesRead = new AtomicInteger(1);
-    AtomicInteger currentPercent = new AtomicInteger(Constants.loadingPercent);
-    final int iterations;
+    private AtomicInteger linesRead = new AtomicInteger(1);
+    private AtomicInteger currentPercent = new AtomicInteger(Constants.loadingPercent);
+    private final int iterations;
+    private boolean done = false;
 
     private static final Object lock = new Object(); // Create a lock object for synchronization
 
@@ -37,14 +38,17 @@ public class ProgressReporter {
                     currentPercent.get() <= 100) {
                 if (currentPercent.get() == 100) {
                     System.out.println("..." + currentPercent.get() + "%");
-                    System.out.println();
                     currentPercent.getAndIncrement();
+                    done = true;
                     break;
                 } else {
                     System.out.print("..." + currentPercent.get() + "%");
                 }
                 currentPercent.addAndGet(Constants.loadingPercent);
                 currentPercent.set(Math.min(currentPercent.get(), 100));
+            }
+            if (linesRead.get() > iterations && !done) {
+                System.out.println("..." + currentPercent.get() + "%");
             }
         }
     }

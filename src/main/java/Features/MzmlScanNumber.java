@@ -199,6 +199,7 @@ public class MzmlScanNumber {
                     expIntensities = ArrayUtils.remove(expIntensities, i);
                 }
             }
+            newPepObj.spectralSimObj.matchedIdx.clear();
         } catch (Exception e) { //TODO: percolator imputation
             float predRT = 0f;
             float predIM = 0f;

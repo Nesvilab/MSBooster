@@ -43,6 +43,7 @@ public class FeatureCalculator {
         this.mzml = mzml;
     }
 
+    //TODO: parallelize
     public void calculate(ExecutorService executorService) throws IOException {
         PeptideObj pepObj = null;
         HashMap<Integer, StatMethods> hm;

@@ -43,9 +43,7 @@ public class SpectrumComparison {
     private static SpearmansCorrelation sc = new SpearmansCorrelation();
     public ArrayList<SpectrumComparison> spectrumComparisons = new ArrayList<>();
     public static Well19937c rng = new Well19937c(123);
-
     public PeptideObj pepObj;
-    ArrayList<Integer> sortedIndicesList = new ArrayList<>();
 
     public SpectrumComparison(PeptideObj pepObj, float[] eMZs, float[] eIntensities,
                               float[] pMZs, float[] pIntensities, int length) {
@@ -265,9 +263,6 @@ public class SpectrumComparison {
             //sort
             Arrays.sort(mzs);
 
-            //modify getMatchedIntensities to be more general, get how many nonzero matched intensities
-            matchedIdx.clear();
-
             allMatchedIntensities = getMatchedIntensities(pepObj.scanNumObj.getExpMZs(), pepObj.scanNumObj.getExpIntensities(),
                     mzs, new float[mzs.length]);
         }
@@ -292,25 +287,28 @@ public class SpectrumComparison {
     }
 
     private float[][] filterFragments(int top) {
-        top = Math.min(top, sortedIndicesList.size());
-
-        //calculate
-        float[] newMatched = new float[top];
-        float[] newPred = new float[top];
-
-        if (Constants.adaptiveFragmentNum && predIntensities.length > top) {
-            //function to filter vectors, and methods will work with these filtered vectors
-            for (int i = 0; i < top; i++) {
-                int index = sortedIndicesList.indexOf(i);
-                newMatched[i] = matchedIntensities[index];
-                newPred[i] = predIntensities[index];
-            }
-        } else {
-            newPred = predIntensities;
-            newMatched = matchedIntensities;
-        }
-
-        return new float[][]{newPred, newMatched};
+        System.out.println("Reimplement filterFragments!");
+        System.exit(1);
+//        top = Math.min(top, sortedIndicesList.size());
+//
+//        //calculate
+//        float[] newMatched = new float[top];
+//        float[] newPred = new float[top];
+//
+//        if (Constants.adaptiveFragmentNum && predIntensities.length > top) {
+//            //function to filter vectors, and methods will work with these filtered vectors
+//            for (int i = 0; i < top; i++) {
+//                int index = sortedIndicesList.indexOf(i);
+//                newMatched[i] = matchedIntensities[index];
+//                newPred[i] = predIntensities[index];
+//            }
+//        } else {
+//            newPred = predIntensities;
+//            newMatched = matchedIntensities;
+//        }
+//
+//        return new float[][]{newPred, newMatched};
+        return new float[][]{};
     }
 
     private static float[] unitNormalize(float[] vector) {
@@ -578,25 +576,17 @@ public class SpectrumComparison {
         }
     }
 
+    //top 36
     public double spearmanCorr() {
         if (predIntensities.length < 2) {
             return -1;
         }
 
-        int top = Constants.topFragments;
-        if (Constants.adaptiveFragmentNum) {
-            top = 36;
-        }
-
-        float[][] vectors = filterFragments(top);
-        float[] predI = vectors[0];
-        float[] matchedI = vectors[1];
-
-        if (Arrays.stream(floatToDouble(matchedI)).sum() == 0 || matchedI.length == 1) {
+        if (Arrays.stream(floatToDouble(matchedIntensities)).sum() == 0 || matchedIntensities.length == 1) {
             return -1;
         } else {
             //uses Apache
-            return sc.correlation(floatToDouble(matchedI), floatToDouble(predI));
+            return sc.correlation(floatToDouble(matchedIntensities), floatToDouble(predIntensities));
         }
     }
 
@@ -686,22 +676,14 @@ public class SpectrumComparison {
         return -1 * entropy;
     }
 
+    //top 12
     public double unweightedSpectralEntropy() { //from https://www.nature.com/articles/s41592-021-01331-z
         if (predIntensities.length < 2) {
             return 0;
         }
 
-        int top = Constants.topFragments;
-        if (Constants.adaptiveFragmentNum) {
-            top = 12;
-        }
-
-        float[][] vectors = filterFragments(top);
-        float[] predI = vectors[0];
-        float[] matchedI = vectors[1];
-
         if (sum1PredIntensities == null) {
-            oneNormalizeIntensities(predI, matchedI);
+            oneNormalizeIntensities(predIntensities, matchedIntensities);
         }
 
         float[] SabVector = new float[sum1PredIntensities.length];
@@ -723,6 +705,7 @@ public class SpectrumComparison {
         return 1 - ( ((2 * spectralEntropy(SabVector)) - spectralEntropy(sum1MatchedIntensities) - spectralEntropy(sum1PredIntensities)) / Math.log(4));
     }
 
+    //top 24
     public double hyperGeometricProbability() {
         this.getAllMatchedIntensities();
         matchedIons = 0;
@@ -732,24 +715,10 @@ public class SpectrumComparison {
             }
         }
 
-//        for (int idx = matchedIdx.size() - 1; idx > -1; idx--) {
-//            pepObj.scanNumObj.expMZs = ArrayUtils.remove(pepObj.scanNumObj.expMZs, idx);
-//            pepObj.scanNumObj.expIntensities = ArrayUtils.remove(pepObj.scanNumObj.expIntensities, idx);
-//        }
-
-        //calculate
-        int top = Constants.topFragments;
-        if (Constants.adaptiveFragmentNum) {
-            top = 24;
-        }
-
-        float[][] vectors = filterFragments(top);
-        float[] predI = vectors[0];
-        float[] matchedI = vectors[1];
-
-        HypergeometricDistribution hgd = new HypergeometricDistribution(rng, 4 * (length - 1), matchedIons, predI.length);
+        HypergeometricDistribution hgd = new HypergeometricDistribution(rng,
+                4 * (length - 1), matchedIons, predIntensities.length);
         int successes = 0;
-        for (float f : matchedI) {
+        for (float f : matchedIntensities) {
             if (f != 0) {
                 successes += 1;
             }
@@ -757,17 +726,11 @@ public class SpectrumComparison {
         return -1 * Math.log10(hgd.upperCumulativeProbability(successes));
     }
 
+    //top 12
     public double intersection() {
         //calculate overlap of top predicted mzs and top matched mzs
-        int top = Constants.topFragments;
-        if (Constants.adaptiveFragmentNum) {
-            top = 12;
-        }
-
-        float[][] vectors = filterFragments(top);
-        float[] matchedI = vectors[1];
         HashSet<Float> predSet = new HashSet<>();
-        for (float f : matchedI) {
+        for (float f : matchedIntensities) {
             predSet.add(f);
         }
 
@@ -783,7 +746,7 @@ public class SpectrumComparison {
                 intersection += 1;
             }
             iters += 1;
-            if (iters >= top) {
+            if (iters >= Constants.topFragments) {
                 break;
             }
         }

@@ -47,7 +47,7 @@ public class MzmlReader {
                       //similarity measures might be calculated using different weights. If you want to use different
                       //weights, just make new mzmlReader object
 
-    public TreeMap<Integer, MzmlScanNumber> scanNumberObjects = new TreeMap<>();
+    public static TreeMap<Integer, MzmlScanNumber> scanNumberObjects = new TreeMap<>();
     List<Integer> scanNums;
     private float[] betas;
     public ArrayList<Float>[] RTbins = null;
@@ -247,24 +247,70 @@ public class MzmlReader {
 //        }
 //    }
 
-    public void setPinEntries(PinReader pin, SpectralPredictionMapper spm) throws AssertionError, Exception {
+    static class setScanNumPepObj implements Runnable {
+        private int scanNum;
+        private ArrayList<PeptideFormatter> peps = new ArrayList<>();
+        private ArrayList<Integer> ranks = new ArrayList<>();
+        private ArrayList<Integer> tds = new ArrayList<>();
+        private ArrayList<String> escores = new ArrayList<>();
+        private final ConcurrentHashMap<String, PredictionEntry> allPreds;
+        public setScanNumPepObj(int scanNum, ConcurrentHashMap<String, PredictionEntry> allPreds) {
+            this.scanNum = scanNum;
+            this.allPreds = allPreds;
+        }
+
+        public void add(PeptideFormatter pep, int rank, int td, String escore) {
+            peps.add(pep);
+            ranks.add(rank);
+            tds.add(td);
+            escores.add(escore);
+        }
+
+        @Override
+        public void run() {
+            for (int i = 0; i < peps.size(); i++) {
+                scanNumberObjects.get(scanNum).setPeptideObject(peps.get(i), ranks.get(i),
+                        tds.get(i), escores.get(i), allPreds, true);
+            }
+        }
+    }
+    public void setPinEntries(PinReader pin, SpectralPredictionMapper spm, ExecutorService executorService)
+            throws AssertionError, Exception {
         //TODO: multithread?
         System.out.println("Loading pin " + pin.name);
         ConcurrentHashMap<String, PredictionEntry> allPreds = spm.getPreds();
-
         ProgressReporter pr = new ProgressReporter(pin.length);
+        futureList.clear();
+
+        int currentScanNum = 0;
+        setScanNumPepObj task = null;
         while (pin.next()) {
             try {
-                scanNumberObjects.get(pin.getScanNum()).setPeptideObject(pin.getPep(), pin.getRank(), pin.getTD(),
-                        pin.getEScore(), allPreds, true);
-
                 pr.progress();
+                if (pin.getScanNum() != currentScanNum) {
+                    //send previous setScanNumPepObj
+                    if (task != null) {
+                        executorService.execute(task);
+                    }
+
+                    //make new setScanNumPepObj
+                    currentScanNum = pin.getScanNum();
+                    task = new setScanNumPepObj(currentScanNum, allPreds);
+                }
+                //add to it
+                task.add(pin.getPep(), pin.getRank(), pin.getTD(), pin.getEScore());
             } catch (Exception e) {
                 e.printStackTrace();
                 System.exit(1);
             }
         }
-        System.out.println("done");
+        try {
+            executorService.execute(task);
+        } catch (Exception e) {
+            e.printStackTrace();
+            System.exit(1);
+        }
+
         //set RT filter
         float maxRT = pin.getRT();
         pin.close();
@@ -338,7 +384,7 @@ public class MzmlReader {
             if (RTbins == null) {
                 System.out.println("why are RTbins null?");
             }
-            RTbinStats = StatMethods.characterizebins(RTbins, Constants.RTIQR);
+            RTbinStats = characterizebins(RTbins, Constants.RTIQR);
 
             //smoothing with window of 1
             //could make it at statmethods method
@@ -355,7 +401,7 @@ public class MzmlReader {
                 System.out.println("why are IMbins null?");
             }
             for (int charge = 0; charge < IMbins.length; charge ++) {
-                IMbinStats[charge] = StatMethods.characterizebins(IMbins[charge], Constants.IMIQR);
+                IMbinStats[charge] = characterizebins(IMbins[charge], Constants.IMIQR);
 
                 //smoothing with window of 1
                 //could make it at statmethods method
@@ -419,7 +465,7 @@ public class MzmlReader {
                             break;
                         }
                         pep.deltaRTbin = Math.abs(binMean - pep.RT);
-                        pep.RTzscore = Math.abs(StatMethods.zscore(pep.RT, binMean, binStd));
+                        pep.RTzscore = Math.abs(zscore(pep.RT, binMean, binStd));
                     }
                 }
             }));
@@ -548,7 +594,7 @@ public class MzmlReader {
                             if (pep == null) {
                                 break;
                             }
-                            pep.RTprob = StatMethods.probability(msn.RT * Constants.RTbinMultiplier, pep.RT, kernelDensities);
+                            pep.RTprob = probability(msn.RT * Constants.RTbinMultiplier, pep.RT, kernelDensities);
                         }
                     }
                 }));
@@ -580,7 +626,7 @@ public class MzmlReader {
                             if (pep == null) {
                                 break;
                             }
-                            pep.IMprob = StatMethods.probability(msn.IM * Constants.IMbinMultiplier, pep.IM, kernelDensities[pep.charge - 1]);
+                            pep.IMprob = probability(msn.IM * Constants.IMbinMultiplier, pep.IM, kernelDensities[pep.charge - 1]);
                         }
                     }
                 }));

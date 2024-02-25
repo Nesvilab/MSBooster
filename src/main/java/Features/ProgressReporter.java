@@ -41,7 +41,6 @@ public class ProgressReporter {
                     break;
                 } else {
                     System.out.print("..." + currentPercent.get() + "%");
-                    System.out.println(linesRead.get());
                 }
                 currentPercent.addAndGet(Constants.loadingPercent);
                 currentPercent.set(Math.min(currentPercent.get(), 100));

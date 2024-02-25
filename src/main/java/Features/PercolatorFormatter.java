@@ -331,7 +331,7 @@ public class PercolatorFormatter {
                 }
 
                 //Special preparations dependent on features we require
-                mzml.setPinEntries(pin, predictedSpectra);
+                mzml.setPinEntries(pin, predictedSpectra, executorService);
                 //these require all experimental peaks before removing higher rank peaks
                 if (Constants.removeRankPeaks &&
                         (featuresList.contains("hypergeometricProbability") ||

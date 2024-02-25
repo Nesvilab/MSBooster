@@ -73,7 +73,7 @@ public class PinReader {
         }
 
         length = getLength();
-        System.out.println(length + " PSMs");
+        System.out.println(name + " has " + length + " PSMs");
     }
 
     //reload from start

@@ -771,7 +771,6 @@ public class PinWriter {
                 //clear old pep obj
                 pepObj.spectralSimObj = null;
             }
-            System.out.println("");
             pin.close();
             writer.close();
             mzml.clear();

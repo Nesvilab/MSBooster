@@ -37,6 +37,7 @@ public class ProgressReporter {
                     currentPercent.get() <= 100) {
                 if (currentPercent.get() == 100) {
                     System.out.println("..." + currentPercent.get() + "%");
+                    System.out.println();
                     currentPercent.getAndIncrement();
                     break;
                 } else {

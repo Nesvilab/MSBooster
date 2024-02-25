@@ -47,7 +47,7 @@ public class MzmlReader {
                       //similarity measures might be calculated using different weights. If you want to use different
                       //weights, just make new mzmlReader object
 
-    public static TreeMap<Integer, MzmlScanNumber> scanNumberObjects = new TreeMap<>();
+    public TreeMap<Integer, MzmlScanNumber> scanNumberObjects = new TreeMap<>();
     List<Integer> scanNums;
     private float[] betas;
     public ArrayList<Float>[] RTbins = null;
@@ -247,7 +247,7 @@ public class MzmlReader {
 //        }
 //    }
 
-    static class setScanNumPepObj implements Runnable {
+    class setScanNumPepObj implements Runnable {
         private int scanNum;
         private ArrayList<PeptideFormatter> peps = new ArrayList<>();
         private ArrayList<Integer> ranks = new ArrayList<>();

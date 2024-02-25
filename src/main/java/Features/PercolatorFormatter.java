@@ -701,9 +701,10 @@ public class PercolatorFormatter {
 
                 //plot hist
                 PinReader pinReader = new PinReader(histFile);
-                for (String feature : featuresList) {
-                    new ScoreHistogram(pinReader, Constants.camelToUnderscore.get(feature));
-                }
+                new ScoreHistogram(pinReader, featuresList);
+//                for (String feature : featuresList) {
+//                    new ScoreHistogram(pinReader, Constants.camelToUnderscore.get(feature));
+//                }
             }
         } catch (Exception e) {
             executorService.shutdown();

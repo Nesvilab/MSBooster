@@ -653,7 +653,7 @@ public class FeatureCalculator {
     }
 
     public void calculate(ExecutorService executorService) throws IOException {
-        ProgressReporter pr = new ProgressReporter(pin.length);
+        ProgressReporter pr = new ProgressReporter(pin.getLength());
         mzml.futureList.clear();
         while (pin.next(false)) {
             calcFeat task = new calcFeat(pin.line, pin.specIdx, pin.pepIdx, pin.scanNumIdx);

@@ -48,7 +48,7 @@ public class PinReader {
     boolean calcEvalue = false;
 
     MzmlReader mzml;
-    int length;
+    private int length = -1;
     Double rtCutoff = Double.NaN;
 
     private static final Object lock = new Object(); // Create a lock object for synchronization
@@ -72,9 +72,6 @@ public class PinReader {
             eScoreIdx = ArrayUtils.indexOf(header, "hyperscore"); //DIA
             calcEvalue = true;
         }
-
-        length = getLength();
-        System.out.println(name + " has " + length + " PSMs");
     }
 
     //reload from start
@@ -121,55 +118,63 @@ public class PinReader {
     }
 
     public int getLength() throws IOException {
-        if (Constants.maxRank == 0) {
-            int mylength = 0;
-            while (next(true)) {
-                mylength++;
-                int rank = getRank();
-                if (rank > Constants.maxRank) {
-                    Constants.maxRank = rank;
+        if (length == -1) {
+            if (Constants.maxRank == 0) {
+                int mylength = 0;
+                while (next(true)) {
+                    mylength++;
+                    int rank = getRank();
+                    if (rank > Constants.maxRank) {
+                        Constants.maxRank = rank;
+                    }
+                }
+                reset();
+                length = mylength;
+            } else {
+                //https://stackoverflow.com/questions/453018/number-of-lines-in-a-file-in-java
+                InputStream is = new BufferedInputStream(new FileInputStream(name));
+                try {
+                    byte[] c = new byte[1024];
+
+                    int readChars = is.read(c);
+                    if (readChars == -1) {
+                        // bail out if nothing to read
+                        length = 0;
+                    }
+
+                    // make it easy for the optimizer to tune this loop
+                    int count = -1;
+                    while (readChars == 1024) {
+                        for (int i = 0; i < 1024; ) {
+                            if (c[i++] == '\n') {
+                                ++count;
+                            }
+                        }
+                        readChars = is.read(c);
+                    }
+
+                    // count remaining characters
+                    while (readChars != -1) {
+                        for (int i = 0; i < readChars; ++i) {
+                            if (c[i] == '\n') {
+                                ++count;
+                            }
+                        }
+                        readChars = is.read(c);
+                    }
+
+                    if (count <= 0) {
+                        length = 1;
+                    } else {
+                        length = count;
+                    }
+                } finally {
+                    is.close();
                 }
             }
-            reset();
-            return mylength;
-        } else {
-            //https://stackoverflow.com/questions/453018/number-of-lines-in-a-file-in-java
-            InputStream is = new BufferedInputStream(new FileInputStream(name));
-            try {
-                byte[] c = new byte[1024];
-
-                int readChars = is.read(c);
-                if (readChars == -1) {
-                    // bail out if nothing to read
-                    return 0;
-                }
-
-                // make it easy for the optimizer to tune this loop
-                int count = -1;
-                while (readChars == 1024) {
-                    for (int i=0; i<1024;) {
-                        if (c[i++] == '\n') {
-                            ++count;
-                        }
-                    }
-                    readChars = is.read(c);
-                }
-
-                // count remaining characters
-                while (readChars != -1) {
-                    for (int i=0; i<readChars; ++i) {
-                        if (c[i] == '\n') {
-                            ++count;
-                        }
-                    }
-                    readChars = is.read(c);
-                }
-
-                return count == 0 ? 1 : count;
-            } finally {
-                is.close();
-            }
+            System.out.println(name + " has " + length + " PSMs");
         }
+        return length;
     }
 
     public String[] getRow() {return row;}

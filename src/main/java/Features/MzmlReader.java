@@ -310,7 +310,7 @@ public class MzmlReader {
             throws AssertionError, Exception {
         //TODO: multithread?
         ConcurrentHashMap<String, PredictionEntry> allPreds = spm.getPreds();
-        ProgressReporter pr = new ProgressReporter(pin.length);
+        ProgressReporter pr = new ProgressReporter(pin.getLength());
         futureList.clear();
 
         String currentScanNum = "0";

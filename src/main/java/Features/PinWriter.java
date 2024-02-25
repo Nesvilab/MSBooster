@@ -85,7 +85,7 @@ public class PinWriter {
     public void write() throws IOException {
         try {
             PeptideObj pepObj = null;
-            ProgressReporter pr = new ProgressReporter(pin.length);
+            ProgressReporter pr = new ProgressReporter(pin.getLength());
             while (pin.next(true)) {
                 pr.progress();
                 String pep = pin.getPep().baseCharge;

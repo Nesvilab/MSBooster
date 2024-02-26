@@ -49,6 +49,7 @@ public class PeptideObj {
     double IMprob;
     String[] fragmentIonTypes;
     int chromatogramWindowQuery;
+    int peptideCounts;
 
     static final HashMap<String, Float> baseMap = makeBaseMap();
     static private HashMap<String, Float> makeBaseMap() {

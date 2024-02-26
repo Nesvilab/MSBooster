@@ -762,6 +762,9 @@ public class PinWriter {
                         case "intensity_distribution_similarity":
                             formattedWrite("intensity_distribution_similarity", pepObj.intensity_distribution_similarity);
                             break;
+                        case "peptideCounts":
+                            writer.addValue("peptide_counts", pepObj.peptideCounts);
+                            break;
                     }
                 }
 

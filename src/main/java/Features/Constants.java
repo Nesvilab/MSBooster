@@ -21,6 +21,7 @@ import org.apache.commons.math3.random.Well19937c;
 
 import java.io.File;
 import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
 
 public class Constants {
     //file input
@@ -214,6 +215,9 @@ public class Constants {
     public static Integer IMbinMultiplier = 100;
     public static final Float IMIQR = 50f;
 
+    //peptide counts
+    public static ConcurrentHashMap<String, Integer> peptideCounter = new ConcurrentHashMap<>();
+
     //support for PredFull and Prosit
     public static String FragmentationType = "";
     public static String NCE = "";
@@ -305,7 +309,7 @@ public class Constants {
     //use single string sep by comma delimiter
     //should include parameter to calculate correlation and then choose
     //default auto, everything, or all? Or a combination I figure out empirically
-    public static String features = "predRTrealUnits,unweightedSpectralEntropy,deltaRTLOESS";
+    public static String features = "predRTrealUnits,unweightedSpectralEntropy,deltaRTLOESS,peptideCounts";
     public static Boolean useMultipleCorrelatedFeatures = false;
     //public static String features = "auto";
 
@@ -383,6 +387,7 @@ public class Constants {
         hs.addAll(individualSpectralSimilaritiesFeatures);
         hs.addAll(intensitiesDifferenceFeatures);
         hs.add("intensity_distribution_similarity");
+        hs.add("peptideCounts");
         return hs;
     }
 
@@ -418,6 +423,7 @@ public class Constants {
         map.put("adjacentSimilarity", "adjacent_similarity");
         map.put("bestScan", "best_scan");
         map.put("bootstrapSimilarity", "bootstrap_similarity");
+        map.put("peptideCounts", "peptide_counts");
         return map;
     }
     ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////

@@ -46,14 +46,17 @@ public class FeatureCalculator {
 
     class calcFeat implements Runnable {
         String pep;
+        String stripped;
         int scanNum;
         final ExecutorService executorService = Executors.newFixedThreadPool(2);
         public calcFeat(String line, int specIdx, int pepIdx, int scanNumIdx) {
             String[] row = line.split("\t");
             String[] periodSplit = row[specIdx].split("\\.");
-            this.pep = new PeptideFormatter(row[pepIdx],
-                    periodSplit[periodSplit.length - 1].split("_")[0], "pin").baseCharge;
+            PeptideFormatter pf = new PeptideFormatter(row[pepIdx],
+                    periodSplit[periodSplit.length - 1].split("_")[0], "pin");
+            this.pep = pf.baseCharge;
             this.scanNum = Integer.parseInt(row[scanNumIdx]);
+            this.stripped = pf.stripped;
         }
 
         @Override
@@ -645,6 +648,9 @@ public class FeatureCalculator {
                                 value = -1;
                             }
                             pepObj.intensity_distribution_similarity = value;
+                            break;
+                        case "peptideCounts":
+                            pepObj.peptideCounts = Constants.peptideCounter.get(stripped);
                             break;
                     }
                 }

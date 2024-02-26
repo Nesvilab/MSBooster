@@ -373,10 +373,18 @@ public class PinReader {
 
     public String[] createFull() throws IOException {
         ArrayList<String> peps = new ArrayList<String>();
-        //TreeMap<Integer, Integer> modMap = new TreeMap<>(); //sorted for future use
         while (next(true)) {
             PeptideFormatter pf = getPep();
             peps.add(pf.base + "\t" + pf.charge);
+
+            if (Constants.features.contains("peptideCounts")) {
+                if (Constants.peptideCounter.containsKey(pf.stripped)) {
+                    Constants.peptideCounter.put(pf.stripped,
+                            Constants.peptideCounter.get(pf.stripped) + 1);
+                } else {
+                    Constants.peptideCounter.put(pf.stripped, 1);
+                }
+            }
         }
         return peps.toArray(new String[0]);
     }

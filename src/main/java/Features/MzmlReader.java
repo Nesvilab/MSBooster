@@ -698,8 +698,9 @@ public class MzmlReader {
                 //divide into train and test sets
                 ArrayList<double[][][]> splits = trainTestSplit(rts);
 
+                System.out.print("Iteration ");
                 for (int Nsplit = 0; Nsplit < splits.size(); Nsplit++) {
-                    System.out.println("Iteration " + (Nsplit + 1));
+                    System.out.print(Nsplit + 1 + "...");
                     double bestMSE = Double.MAX_VALUE;
                     float bestBandwidth = 1f;
 
@@ -733,6 +734,7 @@ public class MzmlReader {
                     }
                     bestBandwidths[Nsplit] = bestBandwidth;
                 }
+                System.out.println();
                 float finalBandwidth = Float.parseFloat(String.format("%.4f", mean(bestBandwidths)));
                 System.out.println("Best average bandwidth for mass " + mass + " from grid search of " +
                         Constants.rtBandwidth + " after " + Constants.regressionSplits + " iterations is " + finalBandwidth);

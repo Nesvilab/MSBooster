@@ -525,6 +525,7 @@ public class StatMethods {
         System.out.print("Iteration ");
         double bestMSE = Double.MAX_VALUE;
         for (int Nsplit = 0; Nsplit < splits.size(); Nsplit++) {
+            bestMSE = Double.MAX_VALUE;
             System.out.print(Nsplit + 1 + "...");
             float bestBandwidth = 1f;
 
@@ -550,9 +551,7 @@ public class StatMethods {
                         bestMSE = mse;
                         bestBandwidth = floatb;
                     }
-                } catch (Exception e) {
-                    //System.out.println("Bandwidth " + floatb + " failed. Moving on");
-                } //bandwidth too small?
+                } catch (Exception ignored) {} //bandwidth too small?
             }
             bestBandwidths[Nsplit] = bestBandwidth;
         }

@@ -64,7 +64,7 @@ public class PercolatorFormatter {
             String[] mgfSplit = mgf.split(",");
 
             if (mgfSplit.length == 1) {
-                System.out.println("Loading predicted spectra");
+                System.out.println("Loading predicted library");
                 if (Constants.spectraRTPredModel.equals("PredFull")) {
                     predictedSpectra = SpectralPredictionMapper.createSpectralPredictionMapper(
                             mgfSplit[1], pinFiles, executorService);
@@ -72,17 +72,16 @@ public class PercolatorFormatter {
                     predictedSpectra = SpectralPredictionMapper.createSpectralPredictionMapper(
                             mgf, Constants.spectraRTPredModel, executorService);
                 }
-                allPreds = predictedSpectra.getPreds();
             } else if (mgfSplit.length == 2){
                 //if fragment from predfull is not y/b, add.
                 //Prosit/diann is first, predfull second
                 //can also add two models, the first being for RT, the second for spectra
                 String[] modelSplit = Constants.spectraRTPredModel.split(",");
 
-                System.out.println("Loading predicted spectra 1");
+                System.out.println("Loading predicted RT: " + mgfSplit[0]);
                 predictedSpectra = SpectralPredictionMapper.createSpectralPredictionMapper(
                         mgfSplit[0], modelSplit[0], executorService);
-                System.out.println("Loading predicted spectra 2");
+                System.out.println("Loading predicted spectra: " + mgfSplit[1]);
                 if (modelSplit[1].equals("PredFull")) {
                     predictedSpectra2 = SpectralPredictionMapper.createSpectralPredictionMapper(
                             mgfSplit[1], pinFiles, executorService); //get predfull library
@@ -109,10 +108,6 @@ public class PercolatorFormatter {
                 }
 
                 for (String key : totalKeyset) {
-//                    if (entry.getValue().fragmentIonTypes == null) { //something with base modifications that is never actually queried
-//                        predictedSpectra.getPreds().remove(entry.getKey());
-//                        //continue; //DIA-NN may still have the prediction
-//                    }
                     PredictionEntry pe = allPreds.get(key);
                     if (pe == null) { //missing in prosit/diann
                         allPreds.put(key, predictedSpectra2.getPreds().get(key));
@@ -185,11 +180,9 @@ public class PercolatorFormatter {
                             //but if predfull has missing entry, use other model instead
                             PredictionEntry pe2 = predictedSpectra2.getPreds().get(key);
                             if (!Objects.isNull(pe2)) {
-                                PredictionEntry newPe = new PredictionEntry(pe2.mzs, pe2.intensities,
-                                        pe.getFragNums(), pe.getCharges(), pe2.fragmentIonTypes);
-                                pe = newPe;
+                                pe2.setRT(pe.getRT());
+                                allPreds.put(key, pe2);
                             }
-                            allPreds.put(key, pe);
                         }
                     }
                 }
@@ -198,6 +191,8 @@ public class PercolatorFormatter {
         }
         System.out.println();
         predictedSpectra.setPreds(predictedSpectra.filterTopFragments(executorService));
+        allPreds = predictedSpectra.getPreds();
+        //TODO test to make sure predicted spectra and allpreds are same
 
         //create detectMap to store detectabilities for base sequence peptides
         //store peptide detectabilities in PredictionEntry

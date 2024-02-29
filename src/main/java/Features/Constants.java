@@ -39,7 +39,7 @@ public class Constants {
     public static Integer renamePin = 1;
     public static String spectraRTPredInput = null;
     public static String detectPredInput = null;
-    public static String spectraRTPredFile = null; //use this if predFile already made
+    public static String spectraRTPredFile = null;
     public static String detectPredFile = null;
     public static Boolean deletePreds = false;
     public static Integer loadingPercent = 10;

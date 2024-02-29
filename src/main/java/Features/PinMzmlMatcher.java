@@ -17,6 +17,8 @@
 
 package Features;
 
+import umich.ms.fileio.exceptions.FileParsingException;
+
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
@@ -25,6 +27,8 @@ import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Set;
+import java.util.concurrent.ExecutionException;
 import java.util.stream.Collectors;
 
 public class PinMzmlMatcher {
@@ -116,5 +120,34 @@ public class PinMzmlMatcher {
         }
 
         mzmlReaders = new MzmlReader[mzmlFiles.length];
+    }
+
+    public void loadMzmlReaders() throws IOException, FileParsingException, ExecutionException, InterruptedException {
+        for (int j = 0; j < mzmlReaders.length; j++) {
+            if (mzmlReaders[j] == null) {
+                MzmlReader mzml = new MzmlReader(mzmlFiles[j].getCanonicalPath());
+                mzmlReaders[j] = mzml;
+            }
+        }
+        System.out.println();
+    }
+
+    public void setFragmentationType() {
+        if (Constants.FragmentationType.isEmpty()) {
+            try {
+                Set<String> fragTypes = mzmlReaders[0]
+                        .scanNumberObjects.firstEntry().getValue().NCEs.keySet();
+                if (fragTypes.contains("CID")) {
+                    Constants.FragmentationType = "CID";
+                } else {
+                    Constants.FragmentationType = "HCD";
+                }
+            } catch (Exception e) {
+                System.out.println("Setting fragmentation type to HCD. " +
+                        "You can specify this with '--FragmentationType' via the command line " +
+                        "or 'FragmentationType=' in the param file.");
+                Constants.FragmentationType = "HCD";
+            }
+        }
     }
 }

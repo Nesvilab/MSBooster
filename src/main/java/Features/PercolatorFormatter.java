@@ -39,12 +39,6 @@ public class PercolatorFormatter {
                                String[] features, String outfile, ExecutorService executorService)
             throws IOException, InterruptedException, ExecutionException, FileParsingException, SQLException {
 
-        //defining num threads, in case using this outside of jar file
-        Runtime run  = Runtime.getRuntime();
-        if (Constants.numThreads <= 0) {
-            Constants.numThreads = run.availableProcessors();
-        }
-
         ArrayList<String> featuresList = new ArrayList<>(Arrays.asList(features));
         //remove features from array for multiple protein formatting
         if (featuresList.contains("detectability")) {
@@ -202,6 +196,7 @@ public class PercolatorFormatter {
                 predictedSpectra2 = null; //free up memory
             }
         }
+        System.out.println();
         predictedSpectra.setPreds(predictedSpectra.filterTopFragments(executorService));
 
         //create detectMap to store detectabilities for base sequence peptides
@@ -655,6 +650,7 @@ public class PercolatorFormatter {
                 String histFile;
                 if (Constants.renamePin == 1) {
                     System.out.println("Edited pin file at " + newOutfile);
+                    System.out.println();
                     histFile = newOutfile;
                 } else { //really should be 0
                     //move file at newOutfile to pinFiles[i] canonical name

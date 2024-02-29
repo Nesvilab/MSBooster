@@ -17,8 +17,6 @@
 
 package Features;
 
-import org.apache.commons.math3.random.Well19937c;
-
 import java.io.File;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
@@ -37,7 +35,7 @@ public class Constants {
     public static String mzmlDirectory = null; //C:/Users/kevin/OneDriveUmich/proteomics/mzml/cptac/
     public static String outputDirectory = null; //where to write all intermediate and final files
     public static String JsonDirectory = null;
-    public static String editedPin = null; //a prefix. Default is edited_
+    public static String editedPin = "edited"; //a prefix. Default is edited_
     public static Integer renamePin = 1;
     public static String spectraRTPredInput = null;
     public static String detectPredInput = null;
@@ -80,6 +78,8 @@ public class Constants {
     public static Integer splitPredInputFile = 1;
     public static Boolean useKoina = false;
     public static Boolean usedKoina = false;
+    public static Boolean findBestRtModel = false;
+    public static Boolean findBestSpectraModel = false;
     public static HashSet<String> KoinaRTmodels = new HashSet<>(Arrays.asList("AlphaPept_rt_generic",
             "Prosit_2019_irt", "Prosit_2020_irt_TMT", "Deeplc_hela_hf"));
     public static HashSet<String> KoinaMS2models = new HashSet<>(Arrays.asList("ms2pip_2021_HCD",
@@ -99,7 +99,7 @@ public class Constants {
     public static Integer initialKoinaMillisecondsToWaitMs2 = 60000;
     public static Float minIntensityToWriteToMgf = 0.01f;
     public static Boolean calibrateNCE = true;
-    public static Integer numPSMsToCalibrateNCE = 1000;
+    public static Integer numPSMsToCalibrate = 1000;
     public static Integer minNCE = 20;
     public static Integer maxNCE = 40;
 
@@ -309,7 +309,8 @@ public class Constants {
     //use single string sep by comma delimiter
     //should include parameter to calculate correlation and then choose
     //default auto, everything, or all? Or a combination I figure out empirically
-    public static String features = "predRTrealUnits,unweightedSpectralEntropy,deltaRTLOESS,peptideCounts";
+    //public static String features = "predRTrealUnits,unweightedSpectralEntropy,deltaRTLOESS,peptideCounts";
+    public static String features = "predRTrealUnits,unweightedSpectralEntropy,deltaRTLOESS";
     public static Boolean useMultipleCorrelatedFeatures = false;
     //public static String features = "auto";
 
@@ -429,7 +430,7 @@ public class Constants {
     ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
     //methods
-    public void updatePaths() {
+    public void updateOutputDirectory() {
         if (outputDirectory == null) {
             String firstFile = pinPepXMLDirectory.split(" ")[0];
             File newFile = new File(firstFile);
@@ -439,9 +440,8 @@ public class Constants {
                 outputDirectory = newFile.getAbsoluteFile().getParent();
             }
         }
-        if (editedPin == null) { //if 0, replace at end
-            editedPin = "edited";
-        }
+    }
+    public void updateInputPaths() {
         if (spectraRTPredInput == null) {
             if (Constants.spectraRTPredModel.contains("Prosit") ||
                     Constants.spectraRTPredModel.contains("alphapeptdeep")) {

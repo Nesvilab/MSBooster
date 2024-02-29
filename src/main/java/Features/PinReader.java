@@ -505,7 +505,7 @@ public class PinReader {
     }
 
     private String getNCE(String frag) {
-        if (Constants.NCE.equals("")) {
+        if (Constants.NCE.isEmpty()) {
             String nce = String.valueOf(mzml.scanNumberObjects.get(getScanNum()).NCEs.get(frag));
             if (nce.equals("null")) {
                 //! mzml.scanNumberObjects.get(getScanNum()).NCEs.containsKey(frag)
@@ -529,7 +529,7 @@ public class PinReader {
         HashSet<String> timsTOFKeys = new HashSet<>(Arrays.asList("flight"));
         HashSet<String> ThermoTOFKeys = new HashSet<>(Arrays.asList("Astral"));
 
-        if (Constants.instrument.equals("")) {
+        if (Constants.instrument.isEmpty()) {
             try {
                 String model = mzml.scans.getRunInfo().getDefaultInstrument().getModel();
                 String analyzer = mzml.scans.getRunInfo().getDefaultInstrument().getAnalyzer();

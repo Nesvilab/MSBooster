@@ -514,4 +514,50 @@ public class StatMethods {
         }
         return splits;
     }
+
+    //finds the best bandwidth and mse
+    public static float[] gridSearchCV(double[][] rts, float[] bandwidths) {
+        float[] bestBandwidths = new float[Constants.regressionSplits];
+
+        //divide into train and test sets
+        ArrayList<double[][][]> splits = trainTestSplit(rts);
+
+        System.out.print("Iteration ");
+        double bestMSE = Double.MAX_VALUE;
+        for (int Nsplit = 0; Nsplit < splits.size(); Nsplit++) {
+            System.out.print(Nsplit + 1 + "...");
+            float bestBandwidth = 1f;
+
+            double[][][] split = splits.get(Nsplit);
+            double[][] train = split[0];
+            double[][] test = split[1];
+
+            for (float floatb : bandwidths) { //for bandwidth in grid search
+                //get the loess model
+                try {
+                    Function1<Double, Double> loess = LOESS(train, floatb, Constants.robustIters);
+
+                    //calculate MSE by comparing calibrated expRT to predRT
+                    double[] calibratedRTs = new double[test[0].length];
+                    for (int i = 0; i < calibratedRTs.length; i++) {
+                        double rt = test[0][i];
+                        calibratedRTs[i] = loess.invoke(rt);
+                    }
+                    double mse = meanSquaredError(calibratedRTs, test[1]);
+
+                    //choose best model
+                    if (mse < bestMSE) {
+                        bestMSE = mse;
+                        bestBandwidth = floatb;
+                    }
+                } catch (Exception e) {
+                    //System.out.println("Bandwidth " + floatb + " failed. Moving on");
+                } //bandwidth too small?
+            }
+            bestBandwidths[Nsplit] = bestBandwidth;
+        }
+        System.out.println();
+        float finalBandwidth = Float.parseFloat(String.format("%.4f", mean(bestBandwidths)));
+        return new float[]{finalBandwidth, (float) bestMSE};
+    }
 }

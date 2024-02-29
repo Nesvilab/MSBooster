@@ -183,10 +183,14 @@ public class PeptideFileCreator {
             if (Constants.useKoina && !modelFormat.equals("Diann")) {
                 JSONWriter jw = new JSONWriter(modelFormat, hSetHits);
                 if (!Constants.usedKoina) {
-                    filename = jw.write(true, "jsonFiles", MainClass.executorService);
+                    filename = jw.write(true,
+                            Constants.outputDirectory + File.separator + "jsonFiles",
+                            MainClass.executorService);
                     Constants.usedKoina = true;
                 } else {
-                    filename = jw.write(false, "jsonFiles", MainClass.executorService);
+                    filename = jw.write(false,
+                            Constants.outputDirectory + File.separator + "jsonFiles",
+                            MainClass.executorService);
                 }
             } else {
                 //TODO: outfile name with prediction model in name
@@ -254,6 +258,7 @@ public class PeptideFileCreator {
             } else {
                 System.out.println("Input file at " + outfile);
             }
+            System.out.println();
             //return fasta; //save fasta for later
         } catch (IOException | JAXBException e) {
             System.out.println("An error occurred");

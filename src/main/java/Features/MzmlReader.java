@@ -687,7 +687,10 @@ public class MzmlReader {
             }
             for (String mass : masses) {
                 String[] bandwidths = bandwidth.split(",");
-                float[] bestBandwidths = new float[Constants.regressionSplits];
+                float[] floatBandwidths = new float[bandwidths.length];
+                for (int i = 0; i < bandwidths.length; i++) {
+                    floatBandwidths[i] = Float.parseFloat(bandwidths[i]);
+                }
                 double[][] rts = expAndPredRTs.get(mass);
                 if (rts[0].length < 50) {
                     RTLOESS.put(mass, null);
@@ -695,47 +698,9 @@ public class MzmlReader {
                     continue;
                 }
 
-                //divide into train and test sets
-                ArrayList<double[][][]> splits = trainTestSplit(rts);
+                float[] gridSearchResults = StatMethods.gridSearchCV(rts, floatBandwidths);
+                float finalBandwidth = gridSearchResults[0];
 
-                System.out.print("Iteration ");
-                for (int Nsplit = 0; Nsplit < splits.size(); Nsplit++) {
-                    System.out.print(Nsplit + 1 + "...");
-                    double bestMSE = Double.MAX_VALUE;
-                    float bestBandwidth = 1f;
-
-                    double[][][] split = splits.get(Nsplit);
-                    double[][] train = split[0];
-                    double[][] test = split[1];
-
-                    for (String b : bandwidths) { //for bandwidth in grid search
-                        float floatb = Float.valueOf(b);
-
-                        //get the loess model
-                        try {
-                            Function1<Double, Double> loess = LOESS(train, floatb, robustIters);
-
-                            //calculate MSE by comparing calibrated expRT to predRT
-                            double[] calibratedRTs = new double[test[0].length];
-                            for (int i = 0; i < calibratedRTs.length; i++) {
-                                double rt = test[0][i];
-                                calibratedRTs[i] = loess.invoke(rt);
-                            }
-                            double mse = meanSquaredError(calibratedRTs, test[1]);
-
-                            //choose best model
-                            if (mse < bestMSE) {
-                                bestMSE = mse;
-                                bestBandwidth = floatb;
-                            }
-                        } catch (Exception e) {
-                            System.out.println("Bandwidth " + floatb + " failed. Moving on");
-                        } //bandwidth too small?
-                    }
-                    bestBandwidths[Nsplit] = bestBandwidth;
-                }
-                System.out.println();
-                float finalBandwidth = Float.parseFloat(String.format("%.4f", mean(bestBandwidths)));
                 System.out.println("Best average bandwidth for mass " + mass + " from grid search of " +
                         Constants.rtBandwidth + " after " + Constants.regressionSplits + " iterations is " + finalBandwidth);
 

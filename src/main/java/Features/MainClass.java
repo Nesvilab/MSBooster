@@ -18,6 +18,7 @@
 package Features;
 
 import External.DiannModelCaller;
+import External.KoinaMethods;
 import External.KoinaModelCaller;
 import External.NCEcalibrator;
 import org.apache.commons.io.FileUtils;
@@ -330,6 +331,16 @@ public class MainClass {
                     field.set(c, myClass.getConstructor(String.class).newInstance(entry.getValue()));
                 }
             }
+            c.updateOutputDirectory();
+
+            //defining num threads
+            if (Constants.numThreads <= 0) {
+                Runtime run = Runtime.getRuntime();
+                Constants.numThreads = run.availableProcessors() - 1;
+            } //otherwise use user-defined
+            System.out.println("Using " + Constants.numThreads + " threads");
+            executorService = new ScheduledThreadPoolExecutor(Constants.numThreads);
+
             if (!Objects.equals(Constants.massDiffToVariableMod, "0")) {
                 if (!Constants.RTmassesForCalibration.isEmpty()) {
                     Constants.RTmassesForCalibration += ",";
@@ -351,9 +362,109 @@ public class MainClass {
             Constants.individualSpectralSimilaritiesFeatures = Constants.makeIndividualSpectralSimilarities();
             Constants.intensitiesDifferenceFeatures = Constants.makeintensitiesDifference();
 
+            //get matched pin files for mzML files
+            PinMzmlMatcher pmMatcher = new PinMzmlMatcher(Constants.mzmlDirectory, Constants.pinPepXMLDirectory);
+
+            //needed for nce calibration and best model search
+            KoinaMethods km = new KoinaMethods();
+            boolean TMT = false;
+            if (Constants.calibrateNCE || Constants.findBestRtModel || Constants.findBestSpectraModel) {
+                Constants.useKoina = true;
+
+                km.getTopPeptides(pmMatcher);
+                for (String pep : km.peptideSet) {
+                    if (pep.contains(String.valueOf(PTMhandler.tmtMass))) {
+                        TMT = true;
+                        break;
+                    }
+                }
+
+                pmMatcher.loadMzmlReaders();
+                pmMatcher.setFragmentationType();
+            }
+
             //if different RT and spectra models
             Constants.spectraRTPredModel = "";
             if (Constants.useRT) {
+                //here, look for best rt model
+                if (Constants.findBestRtModel) {
+                    System.out.println("Searching for best RT model for your data");
+                    ArrayList<String> consideredModels = new ArrayList<>();
+                    //consideredModels.add("DIA-NN");
+                    if (TMT) {
+                        consideredModels.add("Prosit_2020_irt_TMT");
+                    } else {
+                        consideredModels.addAll(Constants.KoinaRTmodels);
+                        consideredModels.remove("Prosit_2020_irt_TMT");
+                    }
+
+                    String jsonOutFolder = Constants.outputDirectory + File.separator + "best_model";
+                    if (Files.exists(Paths.get(jsonOutFolder))) {
+                        try {
+                            FileUtils.cleanDirectory(new File(jsonOutFolder));
+                        } catch (IOException e) {}
+                    } else {
+                        Files.createDirectories(Paths.get(jsonOutFolder));
+                    }
+
+                    HashMap<String, Float> MSEs = new HashMap<>();
+                    for (String model : consideredModels) {
+                        //mode for DIA-NN
+
+                        //mode for koina
+                        HashSet<String> allHits = km.writeFullPeptideFile(
+                                jsonOutFolder + File.separator + model + "_full.tsv", model);
+                        ConcurrentHashMap<String, PredictionEntry> allPreds =
+                                km.getKoinaPredictions(allHits, model, 30,
+                                        jsonOutFolder + File.separator + model,
+                                        jsonOutFolder + File.separator + model + "_full.tsv");
+
+                        ArrayList<Float> expRTs = new ArrayList<>();
+                        ArrayList<Float> predRTs = new ArrayList<>();
+                        for (int j = 0; j < pmMatcher.mzmlReaders.length; j++) {
+                            MzmlReader mzmlReader = pmMatcher.mzmlReaders[j];
+                            LinkedList<Integer> thisScanNums = km.scanNums.get(pmMatcher.mzmlFiles[j].getName());
+                            LinkedList<String> thisPeptides = km.peptides.get(pmMatcher.mzmlFiles[j].getName());
+
+                            for (int k = 0; k < thisScanNums.size(); k++) {
+                                int scanNum = thisScanNums.get(k);
+                                String peptide = thisPeptides.get(k).split(",")[0];
+                                MzmlScanNumber msn = mzmlReader.getScanNumObject(scanNum);
+                                expRTs.add(msn.RT);
+                                predRTs.add(allPreds.get(peptide).RT);
+                            }
+                        }
+                        double[][] rts = new double[2][expRTs.size()];
+                        for (int i = 0; i < expRTs.size(); i++) {
+                            //put pred first so it can be normalized to exp scale
+                            rts[0][i] = predRTs.get(i);
+                            rts[1][i] = expRTs.get(i);
+                        }
+
+                        String[] bandwidths = Constants.rtBandwidth.split(",");
+                        float[] floatBandwidths = new float[bandwidths.length];
+                        for (int i = 0; i < bandwidths.length; i++) {
+                            floatBandwidths[i] = Float.parseFloat(bandwidths[i]);
+                        }
+                        float mse = StatMethods.gridSearchCV(rts, floatBandwidths)[1];
+                        MSEs.put(model, mse);
+                        System.out.println(model + " has root mean squared error of " +
+                                String.format("%.4f", Math.sqrt(mse)));
+                    }
+
+                    //get best model
+                    float bestMSE = Float.MAX_VALUE;
+                    for (Map.Entry<String, Float> entry : MSEs.entrySet()) {
+                        float mse = entry.getValue();
+                        if (mse < bestMSE) {
+                            bestMSE = mse;
+                            Constants.rtModel = entry.getKey();
+                        }
+                    }
+                    System.out.println("RT model chosen is " + Constants.rtModel);
+                    System.out.println();
+                }
+
                 if (Constants.rtModel.isEmpty()) {
                     Constants.rtModel = "DIA-NN";
                 }
@@ -367,6 +478,7 @@ public class MainClass {
                 Constants.rtModel = "";
             }
             if (Constants.useSpectra) {
+                //here, look for best spectra model
                 if (Constants.spectraModel.isEmpty()) {
                     Constants.spectraModel = "DIA-NN";
                 }
@@ -409,14 +521,6 @@ public class MainClass {
             } else if (Constants.divideFragments.equals("0") && Constants.spectraRTPredModel.equals("DIA-NN")) {
                 //Constants.topFragments = 12; //may update in future
             }
-
-            //defining num threads
-            if (Constants.numThreads <= 0) {
-                Runtime run = Runtime.getRuntime();
-                Constants.numThreads = run.availableProcessors() - 1;
-            } //otherwise use user-defined
-            System.out.println("Using " + Constants.numThreads + " threads");
-            executorService = new ScheduledThreadPoolExecutor(Constants.numThreads);
 
             //check that at least pinPepXMLDirectory and mzmlDirectory are provided
             if (Constants.pinPepXMLDirectory == null) {
@@ -632,13 +736,9 @@ public class MainClass {
             if (Constants.detectPredInput != null || Constants.detectPredFile != null) {
                 createDetectPredFile = false;
             }
-
-            c.updatePaths(); //setting null paths
+            c.updateInputPaths(); //setting null paths
 
             //generate files for prediction models
-
-            //get matched pin files for mzML files
-            PinMzmlMatcher pmMatcher = new PinMzmlMatcher(Constants.mzmlDirectory, Constants.pinPepXMLDirectory);
             List<String> modelsList = Arrays.asList(Constants.spectraRTPredModel.split(","));
             ArrayList<String> models = new ArrayList<>(modelsList);
             if (models.size() != 1) {
@@ -663,7 +763,7 @@ public class MainClass {
                 for (String currentModel : Constants.spectraRTPredModel.split(",")) {
                     if (Constants.useKoina && !currentModel.equals("DIA-NN")) {
                         if (Constants.KoinaMS2models.contains(currentModel) && Constants.calibrateNCE) {
-                            Object[] modelInfo = NCEcalibrator.calibrateNCE(pmMatcher, currentModel, models);
+                            Object[] modelInfo = NCEcalibrator.calibrateNCE(pmMatcher, currentModel, models, km);
                             currentModel = (String) modelInfo[0];
                             models = (ArrayList<String>) modelInfo[1];
                         }
@@ -773,6 +873,7 @@ public class MainClass {
             }
 
             //create new pin file with features
+            System.out.println();
             System.out.println("Generating edited pin with following features: " + Arrays.toString(featuresArray));
             long start = System.nanoTime();
             if (Constants.spectraRTPredModel.contains("PredFull")) {

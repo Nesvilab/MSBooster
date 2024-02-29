@@ -23,19 +23,20 @@ import java.io.*;
 import java.nio.file.Files;
 
 public class DiannModelCaller {
-    public static void callModel() {
+    public static void callModel(String inputFile, boolean verbose) {
         long startTime = System.nanoTime();
         try {
             boolean useTMT = false;
             //DIA-NN command
-            System.out.println("Generating DIA-NN predictions");
+            if (verbose) {
+                System.out.println("Generating DIA-NN predictions");
+            }
             Constants.spectraRTPredFile =
-                    Constants.spectraRTPredInput.substring(0, Constants.spectraRTPredInput.length() - 4) +
-                            ".predicted.bin";
+                    inputFile.substring(0, inputFile.length() - 4) + ".predicted.bin";
             String line;
 
             //check for TMT
-            BufferedReader br = new BufferedReader(new FileReader(Constants.spectraRTPredInput));
+            BufferedReader br = new BufferedReader(new FileReader(inputFile));
             while ((line = br.readLine()) != null) {
                 if (line.contains("[TMT]")) {
                     useTMT = true;
@@ -48,7 +49,7 @@ public class DiannModelCaller {
             int subFileSize = 0;
             int linenumTotal = 0;
             if (Constants.splitPredInputFile != 1) {
-                br = new BufferedReader(new FileReader(Constants.spectraRTPredInput));
+                br = new BufferedReader(new FileReader(inputFile));
                 int linenum = -1;
                 while ((line = br.readLine()) != null) {
                     linenum += 1;
@@ -60,7 +61,7 @@ public class DiannModelCaller {
             }
 
             for (int i = 1; i < Constants.splitPredInputFile + 1; i++) {
-                String inputString = Constants.spectraRTPredInput;
+                String inputString = inputFile;
 
                 //splitting in case large input file
                 if (Constants.splitPredInputFile != 1) {
@@ -74,7 +75,7 @@ public class DiannModelCaller {
                         endRow = linenumTotal;
                     }
 
-                    br = new BufferedReader(new FileReader(Constants.spectraRTPredInput));
+                    br = new BufferedReader(new FileReader(inputFile));
                     line = br.readLine();
                     FileWriter myWriter = new FileWriter(inputString);
                     myWriter.write(line + "\n");
@@ -115,7 +116,9 @@ public class DiannModelCaller {
                             "--predict-n-frag",
                             "100");
                 }
-                System.out.println(String.join(" ", builder.command()));
+                if (verbose) {
+                    System.out.println(String.join(" ", builder.command()));
+                }
                 builder.redirectErrorStream(true);
                 Process process = builder.start();
                 InputStream is = process.getInputStream();
@@ -123,7 +126,9 @@ public class DiannModelCaller {
 
                 //print DIA-NN output while running
                 while ((line = reader.readLine()) != null) {
-                    System.out.println(line);
+                    if (verbose) {
+                        System.out.println(line);
+                    }
                 }
 
                 int DIANNtermination = process.waitFor();
@@ -147,8 +152,8 @@ public class DiannModelCaller {
                 }
 
                 if (Constants.splitPredInputFile != 1) {
-                    File inputFile = new File(inputString);
-                    inputFile.delete();
+                    File inputf = new File(inputString);
+                    inputf.delete();
 
                     //concatenate files together
                     //adapted from https://stackoverflow.com/questions/2243073/java-multiple-connection-downloading/2243731#2243731
@@ -181,7 +186,9 @@ public class DiannModelCaller {
             }
 
             if (Files.isReadable(predFile.toPath())) {
-                System.out.println("Done generating DIA-NN predictions");
+                if (verbose) {
+                    System.out.println("Done generating DIA-NN predictions");
+                }
             } else {
                 System.out.println("Cannot find DIA-NN's output. Please rerun MSBooster");
                 System.exit(-1);
@@ -191,8 +198,10 @@ public class DiannModelCaller {
             e.printStackTrace();
             System.exit(1);
         }
-        long endTime = System.nanoTime();
-        long duration = (endTime - startTime);
-        System.out.println("Model running took " + duration / 1000000 +" milliseconds");
+        if (verbose) {
+            long endTime = System.nanoTime();
+            long duration = (endTime - startTime);
+            System.out.println("Model running took " + duration / 1000000 + " milliseconds");
+        }
     }
 }

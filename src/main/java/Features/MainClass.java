@@ -390,7 +390,7 @@ public class MainClass {
                 if (Constants.findBestRtModel) {
                     System.out.println("Searching for best RT model for your data");
                     ArrayList<String> consideredModels = new ArrayList<>();
-                    //consideredModels.add("DIA-NN");
+                    consideredModels.add("DIA-NN");
                     if (TMT) {
                         consideredModels.add("Prosit_2020_irt_TMT");
                     } else {
@@ -409,15 +409,36 @@ public class MainClass {
 
                     HashMap<String, Float> MSEs = new HashMap<>();
                     for (String model : consideredModels) {
-                        //mode for DIA-NN
+                        ConcurrentHashMap<String, PredictionEntry> allPreds = null;
+                        if (model.equals("DIA-NN")) { //mode for DIA-NN
+                            if (Files.exists(Paths.get(jsonOutFolder + File.separator + model))) {
+                                FileUtils.cleanDirectory(new File(jsonOutFolder + File.separator + model));
+                            } else {
+                                Files.createDirectories(Paths.get(jsonOutFolder + File.separator + model));
+                            }
 
-                        //mode for koina
-                        HashSet<String> allHits = km.writeFullPeptideFile(
-                                jsonOutFolder + File.separator + model + "_full.tsv", model);
-                        ConcurrentHashMap<String, PredictionEntry> allPreds =
-                                km.getKoinaPredictions(allHits, model, 30,
-                                        jsonOutFolder + File.separator + model,
-                                        jsonOutFolder + File.separator + model + "_full.tsv");
+                            km.writeFullPeptideFile(jsonOutFolder + File.separator + model + File.separator +
+                                    "spectraRT_full.tsv", model);
+                            String inputFile = jsonOutFolder + File.separator + model + File.separator + "spectraRT.tsv";
+                            FileWriter myWriter = new FileWriter(inputFile);
+                            myWriter.write("peptide" + "\t" + "charge\n");
+                            for (String pep : km.peptideSet) {
+                                String[] pepSplit = pep.split(",");
+                                myWriter.write(pepSplit[1] + "\t" + pepSplit[0].split("\\|")[1] + "\n");
+                            }
+                            myWriter.close();
+
+                            DiannModelCaller.callModel(inputFile, false);
+                            allPreds = SpectralPredictionMapper.createSpectralPredictionMapper(
+                                    Constants.spectraRTPredFile, "DIA-NN", executorService).getPreds();
+                            Constants.spectraRTPredFile = null;
+                        } else { //mode for koina
+                            HashSet<String> allHits = km.writeFullPeptideFile(
+                                    jsonOutFolder + File.separator + model + "_full.tsv", model);
+                            allPreds = km.getKoinaPredictions(allHits, model, 30,
+                                    jsonOutFolder + File.separator + model,
+                                    jsonOutFolder + File.separator + model + "_full.tsv");
+                        }
 
                         ArrayList<Float> expRTs = new ArrayList<>();
                         ArrayList<Float> predRTs = new ArrayList<>();
@@ -843,7 +864,7 @@ public class MainClass {
                         spectraRTPredFile = Constants.outputDirectory + File.separator + "spectraRT_koina.mgf" +
                                 spectraRTPredFile;
                     } else {
-                        DiannModelCaller.callModel();
+                        DiannModelCaller.callModel(Constants.spectraRTPredInput, true);
                         onlyUsedKoina = false;
                         spectraRTPredFile = Constants.spectraRTPredInput.substring(0, Constants.spectraRTPredInput.length() - 4) +
                                 ".predicted.bin" + spectraRTPredFile;

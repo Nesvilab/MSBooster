@@ -42,7 +42,7 @@ public class PinMzmlMatcher {
                     pinFileList.add(directory);
                 }
             } else { //directory, but not recursive
-                List<File> pinFilesCollection = Files.walk(Paths.get(directory))
+                List<File> pinFilesCollection = Files.list(Paths.get(directory))
                     .filter(Files::isRegularFile)
                     .filter(p -> p.getFileName().toString().toLowerCase().endsWith(".pin"))
                     .map(Path::toFile).collect(Collectors.toList());
@@ -72,7 +72,7 @@ public class PinMzmlMatcher {
                     mzmlFileMap.put(f.getName().substring(0, f.getName().length() - 4), f);
                 }
             } else { //directory
-                List<File> mzmlFilesCollection = Files.walk(f.toPath())
+                List<File> mzmlFilesCollection = Files.list(f.toPath())
                     .filter(Files::isRegularFile)
                     .filter(p -> p.getFileName().toString().toLowerCase().endsWith(".mzml"))
                     .map(Path::toFile).collect(Collectors.toList());
@@ -83,7 +83,7 @@ public class PinMzmlMatcher {
                     mzmlFileMap.put(file.getName().substring(0, file.getName().length() - 5), file);
                 }
 
-                mzmlFilesCollection = Files.walk(f.toPath())
+                mzmlFilesCollection = Files.list(f.toPath())
                     .filter(Files::isRegularFile)
                     .filter(p -> p.getFileName().toString().toLowerCase().endsWith(".mgf"))
                     .map(Path::toFile).collect(Collectors.toList());

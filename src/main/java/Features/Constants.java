@@ -84,8 +84,7 @@ public class Constants {
             "Prosit_2019_irt", "Prosit_2020_irt_TMT", "Deeplc_hela_hf"));
     public static HashSet<String> KoinaMS2models = new HashSet<>(Arrays.asList("ms2pip_2021_HCD",
             "AlphaPept_ms2_generic", "Prosit_2019_intensity", "Prosit_2020_intensity_CID",
-            "Prosit_2020_intensity_TMT", "Prosit_2020_intensity_HCD", "Prosit_2023_intensity_timsTOF",
-            "Prosit_2023_intensity_TOF"));
+            "Prosit_2020_intensity_TMT", "Prosit_2020_intensity_HCD", "Prosit_2023_intensity_timsTOF"));
     public static HashSet<String> KoinaTMTmodels = new HashSet<>(Arrays.asList("Prosit_2020_irt_TMT",
             "Prosit_2020_intensity_TMT"));
     public static HashSet<String> nceModels =

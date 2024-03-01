@@ -17,6 +17,8 @@
 
 package Features;
 
+import umich.ms.fileio.exceptions.FileParsingException;
+
 import java.io.File;
 import java.io.IOException;
 import java.nio.ByteBuffer;
@@ -28,6 +30,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ExecutionException;
 import java.util.zip.DataFormatException;
 import java.util.zip.Inflater;
 
@@ -36,7 +39,7 @@ public class DlibReader implements SpectralPredictionMapper{
     ArrayList<String> filenames = new ArrayList<>();
     ConcurrentHashMap<String, PredictionEntry> allPreds = new ConcurrentHashMap();
 
-    public DlibReader(String dlib) throws SQLException, IOException {
+    public DlibReader(String dlib) throws SQLException, IOException, FileParsingException, ExecutionException, InterruptedException {
         File predsDirectory = new File(dlib);
         String[] predsFiles = predsDirectory.list();
         filenames = new ArrayList<String>();

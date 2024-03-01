@@ -22,9 +22,6 @@ public class NCEcalibrator {
     public static Object[] calibrateNCE(PinMzmlMatcher pmMatcher, String currentModel,
                                         ArrayList<String> models, KoinaMethods km, String jsonOutFolder)
             throws IOException, FileParsingException, ExecutionException, InterruptedException {
-        pmMatcher.loadMzmlReaders();
-        pmMatcher.setFragmentationType();
-
         //correct to CID model
         if (Constants.FragmentationType.equals("CID") &&
                 Constants.spectraRTPredModel.contains("Prosit_2020_intensity_HCD")) {

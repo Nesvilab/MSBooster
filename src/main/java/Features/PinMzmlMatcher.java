@@ -36,7 +36,7 @@ public class PinMzmlMatcher {
     public File[] pinFiles;
     public MzmlReader[] mzmlReaders;
 
-    public PinMzmlMatcher(String mzmlDirectory, String pinDirectory) throws IOException {
+    public PinMzmlMatcher(String mzmlDirectory, String pinDirectory) throws IOException, FileParsingException, ExecutionException, InterruptedException {
         //get pin files
         String[] allPinDirectories = pinDirectory.split(" ");
         ArrayList<String> pinFileList = new ArrayList<>();
@@ -120,9 +120,11 @@ public class PinMzmlMatcher {
         }
 
         mzmlReaders = new MzmlReader[mzmlFiles.length];
+        loadMzmlReaders();
+        setFragmentationType();
     }
 
-    public void loadMzmlReaders() throws IOException, FileParsingException, ExecutionException, InterruptedException {
+    private void loadMzmlReaders() throws IOException, FileParsingException, ExecutionException, InterruptedException {
         for (int j = 0; j < mzmlReaders.length; j++) {
             if (mzmlReaders[j] == null) {
                 MzmlReader mzml = new MzmlReader(mzmlFiles[j].getCanonicalPath());
@@ -132,7 +134,7 @@ public class PinMzmlMatcher {
         System.out.println();
     }
 
-    public void setFragmentationType() {
+    private void setFragmentationType() {
         if (Constants.FragmentationType.isEmpty()) {
             try {
                 Set<String> fragTypes = mzmlReaders[0]

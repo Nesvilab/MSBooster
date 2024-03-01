@@ -359,9 +359,6 @@ public class PinReader {
         } else if (pmm.mzmlReaders[fileI] != null) {
             mzml = pmm.mzmlReaders[fileI];
         }
-        if (Constants.instrument.equals("")) {
-            Constants.instrument = getInstrument();
-        }
         while (next(true)) {
             PeptideFormatter pf = getPep();
             String NCE = getNCE(Constants.FragmentationType);
@@ -404,9 +401,6 @@ public class PinReader {
             pmm.mzmlReaders[fileI] = mzml;
         } else if (pmm.mzmlReaders[fileI] != null) {
             mzml = pmm.mzmlReaders[fileI];
-        }
-        if (Constants.instrument.equals("")) {
-            Constants.instrument = getInstrument();
         }
         while (next(true)) {
             PeptideFormatter pf = getPep();
@@ -519,57 +513,5 @@ public class PinReader {
             return Constants.NCE;
         }
 
-    }
-
-    //TODO: support for astral model?
-    public String getInstrument() {
-        HashSet<String> LumosKeys = new HashSet<>(Arrays.asList("LTQ", "Lumos", "Fusion", "Elite", "Velos", "Eclipse", "Tribrid"));
-        HashSet<String> QEKeys = new HashSet<>(Arrays.asList("QE", "Exactive", "Exploris"));
-        HashSet<String> SciexTOFKeys = new HashSet<>(Arrays.asList("Sciex", "TripleTOF"));
-        HashSet<String> timsTOFKeys = new HashSet<>(Arrays.asList("flight"));
-        HashSet<String> ThermoTOFKeys = new HashSet<>(Arrays.asList("Astral"));
-
-        if (Constants.instrument.isEmpty()) {
-            try {
-                String model = mzml.scans.getRunInfo().getDefaultInstrument().getModel();
-                String analyzer = mzml.scans.getRunInfo().getDefaultInstrument().getAnalyzer();
-                for (String k : LumosKeys) {
-                    if (model.contains(k) || analyzer.contains(k)) {
-                        return "Lumos";
-                    }
-                }
-                for (String k : QEKeys) {
-                    if (model.contains(k) || analyzer.contains(k)) {
-                        return "QE";
-                    }
-                }
-                for (String k : SciexTOFKeys) {
-                    if (model.contains(k) || analyzer.contains(k)) {
-                        return "SciexTOF";
-                    }
-                }
-                for (String k : timsTOFKeys) {
-                    if (model.contains(k) || analyzer.contains(k)) {
-                        return "timsTOF";
-                    }
-                }
-                for (String k : ThermoTOFKeys) {
-                    if (model.contains(k) || analyzer.contains(k)) {
-                        return "ThermoTOF";
-                    }
-                }
-                System.out.println("Could not detect instrument type. Setting to Lumos. " +
-                        "If a different instrument was used, specify using '--instrument' via the command line " +
-                        "or 'instrument=' in the param file.");
-                return "Lumos"; //default if nothing found
-            } catch (NullPointerException e) {
-                System.out.println("Could not detect instrument type. Setting to Lumos. " +
-                        "If a different instrument was used, specify using '--instrument' via the command line " +
-                        "or 'instrument=' in the param file.");
-                return "Lumos"; //default if nothing found
-            }
-        } else {
-            return Constants.instrument;
-        }
     }
 }

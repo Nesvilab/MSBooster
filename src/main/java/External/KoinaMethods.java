@@ -34,10 +34,6 @@ public class KoinaMethods {
             peptideSet.addAll(topPSMs[0]);
             scanNums.put(pmMatcher.mzmlFiles[j].getName(), topPSMs[1]);
             peptides.put(pmMatcher.mzmlFiles[j].getName(), topPSMs[0]);
-            if (Constants.instrument.isEmpty()) {
-                pinReader.attachMzml(pmMatcher.mzmlReaders[j]);
-                Constants.instrument = pinReader.getInstrument();
-            }
         }
     }
 

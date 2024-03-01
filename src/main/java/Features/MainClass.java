@@ -378,9 +378,6 @@ public class MainClass {
                         break;
                     }
                 }
-
-                pmMatcher.loadMzmlReaders();
-                pmMatcher.setFragmentationType();
             }
 
             //if different RT and spectra models
@@ -527,13 +524,12 @@ public class MainClass {
                     HashMap<String, Double> medianSimilarities = new HashMap<>();
                     HashMap<String, TreeMap<Integer, ArrayList<Double>>> similarities = new HashMap<>();
                     for (String model : consideredModels) {
+                        if (Files.exists(Paths.get(jsonOutFolder + File.separator + model))) {
+                            FileUtils.cleanDirectory(new File(jsonOutFolder + File.separator + model));
+                        } else {
+                            Files.createDirectories(Paths.get(jsonOutFolder + File.separator + model));
+                        }
                         if (model.equals("DIA-NN")) { //mode for DIA-NN
-                            if (Files.exists(Paths.get(jsonOutFolder + File.separator + model))) {
-                                FileUtils.cleanDirectory(new File(jsonOutFolder + File.separator + model));
-                            } else {
-                                Files.createDirectories(Paths.get(jsonOutFolder + File.separator + model));
-                            }
-
                             km.writeFullPeptideFile(jsonOutFolder + File.separator + model + File.separator +
                                     "spectraRT_full.tsv", model);
                             String inputFile = jsonOutFolder + File.separator + model + File.separator + "spectraRT.tsv";
@@ -561,12 +557,31 @@ public class MainClass {
                             System.out.println("Median similarity for DIA-NN is " +
                                     String.format("%.4f", median));
                         } else { //mode for koina
-                            Object[] results = NCEcalibrator.calibrateNCE(pmMatcher, model, new ArrayList<>(), km,
-                                    Constants.outputDirectory + File.separator + "best_model" +
-                                    File.separator + model);
-                            medianSimilarities.put(model + "&" + results[4], (Double) results[3]);
-                            similarities.put(model + "&" + results[4],
-                                    (TreeMap<Integer, ArrayList<Double>>) results[2]);
+                            if (Constants.nceModels.contains(model)) {
+                                Object[] results = NCEcalibrator.calibrateNCE(pmMatcher, model, new ArrayList<>(), km,
+                                        Constants.outputDirectory + File.separator + "best_model" +
+                                                File.separator + model);
+                                medianSimilarities.put(model + "&" + results[4], (Double) results[3]);
+                                similarities.put(model + "&" + results[4],
+                                        (TreeMap<Integer, ArrayList<Double>>) results[2]);
+                            } else {
+                                HashSet<String> allHits = km.writeFullPeptideFile(jsonOutFolder +
+                                        File.separator + model + "_full.tsv", model);
+                                ConcurrentHashMap<String, PredictionEntry> allPreds =
+                                        km.getKoinaPredictions(allHits, model, 30,
+                                                jsonOutFolder + File.separator + model,
+                                                jsonOutFolder + File.separator + model + "_full.tsv");
+
+                                //get median similarity
+                                ArrayList<Double> similarity = new ArrayList<>();
+                                for (PeptideObj peptideObj : km.getPeptideObjects(allPreds)) {
+                                    similarity.add(peptideObj.spectralSimObj.unweightedSpectralEntropy());
+                                }
+                                double median = StatMethods.medianDouble(similarity);
+                                medianSimilarities.put(model, median);
+                                System.out.println("Median similarity for " + model + " is " +
+                                        String.format("%.4f", median));
+                            }
                         }
                     }
 
@@ -580,14 +595,16 @@ public class MainClass {
                             bestModel = entry.getKey();
                         }
                     }
-                    if (bestModel.contains("&")) {
+                    if (bestModel.contains("&")) { //model that uses NCE
                         String[] modelSplit = bestModel.split("&");
                         Constants.spectraModel = modelSplit[0];
                         Constants.NCE = modelSplit[1];
                         NCEcalibrator.plotNCEchart(similarities.get(bestModel));
+                    } else {
+                        Constants.spectraModel = bestModel;
                     }
                     Constants.calibrateNCE = false;
-                    System.out.println("Spectra model chosen is " + Constants.rtModel);
+                    System.out.println("Spectra model chosen is " + Constants.spectraModel);
                     System.out.println();
                 }
 

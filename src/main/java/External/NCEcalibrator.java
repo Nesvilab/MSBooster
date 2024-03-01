@@ -16,10 +16,11 @@ import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.*;
 import java.util.concurrent.*;
+import java.util.concurrent.atomic.AtomicInteger;
 
 public class NCEcalibrator {
     public static Object[] calibrateNCE(PinMzmlMatcher pmMatcher, String currentModel,
-                                        ArrayList<String> models, KoinaMethods km)
+                                        ArrayList<String> models, KoinaMethods km, String jsonOutFolder)
             throws IOException, FileParsingException, ExecutionException, InterruptedException {
         pmMatcher.loadMzmlReaders();
         pmMatcher.setFragmentationType();
@@ -52,11 +53,13 @@ public class NCEcalibrator {
             }
         }
 
-        if (Constants.nceModels.contains(Constants.spectraModel)) {
+        TreeMap<Integer, ArrayList<Double>> similarities = new TreeMap<>();
+        double bestMedianDouble = 0d;
+        int bestNCEint = 0;
+        if (Constants.nceModels.contains(currentModel)) {
             System.out.println("Calibrating NCE");
 
             //create nce calibration directory
-            String jsonOutFolder = Constants.outputDirectory + File.separator + "NCE_calibration";
             if (Files.exists(Paths.get(jsonOutFolder))) {
                 try {
                     FileUtils.cleanDirectory(new File(jsonOutFolder));
@@ -71,8 +74,10 @@ public class NCEcalibrator {
                     jsonOutFolder + File.separator + "NCE_calibration_full.tsv", currentModel);
 
             //iterate through every NCE
+            //TODO: make this into one method, taking a model and iterating through all NCEs
             ConcurrentHashMap<Integer, ArrayList<Double>> concurrentSimilarities = new ConcurrentHashMap<>();
             AtomicDouble bestMedian = new AtomicDouble(0);
+            AtomicInteger bestNCE = new AtomicInteger();
             boolean old = Constants.removeRankPeaks;
             Constants.removeRankPeaks = false;
 
@@ -90,24 +95,8 @@ public class NCEcalibrator {
                     //make mzmlsscannumber objects and set peptide objects and calculate similarities
                     //can move this after reading in mzml files
                     ArrayList<Double> similarity = new ArrayList<>();
-
-                    for (int j = 0; j < pmMatcher.mzmlReaders.length; j++) {
-                        MzmlReader mzmlReader = pmMatcher.mzmlReaders[j];
-                        LinkedList<Integer> thisScanNums = km.scanNums.get(pmMatcher.mzmlFiles[j].getName());
-                        LinkedList<String> thisPeptides = km.peptides.get(pmMatcher.mzmlFiles[j].getName());
-
-                        for (int k = 0; k < thisScanNums.size(); k++) {
-                            int scanNum = thisScanNums.get(k);
-                            MzmlScanNumber msn = mzmlReader.getScanNumObject(scanNum);
-
-                            String peptide = thisPeptides.get(k).split(",")[0];
-                            String[] baseCharge = peptide.split("\\|");
-
-                            PeptideObj pobj = msn.setPeptideObject(
-                                    new PeptideFormatter(baseCharge[0], baseCharge[1], "base"),
-                                    1, 1, "0", allPreds, false);
-                            similarity.add(pobj.spectralSimObj.unweightedSpectralEntropy());
-                        }
+                    for (PeptideObj peptideObj : km.getPeptideObjects(allPreds)) {
+                        similarity.add(peptideObj.spectralSimObj.unweightedSpectralEntropy());
                     }
 
                     //calculate median
@@ -115,40 +104,27 @@ public class NCEcalibrator {
                     double median = StatMethods.medianDouble(similarity);
                     if (median > bestMedian.get()) {
                         bestMedian.set(median);
-                        Constants.NCE = String.valueOf(finalNCE);
+                        bestNCE.set(finalNCE);
                     }
                 }));
             }
             for (Future future : futureList) {
                 future.get();
             }
-            TreeMap<Integer, ArrayList<Double>> similarities = new TreeMap<>(concurrentSimilarities);
+            similarities = new TreeMap<>(concurrentSimilarities);
             Constants.removeRankPeaks = old;
 
-            System.out.println("Best NCE after calibration is " + Constants.NCE);
-            if (Constants.NCE.equals(String.valueOf(Constants.minNCE))) {
+            System.out.println("Best NCE for " + currentModel + " after calibration is " + bestNCE);
+            bestMedianDouble = bestMedian.get();
+            System.out.println("Median similarity is " + String.format("%.4f", bestMedianDouble));
+            if (bestNCE.get() == Constants.minNCE) {
                 System.out.println("Consider lowering minNCE below " + Constants.minNCE);
-            } else if (Constants.NCE.equals(String.valueOf(Constants.maxNCE))) {
+            } else if (bestNCE.get() == Constants.maxNCE) {
                 System.out.println("Consider increasing maxNCE above " + Constants.maxNCE);
             }
+            bestNCEint = bestNCE.get();
 
-            //create figure
-            BoxChart chart = new BoxChartBuilder().title("NCE calibration").
-                    width(200 * (Constants.maxNCE - Constants.minNCE)).height(1000).
-                    yAxisTitle("unweightedSpectralEntropy").build(); //TODO: adapt to any MS2 feature?
-            chart.getStyler().setBoxplotCalCulationMethod(BoxStyler.BoxplotCalCulationMethod.N_LESS_1);
-
-            for (Map.Entry<Integer, ArrayList<Double>> entry : similarities.entrySet()) {
-                chart.addSeries(String.valueOf(entry.getKey()), entry.getValue());
-            }
-
-            try {
-                BitmapEncoder.saveBitmap(chart, Constants.outputDirectory + File.separator +
-                                "MSBooster_plots" + File.separator + "calibration.png",
-                        BitmapEncoder.BitmapFormat.PNG);
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
+            //clean directories
             try {
                 FileUtils.cleanDirectory(new File(jsonOutFolder));
                 Files.deleteIfExists(Paths.get(jsonOutFolder));
@@ -159,6 +135,26 @@ public class NCEcalibrator {
                 } catch (Exception e2) {}
             }
         }
-        return new Object[]{currentModel, models};
+        return new Object[]{currentModel, models, similarities, bestMedianDouble, bestNCEint};
+    }
+
+    public static void plotNCEchart(TreeMap<Integer, ArrayList<Double>> similarities) {
+        //create figure
+        BoxChart chart = new BoxChartBuilder().title("NCE calibration").
+                width(200 * (Constants.maxNCE - Constants.minNCE)).height(1000).
+                yAxisTitle("unweightedSpectralEntropy").build(); //TODO: adapt to any MS2 feature?
+        chart.getStyler().setBoxplotCalCulationMethod(BoxStyler.BoxplotCalCulationMethod.N_LESS_1);
+
+        for (Map.Entry<Integer, ArrayList<Double>> entry : similarities.entrySet()) {
+            chart.addSeries(String.valueOf(entry.getKey()), entry.getValue());
+        }
+
+        try {
+            BitmapEncoder.saveBitmap(chart, Constants.outputDirectory + File.separator +
+                            "MSBooster_plots" + File.separator + "NCE_calibration.png",
+                    BitmapEncoder.BitmapFormat.PNG);
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
     }
 }

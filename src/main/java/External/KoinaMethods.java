@@ -13,12 +13,15 @@ import java.util.concurrent.ScheduledThreadPoolExecutor;
 
 public class KoinaMethods {
     //these fields are shared regardless of which model is called
+    public PinMzmlMatcher pmMatcher;
     public HashSet<String> peptideSet = new HashSet<>();
     public HashMap<String, LinkedList<Integer>> scanNums = new HashMap<>();
     public HashMap<String, LinkedList<String>> peptides = new HashMap<>();
-    public KoinaMethods() {}
+    public KoinaMethods(PinMzmlMatcher pmMatcher) {
+        this.pmMatcher = pmMatcher;
+    }
 
-    public void getTopPeptides(PinMzmlMatcher pmMatcher) throws IOException {
+    public void getTopPeptides() throws IOException {
         //need to collect top 1000 peptides for calibration
         //approximate by doing a subset per pin
         int numTopPSMs = (int) Math.ceil((float) Constants.numPSMsToCalibrate /
@@ -128,5 +131,35 @@ public class KoinaMethods {
             throw new RuntimeException(e);
         }
         return klr.allPreds;
+    }
+
+    public PeptideObj[] getPeptideObjects(ConcurrentHashMap<String, PredictionEntry> allPreds) {
+        int arrayLength = 0;
+        for (LinkedList<Integer> scanNum : scanNums.values()) {
+            arrayLength += scanNum.size();
+        }
+        PeptideObj[] peptideObjs = new PeptideObj[arrayLength];
+
+        int index = 0;
+        for (int j = 0; j < pmMatcher.mzmlReaders.length; j++) {
+            MzmlReader mzmlReader = pmMatcher.mzmlReaders[j];
+            LinkedList<Integer> thisScanNums = scanNums.get(pmMatcher.mzmlFiles[j].getName());
+            LinkedList<String> thisPeptides = peptides.get(pmMatcher.mzmlFiles[j].getName());
+
+            for (int k = 0; k < thisScanNums.size(); k++) {
+                int scanNum = thisScanNums.get(k);
+                MzmlScanNumber msn = mzmlReader.getScanNumObject(scanNum);
+
+                String peptide = thisPeptides.get(k).split(",")[0];
+                String[] baseCharge = peptide.split("\\|");
+
+                PeptideObj pobj = msn.setPeptideObject(
+                        new PeptideFormatter(baseCharge[0], baseCharge[1], "base"),
+                        1, 1, "0", allPreds, false);
+                peptideObjs[index] = pobj;
+                index++;
+            }
+        }
+        return peptideObjs;
     }
 }

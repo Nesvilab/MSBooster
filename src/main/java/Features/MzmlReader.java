@@ -313,7 +313,7 @@ public class MzmlReader {
         ProgressReporter pr = new ProgressReporter(pin.getLength());
         futureList.clear();
 
-        String currentScanNum = "0";
+        String currentScanNum = "-1";
         setScanNumPepObj task = null;
         int limit = pin.scanNumIdx + 2;
         while (pin.next(false)) {

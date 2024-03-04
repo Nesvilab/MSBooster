@@ -23,7 +23,9 @@ import umich.ms.datatypes.scan.props.PrecursorInfo;
 import umich.ms.datatypes.spectrum.ISpectrum;
 import umich.ms.fileio.exceptions.FileParsingException;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.HashMap;
 import java.util.concurrent.ConcurrentHashMap;
 
 import static Features.FloatUtils.doubleToFloat;

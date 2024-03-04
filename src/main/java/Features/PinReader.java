@@ -18,14 +18,10 @@
 package Features;
 
 import org.apache.commons.lang3.ArrayUtils;
-import org.checkerframework.checker.units.qual.A;
-import org.checkerframework.checker.units.qual.N;
 import umich.ms.fileio.exceptions.FileParsingException;
-import umontreal.ssj.probdist.EmpiricalDist;
 
 import java.io.*;
 import java.util.*;
-import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutionException;
 
 //TODO: which of these tools allows O abd U amino acids?

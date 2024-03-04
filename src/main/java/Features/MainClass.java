@@ -26,7 +26,8 @@ import java.io.*;
 import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
 import java.util.*;
-import java.util.concurrent.*;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ScheduledThreadPoolExecutor;
 
 //this is what I use in the java jar file
 public class MainClass {
@@ -533,7 +534,7 @@ public class MainClass {
                                     String.format("%.4f", median));
                         } else { //mode for koina
                             if (Constants.nceModels.contains(model)) {
-                                Object[] results = NCEcalibrator.calibrateNCE(pmMatcher, model, new ArrayList<>(), km,
+                                Object[] results = NCEcalibrator.calibrateNCE(model, new ArrayList<>(), km,
                                         Constants.outputDirectory + File.separator + "best_model" +
                                                 File.separator + model);
                                 medianSimilarities.put(model + "&" + results[4], (Double) results[3]);
@@ -866,12 +867,14 @@ public class MainClass {
                 }
                 for (String currentModel : Constants.spectraRTPredModel.split(",")) {
                     if (Constants.useKoina && !currentModel.equals("DIA-NN")) {
-                        if (Constants.KoinaMS2models.contains(currentModel) && Constants.calibrateNCE) {
-                            Object[] modelInfo = NCEcalibrator.calibrateNCE(pmMatcher, currentModel, models, km,
+                        if (Constants.KoinaMS2models.contains(currentModel) && Constants.calibrateNCE &&
+                        Constants.nceModels.contains(currentModel)) {
+                            Object[] modelInfo = NCEcalibrator.calibrateNCE(currentModel, models, km,
                                     Constants.outputDirectory + File.separator + "NCE_calibration");
                             currentModel = (String) modelInfo[0];
                             models = (ArrayList<String>) modelInfo[1];
                             NCEcalibrator.plotNCEchart((TreeMap<Integer, ArrayList<Double>>) modelInfo[2]);
+                            Constants.NCE = String.valueOf((int) modelInfo[4]);
                         }
 
                         PeptideFileCreator.createPeptideFile(pmMatcher,

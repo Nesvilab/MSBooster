@@ -28,7 +28,6 @@ import java.nio.FloatBuffer;
 import java.sql.*;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.HashMap;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutionException;
 import java.util.zip.DataFormatException;

@@ -18,14 +18,12 @@
 package Features;
 
 import kotlin.jvm.functions.Function1;
-import org.checkerframework.checker.units.qual.A;
 import umich.ms.datatypes.LCMSDataSubset;
 import umich.ms.datatypes.scan.IScan;
 import umich.ms.datatypes.scan.StorageStrategy;
 import umich.ms.datatypes.scancollection.impl.ScanCollectionDefault;
 import umich.ms.fileio.exceptions.FileParsingException;
 import umich.ms.fileio.filetypes.mzml.MZMLFile;
-//import umontreal.ssj.gof.KernelDensity;
 import umontreal.ssj.probdist.EmpiricalDist;
 
 import java.io.IOException;
@@ -37,7 +35,6 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Future;
 
-import static Features.FloatUtils.doubleToFloat;
 import static Features.StatMethods.*;
 
 public class MzmlReader {

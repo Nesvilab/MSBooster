@@ -18,7 +18,6 @@
 package Features;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Map;
 
 //lots of different ways to format peptide string

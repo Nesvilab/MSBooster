@@ -19,7 +19,6 @@ package External;
 
 import Features.*;
 import com.google.common.util.concurrent.AtomicDouble;
-import org.apache.commons.io.FileUtils;
 import org.knowm.xchart.BitmapEncoder;
 import org.knowm.xchart.BoxChart;
 import org.knowm.xchart.BoxChartBuilder;
@@ -27,16 +26,15 @@ import org.knowm.xchart.style.BoxStyler;
 import umich.ms.fileio.exceptions.FileParsingException;
 
 import java.io.File;
-import java.io.FileWriter;
 import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.Paths;
 import java.util.*;
-import java.util.concurrent.*;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.Future;
 import java.util.concurrent.atomic.AtomicInteger;
 
 public class NCEcalibrator {
-    public static Object[] calibrateNCE(PinMzmlMatcher pmMatcher, String currentModel,
+    public static Object[] calibrateNCE(String currentModel,
                                         ArrayList<String> models, KoinaMethods km, String jsonOutFolder)
             throws IOException, FileParsingException, ExecutionException, InterruptedException {
         //correct to CID model

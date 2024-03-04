@@ -18,19 +18,18 @@
 package Features;
 
 import jakarta.xml.bind.JAXBException;
-import org.apache.commons.lang3.ArrayUtils;
 import umich.ms.fileio.exceptions.FileParsingException;
 
 import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Future;
-
-import static org.apache.commons.io.FileUtils.listFiles;
 
 public class PeptideFileCreator {
 

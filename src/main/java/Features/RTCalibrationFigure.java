@@ -28,8 +28,8 @@ import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
-import java.util.*;
 import java.util.List;
+import java.util.*;
 
 public class RTCalibrationFigure {
     public RTCalibrationFigure(MzmlReader mzml, String outFile, float opacity) throws IOException {

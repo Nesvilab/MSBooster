@@ -27,14 +27,16 @@ import java.util.stream.Stream;
 
 public class MyFileUtils {
     public static void deleteWholeDirectory(String directory) throws IOException {
-        Path rootPath = Paths.get(directory);
-        if (Files.exists(rootPath)) {
-            try (Stream<Path> walk = Files.walk(rootPath)) {
-                walk.sorted(Comparator.reverseOrder())
-                        .map(Path::toFile)
-                        .forEach(File::delete);
+        try {
+            Path rootPath = Paths.get(directory);
+            if (Files.exists(rootPath)) {
+                try (Stream<Path> walk = Files.walk(rootPath)) {
+                    walk.sorted(Comparator.reverseOrder())
+                            .map(Path::toFile)
+                            .forEach(File::delete);
+                }
             }
-        }
+        } catch (Exception ignored) {}
     }
 
     public static void createWholeDirectory(String directory) throws IOException {

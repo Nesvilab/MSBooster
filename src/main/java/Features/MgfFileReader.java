@@ -21,8 +21,14 @@ import umich.ms.fileio.exceptions.FileParsingException;
 
 import java.io.*;
 import java.nio.charset.StandardCharsets;
-import java.util.*;
-import java.util.concurrent.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Future;
 
 public class MgfFileReader implements SpectralPredictionMapper{
     //mgfFileReader can handle both single files and entire directories

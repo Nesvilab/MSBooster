@@ -39,8 +39,8 @@ public class SpectrumComparison {
     int length;
     int matchedIons;
     LinkedHashSet<Integer> matchedIdx = new LinkedHashSet<Integer>();
-    private static PearsonsCorrelation pc = new PearsonsCorrelation();
-    private static SpearmansCorrelation sc = new SpearmansCorrelation();
+    private static final PearsonsCorrelation pc = new PearsonsCorrelation();
+    private static final SpearmansCorrelation sc = new SpearmansCorrelation();
     public ArrayList<SpectrumComparison> spectrumComparisons = new ArrayList<>();
     public static Well19937c rng = new Well19937c(123);
     public PeptideObj pepObj;

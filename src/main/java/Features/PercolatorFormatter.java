@@ -295,7 +295,7 @@ public class PercolatorFormatter {
 
                 //load mzml file
                 MzmlReader mzml;
-                if (mzmlFiles[i].getName().substring( mzmlFiles[i].getName().length() - 3).toLowerCase().equals("mgf")) {
+                if (mzmlFiles[i].getName().substring( mzmlFiles[i].getName().length() - 3).equalsIgnoreCase("mgf")) {
                     mzml = new MzmlReader(new MgfFileReader(mzmlFiles[i].getCanonicalPath(),
                             true, executorService, ""));
                 } else {

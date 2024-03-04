@@ -461,10 +461,9 @@ public class PinReader {
                     pep = "[UNIMOD:737]-" + pep;
                 }
             }
-            StringBuilder sb = new StringBuilder();
-            sb.append(pep).append(",").append(pf.charge).append(",").append(NCE).append(",").
-                    append(Constants.instrument).append(",").append(fragmentation);
-            peps.add(sb.toString());
+            String sb = pep + "," + pf.charge + "," + NCE + "," +
+                    Constants.instrument + "," + fragmentation;
+            peps.add(sb);
         }
         return peps.toArray(new String[0]);
     }

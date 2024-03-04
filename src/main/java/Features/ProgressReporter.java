@@ -20,8 +20,8 @@ package Features;
 import java.util.concurrent.atomic.AtomicInteger;
 
 public class ProgressReporter {
-    private AtomicInteger linesRead = new AtomicInteger(1);
-    private AtomicInteger currentPercent = new AtomicInteger(Constants.loadingPercent);
+    private final AtomicInteger linesRead = new AtomicInteger(1);
+    private final AtomicInteger currentPercent = new AtomicInteger(Constants.loadingPercent);
     private final int iterations;
     private boolean done = false;
 

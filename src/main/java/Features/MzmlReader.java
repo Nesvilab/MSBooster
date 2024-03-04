@@ -61,7 +61,7 @@ public class MzmlReader {
     public float[] unifProbIM;
     public ArrayList<Float>[][] IMbins = null;
     public float[][][] IMbinStats = new float[IMFunctions.numCharges][2 * Constants.IMbinMultiplier + 1][3];
-    private ArrayList<Function1<Double, Double>> IMLOESS = new ArrayList<>();
+    private final ArrayList<Function1<Double, Double>> IMLOESS = new ArrayList<>();
     public HashMap<String, ArrayList<Float>> peptideIMs = new HashMap<>();
     public HashMap<String, double[][]> expAndPredRTs;
     public List<Future> futureList = new ArrayList<>(Constants.numThreads);
@@ -194,8 +194,8 @@ public class MzmlReader {
         HashSet<String> LumosKeys = new HashSet<>(Arrays.asList("LTQ", "Lumos", "Fusion", "Elite", "Velos", "Eclipse", "Tribrid"));
         HashSet<String> QEKeys = new HashSet<>(Arrays.asList("QE", "Exactive", "Exploris"));
         HashSet<String> SciexTOFKeys = new HashSet<>(Arrays.asList("Sciex", "TripleTOF"));
-        HashSet<String> timsTOFKeys = new HashSet<>(Arrays.asList("flight"));
-        HashSet<String> ThermoTOFKeys = new HashSet<>(Arrays.asList("Astral"));
+        HashSet<String> timsTOFKeys = new HashSet<>(List.of("flight"));
+        HashSet<String> ThermoTOFKeys = new HashSet<>(List.of("Astral"));
 
         if (Constants.instrument.isEmpty()) {
             try {
@@ -312,19 +312,19 @@ public class MzmlReader {
 //    }
 
     class setScanNumPepObj implements Runnable {
-        private ArrayList<String> lines = new ArrayList<>();
-        private int scanNum;
-        private ArrayList<PeptideFormatter> peps = new ArrayList<>();
-        private ArrayList<Integer> ranks = new ArrayList<>();
-        private ArrayList<Integer> tds = new ArrayList<>();
-        private ArrayList<String> escores = new ArrayList<>();
+        private final ArrayList<String> lines = new ArrayList<>();
+        private final int scanNum;
+        private final ArrayList<PeptideFormatter> peps = new ArrayList<>();
+        private final ArrayList<Integer> ranks = new ArrayList<>();
+        private final ArrayList<Integer> tds = new ArrayList<>();
+        private final ArrayList<String> escores = new ArrayList<>();
         private final ConcurrentHashMap<String, PredictionEntry> allPreds;
-        private int specIdx;
-        private int pepIdx;
-        private int rankIdx;
-        private int labelIdx;
-        private int eScoreIdx;
-        private boolean calcEvalue;
+        private final int specIdx;
+        private final int pepIdx;
+        private final int rankIdx;
+        private final int labelIdx;
+        private final int eScoreIdx;
+        private final boolean calcEvalue;
         public setScanNumPepObj(String scanNum, ConcurrentHashMap<String, PredictionEntry> allPreds,
                                 int specIdx, int pepIdx, int rankIdx, int labelIdx, int eScoreIdx, boolean calcEvalue) {
             this.scanNum = Integer.parseInt(scanNum);
@@ -438,7 +438,7 @@ public class MzmlReader {
     public void normalizeRTs(ExecutorService executorService) throws ExecutionException, InterruptedException {
         if (betas == null) {
             System.out.println("why are betas null?");
-        };
+        }
         futureList.clear();
 
         //iterate over this list of scan numbers

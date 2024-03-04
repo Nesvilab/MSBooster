@@ -74,7 +74,7 @@ public class MassCalculator {
         put('X', 0f);
     }};
 
-    private HashMap<String, double[]> series = new HashMap<>();
+    private final HashMap<String, double[]> series = new HashMap<>();
     Set<String> leftIons = new HashSet<>(Arrays.asList("a", "b", "c", "cdot"));
     Set<String> rightIons = new HashSet<>(Arrays.asList("x", "y", "z", "zdot"));
 
@@ -330,7 +330,7 @@ public class MassCalculator {
             //neutral loss
             if (Constants.lowestFragmentIonType.contains("precursor-NL")) {
                 for (String nl : neutralLosses) {
-                    String ionName = "MH-" + nl + "" + "+" + iCharge;
+                    String ionName = "MH-" + nl + "+" + iCharge;
                     addToFragmentIons(calcMass(peptide.length(), "y", iCharge, nl), new String[]{ionName, "precursor-NL"});
                 }
             }

@@ -112,11 +112,7 @@ public class JSONWriter {
     public String write(boolean createDir, String jsonOutFolder, ExecutorService executorService)
             throws IOException, ExecutionException, InterruptedException {
         if (createDir) {
-            if (Files.exists(Paths.get(jsonOutFolder))) {
-                FileUtils.cleanDirectory(new File(jsonOutFolder));
-            } else {
-                Files.createDirectories(Paths.get(jsonOutFolder));
-            }
+            MyFileUtils.createWholeDirectory(jsonOutFolder);
         } else {
             if (! Files.exists(Paths.get(jsonOutFolder))) {
                 Files.createDirectories(Paths.get(jsonOutFolder));

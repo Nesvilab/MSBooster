@@ -36,12 +36,13 @@ public class PinMzmlMatcher {
     public File[] pinFiles;
     public MzmlReader[] mzmlReaders;
 
-    public PinMzmlMatcher(String mzmlDirectory, String pinDirectory) throws IOException, FileParsingException, ExecutionException, InterruptedException {
+    public PinMzmlMatcher(String mzmlDirectory, String pinDirectory)
+            throws IOException, FileParsingException, ExecutionException, InterruptedException {
         //get pin files
         String[] allPinDirectories = pinDirectory.split(" ");
         ArrayList<String> pinFileList = new ArrayList<>();
         for (String directory : allPinDirectories) {
-            if (directory.substring(directory.length() - 3).toLowerCase().equals("pin")) { //single file
+            if (directory.substring(directory.length() - 3).equalsIgnoreCase("pin")) { //single file
                 if (! directory.contains("_" + Constants.editedPin)) {
                     pinFileList.add(directory);
                 }
@@ -65,14 +66,14 @@ public class PinMzmlMatcher {
         for (String directory : allMzmlDirectories) {
             File f = new File(directory);
             if (f.isFile()) {
-                if (directory.substring(directory.length() - 17).toLowerCase().equals("uncalibrated.mzml")) {
+                if (directory.substring(directory.length() - 17).equalsIgnoreCase("uncalibrated.mzml")) {
                     mzmlFileMap.put(f.getName().substring(0, f.getName().length() - 18), f);
                     mzmlFileMap.put(f.getName().substring(0, f.getName().length() - 5), f);
-                } else if (directory.substring(directory.length() - 4).toLowerCase().equals("mzml")) {
+                } else if (directory.substring(directory.length() - 4).equalsIgnoreCase("mzml")) {
                     mzmlFileMap.put(f.getName().substring(0, f.getName().length() - 5), f);
-                } else if (directory.substring(directory.length() - 16).toLowerCase().equals("uncalibrated.mgf")) {
+                } else if (directory.substring(directory.length() - 16).equalsIgnoreCase("uncalibrated.mgf")) {
                     mzmlFileMap.put(f.getName().substring(0, f.getName().length() - 17), f);
-                } else if (directory.substring(directory.length() - 3).toLowerCase().equals("mgf")) {
+                } else if (directory.substring(directory.length() - 3).equalsIgnoreCase("mgf")) {
                     mzmlFileMap.put(f.getName().substring(0, f.getName().length() - 4), f);
                 }
             } else { //directory

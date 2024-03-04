@@ -32,7 +32,7 @@ public class FloatUtils {
     public static double[] floatToDouble(float[] arr){
         double[] newArr = new double[arr.length];
         for (int i = 0; i < arr.length; i++){
-            newArr[i] = (double) arr[i];
+            newArr[i] = arr[i];
         }
         return newArr;
     }

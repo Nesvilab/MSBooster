@@ -31,7 +31,7 @@ public class FeatureCalculator {
     final Set<String> supportedFeatures = new HashSet<>(Arrays.asList("intersection",
             "hypergeometricProbability", "unweightedSpectralEntropy"));
     final Set<String> medianMethods = new HashSet<>(Arrays.asList("intersection", "unweightedSpectralEntropy"));
-    final Set<String> zscoreMethods = new HashSet<>(Arrays.asList("hypergeometricProbability"));
+    final Set<String> zscoreMethods = new HashSet<>(List.of("hypergeometricProbability"));
 
 
     PinReader pin;

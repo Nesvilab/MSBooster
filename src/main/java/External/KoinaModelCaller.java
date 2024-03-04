@@ -56,8 +56,8 @@ public class KoinaModelCaller {
     //TODO: add functions to clean this up
     public void callModel(String model, KoinaLibReader klr, String jsonFolder, ScheduledThreadPoolExecutor executorService,
                           boolean verbose, boolean makeFigure) {
-        this.modelType = model.toLowerCase().split("_")[0];
-        this.finalModel = model;
+        modelType = model.toLowerCase().split("_")[0];
+        finalModel = model;
 
         if (verbose) {
             System.out.println("Calling " + model + " model");
@@ -202,7 +202,7 @@ public class KoinaModelCaller {
 
     public static void parseKoinaOutput(String fileName, String koinaString, String property, String model,
                                         KoinaLibReader klr) throws IOException {
-        if (property.toLowerCase().equals("rt")) {
+        if (property.equalsIgnoreCase("rt")) {
             String rts = koinaString.split("data")[2];
             String[] results = rts.substring(3, rts.length() - 4).split(",");
             float[] parsedResults = new float[results.length];
@@ -211,7 +211,7 @@ public class KoinaModelCaller {
             }
 
             assignRTs(fileName, parsedResults, klr);
-        } else if (property.toLowerCase().equals("ms2")) {
+        } else if (property.equalsIgnoreCase("ms2")) {
             //get indices for processing
             int mzIdx = 0;
             int intIdx = 0;

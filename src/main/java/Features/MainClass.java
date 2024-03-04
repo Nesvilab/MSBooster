@@ -21,13 +21,10 @@ import External.DiannModelCaller;
 import External.KoinaMethods;
 import External.KoinaModelCaller;
 import External.NCEcalibrator;
-import org.apache.commons.io.FileUtils;
 
 import java.io.*;
 import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
-import java.nio.file.Files;
-import java.nio.file.Paths;
 import java.util.*;
 import java.util.concurrent.*;
 
@@ -36,7 +33,7 @@ public class MainClass {
     public static ScheduledThreadPoolExecutor executorService;
     public static void main(String[] args) throws Exception {
         Locale.setDefault(Locale.US);
-        System.out.println("MSBooster v1.2.13");
+        System.out.println("MSBooster v1.2.14");
 
         try {
             //accept command line inputs
@@ -63,7 +60,7 @@ public class MainClass {
                             "and DeepMSPeptide for detectability prediction (provided by DeepMSPeptideRevised.exe). " +
                             "Predictions for all peptides from the PSMs, both target and decoy, are also saved.");
 
-                    System.out.println("");
+                    System.out.println();
                     System.out.println("General flags:");
                     System.out.println("\t--paramsList: Text file containing all parameters to use. Specifying this will override any other parameters provided via command line");
                     System.out.println("\t--pinPepXMLDirectory: One or more directories where pin/pepXML files are located, " +
@@ -99,7 +96,7 @@ public class MainClass {
                     System.out.println("\t--useIM: whether or not to use IM features (default: false). This needs to be turned to true manually" +
                             "if analyzing ion mobility data.");
 
-                    System.out.println("");
+                    System.out.println();
                     System.out.println("Flags that are only used if calculating detectability features (these can all be provided using" +
                             "the --fragger flag):");
                     System.out.println("\t--fasta: path to fasta file");
@@ -111,7 +108,7 @@ public class MainClass {
                     System.out.println("\t--digestMinMass: minimum mass peptide searched in database search tool in Daltons (default: 500)");
                     System.out.println("\t--digestMaxMass: maxmimum mass peptide searched in database search tool in Daltons (default: 5000)");
 
-                    System.out.println("");
+                    System.out.println();
                     System.out.println("Flags that are only used if adding spectral and/or RT features to the edited pin file:");
                     System.out.println("\t--ppmTolerance: fragment error tolerance (in ppm) of the database search. " +
                             "Used for matching fragment peaks from experimental spectra to predicted spectra (default: 20)");
@@ -132,7 +129,7 @@ public class MainClass {
                             "experimental RT bin " +
                             "(default: 50)");
 
-                    System.out.println("");
+                    System.out.println();
                     System.out.println("Flags that are only used if adding IM features to the edited pin file:");
                     System.out.println("\t--IMregressionSize: how many PSMs used for loess regression, sorted by lowest e score, " +
                             "are used for the linear regression of predicted and experimental RTs (default: 5000)");
@@ -146,7 +143,7 @@ public class MainClass {
                             "experimental IM bin " +
                             "(default: 50)");
 
-                    System.out.println("");
+                    System.out.println();
                     System.out.println("Flags shared by RT and IM features");
                     System.out.println("\t--uniformPriorPercentile: for RTprobabilityUnifPrior and IMprobabilityUnifPrior, " +
                             "how much weight to give to the uniform prior. " +
@@ -396,23 +393,13 @@ public class MainClass {
                     }
 
                     String jsonOutFolder = Constants.outputDirectory + File.separator + "best_model";
-                    if (Files.exists(Paths.get(jsonOutFolder))) {
-                        try {
-                            FileUtils.cleanDirectory(new File(jsonOutFolder));
-                        } catch (IOException e) {}
-                    } else {
-                        Files.createDirectories(Paths.get(jsonOutFolder));
-                    }
+                    MyFileUtils.createWholeDirectory(jsonOutFolder);
 
                     HashMap<String, Float> MSEs = new HashMap<>();
                     for (String model : consideredModels) {
                         ConcurrentHashMap<String, PredictionEntry> allPreds = null;
                         if (model.equals("DIA-NN")) { //mode for DIA-NN
-                            if (Files.exists(Paths.get(jsonOutFolder + File.separator + model))) {
-                                FileUtils.cleanDirectory(new File(jsonOutFolder + File.separator + model));
-                            } else {
-                                Files.createDirectories(Paths.get(jsonOutFolder + File.separator + model));
-                            }
+                            MyFileUtils.createWholeDirectory(jsonOutFolder + File.separator + model);
 
                             km.writeFullPeptideFile(jsonOutFolder + File.separator + model + File.separator +
                                     "spectraRT_full.tsv", model);
@@ -510,25 +497,13 @@ public class MainClass {
                         consideredModels.remove("Prosit_2020_intensity_TMT");
                     }
 
-                    //TODO: make one method under fileUtils
                     String jsonOutFolder = Constants.outputDirectory + File.separator + "best_model";
-                    if (Files.exists(Paths.get(jsonOutFolder))) {
-                        try {
-                            FileUtils.cleanDirectory(new File(jsonOutFolder));
-                        } catch (IOException e) {
-                        }
-                    } else {
-                        Files.createDirectories(Paths.get(jsonOutFolder));
-                    }
+                    MyFileUtils.createWholeDirectory(jsonOutFolder);
 
                     HashMap<String, Double> medianSimilarities = new HashMap<>();
                     HashMap<String, TreeMap<Integer, ArrayList<Double>>> similarities = new HashMap<>();
                     for (String model : consideredModels) {
-                        if (Files.exists(Paths.get(jsonOutFolder + File.separator + model))) {
-                            FileUtils.cleanDirectory(new File(jsonOutFolder + File.separator + model));
-                        } else {
-                            Files.createDirectories(Paths.get(jsonOutFolder + File.separator + model));
-                        }
+                        MyFileUtils.createWholeDirectory(jsonOutFolder + File.separator + model);
                         if (model.equals("DIA-NN")) { //mode for DIA-NN
                             km.writeFullPeptideFile(jsonOutFolder + File.separator + model + File.separator +
                                     "spectraRT_full.tsv", model);
@@ -987,15 +962,6 @@ public class MainClass {
                         Constants.spectraRTPredInput.substring(0, Constants.spectraRTPredInput.length() - 4) + "_full.tsv");
                 MgfFileWriter mfw = new MgfFileWriter(klr);
                 mfw.write(Constants.outputDirectory + File.separator + "spectraRT_koina.mgf");
-                try {
-                    FileUtils.cleanDirectory(new File(Constants.JsonDirectory));
-                    Files.deleteIfExists(Paths.get(Constants.JsonDirectory));
-                } catch (Exception e) {
-                    try {
-                        FileUtils.cleanDirectory(new File(Constants.JsonDirectory));
-                        Files.deleteIfExists(Paths.get(Constants.JsonDirectory));
-                    } catch (Exception e2) {}
-                }
             }
             if (onlyUsedKoina) {
                 Constants.spectralPredictionMapper = klr;
@@ -1026,6 +992,10 @@ public class MainClass {
                 predFile = new File(Constants.outputDirectory + File.separator + "spectraRT.predicted.bin");
                 predFile.delete();
             }
+            //clean directories
+            MyFileUtils.deleteWholeDirectory(Constants.outputDirectory + File.separator + "best_model");
+            MyFileUtils.deleteWholeDirectory(Constants.outputDirectory + File.separator + "NCE_calibration");
+            MyFileUtils.deleteWholeDirectory(Constants.JsonDirectory);
 
             long end = System.nanoTime();
             long duration = (end - start);

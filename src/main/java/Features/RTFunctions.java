@@ -64,36 +64,36 @@ public class RTFunctions {
                          ArrayList<String> peptides, HashMap<String, ArrayList<Integer>> pepIdx,
                          float escoreThreshold) {
         int added = 0;
-        for (int scanNum : new TreeSet<Integer>(mzml.scanNumberObjects.keySet())) {
+        for (int scanNum : mzml.scanNumberObjects.keySet()) {
             MzmlScanNumber scanNumObj = mzml.getScanNumObject(scanNum);
             float rt = scanNumObj.RT; //experimental RT for this scan
             if (Float.isNaN(rt)) {
                 continue;
             }
+            for (PeptideObj pep : scanNumObj.peptideObjects) {
+                if (pep == null) {
+                    continue;
+                }
 
-            PeptideObj pep = scanNumObj.getPeptideObject(1);
-            if (pep == null) {
-                continue;
+                float e = Float.parseFloat(pep.escore);
+                if (e > escoreThreshold) {
+                    continue;
+                }
+                expRTs.add(rt);
+                predRTs.add(pep.RT);
+                eScores.add(e);
+                peptides.add(pep.name);
+                if (pepIdx.containsKey(pep.name)) {
+                    ArrayList<Integer> tmpList = pepIdx.get(pep.name);
+                    tmpList.add(added);
+                    pepIdx.put(pep.name, tmpList);
+                } else {
+                    ArrayList<Integer> tmpList = new ArrayList<>();
+                    tmpList.add(added);
+                    pepIdx.put(pep.name, tmpList);
+                }
+                added += 1;
             }
-
-            float e = Float.parseFloat(pep.escore);
-            if (e > escoreThreshold) {
-                continue;
-            }
-            expRTs.add(rt);
-            predRTs.add(pep.RT);
-            eScores.add(e);
-            peptides.add(pep.name);
-            if (pepIdx.containsKey(pep.name)) {
-                ArrayList<Integer> tmpList = pepIdx.get(pep.name);
-                tmpList.add(added);
-                pepIdx.put(pep.name, tmpList);
-            } else {
-                ArrayList<Integer> tmpList = new ArrayList<>();
-                tmpList.add(added);
-                pepIdx.put(pep.name, tmpList);
-            }
-            added += 1;
         }
     }
 

@@ -30,10 +30,7 @@ import java.io.IOException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.*;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Future;
+import java.util.concurrent.*;
 
 import static Features.StatMethods.*;
 
@@ -45,7 +42,7 @@ public class MzmlReader {
                       //similarity measures might be calculated using different weights. If you want to use different
                       //weights, just make new mzmlReader object
 
-    public TreeMap<Integer, MzmlScanNumber> scanNumberObjects = new TreeMap<>();
+    public ConcurrentSkipListMap<Integer, MzmlScanNumber> scanNumberObjects = new ConcurrentSkipListMap<>();
     List<Integer> scanNums;
     private float[] betas;
     public ArrayList<Float>[] RTbins = null;
@@ -92,7 +89,7 @@ public class MzmlReader {
         // will be able to reclaim it.
         scans.loadData(LCMSDataSubset.MS2_WITH_SPECTRA);
         Constants.useIM = false;
-        scanNumberObjects = new TreeMap<>();
+        scanNumberObjects = new ConcurrentSkipListMap<>();
         getInstrument();
         createScanNumObjects(); //seems like we always need this anyway
 
@@ -368,7 +365,6 @@ public class MzmlReader {
     }
     public void setPinEntries(PinReader pin, SpectralPredictionMapper spm, ExecutorService executorService)
             throws AssertionError, Exception {
-        //TODO: multithread?
         ConcurrentHashMap<String, PredictionEntry> allPreds = spm.getPreds();
         ProgressReporter pr = new ProgressReporter(pin.getLength());
         futureList.clear();
@@ -829,12 +825,12 @@ public class MzmlReader {
                             for (String minimass : masses) {
                                 if (pep.name.contains(minimass)) {
                                     isNone = false;
-                                    double rt = LOESSRT.get(minimass);
+                                    double rt = LOESSRT.get(mass);
                                     double delta = Math.abs(rt - pep.RT);
                                     if (delta < finalDelta) {
                                         finalDelta = delta;
                                         pep.calibratedRT = rt;
-                                        pep.predRTrealUnits = RTLOESS_realUnits.get(minimass).invoke((double) pep.RT);
+                                        pep.predRTrealUnits = RTLOESS_realUnits.get(mass).invoke((double) pep.RT);
                                         pep.deltaRTLOESS_real = Math.abs(msn.RT - pep.predRTrealUnits);
                                     }
                                 }

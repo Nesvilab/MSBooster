@@ -104,6 +104,7 @@ public class Constants {
     public static Integer numPSMsToCalibrate = 1000;
     public static Integer minNCE = 20;
     public static Integer maxNCE = 40;
+    public static Boolean autoSwitchFragmentation = true;
 
     //additional modifications for alphapeptdeep
     public static String additionalMods = ""; //this used in python script for common/user_defined_modifications

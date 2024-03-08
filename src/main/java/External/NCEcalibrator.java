@@ -36,29 +36,32 @@ import java.util.concurrent.atomic.AtomicInteger;
 public class NCEcalibrator {
     public static Object[] calibrateNCE(String currentModel,
                                         ArrayList<String> models, KoinaMethods km, String jsonOutFolder)
-            throws IOException, FileParsingException, ExecutionException, InterruptedException {
+            throws IOException, ExecutionException, InterruptedException {
         //correct to CID model
-        if (Constants.FragmentationType.equals("CID") &&
-                Constants.spectraRTPredModel.contains("Prosit_2020_intensity_HCD")) {
-            String oldModel = Constants.spectraModel;
-            Constants.spectraRTPredModel =
-                    Constants.spectraRTPredModel.replace("Prosit_2020_intensity_HCD",
+        //TODO do in opposite direction. Or more general method to get right fragmentation model
+        if (Constants.autoSwitchFragmentation) {
+            if (Constants.FragmentationType.equals("CID") &&
+                    Constants.spectraRTPredModel.contains("Prosit_2020_intensity_HCD")) {
+                String oldModel = Constants.spectraModel;
+                Constants.spectraRTPredModel =
+                        Constants.spectraRTPredModel.replace("Prosit_2020_intensity_HCD",
+                                "Prosit_2020_intensity_CID");
+                Constants.spectraModel =
+                        Constants.spectraModel.replace("Prosit_2020_intensity_HCD",
+                                "Prosit_2020_intensity_CID");
+                if (!oldModel.equals(Constants.spectraModel)) {
+                    System.out.println("Replacing Prosit_2020_intensity_HCD with " +
                             "Prosit_2020_intensity_CID");
-            Constants.spectraModel =
-                    Constants.spectraModel.replace("Prosit_2020_intensity_HCD",
-                            "Prosit_2020_intensity_CID");
-            if (!oldModel.equals(Constants.spectraModel)) {
-                System.out.println("Replacing Prosit_2020_intensity_HCD with " +
-                        "Prosit_2020_intensity_CID");
-                currentModel = "Prosit_2020_intensity_CID";
-                List<String> modelsList = Arrays.asList(Constants.spectraRTPredModel.split(","));
-                models = new ArrayList<>(modelsList);
-                if (models.size() != 1) {
-                    if (models.get(0).equals(models.get(1))) {
-                        models.remove(1);
-                        Constants.spectraRTPredModel = models.get(0);
-                        if (Constants.spectraRTPredModel.equals("DIA-NN")) {
-                            Constants.useKoina = false;
+                    currentModel = "Prosit_2020_intensity_CID";
+                    List<String> modelsList = Arrays.asList(Constants.spectraRTPredModel.split(","));
+                    models = new ArrayList<>(modelsList);
+                    if (models.size() != 1) {
+                        if (models.get(0).equals(models.get(1))) {
+                            models.remove(1);
+                            Constants.spectraRTPredModel = models.get(0);
+                            if (Constants.spectraRTPredModel.equals("DIA-NN")) {
+                                Constants.useKoina = false;
+                            }
                         }
                     }
                 }

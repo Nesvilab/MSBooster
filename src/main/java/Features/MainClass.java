@@ -34,7 +34,7 @@ public class MainClass {
     public static ScheduledThreadPoolExecutor executorService;
     public static void main(String[] args) throws Exception {
         Locale.setDefault(Locale.US);
-        System.out.println("MSBooster v1.2.15");
+        System.out.println("MSBooster v1.2.16");
 
         try {
             //accept command line inputs
@@ -366,7 +366,8 @@ public class MainClass {
             //needed for nce calibration and best model search
             KoinaMethods km = new KoinaMethods(pmMatcher);
             boolean TMT = false;
-            if (Constants.calibrateNCE || Constants.findBestRtModel || Constants.findBestSpectraModel) {
+            if ((Constants.calibrateNCE || Constants.findBestRtModel || Constants.findBestSpectraModel) &
+            Constants.KoinaMS2models.contains(Constants.spectraModel)) {
                 Constants.useKoina = true;
 
                 km.getTopPeptides();
@@ -873,8 +874,12 @@ public class MainClass {
                                     Constants.outputDirectory + File.separator + "NCE_calibration");
                             currentModel = (String) modelInfo[0];
                             models = (ArrayList<String>) modelInfo[1];
-                            NCEcalibrator.plotNCEchart((TreeMap<Integer, ArrayList<Double>>) modelInfo[2]);
                             Constants.NCE = String.valueOf((int) modelInfo[4]);
+
+                            //model may have changed
+                            if (Constants.nceModels.contains(currentModel)) {
+                                NCEcalibrator.plotNCEchart((TreeMap<Integer, ArrayList<Double>>) modelInfo[2]);
+                            }
                         }
 
                         PeptideFileCreator.createPeptideFile(pmMatcher,

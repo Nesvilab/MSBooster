@@ -22,6 +22,7 @@ import umich.ms.datatypes.scan.IScan;
 import umich.ms.datatypes.scan.props.PrecursorInfo;
 import umich.ms.datatypes.spectrum.ISpectrum;
 import umich.ms.fileio.exceptions.FileParsingException;
+import umich.ms.fileio.filetypes.agilent.cef.jaxb.P;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -46,7 +47,7 @@ public class MzmlScanNumber {
     Double lowerLimit;
     Double upperLimit;
     public HashMap<String, Float> NCEs = new HashMap<>();
-    PeptideObj[] peptideObjects = new PeptideObj[Constants.maxRank];
+    PeptideObj[] peptideObjects = new PeptideObj[0];
     //double[] mzFreqs;
     public static float[] zeroFloatArray = new float[]{0};
 
@@ -79,40 +80,40 @@ public class MzmlScanNumber {
             NCEs.put(Constants.FragmentationType, Float.parseFloat(Constants.NCE));
         } else {
             //decide if we read in NCE and fragment info
-            boolean read = false;
-            for (String substring : Constants.nceModels) {
-                if (Constants.spectraRTPredModel.contains(substring)) {
-                    read = true;
-                    break;
-                }
-            }
-            if (read || Constants.useKoina) {
-                try {
-                    String[] nceInfo = scan.getFilterString().split("@");
-                    if (nceInfo.length > 1) {
-                        for (String s : Arrays.copyOfRange(nceInfo, 1, nceInfo.length)) {
-                            String fragmentationInfo = s.split(" ")[0];
-                            StringBuilder fragmentationType = new StringBuilder();
-                            for (int i = 0; i < fragmentationInfo.length(); i++) {
-                                char myChar = fragmentationInfo.charAt(i);
-                                if (Character.isDigit(myChar)) {
-                                    NCEs.put(fragmentationType.toString().toUpperCase(),
-                                            Float.parseFloat(fragmentationInfo.substring(i)));
-                                    break;
-                                } else {
-                                    fragmentationType.append(myChar);
-                                }
+//            boolean read = false;
+//            for (String substring : Constants.nceModels) {
+//                if (Constants.spectraRTPredModel.contains(substring)) {
+//                    read = true;
+//                    break;
+//                }
+//            }
+//            if (Constants.useKoina) {
+            try {
+                String[] nceInfo = scan.getFilterString().split("@");
+                if (nceInfo.length > 1) {
+                    for (String s : Arrays.copyOfRange(nceInfo, 1, nceInfo.length)) {
+                        String fragmentationInfo = s.split(" ")[0];
+                        StringBuilder fragmentationType = new StringBuilder();
+                        for (int i = 0; i < fragmentationInfo.length(); i++) {
+                            char myChar = fragmentationInfo.charAt(i);
+                            if (Character.isDigit(myChar)) {
+                                NCEs.put(fragmentationType.toString().toUpperCase(),
+                                        Float.parseFloat(fragmentationInfo.substring(i)));
+                                break;
+                            } else {
+                                fragmentationType.append(myChar);
                             }
                         }
                     }
-                } catch (NullPointerException e) { //like in DIA-Umpire, there is no filter string
-                    System.out.println("mzml file does not contain filter string. Setting NCE to 25 and " +
-                            "FragmentationType to HCD. If other values are desired, please set them in " +
-                            "the parameter file with NCE and FragmentationType.");
-                    Constants.NCE = "25";
-                    Constants.FragmentationType = "HCD";
                 }
+            } catch (NullPointerException e) { //like in DIA-Umpire, there is no filter string
+                System.out.println("mzml file does not contain filter string. Setting NCE to 25 and " +
+                        "FragmentationType to HCD. If other values are desired, please set them in " +
+                        "the parameter file with NCE and FragmentationType.");
+                Constants.NCE = "25";
+                Constants.FragmentationType = "HCD";
             }
+//            }
         }
     }
 
@@ -151,7 +152,9 @@ public class MzmlScanNumber {
 
     public PeptideObj setPeptideObject(PeptideFormatter name, int rank, int targetORdecoy, String escore,
                                  ConcurrentHashMap<String, PredictionEntry> allPreds, boolean set) {
-
+        if (peptideObjects.length == 0) {
+            peptideObjects = new PeptideObj[Constants.maxRank];
+        }
         PredictionEntry predictionEntry = allPreds.get(name.baseCharge);
         PeptideObj newPepObj = null;
         try {

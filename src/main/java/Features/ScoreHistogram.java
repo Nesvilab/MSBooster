@@ -17,11 +17,11 @@
 
 package Features;
 
-import org.knowm.xchart.BitmapEncoder;
-import org.knowm.xchart.CategoryChart;
-import org.knowm.xchart.CategoryChartBuilder;
-import org.knowm.xchart.Histogram;
+import org.knowm.xchart.*;
+import org.knowm.xchart.style.Styler;
+import org.knowm.xchart.style.markers.Marker;
 
+import java.awt.*;
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
@@ -96,14 +96,22 @@ public class ScoreHistogram {
                     decoyScores.get(feature).add(j + 0.5);
                 }
             }
-            CategoryChart chart = new CategoryChartBuilder().width(1200).height(800).
+            CategoryChart chart = new CategoryChartBuilder().width(510).height(170).
                     xAxisTitle(xAxisLabel).yAxisTitle(yAxisLabel).build();
             chart.getStyler().setPlotGridLinesVisible(false);
             //chart.getStyler().setXAxisTickMarkSpacingHint(10);
             chart.getStyler().setXAxisMaxLabelCount(10);
-            chart.getStyler().setYAxisTickMarkSpacingHint(80);
+            //chart.getStyler().setYAxisTickMarkSpacingHint(80);
             chart.getStyler().setXAxisLabelRotation(45);
             chart.getStyler().setXAxisDecimalPattern("#.##");
+            chart.getStyler().setLegendLayout(Styler.LegendLayout.Horizontal);
+            chart.getStyler().setLegendPosition(Styler.LegendPosition.valueOf("OutsideS"));
+            chart.getStyler().setLegendBorderColor(Color.white);
+            chart.getStyler().setPlotBorderVisible(false);
+            chart.getStyler().setAxisTitleFont(new Font("Helvetica", Font.PLAIN, 7));
+            chart.getStyler().setLegendFont(new Font("Helvetica", Font.PLAIN, 7));
+            chart.getStyler().setAxisTickLabelsFont(new Font("Helvetica", Font.PLAIN, 5));
+            chart.getStyler().setChartBackgroundColor(Color.white);
 
             //plot histogram
             int numBins = 100;
@@ -154,9 +162,13 @@ public class ScoreHistogram {
             if (!new File(dir + File.separator + "score_histograms").exists()) {
                 new File(dir + File.separator + "score_histograms").mkdirs();
             }
-            BitmapEncoder.saveBitmap(chart, dir + File.separator + "score_histograms" + File.separator +
-                            name.substring(0, name.length() - 4) + "_" + feature,
-                    BitmapEncoder.BitmapFormat.PNG);
+//            BitmapEncoder.saveBitmap(chart, dir + File.separator + "score_histograms" + File.separator +
+//                            name.substring(0, name.length() - 4) + "_" + feature,
+//                    BitmapEncoder.BitmapFormat.PNG);
+            VectorGraphicsEncoder.saveVectorGraphic(chart,
+                    dir + File.separator + "score_histograms" + File.separator +
+                    name.substring(0, name.length() - 4) + "_" + feature,
+                    VectorGraphicsEncoder.VectorGraphicsFormat.PDF);
         }
     }
 }

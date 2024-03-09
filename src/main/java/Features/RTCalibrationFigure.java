@@ -17,10 +17,7 @@
 
 package Features;
 
-import org.knowm.xchart.BitmapEncoder;
-import org.knowm.xchart.XYChart;
-import org.knowm.xchart.XYChartBuilder;
-import org.knowm.xchart.XYSeries;
+import org.knowm.xchart.*;
 import org.knowm.xchart.style.Styler;
 
 import java.awt.*;
@@ -183,8 +180,12 @@ public class RTCalibrationFigure {
             j += 2;
         }
 
-        BitmapEncoder.saveBitmap(chart, pinPath + File.separator + "MSBooster_plots" + File.separator +
+//        BitmapEncoder.saveBitmap(chart, pinPath + File.separator + "MSBooster_plots" + File.separator +
+//                        "RT_calibration_curves" + File.separator + pinName.substring(0, pinName.length() - 4),
+//                BitmapEncoder.BitmapFormat.PNG);
+        VectorGraphicsEncoder.saveVectorGraphic(chart,
+                pinPath + File.separator + "MSBooster_plots" + File.separator +
                         "RT_calibration_curves" + File.separator + pinName.substring(0, pinName.length() - 4),
-                BitmapEncoder.BitmapFormat.PNG);
+                VectorGraphicsEncoder.VectorGraphicsFormat.PDF);
     }
 }

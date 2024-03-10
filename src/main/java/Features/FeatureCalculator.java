@@ -21,8 +21,10 @@ import org.apache.commons.math3.stat.correlation.PearsonsCorrelation;
 
 import java.io.IOException;
 import java.util.*;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
 
 public class FeatureCalculator {
 
@@ -45,11 +47,12 @@ public class FeatureCalculator {
     }
 
     class calcFeat implements Runnable {
-        String pep;
-        String stripped;
-        int scanNum;
+        private final String pep;
+        private final String stripped;
+        private final int scanNum;
+        private final ProgressReporter pr;
         final ExecutorService executorService = Executors.newFixedThreadPool(2);
-        public calcFeat(String line, int specIdx, int pepIdx, int scanNumIdx) {
+        public calcFeat(String line, int specIdx, int pepIdx, int scanNumIdx, ProgressReporter pr) {
             String[] row = line.split("\t");
             String[] periodSplit = row[specIdx].split("\\.");
             PeptideFormatter pf = new PeptideFormatter(row[pepIdx],
@@ -57,6 +60,7 @@ public class FeatureCalculator {
             this.pep = pf.baseCharge;
             this.scanNum = Integer.parseInt(row[scanNumIdx]);
             this.stripped = pf.stripped;
+            this.pr = pr;
         }
 
         @Override
@@ -655,16 +659,19 @@ public class FeatureCalculator {
                     }
                 }
             }
+            pr.progress();
         }
     }
 
-    public void calculate(ExecutorService executorService) throws IOException {
+    public void calculate(ExecutorService executorService) throws IOException, ExecutionException, InterruptedException {
         ProgressReporter pr = new ProgressReporter(pin.getLength());
         mzml.futureList.clear();
         while (pin.next(false)) {
-            calcFeat task = new calcFeat(pin.line, pin.specIdx, pin.pepIdx, pin.scanNumIdx);
-            executorService.execute(task);
-            pr.progress();
+            calcFeat task = new calcFeat(pin.line, pin.specIdx, pin.pepIdx, pin.scanNumIdx, pr);
+            mzml.futureList.add(executorService.submit(task));
+        }
+        for (Future future : mzml.futureList) {
+            future.get();
         }
         pin.reset();
     }

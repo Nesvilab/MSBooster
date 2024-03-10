@@ -319,8 +319,10 @@ public class MzmlReader {
         private final int labelIdx;
         private final int eScoreIdx;
         private final boolean calcEvalue;
+        private final ProgressReporter pr;
         public setScanNumPepObj(String scanNum, ConcurrentHashMap<String, PredictionEntry> allPreds,
-                                int specIdx, int pepIdx, int rankIdx, int labelIdx, int eScoreIdx, boolean calcEvalue) {
+                                int specIdx, int pepIdx, int rankIdx, int labelIdx, int eScoreIdx, boolean calcEvalue,
+                                ProgressReporter pr) {
             this.scanNum = Integer.parseInt(scanNum);
             this.allPreds = allPreds;
             this.specIdx = specIdx;
@@ -329,6 +331,7 @@ public class MzmlReader {
             this.labelIdx = labelIdx;
             this.eScoreIdx = eScoreIdx;
             this.calcEvalue = calcEvalue;
+            this.pr = pr;
         }
 
         //TODO move this to parallel part
@@ -360,6 +363,7 @@ public class MzmlReader {
             for (int i = 0; i < peps.size(); i++) {
                 scanNumberObjects.get(scanNum).setPeptideObject(peps.get(i), ranks.get(i),
                         tds.get(i), escores.get(i), allPreds, true);
+                pr.progress();
             }
         }
     }
@@ -374,19 +378,18 @@ public class MzmlReader {
         int limit = pin.scanNumIdx + 2;
         while (pin.next(false)) {
             try {
-                pr.progress();
                 //get scanNum as string
                 String scanNum = pin.line.split("\t", limit)[pin.scanNumIdx];
                 if (!Objects.equals(scanNum, currentScanNum)) {
                     //send previous setScanNumPepObj
                     if (task != null) {
-                        executorService.execute(task);
+                        futureList.add(executorService.submit(task));
                     }
 
                     //make new setScanNumPepObj
                     currentScanNum = scanNum;
                     task = new setScanNumPepObj(currentScanNum, allPreds,
-                            pin.specIdx, pin.pepIdx, pin.rankIdx, pin.labelIdx, pin.eScoreIdx, pin.calcEvalue);
+                            pin.specIdx, pin.pepIdx, pin.rankIdx, pin.labelIdx, pin.eScoreIdx, pin.calcEvalue, pr);
                 }
                 //add to it
                 task.add(pin.line);
@@ -396,10 +399,13 @@ public class MzmlReader {
             }
         }
         try {
-            executorService.execute(task);
+            futureList.add(executorService.submit(task));
         } catch (Exception e) {
             e.printStackTrace();
             System.exit(1);
+        }
+        for (Future future : futureList) {
+            future.get();
         }
 
         //set RT filter

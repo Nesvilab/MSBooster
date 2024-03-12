@@ -47,7 +47,7 @@ public class MzmlScanNumber {
     Double lowerLimit;
     Double upperLimit;
     public HashMap<String, Float> NCEs = new HashMap<>();
-    PeptideObj[] peptideObjects = new PeptideObj[0];
+    ArrayList<PeptideObj> peptideObjects = new ArrayList<>();
     //double[] mzFreqs;
     public static float[] zeroFloatArray = new float[]{0};
 
@@ -152,9 +152,6 @@ public class MzmlScanNumber {
 
     public PeptideObj setPeptideObject(PeptideFormatter name, int rank, int targetORdecoy, String escore,
                                  ConcurrentHashMap<String, PredictionEntry> allPreds, boolean set) {
-        if (peptideObjects.length == 0) {
-            peptideObjects = new PeptideObj[Constants.maxRank];
-        }
         PredictionEntry predictionEntry = allPreds.get(name.baseCharge);
         PeptideObj newPepObj = null;
         try {
@@ -193,7 +190,7 @@ public class MzmlScanNumber {
                         zeroFloatArray, predRT, predIM);
             }
             if (set) {
-                peptideObjects[rank - 1] = newPepObj;
+                peptideObjects.add(newPepObj);
             }
 
             //remove higher ranked peaks
@@ -220,14 +217,14 @@ public class MzmlScanNumber {
                 newPepObj = new PeptideObj(this, name.baseCharge, rank, targetORdecoy, escore,
                         zeroFloatArray, zeroFloatArray, predRT, predIM);
                 if (set) {
-                    peptideObjects[rank - 1] = newPepObj;
+                    peptideObjects.add(newPepObj);
                 }
             } else {
                 String[] periodSplit = Constants.spectraRTPredFile.split("\\.");
                 if (periodSplit[periodSplit.length - 1].equals("dlib")) { //won't always include every entry
                     newPepObj = new PeptideObj(this, name.baseCharge, rank, targetORdecoy, escore,
                             zeroFloatArray, zeroFloatArray, predRT, predIM);
-                    peptideObjects[rank - 1] = newPepObj;
+                    peptideObjects.add(newPepObj);
                 } else {
                     System.out.println("Prediction missing in file for " + name.baseCharge);
                     e.printStackTrace();
@@ -239,7 +236,7 @@ public class MzmlScanNumber {
     }
 
     public PeptideObj getPeptideObject(int rank) {
-        return peptideObjects[rank - 1];
+        return peptideObjects.get(rank - 1);
     } //arraylist now, not hashmap
 
     public PeptideObj getPeptideObject(String name) {

@@ -115,58 +115,45 @@ public class PinReader {
 
     public int getLength() throws IOException {
         if (length == -1) {
-            if (Constants.maxRank == 0) {
-                int mylength = 0;
-                while (next(true)) {
-                    mylength++;
-                    int rank = getRank();
-                    if (rank > Constants.maxRank) {
-                        Constants.maxRank = rank;
-                    }
-                }
-                reset();
-                length = mylength;
-            } else {
                 //https://stackoverflow.com/questions/453018/number-of-lines-in-a-file-in-java
-                InputStream is = new BufferedInputStream(new FileInputStream(name));
-                try {
-                    byte[] c = new byte[1024];
+            InputStream is = new BufferedInputStream(new FileInputStream(name));
+            try {
+                byte[] c = new byte[1024];
 
-                    int readChars = is.read(c);
-                    if (readChars == -1) {
-                        // bail out if nothing to read
-                        length = 0;
-                    }
-
-                    // make it easy for the optimizer to tune this loop
-                    int count = -1;
-                    while (readChars == 1024) {
-                        for (int i = 0; i < 1024; ) {
-                            if (c[i++] == '\n') {
-                                ++count;
-                            }
-                        }
-                        readChars = is.read(c);
-                    }
-
-                    // count remaining characters
-                    while (readChars != -1) {
-                        for (int i = 0; i < readChars; ++i) {
-                            if (c[i] == '\n') {
-                                ++count;
-                            }
-                        }
-                        readChars = is.read(c);
-                    }
-
-                    if (count <= 0) {
-                        length = 1;
-                    } else {
-                        length = count;
-                    }
-                } finally {
-                    is.close();
+                int readChars = is.read(c);
+                if (readChars == -1) {
+                    // bail out if nothing to read
+                    length = 0;
                 }
+
+                // make it easy for the optimizer to tune this loop
+                int count = -1;
+                while (readChars == 1024) {
+                    for (int i = 0; i < 1024; ) {
+                        if (c[i++] == '\n') {
+                            ++count;
+                        }
+                    }
+                    readChars = is.read(c);
+                }
+
+                // count remaining characters
+                while (readChars != -1) {
+                    for (int i = 0; i < readChars; ++i) {
+                        if (c[i] == '\n') {
+                            ++count;
+                        }
+                    }
+                    readChars = is.read(c);
+                }
+
+                if (count <= 0) {
+                    length = 1;
+                } else {
+                    length = count;
+                }
+            } finally {
+                is.close();
             }
             System.out.println(name + " has " + length + " PSMs");
         }

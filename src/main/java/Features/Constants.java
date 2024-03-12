@@ -47,7 +47,6 @@ public class Constants {
     public static Boolean deletePreds = false;
     public static Integer loadingPercent = 10;
     public static Integer numPinColumns = 75000;
-    public static Integer maxRank = 0;
 
     //optional file locations and parameters
     //if calculating detectFractionGreater, these are used for FastaReader class

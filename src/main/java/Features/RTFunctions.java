@@ -295,8 +295,7 @@ public class RTFunctions {
             int round = (int) (scanNumObj.RT *  Constants.RTbinMultiplier); //experimental RT for this scan, assume in minutes
 
             //iterate through PSMs
-            for (int i = 1; i < Constants.maxRank + 1; i++) {
-                PeptideObj pep = scanNumObj.getPeptideObject(i);
+            for (PeptideObj pep : scanNumObj.peptideObjects) {
                 if (pep == null) {
                     continue;
                 }

@@ -629,7 +629,7 @@ public class MzmlReader {
 
                     //also set bin size, for use with uniform prior prob
                     int idx = (int) (msn.IM * Constants.IMbinMultiplier);
-                    if (msn.peptideObjects[0] != null) {
+                    if (msn.peptideObjects.isEmpty()) {
                         msn.IMbinSize = IMbins[msn.getPeptideObject(1).charge - 1][idx].size();
                     }
                 }

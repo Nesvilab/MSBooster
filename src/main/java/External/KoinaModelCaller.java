@@ -17,6 +17,9 @@
 
 package External;
 
+import static utils.Print.printError;
+import static utils.Print.printInfo;
+
 import Features.*;
 import com.google.gson.Gson;
 import com.google.gson.stream.JsonReader;
@@ -65,7 +68,7 @@ public class KoinaModelCaller {
         finalModel = model;
 
         if (verbose) {
-            System.out.println("Calling " + model + " model");
+            printInfo("Calling " + model + " model");
         }
         long startTime = System.currentTimeMillis();
 
@@ -76,7 +79,7 @@ public class KoinaModelCaller {
         } else if (Constants.KoinaMS2models.contains(model)) {
             property = "ms2";
         } else {
-            System.out.println(model + " not in Koina models");
+            printError(model + " not in Koina models");
             System.exit(1);
         }
 
@@ -167,7 +170,7 @@ public class KoinaModelCaller {
             long endTime = System.currentTimeMillis();
             long elapsedTime = endTime - startTime;
             if (verbose) {
-                System.out.println("cURL and parse time in milliseconds: " + elapsedTime);
+                printInfo("cURL and parse time in milliseconds: " + elapsedTime);
             }
 
             executorService.setMaximumPoolSize(ogSize);
@@ -428,7 +431,7 @@ public class KoinaModelCaller {
                         stripped = pf.getStripped();
                         break;
                     default:
-                        System.out.println(modelType + " not supported by Koina");
+                        printError(modelType + " not supported by Koina");
                         System.exit(1);
                 }
                 try {
@@ -448,8 +451,8 @@ public class KoinaModelCaller {
                 } catch (Exception e) {
                     if (! PeptideSkipper.skipPeptide(stripped, baseCharge.split("\\|")[1])) {
                         e.printStackTrace();
-                        System.out.println("Missing peptide to transfer prediction onto " + l + ": " + baseCharge);
-                        System.out.println("Exiting now.");
+                        printError("Missing peptide to transfer prediction onto " + l + ": " + baseCharge);
+                        printError("Exiting now.");
                         System.exit(1);
                     }
                 }

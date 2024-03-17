@@ -38,7 +38,7 @@ public class DetectMap {
         }
 //        long endTime = System.nanoTime();
 //        long duration = (endTime - startTime);
-//        System.out.println("Detectability map loading took " + duration / 1000000 +" milliseconds");
+//        printInfo("Detectability map loading took " + duration / 1000000 +" milliseconds");
     }
 
     public float getDetectability(String pep) {

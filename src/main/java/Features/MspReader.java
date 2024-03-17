@@ -17,7 +17,13 @@
 
 package Features;
 
-import java.io.*;
+import static utils.Print.printError;
+
+import java.io.BufferedReader;
+import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.FileReader;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.concurrent.ConcurrentHashMap;
@@ -160,7 +166,7 @@ public class MspReader implements SpectralPredictionMapper {
                                 new PeptideFormatter(lineSplit2[0], lineSplit2[1], "base").prositTMT,
                                 lineSplit2[1], "prosit");
                     } else {
-                        System.out.println("spectraRTPredModel must either be Prosit or PrositTMT");
+                        printError("spectraRTPredModel must either be Prosit or PrositTMT");
                         System.exit(1);
                     }
 

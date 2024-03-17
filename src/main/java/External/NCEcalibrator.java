@@ -17,21 +17,31 @@
 
 package External;
 
-import Features.*;
-import com.google.common.util.concurrent.AtomicDouble;
-import org.knowm.xchart.BitmapEncoder;
-import org.knowm.xchart.BoxChart;
-import org.knowm.xchart.BoxChartBuilder;
-import org.knowm.xchart.style.BoxStyler;
-import umich.ms.fileio.exceptions.FileParsingException;
+import static utils.Print.printInfo;
 
+import Features.Constants;
+import Features.MainClass;
+import Features.MyFileUtils;
+import Features.PeptideObj;
+import Features.PredictionEntry;
+import Features.StatMethods;
+import com.google.common.util.concurrent.AtomicDouble;
 import java.io.File;
 import java.io.IOException;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.TreeMap;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 import java.util.concurrent.atomic.AtomicInteger;
+import org.knowm.xchart.BitmapEncoder;
+import org.knowm.xchart.BoxChart;
+import org.knowm.xchart.BoxChartBuilder;
+import org.knowm.xchart.style.BoxStyler;
 
 public class NCEcalibrator {
     public static Object[] calibrateNCE(String currentModel,
@@ -50,7 +60,7 @@ public class NCEcalibrator {
                         Constants.spectraModel.replace("Prosit_2020_intensity_HCD",
                                 "Prosit_2020_intensity_CID");
                 if (!oldModel.equals(Constants.spectraModel)) {
-                    System.out.println("Replacing Prosit_2020_intensity_HCD with " +
+                    printInfo("Replacing Prosit_2020_intensity_HCD with " +
                             "Prosit_2020_intensity_CID");
                     currentModel = "Prosit_2020_intensity_CID";
                     List<String> modelsList = Arrays.asList(Constants.spectraRTPredModel.split(","));
@@ -72,7 +82,7 @@ public class NCEcalibrator {
         double bestMedianDouble = 0d;
         int bestNCEint = 0;
         if (Constants.nceModels.contains(currentModel)) {
-            System.out.println("Calibrating NCE");
+            printInfo("Calibrating NCE");
 
             //create nce calibration directory
             MyFileUtils.createWholeDirectory(jsonOutFolder);
@@ -123,13 +133,13 @@ public class NCEcalibrator {
             similarities = new TreeMap<>(concurrentSimilarities);
             Constants.removeRankPeaks = old;
 
-            System.out.println("Best NCE for " + currentModel + " after calibration is " + bestNCE);
+            printInfo("Best NCE for " + currentModel + " after calibration is " + bestNCE);
             bestMedianDouble = bestMedian.get();
-            System.out.println("Median similarity is " + String.format("%.4f", bestMedianDouble));
+            printInfo("Median similarity is " + String.format("%.4f", bestMedianDouble));
             if (bestNCE.get() == Constants.minNCE) {
-                System.out.println("Consider lowering minNCE below " + Constants.minNCE);
+                printInfo("Consider lowering minNCE below " + Constants.minNCE);
             } else if (bestNCE.get() == Constants.maxNCE) {
-                System.out.println("Consider increasing maxNCE above " + Constants.maxNCE);
+                printInfo("Consider increasing maxNCE above " + Constants.maxNCE);
             }
             bestNCEint = bestNCE.get();
         }

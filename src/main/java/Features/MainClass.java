@@ -17,6 +17,9 @@
 
 package Features;
 
+import static utils.Print.printError;
+import static utils.Print.printInfo;
+
 import External.DiannModelCaller;
 import External.KoinaMethods;
 import External.KoinaModelCaller;
@@ -34,7 +37,7 @@ public class MainClass {
     public static ScheduledThreadPoolExecutor executorService;
     public static void main(String[] args) throws Exception {
         Locale.setDefault(Locale.US);
-        System.out.println("MSBooster v1.2.17");
+        printInfo("MSBooster v1.2.17");
 
         try {
             //accept command line inputs
@@ -333,7 +336,7 @@ public class MainClass {
                 Runtime run = Runtime.getRuntime();
                 Constants.numThreads = run.availableProcessors() - 1;
             } //otherwise use user-defined
-            System.out.println("Using " + Constants.numThreads + " threads");
+            printInfo("Using " + Constants.numThreads + " threads");
             executorService = new ScheduledThreadPoolExecutor(Constants.numThreads);
 
             if (!Objects.equals(Constants.massDiffToVariableMod, "0")) {
@@ -381,7 +384,7 @@ public class MainClass {
             if (Constants.useRT) {
                 //here, look for best rt model
                 if (Constants.findBestRtModel) {
-                    System.out.println("Searching for best RT model for your data");
+                    printInfo("Searching for best RT model for your data");
                     ArrayList<String> consideredModels = new ArrayList<>();
                     consideredModels.add("DIA-NN");
                     if (TMT) {
@@ -454,7 +457,7 @@ public class MainClass {
                         }
                         float mse = StatMethods.gridSearchCV(rts, floatBandwidths)[1];
                         MSEs.put(model, mse);
-                        System.out.println(model + " has root mean squared error of " +
+                        printInfo(model + " has root mean squared error of " +
                                 String.format("%.4f", Math.sqrt(mse)));
                     }
 
@@ -467,8 +470,7 @@ public class MainClass {
                             Constants.rtModel = entry.getKey();
                         }
                     }
-                    System.out.println("RT model chosen is " + Constants.rtModel);
-                    System.out.println();
+                    printInfo("RT model chosen is " + Constants.rtModel);
                 }
 
                 if (Constants.rtModel.isEmpty()) {
@@ -486,7 +488,7 @@ public class MainClass {
             if (Constants.useSpectra) {
                 //here, look for best spectra model
                 if (Constants.findBestSpectraModel) {
-                    System.out.println("Searching for best spectra model for your data");
+                    printInfo("Searching for best spectra model for your data");
                     ArrayList<String> consideredModels = new ArrayList<>();
                     consideredModels.add("DIA-NN");
                     if (TMT) {
@@ -528,7 +530,7 @@ public class MainClass {
                             }
                             double median = StatMethods.medianDouble(similarity);
                             medianSimilarities.put(model, median);
-                            System.out.println("Median similarity for DIA-NN is " +
+                            printInfo("Median similarity for DIA-NN is " +
                                     String.format("%.4f", median));
                         } else { //mode for koina
                             if (Constants.nceModels.contains(model)) {
@@ -553,7 +555,7 @@ public class MainClass {
                                 }
                                 double median = StatMethods.medianDouble(similarity);
                                 medianSimilarities.put(model, median);
-                                System.out.println("Median similarity for " + model + " is " +
+                                printInfo("Median similarity for " + model + " is " +
                                         String.format("%.4f", median));
                             }
                         }
@@ -578,8 +580,7 @@ public class MainClass {
                         Constants.spectraModel = bestModel;
                     }
                     Constants.calibrateNCE = false;
-                    System.out.println("Spectra model chosen is " + Constants.spectraModel);
-                    System.out.println();
+                    printInfo("Spectra model chosen is " + Constants.spectraModel);
                 }
 
                 if (Constants.spectraModel.isEmpty()) {
@@ -677,7 +678,7 @@ public class MainClass {
             }
             try {
                 if (Constants.useDetect) {
-                    System.out.println("Detect features not fully tested");
+                    printInfo("Detect features not fully tested");
                     Set<String> intersection = new HashSet<>(featureLL);
                     intersection.retainAll(Constants.detectFeatures);
                     if (intersection.size() == 0) {
@@ -888,35 +889,35 @@ public class MainClass {
                                 if (Constants.DiaNN == null) {
                                     throw new IllegalArgumentException("path to DIA-NN executable must be provided");
                                 }
-                                System.out.println("Generating input file for DIA-NN");
+                                printInfo("Generating input file for DIA-NN");
                                 PeptideFileCreator.createPeptideFile(pmMatcher, Constants.spectraRTPredInput, "Diann");
                                 break;
                             case "pDeep2":
-                                System.out.println("Generating input file for pDeep2");
+                                printInfo("Generating input file for pDeep2");
                                 PeptideFileCreator.createPeptideFile(pmMatcher, Constants.spectraRTPredInput, "pDeep2");
                                 break;
                             case "pDeep3":
-                                System.out.println("Generating input file for pDeep3");
+                                printInfo("Generating input file for pDeep3");
                                 PeptideFileCreator.createPeptideFile(pmMatcher, Constants.spectraRTPredInput, "pDeep3");
                                 break;
                             case "PredFull":
-                                System.out.println("Generating input file for PredFull");
+                                printInfo("Generating input file for PredFull");
                                 PeptideFileCreator.createPeptideFile(pmMatcher, Constants.spectraRTPredInput, "PredFull");
                                 break;
                             case "Prosit":
-                                System.out.println("Generating input file for Prosit");
+                                printInfo("Generating input file for Prosit");
                                 PeptideFileCreator.createPeptideFile(pmMatcher, Constants.spectraRTPredInput, "Prosit");
                                 break;
                             case "PrositTMT":
-                                System.out.println("Generating input file for PrositTMT");
+                                printInfo("Generating input file for PrositTMT");
                                 PeptideFileCreator.createPeptideFile(pmMatcher, Constants.spectraRTPredInput, "PrositTMT");
                                 break;
                             case "alphapeptdeep":
-                                System.out.println("Generating input file for alphapeptdeep");
+                                printInfo("Generating input file for alphapeptdeep");
                                 PeptideFileCreator.createPeptideFile(pmMatcher, Constants.spectraRTPredInput, "alphapeptdeep");
                                 break;
                             default:
-                                System.out.println("spectraRTPredModel must be one of DIA-NN, Prosit, PrositTMT, " +
+                                printError("spectraRTPredModel must be one of DIA-NN, Prosit, PrositTMT, " +
                                         "PredFull, pDeep2, pDeep3, or alphapeptdeep");
                                 System.exit(-1);
                         }
@@ -924,18 +925,18 @@ public class MainClass {
                 }
 
                 if (Constants.createPredFileOnly) {
-                    System.out.println("Successfully created input file for prediction model. Stopping here");
+                    printInfo("Successfully created input file for prediction model. Stopping here");
                     System.exit(0);
                 }
             }
 //            if (createDetectAllPredFile) {
-//                System.out.println("Generating input file for DeepMSPeptide");
+//                printInfo("Generating input file for DeepMSPeptide");
 //                //long startTime = System.nanoTime();
 //                //Constants.setFastaReader(peptideFileCreator.createPeptideFile(pmMatcher.pinFiles, Constants.detectPredInput, "DeepMSPeptideAll", "pin"));
 //                //long endTime = System.nanoTime();
 //                //long duration = (endTime - startTime);
 //            } else if (createDetectPredFile) {
-//                System.out.println("Generating input file for DeepMSPeptide");
+//                printInfo("Generating input file for DeepMSPeptide");
 //                peptideFileCreator.createPeptideFile(pmMatcher.pinFiles, Constants.detectPredInput, "DeepMSPeptide", "pin");
 //            }
 
@@ -975,8 +976,7 @@ public class MainClass {
             }
 
             //create new pin file with features
-            System.out.println();
-            System.out.println("Generating edited pin with following features: " + Arrays.toString(featuresArray));
+            printInfo("Generating edited pin with following features: " + Arrays.toString(featuresArray));
             long start = System.nanoTime();
             if (Constants.spectraRTPredModel.contains("PredFull")) {
                 Constants.matchWithDaltons = true; //they report predictions in bins
@@ -1004,7 +1004,7 @@ public class MainClass {
 
             long end = System.nanoTime();
             long duration = (end - start);
-            System.out.println("Feature calculation, edited pin writing, and QC plot generation done in " +
+            printInfo("Feature calculation, edited pin writing, and QC plot generation done in " +
                     duration / 1000000 + " ms");
             System.exit(0);
         } catch (Exception e) {
@@ -1029,7 +1029,7 @@ public class MainClass {
             }
             buffer.close();
         } catch (Exception e) {
-            System.out.println("could not write final params");
+            printError("could not write final params");
             e.getStackTrace();
             System.exit(1);
         }
@@ -1037,7 +1037,7 @@ public class MainClass {
 
     static private void printParamsPS() {
         try {
-            System.out.println("Final parameters used for feature annotation:");
+            printInfo("Final parameters used for feature annotation:");
             //Constants c = new Constants();
 
             Field[] f = Constants.class.getFields();
@@ -1045,17 +1045,17 @@ public class MainClass {
                 if ((field.getModifiers() & Modifier.FINAL) != Modifier.FINAL) {
                     if (!field.getName().equals("paramsList")) {
                         if (field.getName().equals("fragmentIonHierarchy")) {
-                            //System.out.println("\t" + field.getName() + " = " + Arrays.toString((String[]) field.get(c)));
-                            System.out.println("\t" + field.getName() + " = " + Arrays.toString((String[]) field.get(Constants.class)));
+                            //printInfo("\t" + field.getName() + " = " + Arrays.toString((String[]) field.get(c)));
+                            printInfo("\t" + field.getName() + " = " + Arrays.toString((String[]) field.get(Constants.class)));
                         } else {
-                            //System.out.println("\t" + field.getName() + " = " + field.get(c));
-                            System.out.println("\t" + field.getName() + " = " + field.get(Constants.class));
+                            //printInfo("\t" + field.getName() + " = " + field.get(c));
+                            printInfo("\t" + field.getName() + " = " + field.get(Constants.class));
                         }
                     }
                 }
             }
         } catch (Exception e) {
-            System.out.println("could not write final params");
+            printError("could not write final params");
             e.getStackTrace();
             System.exit(1);
         }

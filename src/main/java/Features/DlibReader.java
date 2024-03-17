@@ -17,6 +17,8 @@
 
 package Features;
 
+import static utils.Print.printInfo;
+
 import umich.ms.fileio.exceptions.FileParsingException;
 
 import java.io.File;
@@ -54,7 +56,7 @@ public class DlibReader implements SpectralPredictionMapper{
         }
 
         //read in original dlib
-        System.out.println("loading dlib");
+        printInfo("loading dlib");
         for (String dl : filenames) {
             Connection connection = DriverManager.getConnection("jdbc:sqlite:" + dl);
             Statement statement = connection.createStatement();
@@ -106,7 +108,7 @@ public class DlibReader implements SpectralPredictionMapper{
         }
 
         //for pin in pin files
-        System.out.println("generating modified and decoy peptides");
+        printInfo("generating modified and decoy peptides");
         PinMzmlMatcher pmm = new PinMzmlMatcher(Constants.mzmlDirectory, Constants.pinPepXMLDirectory);
         for (File f : pmm.pinFiles) {
             PinReader pin = new PinReader(f.getCanonicalPath());
@@ -184,10 +186,10 @@ public class DlibReader implements SpectralPredictionMapper{
                             ArrayList<Float> finalmz = new ArrayList<>();
                             for (String anno : colonSplit) {
                                 if (anno.equals("unknown")) {
-                                    System.out.println(pf.dlib);
-                                    System.out.println(Arrays.toString(annotations));
-                                    System.out.println(Arrays.toString(tmp.mzs));
-                                    System.out.println(mc.fragmentIons.keySet());
+                                    printInfo(pf.dlib);
+                                    printInfo(Arrays.toString(annotations));
+                                    printInfo(Arrays.toString(tmp.mzs));
+                                    printInfo(mc.fragmentIons.keySet().toString());
                                 }
 
                                 String[] plusSplit = anno.split("\\+");

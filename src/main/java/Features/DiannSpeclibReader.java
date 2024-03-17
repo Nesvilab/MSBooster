@@ -17,7 +17,15 @@
 
 package Features;
 
-import java.io.*;
+import static utils.Print.printError;
+
+import java.io.BufferedReader;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
+import java.io.FileReader;
+import java.io.IOException;
+import java.io.InputStream;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.util.ArrayList;
@@ -48,12 +56,12 @@ public class DiannSpeclibReader implements SpectralPredictionMapper{
             //try to infer binary file name from text file
             int splitDot = bFile.indexOf("predicted.bin");
             if (! new File(bFile).exists()) {
-                System.out.println("Error: no prediction file available at: " + bFile);
+                printError("Error: no prediction file available at: " + bFile);
                 System.exit(-1);
             }
             String textFile = bFile.substring(0, splitDot) + "tsv"; //enforces tsv naming convention
             if (! new File(textFile).exists()) {
-                System.out.println("Error: no prediction file available at: " + textFile);
+                printError("Error: no prediction file available at: " + textFile);
                 System.exit(-1);
             }
 
@@ -118,7 +126,7 @@ public class DiannSpeclibReader implements SpectralPredictionMapper{
                 is.close();
 
                 if (TSVReader.readLine() != null) {
-                    System.out.println("Prediction file is missing some entries. Please rerun MSBooster");
+                    printError("Prediction file is missing some entries. Please rerun MSBooster");
                     System.exit(-1);
                 }
                 TSVReader.close();

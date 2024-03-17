@@ -17,6 +17,8 @@
 
 package External;
 
+import static utils.Print.printInfo;
+
 import Features.Constants;
 
 import java.io.BufferedReader;
@@ -29,10 +31,10 @@ public class AlphaPeptDeepModelCaller {
         long startTime = System.nanoTime();
         try {
             if (mode.equals("transfer")) {
-                System.out.println("Generating AlphaPeptDeep transfer learned model");
+                printInfo("Generating AlphaPeptDeep transfer learned model");
                 ProcessBuilder builder = new ProcessBuilder(Constants.AlphaPeptDeep,
                         "transfer", Constants.paramsList);
-                System.out.println(String.join(" ", builder.command()));
+                printInfo(String.join(" ", builder.command()));
                 builder.redirectErrorStream(true);
                 Process process = builder.start();
                 InputStream is = process.getInputStream();
@@ -40,13 +42,13 @@ public class AlphaPeptDeepModelCaller {
 
                 String line = null;
                 while ((line = reader.readLine()) != null) {
-                    System.out.println(line);
+                    printInfo(line);
                 }
             } else if (mode.equals("predict")) {
-                System.out.println("Generating AlphaPeptDeep predictions");
+                printInfo("Generating AlphaPeptDeep predictions");
                 ProcessBuilder builder = new ProcessBuilder(Constants.AlphaPeptDeep,
                         "predict", Constants.paramsList);
-                System.out.println(String.join(" ", builder.command()));
+                printInfo(String.join(" ", builder.command()));
                 builder.redirectErrorStream(true);
                 Process process = builder.start();
                 InputStream is = process.getInputStream();
@@ -54,7 +56,7 @@ public class AlphaPeptDeepModelCaller {
 
                 String line = null;
                 while ((line = reader.readLine()) != null) {
-                    System.out.println(line);
+                    printInfo(line);
                 }
             }
         } catch (IOException e) {
@@ -62,6 +64,6 @@ public class AlphaPeptDeepModelCaller {
         }
         long endTime = System.nanoTime();
         long duration = (endTime - startTime);
-        System.out.println("Model running took " + duration / 1000000 +" milliseconds");
+        printInfo("Model running took " + duration / 1000000 +" milliseconds");
     }
 }

@@ -17,6 +17,8 @@
 
 package Features;
 
+import static utils.Print.printError;
+
 import java.io.File;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -239,7 +241,7 @@ public class Constants {
                 if (MassCalculator.allowedFragmentIonTypes.contains(fragmentIonType)) {
                     onlyFragmentIonTypes.add(fragmentIonType);
                 } else {
-                    System.out.println(fragmentIonType + " is not a supported fragment ion type to include. " +
+                    printError(fragmentIonType + " is not a supported fragment ion type to include. " +
                             "Please choose from " + MassCalculator.allowedFragmentIonTypes);
                     System.exit(-1);
                 }
@@ -258,7 +260,7 @@ public class Constants {
                 if (MassCalculator.allowedFragmentIonTypes.contains(fragmentIonType)) {
                     ignoredFragmentIonTypes.add(fragmentIonType);
                 } else {
-                    System.out.println(fragmentIonType + " is not a supported fragment ion type to exclude. " +
+                    printError(fragmentIonType + " is not a supported fragment ion type to exclude. " +
                             "Please choose from " + MassCalculator.allowedFragmentIonTypes);
                     System.exit(-1);
                 }

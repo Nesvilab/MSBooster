@@ -17,6 +17,8 @@
 
 package External;
 
+import static utils.Print.printInfo;
+
 import Features.*;
 
 import java.io.File;
@@ -112,7 +114,7 @@ public class KoinaMethods {
         ScheduledThreadPoolExecutor executorService = new ScheduledThreadPoolExecutor(1);
 
         if (Constants.FragmentationType.isEmpty()) {
-            System.out.println("Setting fragmentation type to HCD. " +
+            printInfo("Setting fragmentation type to HCD. " +
                     "You can specify this with '--FragmentationType' via the command line " +
                     "or 'FragmentationType=' in the param file.");
             Constants.FragmentationType = "HCD";

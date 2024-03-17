@@ -17,6 +17,9 @@
 
 package External;
 
+import static utils.Print.printError;
+import static utils.Print.printInfo;
+
 import Features.Constants;
 
 import java.io.*;
@@ -29,7 +32,7 @@ public class DiannModelCaller {
             boolean useTMT = false;
             //DIA-NN command
             if (verbose) {
-                System.out.println("Generating DIA-NN predictions");
+                printInfo("Generating DIA-NN predictions");
             }
             Constants.spectraRTPredFile =
                     inputFile.substring(0, inputFile.length() - 4) + ".predicted.bin";
@@ -117,7 +120,7 @@ public class DiannModelCaller {
                             "100");
                 }
                 if (verbose) {
-                    System.out.println(String.join(" ", builder.command()));
+                    printInfo(String.join(" ", builder.command()));
                 }
                 builder.redirectErrorStream(true);
                 Process process = builder.start();
@@ -127,25 +130,25 @@ public class DiannModelCaller {
                 //print DIA-NN output while running
                 while ((line = reader.readLine()) != null) {
                     if (verbose) {
-                        System.out.println(line);
+                        printInfo(line);
                     }
                 }
 
                 int DIANNtermination = process.waitFor();
 
                 if (DIANNtermination == -1073741515) {
-                    System.out.println("Microsoft Visual C++ Redistributable is missing. Please download at " +
+                    printError("Microsoft Visual C++ Redistributable is missing. Please download at " +
                             "https://learn.microsoft.com/en-us/cpp/windows/latest-supported-vc-redist");
                     System.exit(-1);
                 }
                 if (DIANNtermination == 137) {
-                    System.out.println("Out of memory during DIA-NN prediction. " +
+                    printError("Out of memory during DIA-NN prediction. " +
                             "Please allocate more memory, or increase splitPredInputFile " +
                             "parameter until successfully predicted.");
                     System.exit(-1);
                 }
                 if (DIANNtermination != 0) {
-                    System.out.println("Abnormal DIANN termination: " + DIANNtermination + ", please run the " +
+                    printError("Abnormal DIANN termination: " + DIANNtermination + ", please run the " +
                             "following command from the command line for more information\n" +
                             String.join(" ", builder.command()));
                     System.exit(-1);
@@ -187,10 +190,10 @@ public class DiannModelCaller {
 
             if (Files.isReadable(predFile.toPath())) {
                 if (verbose) {
-                    System.out.println("Done generating DIA-NN predictions");
+                    printInfo("Done generating DIA-NN predictions");
                 }
             } else {
-                System.out.println("Cannot find DIA-NN's output. Please rerun MSBooster");
+                printError("Cannot find DIA-NN's output. Please rerun MSBooster");
                 System.exit(-1);
             }
 
@@ -201,7 +204,7 @@ public class DiannModelCaller {
         if (verbose) {
             long endTime = System.nanoTime();
             long duration = (endTime - startTime);
-            System.out.println("Model running took " + duration / 1000000 + " milliseconds");
+            printInfo("Model running took " + duration / 1000000 + " milliseconds");
         }
     }
 }

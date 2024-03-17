@@ -17,6 +17,9 @@
 
 package Features;
 
+import static utils.Print.printError;
+import static utils.Print.printInfo;
+
 import com.google.common.collect.Range;
 import com.google.common.collect.RangeMap;
 import com.google.common.collect.TreeRangeMap;
@@ -66,7 +69,7 @@ public class PercolatorFormatter {
             String[] mgfSplit = mgf.split(",");
 
             if (mgfSplit.length == 1) {
-                System.out.println("Loading predicted library");
+                printInfo("Loading predicted library");
                 if (Constants.spectraRTPredModel.equals("PredFull")) {
                     predictedSpectra = SpectralPredictionMapper.createSpectralPredictionMapper(
                             mgfSplit[1], pinFiles, executorService);
@@ -80,10 +83,10 @@ public class PercolatorFormatter {
                 //can also add two models, the first being for RT, the second for spectra
                 String[] modelSplit = Constants.spectraRTPredModel.split(",");
 
-                System.out.println("Loading predicted RT: " + mgfSplit[0]);
+                printInfo("Loading predicted RT: " + mgfSplit[0]);
                 predictedSpectra = SpectralPredictionMapper.createSpectralPredictionMapper(
                         mgfSplit[0], modelSplit[0], executorService);
-                System.out.println("Loading predicted spectra: " + mgfSplit[1]);
+                printInfo("Loading predicted spectra: " + mgfSplit[1]);
                 if (modelSplit[1].equals("PredFull")) {
                     predictedSpectra2 = SpectralPredictionMapper.createSpectralPredictionMapper(
                             mgfSplit[1], pinFiles, executorService); //get predfull library
@@ -92,7 +95,7 @@ public class PercolatorFormatter {
                             mgfSplit[1], modelSplit[1], executorService); //get other library
                     Constants.addNonYb = false; //probably just want to use separate spectra and RT models
                 }
-                System.out.println("Merging spectral libraries");
+                printInfo("Merging spectral libraries");
 
                 //get all possible keys from both preds1 and preds2
                 Set<String> totalKeyset = new HashSet<String>();
@@ -191,7 +194,6 @@ public class PercolatorFormatter {
                 predictedSpectra2 = null; //free up memory
             }
         }
-        System.out.println();
         predictedSpectra.setPreds(predictedSpectra.filterTopFragments(executorService));
         allPreds = predictedSpectra.getPreds();
         //TODO test to make sure predicted spectra and allpreds are same
@@ -235,14 +237,14 @@ public class PercolatorFormatter {
 
 //            //load fasta
 //            if (Constants.getFastaReader() == null) {
-//                System.out.println("Creating fasta object");
+//                printInfo("Creating fasta object");
 //                fasta = new FastaReader(Constants.fasta);
 //            } else {
-//                System.out.println("Loading fasta");
+//                printInfo("Loading fasta");
 //                fasta = Constants.getFastaReader();
 //            }
 //
-//            System.out.println("Loading detectabilities for unique peptides from each protein");
+//            printInfo("Loading detectabilities for unique peptides from each protein");
 //            for (Map.Entry<String, ProteinEntry> e : fasta.protToPep.entrySet()) {
 //                ArrayList<String> pepList = e.getValue().peptides;
 //                float[] protDetects = new float[pepList.size()]; //for storing initial detect order
@@ -310,7 +312,7 @@ public class PercolatorFormatter {
 
                 //load pin file, which already includes all ranks
                 PinReader pin = new PinReader(pinFiles[i].getCanonicalPath());
-                System.out.println("Processing pin " + pin.name);
+                printInfo("Processing pin " + pin.name);
                 if (Constants.removeWashGradient) {
                     if (Constants.rtCutoff.isNaN()) {
                         pin.attachMzml(mzml);
@@ -337,10 +339,10 @@ public class PercolatorFormatter {
                 }
 
                 if (featuresList.contains("adjacentSimilarity")) {
-                    System.out.println("Calculating adjacent similarity");
+                    printInfo("Calculating adjacent similarity");
                     //check that scan m/z ranges are in mzml
                     if (mzml.scanNumberObjects.firstEntry().getValue().isolationUpper == 0.0d) {
-                        System.out.println("Adjacent similarity feature requires m/z ranges " +
+                        printError("Adjacent similarity feature requires m/z ranges " +
                                 "for each scan. This mzml is incompatible. Exiting.");
                         System.exit(1);
                     }
@@ -637,17 +639,16 @@ public class PercolatorFormatter {
                 }
 
                 //TODO: multithread?
-                System.out.println("Calculating features");
+                printInfo("Calculating features");
                 FeatureCalculator fc = new FeatureCalculator(pin, featuresList, mzml);
                 fc.calculate(executorService);
 
-                System.out.println("Writing features");
+                printInfo("Writing features");
                 PinWriter pw = new PinWriter(newOutfile, pin, featuresList, mzml, fc.featureStats);
                 pw.write();
                 String histFile;
                 if (Constants.renamePin == 1) {
-                    System.out.println("Edited pin file at " + newOutfile);
-                    System.out.println();
+                    printInfo("Edited pin file at " + newOutfile);
                     histFile = newOutfile;
                 } else { //really should be 0
                     //move file at newOutfile to pinFiles[i] canonical name

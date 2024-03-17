@@ -17,6 +17,27 @@
 
 package Features;
 
+import static Features.StatMethods.LOESS;
+import static Features.StatMethods.characterizebins;
+import static Features.StatMethods.movingAverage;
+import static Features.StatMethods.probability;
+import static Features.StatMethods.zscore;
+import static utils.Print.printInfo;
+
+import java.io.IOException;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Objects;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentSkipListMap;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Future;
 import kotlin.jvm.functions.Function1;
 import umich.ms.datatypes.LCMSDataSubset;
 import umich.ms.datatypes.scan.IScan;
@@ -25,14 +46,6 @@ import umich.ms.datatypes.scancollection.impl.ScanCollectionDefault;
 import umich.ms.fileio.exceptions.FileParsingException;
 import umich.ms.fileio.filetypes.mzml.MZMLFile;
 import umontreal.ssj.probdist.EmpiricalDist;
-
-import java.io.IOException;
-import java.nio.file.Path;
-import java.nio.file.Paths;
-import java.util.*;
-import java.util.concurrent.*;
-
-import static Features.StatMethods.*;
 
 public class MzmlReader {
     //final Path path;
@@ -63,7 +76,7 @@ public class MzmlReader {
     public MzmlReader(String filename) throws FileParsingException, ExecutionException, InterruptedException {
         // Creating data source
         //path = Paths.get(filename); //
-        System.out.println("Processing " + filename);
+        printInfo("Processing " + filename);
         Path path = Paths.get(filename);
         pathStr = path.toString();
         MZMLFile source = new MZMLFile(pathStr);
@@ -100,7 +113,7 @@ public class MzmlReader {
 
     public MzmlReader(MgfFileReader mgf) throws FileParsingException, ExecutionException, InterruptedException { //uncalibrated mgf from MSFragger .d search
         pathStr = mgf.filenames.get(0);
-        System.out.println("Processing " + pathStr);
+        printInfo("Processing " + pathStr);
 
         //Constants.useIM = true;
         //scanNumberObjects = mgf.scanNumberObjects;
@@ -197,45 +210,45 @@ public class MzmlReader {
                 String analyzer = scans.getRunInfo().getDefaultInstrument().getAnalyzer();
                 for (String k : LumosKeys) {
                     if (model.contains(k) || analyzer.contains(k)) {
-                        System.out.println("Instrument detected: Lumos");
+                        printInfo("Instrument detected: Lumos");
                         Constants.instrument = "Lumos";
                         return "Lumos";
                     }
                 }
                 for (String k : QEKeys) {
                     if (model.contains(k) || analyzer.contains(k)) {
-                        System.out.println("Instrument detected: QE");
+                        printInfo("Instrument detected: QE");
                         Constants.instrument = "QE";
                         return "QE";
                     }
                 }
                 for (String k : SciexTOFKeys) {
                     if (model.contains(k) || analyzer.contains(k)) {
-                        System.out.println("Instrument detected: SciexTOF");
+                        printInfo("Instrument detected: SciexTOF");
                         Constants.instrument = "SciexTOF";
                         return "SciexTOF";
                     }
                 }
                 for (String k : timsTOFKeys) {
                     if (model.contains(k) || analyzer.contains(k)) {
-                        System.out.println("Instrument detected: timsTOF");
+                        printInfo("Instrument detected: timsTOF");
                         Constants.instrument = "timsTOF";
                         return "timsTOF";
                     }
                 }
                 for (String k : ThermoTOFKeys) {
                     if (model.contains(k) || analyzer.contains(k)) {
-                        System.out.println("Instrument detected: ThermoTOF");
+                        printInfo("Instrument detected: ThermoTOF");
                         Constants.instrument = "ThermoTOF";
                         return "ThermoTOF";
                     }
                 }
-                System.out.println("Could not detect instrument type. Setting to Lumos. " +
+                printInfo("Could not detect instrument type. Setting to Lumos. " +
                         "If a different instrument was used, specify using '--instrument' via the command line " +
                         "or 'instrument=' in the param file.");
                 return "Lumos"; //default if nothing found
             } catch (NullPointerException e) {
-                System.out.println("Could not detect instrument type. Setting to Lumos. " +
+                printInfo("Could not detect instrument type. Setting to Lumos. " +
                         "If a different instrument was used, specify using '--instrument' via the command line " +
                         "or 'instrument=' in the param file.");
                 return "Lumos"; //default if nothing found
@@ -282,7 +295,7 @@ public class MzmlReader {
         scans.reset(); //free up memory. Could consider setting to null as well, but idk how to check if it's garbage collected
         //long endTime = System.nanoTime();
         //long duration = (endTime - startTime);
-        //System.out.println("createScanNumObjects took " + duration / 1000000 +" milliseconds");
+        //printInfo("createScanNumObjects took " + duration / 1000000 +" milliseconds");
     }
 
     public MzmlScanNumber getScanNumObject(int scanNum) {
@@ -417,7 +430,7 @@ public class MzmlReader {
             if (Constants.percentRTgradientFilter != 100f) {
                 Constants.realMinuteFilter = Constants.percentRTgradientFilter / 100 *
                         maxRT;
-                System.out.println("Setting minute filter to " + Constants.realMinuteFilter);
+                printInfo("Setting minute filter to " + Constants.realMinuteFilter);
             }
         }
     }
@@ -436,7 +449,7 @@ public class MzmlReader {
     //get normalized RTs for regression
     public void normalizeRTs(ExecutorService executorService) throws ExecutionException, InterruptedException {
         if (betas == null) {
-            System.out.println("why are betas null?");
+            printInfo("why are betas null?");
         }
         futureList.clear();
 
@@ -479,7 +492,7 @@ public class MzmlReader {
     public void calculateBinStats(String mode) {
         if (mode.equals("RT")) {
             if (RTbins == null) {
-                System.out.println("why are RTbins null?");
+                printInfo("why are RTbins null?");
             }
             RTbinStats = characterizebins(RTbins, Constants.RTIQR);
 
@@ -495,7 +508,7 @@ public class MzmlReader {
             }
         } else if (mode.equals("IM")) {
             if (IMbins == null) {
-                System.out.println("why are IMbins null?");
+                printInfo("why are IMbins null?");
             }
             for (int charge = 0; charge < IMbins.length; charge ++) {
                 IMbinStats[charge] = characterizebins(IMbins[charge], Constants.IMIQR);
@@ -701,7 +714,7 @@ public class MzmlReader {
             }
             //long endTime = System.nanoTime();
             //long duration = (endTime - startTime);
-            //System.out.println("Calculating RT probabilities took " + duration / 1000000 + " milliseconds");
+            //printInfo("Calculating RT probabilities took " + duration / 1000000 + " milliseconds");
         } else if (mode.equals("IM")) {
             EmpiricalDist[][] kernelDensities = new EmpiricalDist[IMFunctions.numCharges][];
             for (int c = 0; c < IMFunctions.numCharges; c++) {
@@ -733,7 +746,7 @@ public class MzmlReader {
             }
 //            long endTime = System.nanoTime();
 //            long duration = (endTime - startTime);
-//            System.out.println("Calculating IM probabilities took " + duration / 1000000000 + " seconds");
+//            printInfo("Calculating IM probabilities took " + duration / 1000000000 + " seconds");
         }
     }
 
@@ -763,7 +776,7 @@ public class MzmlReader {
                 float[] gridSearchResults = StatMethods.gridSearchCV(rts, floatBandwidths);
                 float finalBandwidth = gridSearchResults[0];
 
-                System.out.println("Best average bandwidth for mass " + mass + " from grid search of " +
+                printInfo("Best average bandwidth for mass " + mass + " from grid search of " +
                         Constants.rtBandwidth + " after " + Constants.regressionSplits + " iterations is " + finalBandwidth);
 
                 //final model trained on all data
@@ -777,13 +790,13 @@ public class MzmlReader {
                         break;
                     } catch (Exception e) {
                         if (finalBandwidth == 1) {
-                            System.out.println("Regression still not possible with bandwidth 1. Setting RT score to 0");
+                            printInfo("Regression still not possible with bandwidth 1. Setting RT score to 0");
                             RTLOESS.put(mass, null);
                             RTLOESS_realUnits.put(mass, null);
                             break;
                         }
                         finalBandwidth = Math.min(finalBandwidth * 2, 1);
-                        System.out.println("Regression failed, retrying with double the bandwidth: " + finalBandwidth);
+                        printInfo("Regression failed, retrying with double the bandwidth: " + finalBandwidth);
                     }
                 }
             }
@@ -910,7 +923,7 @@ public class MzmlReader {
         }
         //long endTime = System.nanoTime();
         //long duration = (endTime - startTime);
-        //System.out.println("Calculating deltaIMLOESS took " + duration / 1000000 +" milliseconds");
+        //printInfo("Calculating deltaIMLOESS took " + duration / 1000000 +" milliseconds");
     }
 
     public void clear() {

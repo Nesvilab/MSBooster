@@ -17,6 +17,8 @@
 
 package Features;
 
+import static utils.Print.printError;
+
 import java.util.ArrayList;
 import java.util.Map;
 
@@ -278,7 +280,7 @@ public class PeptideFormatter {
                 modName = PTMhandler.aamassToAlphapeptdeep.get(String.format("%.4f", doubleModMass));
             }
             if (modName == null) { //can try checking if it's a combo of fixed and var mod
-                System.out.println("There is an unknown modification with mass " + doubleModMass +
+                printError("There is an unknown modification with mass " + doubleModMass +
                         ". Please provide PTM info via additionalMods param in --paramsList.");
                 System.exit(1);
             }
@@ -307,7 +309,7 @@ public class PeptideFormatter {
                     break;
                 }
                 if (ptmSubstitutes.size() == 1) {
-                    System.out.println("This PTM is not supported with mass " + doubleModMass +
+                    printError("This PTM is not supported with mass " + doubleModMass +
                             ": " + modName + "@" + aa + "\n" +
                             "Please provide PTM info via additional_mods param in --paramsList.");
                     System.exit(1);

@@ -17,6 +17,9 @@
 
 package Features;
 
+import static utils.Print.printError;
+import static utils.Print.printInfo;
+
 import jakarta.xml.bind.JAXBContext;
 import jakarta.xml.bind.JAXBException;
 import jakarta.xml.bind.Marshaller;
@@ -45,7 +48,7 @@ public class PepXMLDivider {
 
     public PepXMLDivider(int divisions) {
         if (divisions < 2) {
-            System.out.println("Divisions for PepXMLDivider must be 2 or greater");
+            printError("Divisions for PepXMLDivider must be 2 or greater");
             System.exit(1);
         }
         this.divisions = divisions;
@@ -166,7 +169,7 @@ public class PepXMLDivider {
     //baseCharge to unicode bin
     public void mapPepxmlToPin() {
         if (pinMap.size() == 0) { //empty
-            System.out.println("must load pin before mapping pepxml to pin");
+            printError("must load pin before mapping pepxml to pin");
             System.exit(1);
         }
 
@@ -268,13 +271,13 @@ public class PepXMLDivider {
             loadPin(pin.getCanonicalPath());
 
             for (String pepxml : pinToPepxml.get(pin.getCanonicalPath())) {
-                System.out.println("Processing " + pepxml);
+                printInfo("Processing " + pepxml);
                 process(pepxml);
                 mapPepxmlToPin();
             }
         }
 
-        System.out.println("Creating divided AlphaPeptDeep input files");
+        printInfo("Creating divided AlphaPeptDeep input files");
         inputFileAssignBins(predInputFile);
     }
 }

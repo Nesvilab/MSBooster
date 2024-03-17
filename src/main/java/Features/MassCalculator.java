@@ -17,7 +17,15 @@
 
 package Features;
 
-import java.util.*;
+import static utils.Print.printError;
+
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Set;
+import java.util.SortedMap;
+import java.util.TreeMap;
 
 public class MassCalculator {
     public final float proton = 1.00727647f;
@@ -242,7 +250,7 @@ public class MassCalculator {
             case "ay":
                 return newY.calcMass(num2, "a", 1);
             default:
-                System.out.println(flag + " is not supported. Choose ay or by");
+                printError(flag + " is not supported. Choose ay or by");
                 System.exit(-1);
         }
         return 0;
@@ -286,7 +294,7 @@ public class MassCalculator {
     //y is which y fragment
     private MassCalculator makeInternalPeptide(int y) {
         if (y >= this.peptide.length()) { //only make smaller peptides
-            System.out.println("internal fragment must be shorter than initial peptide");
+            printError("internal fragment must be shorter than initial peptide");
             System.exit(-1);
         }
         String peptide = this.peptide.substring(this.peptide.length() - y);

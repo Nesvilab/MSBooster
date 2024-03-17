@@ -17,6 +17,8 @@
 
 package Features;
 
+import static utils.Print.printInfo;
+
 import org.apache.commons.lang3.ArrayUtils;
 import umich.ms.fileio.exceptions.FileParsingException;
 
@@ -155,7 +157,7 @@ public class PinReader {
             } finally {
                 is.close();
             }
-            System.out.println(name + " has " + length + " PSMs");
+            printInfo(name + " has " + length + " PSMs");
         }
         return length;
     }
@@ -231,12 +233,12 @@ public class PinReader {
         if (zeroAt != -1) {
             cutoffRT = minRT + zeroAt * RTrange / bins;
         } else {
-            System.out.println("Washing gradient not detected. If there is one, you can try increasing the parameter " +
+            printInfo("Washing gradient not detected. If there is one, you can try increasing the parameter " +
                     "washGradientBins (default 100) or manually setting it with the parameter rtCutoff.");
         }
 
         rtCutoff = (double) cutoffRT;
-        System.out.println("Setting RT cutoff at " + rtCutoff);
+        printInfo("Setting RT cutoff at " + rtCutoff);
 
         //edit length
         length = getLength();
@@ -413,7 +415,7 @@ public class PinReader {
                 NCE = Constants.NCE;
                 synchronized (lock) {
                     if (Constants.FragmentationType.isEmpty()) {
-                        System.out.println("Setting fragmentation type to HCD. " +
+                        printInfo("Setting fragmentation type to HCD. " +
                                 "You can specify this with '--FragmentationType' via the command line " +
                                 "or 'FragmentationType=' in the param file.");
                         Constants.FragmentationType = "HCD";
@@ -485,7 +487,7 @@ public class PinReader {
             String nce = String.valueOf(mzml.scanNumberObjects.get(getScanNum()).NCEs.get(frag));
             if (nce.equals("null")) {
                 //! mzml.scanNumberObjects.get(getScanNum()).NCEs.containsKey(frag)
-                System.out.println("No NCE detected in mzml. Setting to 25. NCE can be specified by '--NCE' via " +
+                printInfo("No NCE detected in mzml. Setting to 25. NCE can be specified by '--NCE' via " +
                         "the command line or 'NCE=' in the param file.");
                 Constants.NCE = "25";
                 return Constants.NCE;

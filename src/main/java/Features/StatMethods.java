@@ -17,6 +17,8 @@
 
 package Features;
 
+import static utils.Print.printInfo;
+
 import com.github.sanity.pav.PairAdjacentViolators;
 import com.github.sanity.pav.Point;
 import kotlin.jvm.functions.Function1;
@@ -195,11 +197,11 @@ public class StatMethods {
     //TODO: automatic bandwidth selection
     public static Function1<Double, Double> LOESS(double[][] bins, double bandwidth, int robustIters) {
         if (bandwidth <= 0) {
-            System.out.println("bandwidth is set to " + bandwidth + " but it must be greater than 0. Setting it to 0.05");
+            printInfo("bandwidth is set to " + bandwidth + " but it must be greater than 0. Setting it to 0.05");
             bandwidth = 0.05;
         }
         if (bandwidth > 1) {
-            System.out.println("bandwidth is set to " + bandwidth + " but maximum allowed is 1. Setting it to 1");
+            printInfo("bandwidth is set to " + bandwidth + " but maximum allowed is 1. Setting it to 1");
             bandwidth = 1;
         }
 

@@ -17,19 +17,19 @@
 
 package Features;
 
-import org.apache.commons.lang3.ArrayUtils;
-import umich.ms.datatypes.scan.IScan;
-import umich.ms.datatypes.scan.props.PrecursorInfo;
-import umich.ms.datatypes.spectrum.ISpectrum;
-import umich.ms.fileio.exceptions.FileParsingException;
-import umich.ms.fileio.filetypes.agilent.cef.jaxb.P;
+import static Features.FloatUtils.doubleToFloat;
+import static utils.Print.printError;
+import static utils.Print.printInfo;
 
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.concurrent.ConcurrentHashMap;
-
-import static Features.FloatUtils.doubleToFloat;
+import org.apache.commons.lang3.ArrayUtils;
+import umich.ms.datatypes.scan.IScan;
+import umich.ms.datatypes.scan.props.PrecursorInfo;
+import umich.ms.datatypes.spectrum.ISpectrum;
+import umich.ms.fileio.exceptions.FileParsingException;
 
 public class MzmlScanNumber {
     final int scanNum;
@@ -107,7 +107,7 @@ public class MzmlScanNumber {
                     }
                 }
             } catch (NullPointerException e) { //like in DIA-Umpire, there is no filter string
-                System.out.println("mzml file does not contain filter string. Setting NCE to 25 and " +
+                printInfo("mzml file does not contain filter string. Setting NCE to 25 and " +
                         "FragmentationType to HCD. If other values are desired, please set them in " +
                         "the parameter file with NCE and FragmentationType.");
                 Constants.NCE = "25";
@@ -226,7 +226,7 @@ public class MzmlScanNumber {
                             zeroFloatArray, zeroFloatArray, predRT, predIM);
                     peptideObjects.add(newPepObj);
                 } else {
-                    System.out.println("Prediction missing in file for " + name.baseCharge);
+                    printError("Prediction missing in file for " + name.baseCharge);
                     e.printStackTrace();
                     System.exit(-1);
                 }
@@ -247,7 +247,7 @@ public class MzmlScanNumber {
                 return p;
             }
         }
-        System.out.println("no peptideObj with name " + name + ", returning null");
+        printInfo("no peptideObj with name " + name + ", returning null");
         return returnedP; //only if peptide name not there
     }
 }

@@ -17,9 +17,10 @@
 
 package External;
 
+import static utils.Print.printError;
+
 import Features.Constants;
 import Features.KoinaLibReader;
-
 import java.io.BufferedReader;
 import java.io.InputStreamReader;
 import java.util.Timer;
@@ -101,13 +102,13 @@ public class KoinaTask implements Callable<Boolean> {
             failedAttempts++;
 
             if (failedAttempts == Constants.numKoinaAttempts) {
-                System.out.println(command);
-                System.out.println(filename + " had output that ended in: ");
-                System.out.println(ending);
-                System.out.println("Retried calling " + filename + " " + failedAttempts +
+                printError(command);
+                printError(filename + " had output that ended in: ");
+                printError(ending);
+                printError("Retried calling " + filename + " " + failedAttempts +
                         " times. This many be fixable by sending prediction requests to Koina at a slower rate " +
                         "by lowering the --numThreads parameter in the parameter file.");
-                System.out.println("Exiting");
+                printError("Exiting");
                 System.exit(1);
             }
 

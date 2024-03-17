@@ -17,14 +17,20 @@
 
 package Features;
 
+import static Features.FloatUtils.floatToDouble;
+import static utils.Print.printError;
+
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.LinkedHashSet;
+import java.util.Random;
 import org.apache.commons.math3.distribution.HypergeometricDistribution;
 import org.apache.commons.math3.random.Well19937c;
 import org.apache.commons.math3.stat.correlation.PearsonsCorrelation;
 import org.apache.commons.math3.stat.correlation.SpearmansCorrelation;
 
-import java.util.*;
-
-import static Features.FloatUtils.floatToDouble;
 //TODO: also square root intensities? Squaring intensities may help for single cell data
 public class SpectrumComparison {
     float[] predMZs;
@@ -287,7 +293,7 @@ public class SpectrumComparison {
     }
 
     private float[][] filterFragments(int top) {
-        System.out.println("Reimplement filterFragments!");
+        printError("Reimplement filterFragments!");
         System.exit(1);
 //        top = Math.min(top, sortedIndicesList.size());
 //

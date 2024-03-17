@@ -17,6 +17,8 @@
 
 package Features;
 
+import static utils.Print.printInfo;
+
 import umich.ms.fileio.exceptions.FileParsingException;
 
 import java.io.BufferedReader;
@@ -49,7 +51,7 @@ public class PredFullSpeclibReader extends MgfFileReader {
             pin.close();
         }
 
-        System.out.println("Shifting peaks for PredFull predictions");
+        printInfo("Shifting peaks for PredFull predictions");
         //also need to add to allPreds the peptides with PTMs not supported by PredFull
         //this requires that mgf file name has same prefix as full input file
         String fullFile = file.substring(0, file.length() - 4) + "_full.tsv";

@@ -17,16 +17,16 @@
 
 package Features;
 
+import static Features.Constants.camelToUnderscore;
+import static utils.Print.printInfo;
+
 import com.univocity.parsers.tsv.TsvWriter;
 import com.univocity.parsers.tsv.TsvWriterSettings;
-
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
-
-import static Features.Constants.camelToUnderscore;
 
 public class PinWriter {
     String newOutfile;
@@ -465,7 +465,7 @@ public class PinWriter {
                             StringBuilder s = new StringBuilder();
 
                             Float[] scores = PercolatorFormatter.allPreds.get(pep).scores.get("entropy");
-                            //System.out.println(scores.length + "\t" + pepObj.chromatogramWindowQuery);
+                            //printInfo(scores.length + "\t" + pepObj.chromatogramWindowQuery);
                             for (int i = Math.max(0, pepObj.chromatogramWindowQuery - Constants.chromatogramWindow);
                                  i < Math.min(scores.length, pepObj.chromatogramWindowQuery + Constants.chromatogramWindow + 1);
                                  i++) {
@@ -779,7 +779,7 @@ public class PinWriter {
             mzml.clear();
         } catch (com.univocity.parsers.common.TextWritingException e) {
             e.printStackTrace();
-            System.out.println("Try increasing the parameter numPinColumns if you have many protein columns!");
+            printInfo("Try increasing the parameter numPinColumns if you have many protein columns!");
         } catch (Exception e) {
             e.printStackTrace();
         }

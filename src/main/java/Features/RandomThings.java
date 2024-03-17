@@ -17,6 +17,8 @@
 
 package Features;
 
+import static utils.Print.printInfo;
+
 import java.util.Arrays;
 
 public class RandomThings {
@@ -29,8 +31,8 @@ public class RandomThings {
         a[0] = 1f;
         float[] b = a;
         b[0] = 2f;
-        System.out.println(Arrays.toString(a));
-        System.out.println(Arrays.toString(b));
+        printInfo(Arrays.toString(a));
+        printInfo(Arrays.toString(b));
     }
 }
 

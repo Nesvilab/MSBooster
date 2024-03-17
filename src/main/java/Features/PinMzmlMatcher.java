@@ -17,6 +17,8 @@
 
 package Features;
 
+import static utils.Print.printInfo;
+
 import umich.ms.fileio.exceptions.FileParsingException;
 
 import java.io.File;
@@ -132,7 +134,6 @@ public class PinMzmlMatcher {
                 mzmlReaders[j] = mzml;
             }
         }
-        System.out.println();
     }
 
     private void setFragmentationType() {
@@ -146,7 +147,7 @@ public class PinMzmlMatcher {
                     Constants.FragmentationType = "HCD";
                 }
             } catch (Exception e) {
-                System.out.println("Setting fragmentation type to HCD. " +
+                printInfo("Setting fragmentation type to HCD. " +
                         "You can specify this with '--FragmentationType' via the command line " +
                         "or 'FragmentationType=' in the param file.");
                 Constants.FragmentationType = "HCD";

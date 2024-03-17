@@ -17,7 +17,7 @@
 
 package Features;
 
-import umich.ms.fileio.exceptions.FileParsingException;
+import static utils.Print.printError;
 
 import java.io.File;
 import java.io.IOException;
@@ -29,6 +29,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Future;
+import umich.ms.fileio.exceptions.FileParsingException;
 
 public interface SpectralPredictionMapper {
     ConcurrentHashMap<String, PredictionEntry> getPreds() throws IOException;
@@ -56,7 +57,7 @@ public interface SpectralPredictionMapper {
             case "dlib":
                 return new DlibReader(file);
             default:
-                System.out.println(extension + " is not a valid prediction file format");
+                printError(extension + " is not a valid prediction file format");
                 return null;
         }
     }

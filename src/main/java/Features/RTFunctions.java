@@ -17,6 +17,8 @@
 
 package Features;
 
+import static utils.Print.printInfo;
+
 import umontreal.ssj.probdist.EmpiricalDist;
 
 import java.io.IOException;
@@ -109,7 +111,7 @@ public class RTFunctions {
         getPSMs(mzml, expRTs, predRTs, eScores, peptides, pepIdx, Constants.RTescoreCutoff);
 
         if (expRTs.size() < Constants.minRTregressionSize) { //no more e score threshold
-            System.out.println("Not enough high quality PSMs for RT regression with escore cutoff of "
+            printInfo("Not enough high quality PSMs for RT regression with escore cutoff of "
                     + Constants.RTescoreCutoff + ". Relaxing escore cutoff to 0.01");
             RTregressionSize = Constants.minRTregressionSize;
 
@@ -225,10 +227,10 @@ public class RTFunctions {
             int sizeLimit = thisExpRTs.size();
             if (sizeLimit < 2) { //hard coded
                 if (mass.isEmpty()) {
-                    System.out.println("Warning: not enough target PSMs (" + sizeLimit + ") are available for regression" +
+                    printInfo("Warning: not enough target PSMs (" + sizeLimit + ") are available for regression" +
                             ", setting RT scores equal to 0");
                 } else {
-                    System.out.println("Warning: not enough target PSMs (" + sizeLimit + ") are available for regression" +
+                    printInfo("Warning: not enough target PSMs (" + sizeLimit + ") are available for regression" +
                             " for mass " + mass + ", will use RT calibration curve for regular peptides if available");
                 }
 
@@ -239,9 +241,9 @@ public class RTFunctions {
                 RTs.put(mass, thisRTs);
             } else if (RTregressionSize > 0 && RTregressionSize <= sizeLimit) {
                 if (mass.isEmpty()) {
-                    System.out.println("RT regression using " + RTregressionSize + " PSMs");
+                    printInfo("RT regression using " + RTregressionSize + " PSMs");
                 } else {
-                    System.out.println("RT regression for mass " + mass + " using " + RTregressionSize + " PSMs");
+                    printInfo("RT regression for mass " + mass + " using " + RTregressionSize + " PSMs");
                 }
                 int[] sortedIndices = IntStream.range(0, thisEscores.size())
                         .boxed().sorted(Comparator.comparing(thisEscores::get))
@@ -258,9 +260,9 @@ public class RTFunctions {
                 RTs.put(mass, thisRTs);
             } else {
                 if (mass.isEmpty()) {
-                    System.out.println("RT regression using " + sizeLimit + " PSMs");
+                    printInfo("RT regression using " + sizeLimit + " PSMs");
                 } else {
-                    System.out.println("RT regression for mass " + mass + " using " + sizeLimit + " PSMs");
+                    printInfo("RT regression for mass " + mass + " using " + sizeLimit + " PSMs");
                 }
                 double[][] thisRTs = new double[2][];
                 thisRTs[0] = thisExpRTs.stream().mapToDouble(i -> i).toArray();

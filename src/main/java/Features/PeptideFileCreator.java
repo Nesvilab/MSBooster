@@ -17,6 +17,9 @@
 
 package Features;
 
+import static utils.Print.printError;
+import static utils.Print.printInfo;
+
 import jakarta.xml.bind.JAXBException;
 import umich.ms.fileio.exceptions.FileParsingException;
 
@@ -56,7 +59,7 @@ public class PeptideFileCreator {
         //this step can reduce number of predictions needed to 1/3, decreasing prediction time
         ConcurrentHashMap<String, Integer> allHits = new ConcurrentHashMap<>();
 
-        System.out.println("Creating input file for " + modelFormat);
+        printInfo("Creating input file for " + modelFormat);
         List<Future> futureList = new ArrayList<>();
         ExecutorService executorService = MainClass.executorService;
         for (int i = 0; i < pinFiles.length; i++) {
@@ -87,21 +90,21 @@ public class PeptideFileCreator {
                             break;
                         case "Prosit":
                             if (Constants.NCE.equals("")) {
-                                System.out.println("If mzml file is available, will read in NCE from there");
+                                printInfo("If mzml file is available, will read in NCE from there");
                                 Constants.FragmentationType = "HCD";
                             }
                             hitsToAdd = pin.createPrositList(mzmlf, pmm);
                             break;
                         case "PrositTMT":
                             if (Constants.FragmentationType.equals("")) {
-                                System.out.println("Missing information for Prosit file generation. " +
+                                printInfo("Missing information for Prosit file generation. " +
                                         "Please provide FragmentationType (HCD or CID) in " +
                                         "parameter file via --paramsList or as arguments on command line." +
                                         "For now, setting as HCD.");
                                 Constants.FragmentationType = "HCD";
                             }
                             if (Constants.NCE.equals("")) {
-                                System.out.println("If mzml file is available, will read in NCE from there");
+                                printInfo("If mzml file is available, will read in NCE from there");
                             }
                             hitsToAdd = pin.createPrositTMTList(mzmlf, pmm);
                             break;
@@ -110,20 +113,20 @@ public class PeptideFileCreator {
                             break;
                         case "PredFull":
                             if (Constants.FragmentationType.equals("")) {
-                                System.out.println("Missing fragmentation type for PredFull file generation. " +
+                                printInfo("Missing fragmentation type for PredFull file generation. " +
                                         "You can provide FragmentationType (HCD or ETD) in the " +
                                         "parameter file via --paramsList or as arguments on command line. " +
                                         "For now, setting as HCD");
                                 Constants.FragmentationType = "HCD";
                             }
                             if (Constants.NCE.equals("")) {
-                                System.out.println("If mzml file is available, will read in NCE from there");
+                                printInfo("If mzml file is available, will read in NCE from there");
                             }
                             hitsToAdd = pin.createPredFullList(mzmlf, pmm);
                             break;
                         case "alphapeptdeep":
                             if (Constants.instrument.equals("")) {
-                                System.out.println("Missing instrument for alphapeptdeep file generation. " +
+                                printInfo("Missing instrument for alphapeptdeep file generation. " +
                                         "You can provide an instrument in the " +
                                         "parameter file via --paramsList or as arguments on command line. " +
                                         "For now, automatically setting it based on mzml metadata. " +
@@ -149,7 +152,7 @@ public class PeptideFileCreator {
                                 Constants.instrument = "Lumos";
                             }
                             if (Constants.NCE.equals("")) {
-                                System.out.println("If mzml file is available, will read in NCE from there");
+                                printInfo("If mzml file is available, will read in NCE from there");
                                 Constants.FragmentationType = "HCD";
                             }
                             hitsToAdd = pin.createAlphapeptdeepList(mzmlf, pmm);
@@ -174,7 +177,7 @@ public class PeptideFileCreator {
         }
 
         HashSet<String> hSetHits = new HashSet<>(allHits.keySet());
-        System.out.println(hSetHits.size() + " PSMs for prediction");
+        printInfo(hSetHits.size() + " PSMs for prediction");
 
         //write to file
         try {
@@ -196,11 +199,11 @@ public class PeptideFileCreator {
                 FileWriter myWriter = new FileWriter(outfile);
                 switch (modelFormat) {
                     case "pDeep2":
-                        System.out.println("Writing pDeep2 input file");
+                        printInfo("Writing pDeep2 input file");
                         myWriter.write("peptide" + "\t" + "modification" + "\t" + "charge\n");
                         break;
                     case "pDeep3":
-                        System.out.println("Writing pDeep3 input file");
+                        printInfo("Writing pDeep3 input file");
                         myWriter.write("raw_name" + "\t" + "scan" + "\t" + "peptide" + "\t" +
                                 "modinfo" + "\t" + "charge\n");
                         break;
@@ -209,31 +212,31 @@ public class PeptideFileCreator {
                                 "modinfo" + "\t" + "charge" + "\t" + "RTInSeconds\n");
                         break;
                     case "DeepMSPeptide":
-                        System.out.println("Writing DeepMSPeptide input file");
+                        printInfo("Writing DeepMSPeptide input file");
                         //hSetHits.removeIf(hSetHit -> hSetHit.contains("B") || hSetHit.contains("X") || hSetHit.contains("Z"));
                         break; //no header
                     case "DeepMSPeptideAll":
-                        System.out.println("Writing DeepMSPeptideAll input file");
+                        printInfo("Writing DeepMSPeptideAll input file");
                         //hSetHits.removeIf(hSetHit -> hSetHit.contains("B") || hSetHit.contains("X") || hSetHit.contains("Z"));
                         break; //no header
                     case "Diann":
-                        System.out.println("Writing DIA-NN input file");
+                        printInfo("Writing DIA-NN input file");
                         myWriter.write("peptide" + "\t" + "charge\n");
                         break;
                     case "PredFull":
-                        System.out.println("Writing PredFull input file");
+                        printInfo("Writing PredFull input file");
                         myWriter.write("Peptide" + "\t" + "Charge" + "\t" + "Type" + "\t" + "NCE\n");
                         break;
                     case "Prosit":
-                        System.out.println("Writing Prosit input file");
+                        printInfo("Writing Prosit input file");
                         myWriter.write("modified_sequence,collision_energy,precursor_charge\n");
                         break;
                     case "PrositTMT":
-                        System.out.println("Writing Prosit TMT input file");
+                        printInfo("Writing Prosit TMT input file");
                         myWriter.write("modified_sequence,collision_energy,precursor_charge,fragmentation\n");
                         break;
                     case "alphapeptdeep":
-                        System.out.println("Writing alphapeptdeep input file");
+                        printInfo("Writing alphapeptdeep input file");
                         myWriter.write("sequence,mods,mod_sites,charge,nce,instrument,base\n");
                         break;
                 }
@@ -250,17 +253,16 @@ public class PeptideFileCreator {
 
             long endTime = System.nanoTime();
             long duration = (endTime - startTime);
-            System.out.println(modelFormat + " input file generation took " + duration / 1000000 +" milliseconds");
+            printInfo(modelFormat + " input file generation took " + duration / 1000000 +" milliseconds");
             if (Constants.useKoina && !modelFormat.equals("Diann")) {
-                System.out.println("Input files in " + filename);
+                printInfo("Input files in " + filename);
                 Constants.JsonDirectory = filename;
             } else {
-                System.out.println("Input file at " + outfile);
+                printInfo("Input file at " + outfile);
             }
-            System.out.println();
             //return fasta; //save fasta for later
         } catch (IOException | JAXBException e) {
-            System.out.println("An error occurred");
+            printError("An error occurred");
             e.printStackTrace();
             System.exit(1);
             //return null;

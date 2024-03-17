@@ -17,8 +17,7 @@
 
 package Features;
 
-import org.json.JSONArray;
-import org.json.JSONObject;
+import static utils.Print.printError;
 
 import java.io.File;
 import java.io.FileWriter;
@@ -32,6 +31,8 @@ import java.util.List;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Future;
+import org.json.JSONArray;
+import org.json.JSONObject;
 
 public class JSONWriter {
     String url;
@@ -263,7 +264,7 @@ public class JSONWriter {
                     }
                     break;
                 default:
-                    System.out.println(model + " is not supported by Koina. Exiting now.");
+                    printError(model + " is not supported by Koina. Exiting now.");
                     System.exit(0);
             }
         }

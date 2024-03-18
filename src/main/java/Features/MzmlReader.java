@@ -27,18 +27,14 @@ import static utils.Print.printInfo;
 import java.io.IOException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Objects;
+import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentSkipListMap;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Future;
 import kotlin.jvm.functions.Function1;
+import org.checkerframework.checker.units.qual.A;
 import umich.ms.datatypes.LCMSDataSubset;
 import umich.ms.datatypes.scan.IScan;
 import umich.ms.datatypes.scan.StorageStrategy;
@@ -48,15 +44,13 @@ import umich.ms.fileio.filetypes.mzml.MZMLFile;
 import umontreal.ssj.probdist.EmpiricalDist;
 
 public class MzmlReader {
-    //final Path path;
     final String pathStr;
     public ScanCollectionDefault scans; //need to implement serializable
-    double[] mzFreqs; //this can never be changed once set. It would be difficult if mzFreqs could change, as weighted
+    //double[] mzFreqs; //this can never be changed once set. It would be difficult if mzFreqs could change, as weighted
                       //similarity measures might be calculated using different weights. If you want to use different
                       //weights, just make new mzmlReader object
 
-    public ConcurrentSkipListMap<Integer, MzmlScanNumber> scanNumberObjects = new ConcurrentSkipListMap<>();
-    List<Integer> scanNums;
+    private ConcurrentSkipListMap<Integer, MzmlScanNumber> scanNumberObjects = new ConcurrentSkipListMap<>();
     private float[] betas;
     public ArrayList<Float>[] RTbins = null;
     public float[][] RTbinStats;
@@ -74,40 +68,20 @@ public class MzmlReader {
     public List<Future> futureList = new ArrayList<>(Constants.numThreads);
 
     public MzmlReader(String filename) throws FileParsingException, ExecutionException, InterruptedException {
-        // Creating data source
-        //path = Paths.get(filename); //
         printInfo("Processing " + filename);
         Path path = Paths.get(filename);
         pathStr = path.toString();
         MZMLFile source = new MZMLFile(pathStr);
         source.setExcludeEmptyScans(true);
 
-        scans = new ScanCollectionDefault(true); //combined this with line 52
-        // Softly reference spectral data, make it reclaimable by GC
-        scans.setDefaultStorageStrategy(StorageStrategy.STRONG);
-        // Set it to automatically re-parse spectra from the file if spectra were not
-        // yet parsed or were reclaimed to make auto-loading work you'll need to use
-        // IScan#fetchSpectrum() method instead of IScan#getSpectrum()
-        //scans.isAutoloadSpectra(true); // this is actually the default
-
-        // Set our mzXML file as the data source for this scan collection
+        scans = new ScanCollectionDefault(true);
+        scans.setDefaultStorageStrategy(StorageStrategy.SOFT);
         scans.setDataSource(source);
-        // Set number of threads for multi-threaded parsing.
-        // null means use as many cores as reported by Runtime.getRuntime().availableProcessors()
-        source.setNumThreadsForParsing(Constants.numThreads); // this is actually the default
-        // load the meta-data about the whole run, with forced parsing of MS1 spectra
-        // as we have enabled auto-loading, then if we ever invoke IScan#fetchSpectrum()
-        // on an MS2 spectrum, for which the spectrum has not been parsed, it will be
-        // obtained from disk automatically. And because of Soft referencing, the GC
-        // will be able to reclaim it.
-        scans.loadData(LCMSDataSubset.MS2_WITH_SPECTRA);
+        source.setNumThreadsForParsing(Constants.numThreads);
         Constants.useIM = false;
-        scanNumberObjects = new ConcurrentSkipListMap<>();
-        getInstrument();
-        createScanNumObjects(); //seems like we always need this anyway
 
-        scanNums = new ArrayList<>(scanNumberObjects.size());
-        scanNums.addAll(scanNumberObjects.keySet());
+        scans.loadData(LCMSDataSubset.STRUCTURE_ONLY);
+        getInstrument();
         //this.getMzFreq(); only if we end up using weights
     }
 
@@ -119,9 +93,6 @@ public class MzmlReader {
         //scanNumberObjects = mgf.scanNumberObjects;
         scanNumberObjects.putAll(mgf.scanNumberObjects);
         mgf.clear();
-
-        scanNums = new ArrayList<>(scanNumberObjects.size());
-        scanNums.addAll(scanNumberObjects.keySet());
         //this.getMzFreq(); only if we end up using weights
     }
 
@@ -260,12 +231,13 @@ public class MzmlReader {
         }
     }
 
-    public void createScanNumObjects() throws FileParsingException {
+    public void createScanNumObjects() {
         //for checking resolution
         boolean hasFTMS = false;
         boolean hasITMS = false;
 
         //get all scan nums
+        //TODO: instead, call getScanNumObject for all
         for (IScan scan : scans.getMapNum2scan().values()) {
             if (scan.getMsLevel() != 1) {
                 if (scan.getFilterString() != null) {
@@ -280,9 +252,6 @@ public class MzmlReader {
                         }
                     }
                 }
-
-                MzmlScanNumber msn = new MzmlScanNumber(scan);
-                scanNumberObjects.put(scan.getNum(), msn);
             }
         }
 
@@ -293,15 +262,23 @@ public class MzmlReader {
         } else if (hasITMS) { //low resolution, or both high and low are present so default to low
             Constants.ppmTolerance = Constants.lowResppmTolerance;
         }
-
-        scans.reset(); //free up memory. Could consider setting to null as well, but idk how to check if it's garbage collected
-        //long endTime = System.nanoTime();
-        //long duration = (endTime - startTime);
-        //printInfo("createScanNumObjects took " + duration / 1000000 +" milliseconds");
     }
 
-    public MzmlScanNumber getScanNumObject(int scanNum) {
-        return scanNumberObjects.get(scanNum);
+    public MzmlScanNumber getScanNumObject(int scanNum) throws FileParsingException {
+        MzmlScanNumber msn = scanNumberObjects.get(scanNum);
+        if (msn == null) {
+            //load scan if not there
+            LCMSDataSubset subset = new LCMSDataSubset(scanNum, scanNum + 1,
+                    Collections.singleton(2), null);
+            scans.loadData(subset);
+            msn = new MzmlScanNumber(scans.getScanByNum(scanNum));
+            scanNumberObjects.put(scanNum, msn);
+        }
+        return msn;
+    }
+
+    public NavigableSet<Integer> getScanNums() {
+        return scanNumberObjects.keySet();
     }
 
     //can consider method for setting single pepxml entry
@@ -376,8 +353,12 @@ public class MzmlReader {
             }
 
             for (int i = 0; i < peps.size(); i++) {
-                scanNumberObjects.get(scanNum).setPeptideObject(peps.get(i), ranks.get(i),
-                        tds.get(i), escores.get(i), allPreds, true);
+                try {
+                    getScanNumObject(scanNum).setPeptideObject(peps.get(i), ranks.get(i),
+                            tds.get(i), escores.get(i), allPreds, true);
+                } catch (FileParsingException e) {
+                    throw new RuntimeException(e);
+                }
                 pr.progress();
             }
         }
@@ -437,7 +418,7 @@ public class MzmlReader {
         }
     }
 
-    public void setBetas(SpectralPredictionMapper preds, int RTregressionSize) throws IOException {
+    public void setBetas(SpectralPredictionMapper preds, int RTregressionSize) throws IOException, FileParsingException {
         betas = RTFunctions.getBetas(this, RTregressionSize);
     }
     public void setBetas() {
@@ -456,12 +437,21 @@ public class MzmlReader {
         futureList.clear();
 
         //iterate over this list of scan numbers
+        ArrayList<Integer> scanNums = new ArrayList<>();
+        for (int num : getScanNums()) {
+            scanNums.add(num);
+        }
         for (int i = 0; i < Constants.numThreads; i++) {
             int start = (int) (scanNumberObjects.size() * (long) i) / Constants.numThreads;
             int end = (int) (scanNumberObjects.size() * (long) (i + 1)) / Constants.numThreads;
             futureList.add(executorService.submit(() -> {
                 for (int j = start; j < end; j++) {
-                    MzmlScanNumber msn = getScanNumObject(scanNums.get(j));
+                    MzmlScanNumber msn = null;
+                    try {
+                        msn = getScanNumObject(scanNums.get(j));
+                    } catch (FileParsingException e) {
+                        throw new RuntimeException(e);
+                    }
                     msn.normalizedRT = RTFunctions.normalizeRT(betas, msn.RT);
 
                     //now calculate deltaRTs
@@ -479,11 +469,11 @@ public class MzmlReader {
         }
     }
 
-    public void setRTbins() throws IOException {
+    public void setRTbins() throws IOException, FileParsingException {
         RTbins = RTFunctions.RTbins(this);
     }
 
-    public void setIMbins() throws IOException {
+    public void setIMbins() throws IOException, FileParsingException {
         IMbins = IMFunctions.IMbins(this);
     }
 
@@ -533,12 +523,21 @@ public class MzmlReader {
         futureList.clear();
 
         //iterate over this list of scan numbers
+        ArrayList<Integer> scanNums = new ArrayList<>();
+        for (int num : getScanNums()) {
+            scanNums.add(num);
+        }
         for (int i = 0; i < Constants.numThreads; i++) {
             int start = (int) (scanNumberObjects.size() * (long) i) / Constants.numThreads;
             int end = (int) (scanNumberObjects.size() * (long) (i + 1)) / Constants.numThreads;
             futureList.add(executorService.submit(() -> {
                 for (int j = start; j < end; j++) {
-                    MzmlScanNumber msn = getScanNumObject(scanNums.get(j));
+                    MzmlScanNumber msn = null;
+                    try {
+                        msn = getScanNumObject(scanNums.get(j));
+                    } catch (FileParsingException e) {
+                        throw new RuntimeException(e);
+                    }
 
                     //also set bin size, for use with uniform prior prob
                     int idx = (int) (msn.RT * Constants.RTbinMultiplier);
@@ -556,12 +555,21 @@ public class MzmlReader {
         futureList.clear();
 
         //iterate over this list of scan numbers
+        ArrayList<Integer> scanNums = new ArrayList<>();
+        for (int num : getScanNums()) {
+            scanNums.add(num);
+        }
         for (int i = 0; i < Constants.numThreads; i++) {
             int start = (int) (scanNumberObjects.size() * (long) i) / Constants.numThreads;
             int end = (int) (scanNumberObjects.size() * (long) (i + 1)) / Constants.numThreads;
             futureList.add(executorService.submit(() -> {
                 for (int j = start; j < end; j++) {
-                    MzmlScanNumber msn = getScanNumObject(scanNums.get(j));
+                    MzmlScanNumber msn = null;
+                    try {
+                        msn = getScanNumObject(scanNums.get(j));
+                    } catch (FileParsingException e) {
+                        throw new RuntimeException(e);
+                    }
 
                     //get stats based on experimental RT bin
                     int idx = (int) (msn.RT * Constants.RTbinMultiplier);
@@ -591,13 +599,22 @@ public class MzmlReader {
         futureList.clear();
 
         //iterate over this list of scan numbers
+        ArrayList<Integer> scanNums = new ArrayList<>();
+        for (int num : getScanNums()) {
+            scanNums.add(num);
+        }
         for (int i = 0; i < Constants.numThreads; i++) {
             int start = (int) (scanNumberObjects.size() * (long) i) / Constants.numThreads;
             int end = (int) (scanNumberObjects.size() * (long) (i + 1)) / Constants.numThreads;
             futureList.add(executorService.submit(() -> {
                 HashMap<String, Double> LOESSRT = new HashMap<>();
                 for (int j = start; j < end; j++) {
-                    MzmlScanNumber msn = getScanNumObject(scanNums.get(j));
+                    MzmlScanNumber msn = null;
+                    try {
+                        msn = getScanNumObject(scanNums.get(j));
+                    } catch (FileParsingException e) {
+                        throw new RuntimeException(e);
+                    }
 
                     //get stats based on experimental RT bin
                     int idx = (int) (msn.RT * Constants.RTbinMultiplier);
@@ -635,12 +652,21 @@ public class MzmlReader {
         futureList.clear();
 
         //iterate over this list of scan numbers
+        ArrayList<Integer> scanNums = new ArrayList<>();
+        for (int num : getScanNums()) {
+            scanNums.add(num);
+        }
         for (int i = 0; i < Constants.numThreads; i++) {
             int start = (int) (scanNumberObjects.size() * (long) i) / Constants.numThreads;
             int end = (int) (scanNumberObjects.size() * (long) (i + 1)) / Constants.numThreads;
             futureList.add(executorService.submit(() -> {
                 for (int j = start; j < end; j++) {
-                    MzmlScanNumber msn = getScanNumObject(scanNums.get(j));
+                    MzmlScanNumber msn = null;
+                    try {
+                        msn = getScanNumObject(scanNums.get(j));
+                    } catch (FileParsingException e) {
+                        throw new RuntimeException(e);
+                    }
 
                     //also set bin size, for use with uniform prior prob
                     int idx = (int) (msn.IM * Constants.IMbinMultiplier);
@@ -659,12 +685,21 @@ public class MzmlReader {
         futureList.clear();
 
         //iterate over this list of scan numbers
+        ArrayList<Integer> scanNums = new ArrayList<>();
+        for (int num : getScanNums()) {
+            scanNums.add(num);
+        }
         for (int i = 0; i < Constants.numThreads; i++) {
             int start = (int) (scanNumberObjects.size() * (long) i) / Constants.numThreads;
             int end = (int) (scanNumberObjects.size() * (long) (i + 1)) / Constants.numThreads;
             futureList.add(executorService.submit(() -> {
                 for (int j = start; j < end; j++) {
-                    MzmlScanNumber msn = getScanNumObject(scanNums.get(j));
+                    MzmlScanNumber msn = null;
+                    try {
+                        msn = getScanNumObject(scanNums.get(j));
+                    } catch (FileParsingException e) {
+                        throw new RuntimeException(e);
+                    }
 
                     //get stats based on experimental RT bin
                     int idx = (int) (msn.IM * Constants.IMbinMultiplier);
@@ -695,12 +730,21 @@ public class MzmlReader {
             futureList.clear();
 
             //iterate over this list of scan numbers
+            ArrayList<Integer> scanNums = new ArrayList<>();
+            for (int num : getScanNums()) {
+                scanNums.add(num);
+            }
             for (int i = 0; i < Constants.numThreads; i++) {
                 int start = (int) (scanNumberObjects.size() * (long) i) / Constants.numThreads;
                 int end = (int) (scanNumberObjects.size() * (long) (i + 1)) / Constants.numThreads;
                 futureList.add(executorService.submit(() -> {
                     for (int j = start; j < end; j++) {
-                        MzmlScanNumber msn = getScanNumObject(scanNums.get(j));
+                        MzmlScanNumber msn = null;
+                        try {
+                            msn = getScanNumObject(scanNums.get(j));
+                        } catch (FileParsingException e) {
+                            throw new RuntimeException(e);
+                        }
 
                         for (PeptideObj pep : msn.peptideObjects) {
                             if (pep == null) {
@@ -727,12 +771,21 @@ public class MzmlReader {
             futureList.clear();
 
             //iterate over this list of scan numbers
+            ArrayList<Integer> scanNums = new ArrayList<>();
+            for (int num : getScanNums()) {
+                scanNums.add(num);
+            }
             for (int i = 0; i < Constants.numThreads; i++) {
                 int start = (int) (scanNumberObjects.size() * (long) i) / Constants.numThreads;
                 int end = (int) (scanNumberObjects.size() * (long) (i + 1)) / Constants.numThreads;
                 futureList.add(executorService.submit(() -> {
                     for (int j = start; j < end; j++) {
-                        MzmlScanNumber msn = getScanNumObject(scanNums.get(j));
+                        MzmlScanNumber msn = null;
+                        try {
+                            msn = getScanNumObject(scanNums.get(j));
+                        } catch (FileParsingException e) {
+                            throw new RuntimeException(e);
+                        }
 
                         for (PeptideObj pep : msn.peptideObjects) {
                             if (pep == null) {
@@ -752,7 +805,7 @@ public class MzmlReader {
         }
     }
 
-    public void setLOESS(int regressionSize, String bandwidth, int robustIters, String mode) {
+    public void setLOESS(int regressionSize, String bandwidth, int robustIters, String mode) throws FileParsingException {
         if (mode.equals("RT")) {
             expAndPredRTs = RTFunctions.getRTarrays(this, regressionSize);
             ArrayList<String> masses = new ArrayList<>();
@@ -821,13 +874,22 @@ public class MzmlReader {
         futureList.clear();
 
         //iterate over this list of scan numbers
+        ArrayList<Integer> scanNums = new ArrayList<>();
+        for (int num : getScanNums()) {
+            scanNums.add(num);
+        }
         for (int i = 0; i < Constants.numThreads; i++) {
             int start = (int) (scanNumberObjects.size() * (long) i) / Constants.numThreads;
             int end = (int) (scanNumberObjects.size() * (long) (i + 1)) / Constants.numThreads;
             futureList.add(executorService.submit(() -> {
                 HashMap<String, Double> LOESSRT = new HashMap<>();
                 for (int j = start; j < end; j++) {
-                    MzmlScanNumber msn = getScanNumObject(scanNums.get(j));
+                    MzmlScanNumber msn = null;
+                    try {
+                        msn = getScanNumObject(scanNums.get(j));
+                    } catch (FileParsingException e) {
+                        throw new RuntimeException(e);
+                    }
                     for (String mass : RTLOESS.keySet()) {
                         //if null
                         if (RTLOESS.get(mass) == null) {
@@ -883,12 +945,21 @@ public class MzmlReader {
         futureList.clear();
 
         //iterate over this list of scan numbers
+        ArrayList<Integer> scanNums = new ArrayList<>();
+        for (int num : getScanNums()) {
+            scanNums.add(num);
+        }
         for (int i = 0; i < Constants.numThreads; i++) {
             int start = (int) (scanNumberObjects.size() * (long) i) / Constants.numThreads;
             int end = (int) (scanNumberObjects.size() * (long) (i + 1)) / Constants.numThreads;
             futureList.add(executorService.submit(() -> {
                 for (int j = start; j < end; j++) {
-                    MzmlScanNumber msn = getScanNumObject(scanNums.get(j));
+                    MzmlScanNumber msn = null;
+                    try {
+                        msn = getScanNumObject(scanNums.get(j));
+                    } catch (FileParsingException e) {
+                        throw new RuntimeException(e);
+                    }
 
                     for (PeptideObj pep : msn.peptideObjects) {
                         if (pep == null) {
@@ -930,8 +1001,6 @@ public class MzmlReader {
 
     public void clear() {
         scanNumberObjects.clear();
-        scanNums.clear();
-        IMLOESS.clear();
-        peptideIMs.clear();
+        scans.reset();
     }
 }

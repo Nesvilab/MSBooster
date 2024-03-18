@@ -329,7 +329,8 @@ public class PercolatorFormatter {
                         (featuresList.contains("hypergeometricProbability") ||
                                 featuresList.contains("intersection") ||
                                 featuresList.contains("adjacentSimilarity"))) {
-                    for (MzmlScanNumber msn : mzml.scanNumberObjects.values()) {
+                    for (int num : mzml.getScanNums()) {
+                        MzmlScanNumber msn = mzml.getScanNumObject(num);
                         msn.expMZs = msn.savedExpMZs;
                         msn.expIntensities = msn.savedExpIntensities;
                         msn.savedExpMZs = null;
@@ -341,14 +342,15 @@ public class PercolatorFormatter {
                 if (featuresList.contains("adjacentSimilarity")) {
                     printInfo("Calculating adjacent similarity");
                     //check that scan m/z ranges are in mzml
-                    if (mzml.scanNumberObjects.firstEntry().getValue().isolationUpper == 0.0d) {
+                    if (mzml.getScanNumObject(mzml.getScanNums().first()).isolationUpper == 0.0d) {
                         printError("Adjacent similarity feature requires m/z ranges " +
                                 "for each scan. This mzml is incompatible. Exiting.");
                         System.exit(1);
                     }
 
                     SortedSet<Double> scanNumbers = new TreeSet<>();
-                    for (MzmlScanNumber msn : mzml.scanNumberObjects.values()) {
+                    for (int num : mzml.getScanNums()) {
+                        MzmlScanNumber msn = mzml.getScanNumObject(num);
                         scanNumbers.add(msn.isolationLower);
                         scanNumbers.add(msn.isolationUpper);
                     }
@@ -366,7 +368,8 @@ public class PercolatorFormatter {
                     }
 
                     //add scan numbers to ranges with sub range maps?
-                    for (MzmlScanNumber msn : mzml.scanNumberObjects.values()) {
+                    for (int num : mzml.getScanNums()) {
+                        MzmlScanNumber msn = mzml.getScanNumObject(num);
                         RangeMap<Double, ArrayList<Integer>> rangemap =
                                 allMatchedScans.subRangeMap(Range.open(msn.isolationLower, msn.isolationUpper));
                         for (ArrayList<Integer> entry :
@@ -383,7 +386,8 @@ public class PercolatorFormatter {
                     }
 
                     //TODO: make less clunky
-                    for (MzmlScanNumber msn : mzml.scanNumberObjects.values()) {
+                    for (int num : mzml.getScanNums()) {
+                        MzmlScanNumber msn = mzml.getScanNumObject(num);
                         for (PeptideObj pobj : msn.peptideObjects) {
                             if (pobj == null) {
                                 break;
@@ -477,7 +481,11 @@ public class PercolatorFormatter {
 //
 //                                    int RTidx = 0;
                                 for (int scan : scansList) {
-                                    msn = mzml.scanNumberObjects.get(scan);
+                                    try {
+                                        msn = mzml.getScanNumObject(scan);
+                                    } catch (FileParsingException e) {
+                                        throw new RuntimeException(e);
+                                    }
 //                                        double deltaRT = Math.abs(msn.calibratedRT - predictionEntry.RT);
 //                                        if (deltaRT < minDeltaRT) {
 //                                            minDeltaRT = deltaRT;
@@ -659,8 +667,7 @@ public class PercolatorFormatter {
                 }
 
                 //plot hist
-                PinReader pinReader = new PinReader(histFile);
-                new ScoreHistogram(pinReader, featuresList);
+                new ScoreHistogram(new PinReader(histFile), featuresList);
             }
         } catch (Exception e) {
             executorService.shutdown();

@@ -194,7 +194,7 @@ public class PinReader {
     public float getRT() {return Float.parseFloat(row[rtIdx]);}
 
     //TODO: new algorithm?
-    public void findWashGradientCutoff() throws IOException {
+    public void findWashGradientCutoff() throws IOException, FileParsingException {
         int bins = Constants.washGradientBins;
         //TODO read in RT directly from pin
         next(true);
@@ -213,7 +213,7 @@ public class PinReader {
 
         int[] counts = new int[bins];
         while (next(true)) {
-            int bin = Math.min(bins-1,Math.round(((mzml.scanNumberObjects.get(getScanNum()).RT - minRT) / RTrange * bins)));
+            int bin = Math.min(bins-1,Math.round(((mzml.getScanNumObject(getScanNum()).RT - minRT) / RTrange * bins)));
             counts[bin] += 1;
         }
         reset();
@@ -404,7 +404,7 @@ public class PinReader {
             String fragmentation;
             // && (Constants.NCE.isEmpty() || Constants.FragmentationType.isEmpty())
             if (mzml != null) {
-                Set<String> fragTypes = mzml.scanNumberObjects.get(getScanNum()).NCEs.keySet();
+                Set<String> fragTypes = mzml.getScanNumObject(getScanNum()).NCEs.keySet();
                 if (fragTypes.contains("CID")) {
                     fragmentation = "CID";
                 } else {
@@ -482,9 +482,9 @@ public class PinReader {
         return new LinkedList[]{PSMs, scanNums};
     }
 
-    private String getNCE(String frag) {
+    private String getNCE(String frag) throws FileParsingException {
         if (Constants.NCE.isEmpty()) {
-            String nce = String.valueOf(mzml.scanNumberObjects.get(getScanNum()).NCEs.get(frag));
+            String nce = String.valueOf(mzml.getScanNumObject(getScanNum()).NCEs.get(frag));
             if (nce.equals("null")) {
                 //! mzml.scanNumberObjects.get(getScanNum()).NCEs.containsKey(frag)
                 printInfo("No NCE detected in mzml. Setting to 25. NCE can be specified by '--NCE' via " +

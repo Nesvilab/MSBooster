@@ -42,6 +42,7 @@ import org.knowm.xchart.BitmapEncoder;
 import org.knowm.xchart.BoxChart;
 import org.knowm.xchart.BoxChartBuilder;
 import org.knowm.xchart.style.BoxStyler;
+import umich.ms.fileio.exceptions.FileParsingException;
 
 public class NCEcalibrator {
     public static Object[] calibrateNCE(String currentModel,
@@ -114,8 +115,12 @@ public class NCEcalibrator {
                     //make mzmlsscannumber objects and set peptide objects and calculate similarities
                     //can move this after reading in mzml files
                     ArrayList<Double> similarity = new ArrayList<>();
-                    for (PeptideObj peptideObj : km.getPeptideObjects(allPreds)) {
-                        similarity.add(peptideObj.spectralSimObj.unweightedSpectralEntropy());
+                    try {
+                        for (PeptideObj peptideObj : km.getPeptideObjects(allPreds)) {
+                            similarity.add(peptideObj.spectralSimObj.unweightedSpectralEntropy());
+                        }
+                    } catch (FileParsingException e) {
+                        throw new RuntimeException(e);
                     }
 
                     //calculate median

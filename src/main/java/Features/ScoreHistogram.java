@@ -170,5 +170,6 @@ public class ScoreHistogram {
                     name.substring(0, name.length() - 4) + "_" + feature,
                     VectorGraphicsEncoder.VectorGraphicsFormat.PDF);
         }
+        pinReader.close();
     }
 }

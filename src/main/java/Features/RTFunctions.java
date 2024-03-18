@@ -19,6 +19,7 @@ package Features;
 
 import static utils.Print.printInfo;
 
+import umich.ms.fileio.exceptions.FileParsingException;
 import umontreal.ssj.probdist.EmpiricalDist;
 
 import java.io.IOException;
@@ -52,7 +53,7 @@ public class RTFunctions {
     //get predicted RTs
     //assumes peptide objects already set
     //TODO: only supporting getting PSMs for supported PTMs
-    public static float[] getBetas(MzmlReader mzml, int RTregressionSize) {
+    public static float[] getBetas(MzmlReader mzml, int RTregressionSize) throws FileParsingException {
         double[][] RTs = getRTarrays(mzml, RTregressionSize).get("");
         return StatMethods.linearRegression(RTs[0], RTs[1]);
     }
@@ -64,9 +65,9 @@ public class RTFunctions {
     private static void getPSMs(MzmlReader mzml,
                          ArrayList<Float> expRTs, ArrayList<Float> predRTs, ArrayList<Float> eScores,
                          ArrayList<String> peptides, HashMap<String, ArrayList<Integer>> pepIdx,
-                         float escoreThreshold) {
+                         float escoreThreshold) throws FileParsingException {
         int added = 0;
-        for (int scanNum : mzml.scanNumberObjects.keySet()) {
+        for (int scanNum : mzml.getScanNums()) {
             MzmlScanNumber scanNumObj = mzml.getScanNumObject(scanNum);
             float rt = scanNumObj.RT; //experimental RT for this scan
             if (Float.isNaN(rt)) {
@@ -102,7 +103,7 @@ public class RTFunctions {
     //utility for getBetas and LOESS
     //returns exp and pred RT arrays
     //if speed is issue, don't need extra steps for regular regression
-    public static HashMap<String, double[][]> getRTarrays(MzmlReader mzml, int RTregressionSize) {
+    public static HashMap<String, double[][]> getRTarrays(MzmlReader mzml, int RTregressionSize) throws FileParsingException {
         ArrayList<Float> expRTs = new ArrayList<>();
         ArrayList<Float> predRTs = new ArrayList<>();
         ArrayList<Float> eScores = new ArrayList<>(); //for sorting
@@ -276,10 +277,11 @@ public class RTFunctions {
     //function that returns double[] of bin boundaries, with mean and var od each
     //exp on x axis, pred on y
     //to do: test for normal dist nature of each bin (Shapiro Wilk test)
-    public static ArrayList<Float>[] RTbins(MzmlReader mzml) throws IOException {
+    public static ArrayList<Float>[] RTbins(MzmlReader mzml) throws IOException, FileParsingException {
         //get max index
         float maxRT = -1;
-        for (MzmlScanNumber msn : mzml.scanNumberObjects.values()) {
+        for (int num : mzml.getScanNums()) {
+            MzmlScanNumber msn = mzml.getScanNumObject(num);
             if (msn.RT > maxRT) {
                 maxRT = msn.RT;
             }
@@ -292,7 +294,7 @@ public class RTFunctions {
         }
 
         //iterate through scanNumbers
-        for (int scanNum : mzml.scanNumberObjects.keySet()) {
+        for (int scanNum : mzml.getScanNums()) {
             MzmlScanNumber scanNumObj = mzml.getScanNumObject(scanNum);
             int round = (int) (scanNumObj.RT *  Constants.RTbinMultiplier); //experimental RT for this scan, assume in minutes
 

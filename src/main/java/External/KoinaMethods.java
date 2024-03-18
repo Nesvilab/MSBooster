@@ -20,6 +20,7 @@ package External;
 import static utils.Print.printInfo;
 
 import Features.*;
+import umich.ms.fileio.exceptions.FileParsingException;
 
 import java.io.File;
 import java.io.FileWriter;
@@ -148,7 +149,7 @@ public class KoinaMethods {
         return klr.allPreds;
     }
 
-    public PeptideObj[] getPeptideObjects(ConcurrentHashMap<String, PredictionEntry> allPreds) {
+    public PeptideObj[] getPeptideObjects(ConcurrentHashMap<String, PredictionEntry> allPreds) throws FileParsingException {
         int arrayLength = 0;
         for (LinkedList<Integer> scanNum : scanNums.values()) {
             arrayLength += scanNum.size();

@@ -17,6 +17,8 @@
 
 package Features;
 
+import umich.ms.fileio.exceptions.FileParsingException;
+
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Comparator;
@@ -27,7 +29,7 @@ import java.util.stream.IntStream;
 public class IMFunctions {
     public static int numCharges = 7;
 
-    public static double[][][] getIMarrays(MzmlReader mzml, int IMregressionSize) {
+    public static double[][][] getIMarrays(MzmlReader mzml, int IMregressionSize) throws FileParsingException {
         double[][][] finalIMs = new double[numCharges][2][];
 
         //ArrayList<ArrayList<Float>> expIMs = new ArrayList<ArrayList<Float>>(numCharges);
@@ -44,7 +46,7 @@ public class IMFunctions {
 
         //collect RTs and escores
 
-        for (int scanNum : new TreeSet<Integer>(mzml.scanNumberObjects.keySet())) {
+        for (int scanNum : mzml.getScanNums()) {
             MzmlScanNumber scanNumObj = mzml.getScanNumObject(scanNum);
             float im = scanNumObj.IM; //experimental RT for this scan
 
@@ -125,7 +127,7 @@ public class IMFunctions {
         return finalIMs;
     }
 
-    public static ArrayList<Float>[][] IMbins(MzmlReader mzml) throws IOException {
+    public static ArrayList<Float>[][] IMbins(MzmlReader mzml) throws IOException, FileParsingException {
         //hard coded as 2, but if there are higher IM values, this can change
         int numBins = 2 * Constants.IMbinMultiplier;
 
@@ -137,7 +139,7 @@ public class IMFunctions {
         }
 
         //iterate through scanNumbers
-        for (int scanNum : mzml.scanNumberObjects.keySet()) {
+        for (int scanNum : mzml.getScanNums()) {
             MzmlScanNumber scanNumObj = mzml.getScanNumObject(scanNum);
             int round = (int) (scanNumObj.IM * Constants.IMbinMultiplier); //experimental RT for this scan, assume in minutes
 

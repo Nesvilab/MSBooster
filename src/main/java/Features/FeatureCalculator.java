@@ -18,6 +18,7 @@
 package Features;
 
 import org.apache.commons.math3.stat.correlation.PearsonsCorrelation;
+import umich.ms.fileio.exceptions.FileParsingException;
 
 import java.io.IOException;
 import java.util.*;
@@ -65,7 +66,12 @@ public class FeatureCalculator {
 
         @Override
         public void run() {
-            PeptideObj pepObj = mzml.scanNumberObjects.get(scanNum).getPeptideObject(pep);
+            PeptideObj pepObj = null;
+            try {
+                pepObj = mzml.getScanNumObject(scanNum).getPeptideObject(pep);
+            } catch (FileParsingException e) {
+                throw new RuntimeException(e);
+            }
 
             //RT filter
             if (pepObj.deltaRTLOESS_real <= Constants.realMinuteFilter) {

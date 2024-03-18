@@ -89,7 +89,7 @@ public class PinWriter {
             while (pin.next(true)) {
                 pr.progress();
                 String pep = pin.getPep().baseCharge;
-                pepObj = mzml.scanNumberObjects.get(pin.getScanNum()).getPeptideObject(pep);
+                pepObj = mzml.getScanNumObject(pin.getScanNum()).getPeptideObject(pep);
 
                 //RT filter
                 if (pepObj.deltaRTLOESS_real > Constants.realMinuteFilter) {

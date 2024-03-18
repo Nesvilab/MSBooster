@@ -139,8 +139,8 @@ public class PinMzmlMatcher {
     private void setFragmentationType() {
         if (Constants.FragmentationType.isEmpty()) {
             try {
-                Set<String> fragTypes = mzmlReaders[0]
-                        .scanNumberObjects.firstEntry().getValue().NCEs.keySet();
+                Set<String> fragTypes = mzmlReaders[0].
+                        getScanNumObject(mzmlReaders[0].getScanNums().first()).NCEs.keySet();
                 if (fragTypes.contains("CID")) {
                     Constants.FragmentationType = "CID";
                 } else {

@@ -284,21 +284,18 @@ public class MainClass {
                         }
                     }
 
+                    float tol;
                     if (DaToPPM) {
-                        float tol = (float) Math.ceil(Float.parseFloat(params.get("ppmTolerance")) * 1000f);
-                        if (tol >= 100f) {
-                            params.put("lowResppmTolerance", String.valueOf(tol));
-                        } else {
-                            params.put("highResppmTolerance", String.valueOf(tol));
-                        }
+                        tol = (float) Math.ceil(Float.parseFloat(params.get("ppmTolerance")) * 1000f);
                     } else {
-                        float tol = Float.parseFloat(params.get("ppmTolerance"));
-                        if (tol >= 100f) {
-                            params.put("lowResppmTolerance", String.valueOf(tol));
-                        } else {
-                            params.put("highResppmTolerance", String.valueOf(tol));
-                        }
+                        tol = Float.parseFloat(params.get("ppmTolerance"));
                     }
+                    if (tol >= 100f) {
+                        params.put("lowResppmTolerance", String.valueOf(tol));
+                    } else {
+                        params.put("highResppmTolerance", String.valueOf(tol));
+                    }
+                    Constants.ppmTolerance = Constants.highResppmTolerance;
                 }
             }
 

@@ -160,6 +160,7 @@ public class Constants {
     public static Float highResppmTolerance = 20f;
     public static Boolean matchWithDaltons = false;
     public static Float DaTolerance = 0.05f;
+    public static Boolean hasITMS = false;
 
     //for limiting number of fragments used
     public static Boolean useSpectra = true;

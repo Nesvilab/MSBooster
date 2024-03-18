@@ -237,36 +237,6 @@ public class MzmlReader {
                 scanNumberObjects.put(scan.getNum(), new MzmlScanNumber(scan));
             }
         }
-//        //for checking resolution
-//        boolean hasFTMS = false;
-//        boolean hasITMS = false;
-//
-//        //get all scan nums
-//        //TODO: instead, call getScanNumObject for all
-//        for (IScan scan : scans.getMapNum2scan().values()) {
-//            if (scan.getMsLevel() != 1) {
-//                if (scan.getFilterString() != null) {
-//                    if (!hasFTMS) {
-//                        if (scan.getFilterString().contains("FTMS")) {
-//                            hasFTMS = true;
-//                        }
-//                    }
-//                    if (!hasITMS) {
-//                        if (scan.getFilterString().contains("ITMS")) {
-//                            hasITMS = true;
-//                        }
-//                    }
-//                }
-//            }
-//        }
-//
-//        //what happens with resolution
-//        //needs to be updated for each mzml
-//        if (hasFTMS && ! hasITMS) { //only high resoltuion
-//            Constants.ppmTolerance = Constants.highResppmTolerance;
-//        } else if (hasITMS) { //low resolution, or both high and low are present so default to low
-//            Constants.ppmTolerance = Constants.lowResppmTolerance;
-//        }
     }
 
     public MzmlScanNumber getScanNumObject(int scanNum) throws FileParsingException {
@@ -276,8 +246,17 @@ public class MzmlReader {
             LCMSDataSubset subset = new LCMSDataSubset(scanNum, scanNum + 1,
                     Collections.singleton(2), null);
             scans.loadData(subset);
-            msn = new MzmlScanNumber(scans.getScanByNum(scanNum));
+            IScan scan = scans.getScanByNum(scanNum);
+            msn = new MzmlScanNumber(scan);
             scanNumberObjects.put(scanNum, msn);
+
+            if ((!Constants.hasITMS) && (scan.getFilterString() != null)) {
+                if (scan.getFilterString().contains("ITMS")) {
+                    Constants.hasITMS = true;
+                    Constants.ppmTolerance = Constants.lowResppmTolerance;
+                    printInfo("Switching to low res MS2 peak matching");
+                }
+            }
         }
         return msn;
     }

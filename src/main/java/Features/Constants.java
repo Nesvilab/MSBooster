@@ -42,7 +42,7 @@ public class Constants {
     public static String JsonDirectory = null;
     public static String editedPin = "edited"; //a prefix. Default is edited_
     public static Integer renamePin = 1;
-    public static String spectraRTPredInput = null;
+    public static String spectraRTPrefix = null;
     public static String detectPredInput = null;
     public static String spectraRTPredFile = null;
     public static String detectPredFile = null;
@@ -446,13 +446,8 @@ public class Constants {
         }
     }
     public void updateInputPaths() {
-        if (spectraRTPredInput == null) {
-            if (Constants.spectraRTPredModel.contains("Prosit") ||
-                    Constants.spectraRTPredModel.contains("alphapeptdeep")) {
-                spectraRTPredInput = outputDirectory + File.separator + "spectraRT.csv";
-            } else {
-                spectraRTPredInput = outputDirectory + File.separator + "spectraRT.tsv";
-            }
+        if (spectraRTPrefix == null) {
+            spectraRTPrefix = outputDirectory + File.separator + "spectraRT";
         }
         if (detectPredInput == null) {
             detectPredInput = outputDirectory + File.separator + "detect.tsv";

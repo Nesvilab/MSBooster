@@ -246,11 +246,13 @@ public class MzmlReader {
                 printInfo("Could not detect instrument type. Setting to Lumos. " +
                         "If a different instrument was used, specify using '--instrument' via the command line " +
                         "or 'instrument=' in the param file.");
+                Constants.instrument = "Lumos";
                 return "Lumos"; //default if nothing found
             } catch (NullPointerException e) {
                 printInfo("Could not detect instrument type. Setting to Lumos. " +
                         "If a different instrument was used, specify using '--instrument' via the command line " +
                         "or 'instrument=' in the param file.");
+                Constants.instrument = "Lumos";
                 return "Lumos"; //default if nothing found
             }
         } else {

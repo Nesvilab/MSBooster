@@ -247,7 +247,7 @@ public class PeptideFileCreator {
 
                 if (Constants.modelSplit && modelFormat.equals("alphapeptdeep")) {
                     PepXMLDivider pxd = new PepXMLDivider(Constants.modelSplitNum);
-                    pxd.dividePinPepxml(pmm.pinFiles, Constants.spectraRTPredInput);
+                    pxd.dividePinPepxml(pmm.pinFiles, Constants.spectraRTPrefix + ".csv");
                 }
             }
 

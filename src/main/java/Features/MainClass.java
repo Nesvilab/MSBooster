@@ -37,7 +37,7 @@ public class MainClass {
     public static ScheduledThreadPoolExecutor executorService;
     public static void main(String[] args) throws Exception {
         Locale.setDefault(Locale.US);
-        printInfo("MSBooster v1.2.17");
+        printInfo("MSBooster v1.2.18");
 
         try {
             //accept command line inputs
@@ -830,13 +830,9 @@ public class MainClass {
                 Constants.useKoina = false;
             }
             //overriding if intermediate files already made
-            if (Constants.spectraRTPredInput != null || Constants.spectraRTPredFile != null) {
+            if (Constants.spectraRTPrefix != null || Constants.spectraRTPredFile != null) {
                 createSpectraRTPredFile = false;
             }
-            //if we specify the files, it should just accept it
-//            if ((Constants.spectraRTPredModel.contains("DIA-NN")) && !(Constants.spectraRTPredModel.equals("DIA-NN"))) {
-//                createSpectraRTPredFile = true;
-//            }
             if (Constants.detectPredInput != null || Constants.detectPredFile != null) {
                 createDetectPredFile = false;
             }
@@ -859,7 +855,7 @@ public class MainClass {
                 boolean revertToKoina = Constants.useKoina;
                 Constants.useKoina = false;
                 PeptideFileCreator.createPeptideFile(pmMatcher,
-                        Constants.spectraRTPredInput.substring(0, Constants.spectraRTPredInput.length() - 4) + "_full.tsv",
+                        Constants.spectraRTPrefix + "_full.tsv",
                         "createFull");
                 if (revertToKoina) {
                     Constants.useKoina = true;
@@ -881,8 +877,7 @@ public class MainClass {
                         }
 
                         PeptideFileCreator.createPeptideFile(pmMatcher,
-                                Constants.spectraRTPredInput.substring(0, Constants.spectraRTPredInput.length() - 4)
-                                        + "_" + currentModel + ".json", currentModel);
+                                Constants.spectraRTPrefix + "_" + currentModel + ".json", currentModel);
                     } else {
                         switch (currentModel) {
                             case "DIA-NN":
@@ -890,31 +885,31 @@ public class MainClass {
                                     throw new IllegalArgumentException("path to DIA-NN executable must be provided");
                                 }
                                 printInfo("Generating input file for DIA-NN");
-                                PeptideFileCreator.createPeptideFile(pmMatcher, Constants.spectraRTPredInput, "Diann");
+                                PeptideFileCreator.createPeptideFile(pmMatcher, Constants.spectraRTPrefix + ".tsv", "Diann");
                                 break;
                             case "pDeep2":
                                 printInfo("Generating input file for pDeep2");
-                                PeptideFileCreator.createPeptideFile(pmMatcher, Constants.spectraRTPredInput, "pDeep2");
+                                PeptideFileCreator.createPeptideFile(pmMatcher, Constants.spectraRTPrefix + ".tsv", "pDeep2");
                                 break;
                             case "pDeep3":
                                 printInfo("Generating input file for pDeep3");
-                                PeptideFileCreator.createPeptideFile(pmMatcher, Constants.spectraRTPredInput, "pDeep3");
+                                PeptideFileCreator.createPeptideFile(pmMatcher, Constants.spectraRTPrefix + ".tsv", "pDeep3");
                                 break;
                             case "PredFull":
                                 printInfo("Generating input file for PredFull");
-                                PeptideFileCreator.createPeptideFile(pmMatcher, Constants.spectraRTPredInput, "PredFull");
+                                PeptideFileCreator.createPeptideFile(pmMatcher, Constants.spectraRTPrefix + ".tsv", "PredFull");
                                 break;
                             case "Prosit":
                                 printInfo("Generating input file for Prosit");
-                                PeptideFileCreator.createPeptideFile(pmMatcher, Constants.spectraRTPredInput, "Prosit");
+                                PeptideFileCreator.createPeptideFile(pmMatcher, Constants.spectraRTPrefix + ".csv", "Prosit");
                                 break;
                             case "PrositTMT":
                                 printInfo("Generating input file for PrositTMT");
-                                PeptideFileCreator.createPeptideFile(pmMatcher, Constants.spectraRTPredInput, "PrositTMT");
+                                PeptideFileCreator.createPeptideFile(pmMatcher, Constants.spectraRTPrefix + ".csv", "PrositTMT");
                                 break;
                             case "alphapeptdeep":
                                 printInfo("Generating input file for alphapeptdeep");
-                                PeptideFileCreator.createPeptideFile(pmMatcher, Constants.spectraRTPredInput, "alphapeptdeep");
+                                PeptideFileCreator.createPeptideFile(pmMatcher, Constants.spectraRTPrefix + ".csv", "alphapeptdeep");
                                 break;
                             default:
                                 printError("spectraRTPredModel must be one of DIA-NN, Prosit, PrositTMT, " +
@@ -955,17 +950,16 @@ public class MainClass {
                         spectraRTPredFile = Constants.outputDirectory + File.separator + "spectraRT_koina.mgf" +
                                 spectraRTPredFile;
                     } else {
-                        DiannModelCaller.callModel(Constants.spectraRTPredInput, true);
+                        DiannModelCaller.callModel(Constants.spectraRTPrefix + ".tsv", true);
                         onlyUsedKoina = false;
-                        spectraRTPredFile = Constants.spectraRTPredInput.substring(0, Constants.spectraRTPredInput.length() - 4) +
-                                ".predicted.bin" + spectraRTPredFile;
+                        spectraRTPredFile = Constants.spectraRTPrefix + ".predicted.bin" + spectraRTPredFile;
                     }
                     spectraRTPredFile = "," + spectraRTPredFile;
                 }
             }
             if (Constants.useKoina) {
                 kmc.assignMissingPeptidePredictions(klr,
-                        Constants.spectraRTPredInput.substring(0, Constants.spectraRTPredInput.length() - 4) + "_full.tsv");
+                        Constants.spectraRTPrefix + "_full.tsv");
                 MgfFileWriter mfw = new MgfFileWriter(klr);
                 mfw.write(Constants.outputDirectory + File.separator + "spectraRT_koina.mgf");
             }

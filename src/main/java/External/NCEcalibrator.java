@@ -158,8 +158,11 @@ public class NCEcalibrator {
         }
 
         try {
-            BitmapEncoder.saveBitmap(chart, Constants.outputDirectory + File.separator +
-                            "MSBooster_plots" + File.separator + "NCE_calibration.png",
+            String dir = Constants.outputDirectory + File.separator + "MSBooster_plots";
+            if (!new File(dir).exists()) {
+                new File(dir).mkdirs();
+            }
+            BitmapEncoder.saveBitmap(chart,  dir + File.separator + "NCE_calibration.png",
                     BitmapEncoder.BitmapFormat.PNG);
         } catch (IOException e) {
             e.printStackTrace();

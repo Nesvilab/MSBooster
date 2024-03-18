@@ -68,14 +68,14 @@ public class MzmlReader {
     public List<Future> futureList = new ArrayList<>(Constants.numThreads);
 
     public MzmlReader(String filename) throws FileParsingException, ExecutionException, InterruptedException {
-        printInfo("Processing " + filename);
+        printInfo("Initializing " + filename);
         Path path = Paths.get(filename);
         pathStr = path.toString();
         MZMLFile source = new MZMLFile(pathStr);
         source.setExcludeEmptyScans(true);
 
         scans = new ScanCollectionDefault(true);
-        scans.setDefaultStorageStrategy(StorageStrategy.SOFT);
+        scans.setDefaultStorageStrategy(StorageStrategy.STRONG);
         scans.setDataSource(source);
         source.setNumThreadsForParsing(Constants.numThreads);
         Constants.useIM = false;
@@ -89,8 +89,6 @@ public class MzmlReader {
         pathStr = mgf.filenames.get(0);
         printInfo("Processing " + pathStr);
 
-        //Constants.useIM = true;
-        //scanNumberObjects = mgf.scanNumberObjects;
         scanNumberObjects.putAll(mgf.scanNumberObjects);
         mgf.clear();
         //this.getMzFreq(); only if we end up using weights
@@ -231,37 +229,44 @@ public class MzmlReader {
         }
     }
 
-    public void createScanNumObjects() {
-        //for checking resolution
-        boolean hasFTMS = false;
-        boolean hasITMS = false;
-
-        //get all scan nums
-        //TODO: instead, call getScanNumObject for all
+    public void createScanNumObjects() throws FileParsingException {
+        printInfo("Processing " + pathStr);
+        scans.loadData(LCMSDataSubset.MS2_WITH_SPECTRA);
         for (IScan scan : scans.getMapNum2scan().values()) {
             if (scan.getMsLevel() != 1) {
-                if (scan.getFilterString() != null) {
-                    if (!hasFTMS) {
-                        if (scan.getFilterString().contains("FTMS")) {
-                            hasFTMS = true;
-                        }
-                    }
-                    if (!hasITMS) {
-                        if (scan.getFilterString().contains("ITMS")) {
-                            hasITMS = true;
-                        }
-                    }
-                }
+                scanNumberObjects.put(scan.getNum(), new MzmlScanNumber(scan));
             }
         }
-
-        //what happens with resolution
-        //needs to be updated for each mzml
-        if (hasFTMS && ! hasITMS) { //only high resoltuion
-            Constants.ppmTolerance = Constants.highResppmTolerance;
-        } else if (hasITMS) { //low resolution, or both high and low are present so default to low
-            Constants.ppmTolerance = Constants.lowResppmTolerance;
-        }
+//        //for checking resolution
+//        boolean hasFTMS = false;
+//        boolean hasITMS = false;
+//
+//        //get all scan nums
+//        //TODO: instead, call getScanNumObject for all
+//        for (IScan scan : scans.getMapNum2scan().values()) {
+//            if (scan.getMsLevel() != 1) {
+//                if (scan.getFilterString() != null) {
+//                    if (!hasFTMS) {
+//                        if (scan.getFilterString().contains("FTMS")) {
+//                            hasFTMS = true;
+//                        }
+//                    }
+//                    if (!hasITMS) {
+//                        if (scan.getFilterString().contains("ITMS")) {
+//                            hasITMS = true;
+//                        }
+//                    }
+//                }
+//            }
+//        }
+//
+//        //what happens with resolution
+//        //needs to be updated for each mzml
+//        if (hasFTMS && ! hasITMS) { //only high resoltuion
+//            Constants.ppmTolerance = Constants.highResppmTolerance;
+//        } else if (hasITMS) { //low resolution, or both high and low are present so default to low
+//            Constants.ppmTolerance = Constants.lowResppmTolerance;
+//        }
     }
 
     public MzmlScanNumber getScanNumObject(int scanNum) throws FileParsingException {
@@ -368,6 +373,7 @@ public class MzmlReader {
         ConcurrentHashMap<String, PredictionEntry> allPreds = spm.getPreds();
         ProgressReporter pr = new ProgressReporter(pin.getLength());
         futureList.clear();
+        createScanNumObjects();
 
         String currentScanNum = "-1";
         setScanNumPepObj task = null;

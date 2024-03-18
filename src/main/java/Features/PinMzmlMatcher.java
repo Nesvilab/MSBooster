@@ -125,13 +125,19 @@ public class PinMzmlMatcher {
         mzmlReaders = new MzmlReader[mzmlFiles.length];
         loadMzmlReaders();
         setFragmentationType();
+        setNCE();
     }
 
     private void loadMzmlReaders() throws IOException, FileParsingException, ExecutionException, InterruptedException {
         for (int j = 0; j < mzmlReaders.length; j++) {
             if (mzmlReaders[j] == null) {
                 MzmlReader mzml = new MzmlReader(mzmlFiles[j].getCanonicalPath());
+                //load in example ms2 scan
+                PinReader pin = new PinReader(pinFiles[j].getCanonicalPath());
+                pin.next(true);
+                mzml.getScanNumObject(pin.getScanNum());
                 mzmlReaders[j] = mzml;
+                pin.close();
             }
         }
     }
@@ -141,16 +147,46 @@ public class PinMzmlMatcher {
             try {
                 Set<String> fragTypes = mzmlReaders[0].
                         getScanNumObject(mzmlReaders[0].getScanNums().first()).NCEs.keySet();
-                if (fragTypes.contains("CID")) {
+                if (fragTypes.contains("HCD")) {
+                    Constants.FragmentationType = "HCD";
+                    printInfo("Fragmentation type detected: " + Constants.FragmentationType);
+                } else if (fragTypes.contains("CID")) {
                     Constants.FragmentationType = "CID";
+                    printInfo("Fragmentation type detected: " + Constants.FragmentationType);
                 } else {
+                    printInfo("No fragmentation type detected. Setting fragmentation type to HCD. " +
+                            "You can specify this with '--FragmentationType' via the command line " +
+                            "or 'FragmentationType=' in the param file.");
                     Constants.FragmentationType = "HCD";
                 }
             } catch (Exception e) {
-                printInfo("Setting fragmentation type to HCD. " +
+                printInfo("No fragmentation type detected. Setting fragmentation type to HCD. " +
                         "You can specify this with '--FragmentationType' via the command line " +
                         "or 'FragmentationType=' in the param file.");
                 Constants.FragmentationType = "HCD";
+            }
+        }
+    }
+
+    private void setNCE() {
+        if (Constants.NCE.isEmpty()) {
+            try {
+                Float NCE = mzmlReaders[0].getScanNumObject(mzmlReaders[0].getScanNums().first()).
+                        NCEs.get(Constants.FragmentationType);
+                if (NCE != null) {
+                    Constants.NCE = String.valueOf(NCE);
+                    printInfo("NCE detected: " + Constants.NCE);
+                } else {
+                    printInfo("No NCE detected. Setting NCE to 25. " +
+                            "You can specify this with '--NCE' via the command line " +
+                            "or 'NCE=' in the param file.");
+                    Constants.NCE = "25";
+                }
+            } catch (Exception e) {
+                printInfo("No NCE detected. Setting NCE to 25. " +
+                        "You can specify this with '--NCE' via the command line " +
+                        "or 'NCE=' in the param file.");
+                Constants.NCE = "25";
             }
         }
     }

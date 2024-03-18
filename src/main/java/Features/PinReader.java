@@ -294,8 +294,7 @@ public class PinReader {
             if (! pf.stripped.contains("O") && ! pf.stripped.contains("U") &&
                     ! pf.stripped.contains("Z") && ! pf.stripped.contains("B") &&
                     ! pf.stripped.contains("X")) {
-                String NCE = getNCE(Constants.FragmentationType);
-                peps.add(pf.predfull + "\t" + pf.charge + "\t" + Constants.FragmentationType + "\t" + NCE);
+                peps.add(pf.predfull + "\t" + pf.charge + "\t" + Constants.FragmentationType + "\t" + Constants.NCE);
             }
         }
         return peps.toArray(new String[0]);
@@ -312,8 +311,7 @@ public class PinReader {
         }
         while (next(true)) {
             PeptideFormatter pf = getPep();
-            String NCE = getNCE(Constants.FragmentationType);
-            peps.add(pf.prosit + "," + NCE + "," + pf.charge);
+            peps.add(pf.prosit + "," + Constants.NCE + "," + pf.charge);
         }
         return peps.toArray(new String[0]);
     }
@@ -329,8 +327,7 @@ public class PinReader {
         }
         while (next(true)) {
             PeptideFormatter pf = getPep();
-            String NCE = getNCE(Constants.FragmentationType);
-            peps.add(pf.prosit + "," + NCE + "," + pf.charge + "," + Constants.FragmentationType);
+            peps.add(pf.prosit + "," + Constants.NCE + "," + pf.charge + "," + Constants.FragmentationType);
         }
         return peps.toArray(new String[0]);
     }
@@ -346,9 +343,8 @@ public class PinReader {
         }
         while (next(true)) {
             PeptideFormatter pf = getPep();
-            String NCE = getNCE(Constants.FragmentationType);
             peps.add(pf.stripped + "," + pf.alphapeptdeepMods + "," + pf.modPositions + "," + pf.charge + "," +
-                    NCE + "," + Constants.instrument + "," + pf.base);
+                    Constants.NCE + "," + Constants.instrument + "," + pf.base);
         }
         return peps.toArray(new String[0]);
     }
@@ -381,7 +377,7 @@ public class PinReader {
             }
             fileI++;
         }
-        if (Constants.NCE.equals("") && pmm.mzmlReaders[fileI] == null) {
+        if (pmm.mzmlReaders[fileI] == null) {
             mzml = new MzmlReader(mzmlFile.getCanonicalPath());
             pmm.mzmlReaders[fileI] = mzml;
         } else if (pmm.mzmlReaders[fileI] != null) {
@@ -400,29 +396,6 @@ public class PinReader {
                 continue;
             }
 
-            String NCE;
-            String fragmentation;
-            // && (Constants.NCE.isEmpty() || Constants.FragmentationType.isEmpty())
-            if (mzml != null) {
-                Set<String> fragTypes = mzml.getScanNumObject(getScanNum()).NCEs.keySet();
-                if (fragTypes.contains("CID")) {
-                    fragmentation = "CID";
-                } else {
-                    fragmentation = "HCD";
-                }
-                NCE = getNCE(fragmentation);
-            } else {
-                NCE = Constants.NCE;
-                synchronized (lock) {
-                    if (Constants.FragmentationType.isEmpty()) {
-                        printInfo("Setting fragmentation type to HCD. " +
-                                "You can specify this with '--FragmentationType' via the command line " +
-                                "or 'FragmentationType=' in the param file.");
-                        Constants.FragmentationType = "HCD";
-                    }
-                }
-                fragmentation = Constants.FragmentationType;
-            }
             String pep = pf.diann.replace("UniMod", "UNIMOD");
             if (pep.contains("[TMT]")) {
                 pep = pep.replace("[TMT]", "[UNIMOD:737]");
@@ -446,8 +419,8 @@ public class PinReader {
                     pep = "[UNIMOD:737]-" + pep;
                 }
             }
-            String sb = pep + "," + pf.charge + "," + NCE + "," +
-                    Constants.instrument + "," + fragmentation;
+            String sb = pep + "," + pf.charge + "," +  Constants.NCE + "," +
+                    Constants.instrument + "," + Constants.FragmentationType;
             peps.add(sb);
         }
         return peps.toArray(new String[0]);
@@ -474,28 +447,12 @@ public class PinReader {
         while (next(true) && PSMs.size() < num) {
             float escore = Float.parseFloat(getEScore());
             if (escore <= eScoreCutoff) {
-                PSMs.add(getPep().getBaseCharge() + "," + getPep().getDiann() + "," + getPep().getStripped());
+                PeptideFormatter pf = getPep();
+                PSMs.add(pf.getBaseCharge() + "," + pf.getDiann() + "," + pf.getStripped());
                 scanNums.add(getScanNum());
             }
         }
         reset();
         return new LinkedList[]{PSMs, scanNums};
-    }
-
-    private String getNCE(String frag) throws FileParsingException {
-        if (Constants.NCE.isEmpty()) {
-            String nce = String.valueOf(mzml.getScanNumObject(getScanNum()).NCEs.get(frag));
-            if (nce.equals("null")) {
-                //! mzml.scanNumberObjects.get(getScanNum()).NCEs.containsKey(frag)
-                printInfo("No NCE detected in mzml. Setting to 25. NCE can be specified by '--NCE' via " +
-                        "the command line or 'NCE=' in the param file.");
-                Constants.NCE = "25";
-                return Constants.NCE;
-            }
-            return nce;
-        } else {
-            return Constants.NCE;
-        }
-
     }
 }

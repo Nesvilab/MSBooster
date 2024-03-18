@@ -114,13 +114,6 @@ public class KoinaMethods {
             HashSet<String> allHits, String model, int NCE, String folder, String fulltsv) {
         ScheduledThreadPoolExecutor executorService = new ScheduledThreadPoolExecutor(1);
 
-        if (Constants.FragmentationType.isEmpty()) {
-            printInfo("Setting fragmentation type to HCD. " +
-                    "You can specify this with '--FragmentationType' via the command line " +
-                    "or 'FragmentationType=' in the param file.");
-            Constants.FragmentationType = "HCD";
-        }
-
         HashSet<String> hits = new HashSet<>();
         for (String s : allHits) {
             hits.add(s + "," + NCE + "," + Constants.instrument + "," + Constants.FragmentationType);

@@ -89,72 +89,18 @@ public class PeptideFileCreator {
                             hitsToAdd = pin.createDiannList();
                             break;
                         case "Prosit":
-                            if (Constants.NCE.equals("")) {
-                                printInfo("If mzml file is available, will read in NCE from there");
-                                Constants.FragmentationType = "HCD";
-                            }
                             hitsToAdd = pin.createPrositList(mzmlf, pmm);
                             break;
                         case "PrositTMT":
-                            if (Constants.FragmentationType.equals("")) {
-                                printInfo("Missing information for Prosit file generation. " +
-                                        "Please provide FragmentationType (HCD or CID) in " +
-                                        "parameter file via --paramsList or as arguments on command line." +
-                                        "For now, setting as HCD.");
-                                Constants.FragmentationType = "HCD";
-                            }
-                            if (Constants.NCE.equals("")) {
-                                printInfo("If mzml file is available, will read in NCE from there");
-                            }
                             hitsToAdd = pin.createPrositTMTList(mzmlf, pmm);
                             break;
                         case "createFull":
                             hitsToAdd = pin.createFull();
                             break;
                         case "PredFull":
-                            if (Constants.FragmentationType.equals("")) {
-                                printInfo("Missing fragmentation type for PredFull file generation. " +
-                                        "You can provide FragmentationType (HCD or ETD) in the " +
-                                        "parameter file via --paramsList or as arguments on command line. " +
-                                        "For now, setting as HCD");
-                                Constants.FragmentationType = "HCD";
-                            }
-                            if (Constants.NCE.equals("")) {
-                                printInfo("If mzml file is available, will read in NCE from there");
-                            }
                             hitsToAdd = pin.createPredFullList(mzmlf, pmm);
                             break;
                         case "alphapeptdeep":
-                            if (Constants.instrument.equals("")) {
-                                printInfo("Missing instrument for alphapeptdeep file generation. " +
-                                        "You can provide an instrument in the " +
-                                        "parameter file via --paramsList or as arguments on command line. " +
-                                        "For now, automatically setting it based on mzml metadata. " +
-                                        "The following instruments are allowed, along with the model mode that " +
-                                        "alphapeptdeep converts them to (user input: alphapeptdeep mode):\n" +
-                                        "    Lumos: Lumos\n" +
-                                        "    QE: QE\n" +
-                                        "    timsTOF: timsTOF\n" +
-                                        "    SciexTOF: SciexTOF\n" +
-                                        "    Fusion: Lumos\n" +
-                                        "    Eclipse: Lumos\n" +
-                                        "    Velos: Lumos\n" +
-                                        "    Elite: Lumos\n" +
-                                        "    OrbitrapTribrid: Lumos\n" +
-                                        "    ThermoTribrid: Lumos\n" +
-                                        "    QE+: QE\n" +
-                                        "    QEHF: QE\n" +
-                                        "    QEHFX: QE\n" +
-                                        "    Exploris: QE\n" +
-                                        "    Exploris480: QE" +
-                                        "    ThermoTOF: ThermoTOF" +
-                                        "    Astral: ThermoTOF");
-                                Constants.instrument = "Lumos";
-                            }
-                            if (Constants.NCE.equals("")) {
-                                printInfo("If mzml file is available, will read in NCE from there");
-                                Constants.FragmentationType = "HCD";
-                            }
                             hitsToAdd = pin.createAlphapeptdeepList(mzmlf, pmm);
                             break;
                     }

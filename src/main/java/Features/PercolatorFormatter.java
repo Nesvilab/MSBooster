@@ -95,7 +95,7 @@ public class PercolatorFormatter {
                             mgfSplit[1], modelSplit[1], executorService); //get other library
                     Constants.addNonYb = false; //probably just want to use separate spectra and RT models
                 }
-                printInfo("Merging spectral libraries");
+                printInfo("Merging libraries");
 
                 //get all possible keys from both preds1 and preds2
                 Set<String> totalKeyset = new HashSet<String>();
@@ -668,6 +668,7 @@ public class PercolatorFormatter {
 
                 //plot hist
                 new ScoreHistogram(new PinReader(histFile), featuresList);
+                mzml.clear();
             }
         } catch (Exception e) {
             executorService.shutdown();

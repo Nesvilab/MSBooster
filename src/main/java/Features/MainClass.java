@@ -366,8 +366,9 @@ public class MainClass {
             //needed for nce calibration and best model search
             KoinaMethods km = new KoinaMethods(pmMatcher);
             boolean TMT = false;
-            if ((Constants.calibrateNCE || Constants.findBestRtModel || Constants.findBestSpectraModel) &
-            Constants.KoinaMS2models.contains(Constants.spectraModel)) {
+            if (Constants.calibrateNCE || Constants.findBestRtModel || Constants.findBestSpectraModel ||
+            Constants.KoinaMS2models.contains(Constants.spectraModel) ||
+                    Constants.KoinaRTmodels.contains(Constants.rtModel)) {
                 Constants.useKoina = true;
 
                 km.getTopPeptides();
@@ -408,9 +409,14 @@ public class MainClass {
                             String inputFile = jsonOutFolder + File.separator + model + File.separator + "spectraRT.tsv";
                             FileWriter myWriter = new FileWriter(inputFile);
                             myWriter.write("peptide" + "\t" + "charge\n");
+                            HashSet<String> peptides = new HashSet<>();
                             for (String pep : km.peptideSet) {
                                 String[] pepSplit = pep.split(",");
-                                myWriter.write(pepSplit[1] + "\t" + pepSplit[0].split("\\|")[1] + "\n");
+                                String line = pepSplit[1] + "\t" + pepSplit[0].split("\\|")[1] + "\n";
+                                if (!peptides.contains(line)) {
+                                    myWriter.write(line);
+                                    peptides.add(line);
+                                }
                             }
                             myWriter.close();
 
@@ -511,9 +517,14 @@ public class MainClass {
                             String inputFile = jsonOutFolder + File.separator + model + File.separator + "spectraRT.tsv";
                             FileWriter myWriter = new FileWriter(inputFile);
                             myWriter.write("peptide" + "\t" + "charge\n");
+                            HashSet<String> peptides = new HashSet<>();
                             for (String pep : km.peptideSet) {
                                 String[] pepSplit = pep.split(",");
-                                myWriter.write(pepSplit[1] + "\t" + pepSplit[0].split("\\|")[1] + "\n");
+                                String line = pepSplit[1] + "\t" + pepSplit[0].split("\\|")[1] + "\n";
+                                if (!peptides.contains(line)) {
+                                    myWriter.write(line);
+                                    peptides.add(line);
+                                }
                             }
                             myWriter.close();
 

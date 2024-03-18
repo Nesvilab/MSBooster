@@ -79,15 +79,6 @@ public class MzmlScanNumber {
         if (!Constants.NCE.isEmpty() && !Constants.FragmentationType.isEmpty()) {
             NCEs.put(Constants.FragmentationType, Float.parseFloat(Constants.NCE));
         } else {
-            //decide if we read in NCE and fragment info
-//            boolean read = false;
-//            for (String substring : Constants.nceModels) {
-//                if (Constants.spectraRTPredModel.contains(substring)) {
-//                    read = true;
-//                    break;
-//                }
-//            }
-//            if (Constants.useKoina) {
             try {
                 String[] nceInfo = scan.getFilterString().split("@");
                 if (nceInfo.length > 1) {

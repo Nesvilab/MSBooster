@@ -776,7 +776,6 @@ public class PinWriter {
             }
             pin.close();
             writer.close();
-            mzml.clear();
         } catch (com.univocity.parsers.common.TextWritingException e) {
             e.printStackTrace();
             printInfo("Try increasing the parameter numPinColumns if you have many protein columns!");

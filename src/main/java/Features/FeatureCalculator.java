@@ -48,12 +48,25 @@ public class FeatureCalculator {
     }
 
     class calcFeat implements Runnable {
-        private final String pep;
-        private final String stripped;
-        private final int scanNum;
-        private final ProgressReporter pr;
+        private final String line;
+        private final int specIdx;
+        private final int pepIdx;
+        private final int scanNumIdx;
+        private String pep;
+        private String stripped;
+        private int scanNum;
+        private ProgressReporter pr;
         final ExecutorService executorService = Executors.newFixedThreadPool(2);
         public calcFeat(String line, int specIdx, int pepIdx, int scanNumIdx, ProgressReporter pr) {
+            this.line = line;
+            this.specIdx = specIdx;
+            this.pepIdx = pepIdx;
+            this.scanNumIdx = scanNumIdx;
+            this.pr = pr;
+        }
+
+        @Override
+        public void run() {
             String[] row = line.split("\t");
             String[] periodSplit = row[specIdx].split("\\.");
             PeptideFormatter pf = new PeptideFormatter(row[pepIdx],
@@ -61,11 +74,7 @@ public class FeatureCalculator {
             this.pep = pf.baseCharge;
             this.scanNum = Integer.parseInt(row[scanNumIdx]);
             this.stripped = pf.stripped;
-            this.pr = pr;
-        }
 
-        @Override
-        public void run() {
             PeptideObj pepObj = null;
             try {
                 pepObj = mzml.getScanNumObject(scanNum).getPeptideObject(pep);

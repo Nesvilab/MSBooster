@@ -84,6 +84,7 @@ public class Constants {
     public static Boolean usedKoina = false;
     public static Boolean findBestRtModel = false;
     public static Boolean findBestSpectraModel = false;
+    //TODO: hashset with all models to check that model is acceptable?
     public static CaseInsensitiveHashSet KoinaRTmodels = new CaseInsensitiveHashSet(
             new String[] {"AlphaPept_rt_generic", "Prosit_2019_irt",
                     "Prosit_2020_irt_TMT", "Deeplc_hela_hf"});

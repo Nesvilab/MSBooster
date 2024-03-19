@@ -478,7 +478,7 @@ public class MainClass {
                     Constants.rtModel = "DIA-NN";
                 }
                 for (String model : Constants.KoinaRTmodels) {
-                    if (model.toLowerCase().equals(Constants.rtModel)) {
+                    if (model.equalsIgnoreCase(Constants.rtModel)) {
                         Constants.rtModel = model;
                     }
                 }
@@ -594,7 +594,7 @@ public class MainClass {
                     Constants.spectraModel = "DIA-NN";
                 }
                 for (String model : Constants.KoinaMS2models) {
-                    if (model.toLowerCase().equals(Constants.spectraModel)) {
+                    if (model.equalsIgnoreCase(Constants.spectraModel)) {
                         Constants.spectraModel = model;
                     }
                 }

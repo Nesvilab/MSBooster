@@ -366,8 +366,6 @@ public class MainClass {
             if (Constants.calibrateNCE || Constants.findBestRtModel || Constants.findBestSpectraModel ||
             Constants.KoinaMS2models.contains(Constants.spectraModel) ||
                     Constants.KoinaRTmodels.contains(Constants.rtModel)) {
-                Constants.useKoina = true;
-
                 km.getTopPeptides();
                 for (String pep : km.peptideSet) {
                     if (pep.contains(String.valueOf(PTMhandler.tmtMass))) {

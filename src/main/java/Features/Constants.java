@@ -84,17 +84,19 @@ public class Constants {
     public static Boolean usedKoina = false;
     public static Boolean findBestRtModel = false;
     public static Boolean findBestSpectraModel = false;
-    public static HashSet<String> KoinaRTmodels = new HashSet<>(Arrays.asList("AlphaPept_rt_generic",
-            "Prosit_2019_irt", "Prosit_2020_irt_TMT", "Deeplc_hela_hf"));
-    public static HashSet<String> KoinaMS2models = new HashSet<>(Arrays.asList("ms2pip_2021_HCD",
-            "AlphaPept_ms2_generic", "Prosit_2019_intensity", "Prosit_2020_intensity_CID",
-            "Prosit_2020_intensity_TMT", "Prosit_2020_intensity_HCD", "Prosit_2023_intensity_timsTOF"));
-    public static HashSet<String> KoinaTMTmodels = new HashSet<>(Arrays.asList("Prosit_2020_irt_TMT",
-            "Prosit_2020_intensity_TMT"));
-    public static HashSet<String> nceModels =
-            new HashSet<>(Arrays.asList("PredFull", "Prosit", "PrositTMT", "alphapeptdeep",
+    public static CaseInsensitiveHashSet KoinaRTmodels = new CaseInsensitiveHashSet(
+            new String[] {"AlphaPept_rt_generic", "Prosit_2019_irt",
+                    "Prosit_2020_irt_TMT", "Deeplc_hela_hf"});
+    public static CaseInsensitiveHashSet KoinaMS2models = new CaseInsensitiveHashSet(
+            new String[] {"ms2pip_2021_HCD", "AlphaPept_ms2_generic", "Prosit_2019_intensity",
+                    "Prosit_2020_intensity_CID", "Prosit_2020_intensity_TMT", "Prosit_2020_intensity_HCD",
+                    "Prosit_2023_intensity_timsTOF"});
+    public static CaseInsensitiveHashSet KoinaTMTmodels = new CaseInsensitiveHashSet(
+            new String[] {"Prosit_2020_irt_TMT", "Prosit_2020_intensity_TMT"});
+    public static CaseInsensitiveHashSet nceModels = new CaseInsensitiveHashSet(
+            new String[] {"PredFull", "Prosit", "PrositTMT", "alphapeptdeep",
                     "AlphaPept_ms2_generic", "Prosit_2019_intensity", "Prosit_2023_intensity_timsTOF",
-                    "Prosit_2020_intensity_TMT", "Prosit_2020_intensity_HCD"));
+                    "Prosit_2020_intensity_TMT", "Prosit_2020_intensity_HCD"});
     public static SpectralPredictionMapper spectralPredictionMapper;
 
     public static Integer numKoinaAttempts = 3;
@@ -320,26 +322,30 @@ public class Constants {
     //public static String features = "auto";
 
     //don't currently support weighted similarity features
-    public static final HashSet<String> detectFeatures =
-            new HashSet<>(Arrays.asList("detectFractionGreater", "detectability", "detectSubtractMissing", "detectProtSpearmanDiff"));
-    public static final HashSet<String> spectraRTFeatures = new HashSet<>(Arrays.asList(
+    public static final CaseInsensitiveHashSet detectFeatures = new CaseInsensitiveHashSet(
+            new String[] {"detectFractionGreater", "detectability",
+                    "detectSubtractMissing", "detectProtSpearmanDiff"});
+    public static final CaseInsensitiveHashSet spectraRTFeatures = new CaseInsensitiveHashSet(
+            new String[] {
             "cosineSimilarity", "weightedCosineSimilarity", "spectralContrastAngle", "weightedSpectralContrastAngle",
             "euclideanDistance", "weightedEuclideanDistance", "brayCurtis", "weightedBrayCurtis",
             "pearsonCorr", "weightedPearsonCorr", "spearmanCorr", "dotProduct", "weightedDotProduct", "unweightedSpectralEntropy",
             "deltaRTlinear", "deltaRTbins", "deltaRTLOESS", "RTzscore", "RTprobability", "RTprobabilityUnifPrior",
             "deltaRTLOESSnormalized", "calibratedRT", "predictedRT", "numMatchedFragments", "hypergeometricProbability",
-            "intersection", "adjacentSimilarity", "bestScan", "bootstrapSimilarity", "deltaRTLOESSreal", "predRTrealUnits"));
-    public static final HashSet<String> spectraFeatures = new HashSet<>(Arrays.asList(
+            "intersection", "adjacentSimilarity", "bestScan", "bootstrapSimilarity", "deltaRTLOESSreal", "predRTrealUnits"});
+    public static final CaseInsensitiveHashSet spectraFeatures = new CaseInsensitiveHashSet(
+            new String[] {
             "cosineSimilarity", "weightedCosineSimilarity", "spectralContrastAngle", "weightedSpectralContrastAngle",
             "euclideanDistance", "weightedEuclideanDistance", "brayCurtis", "weightedBrayCurtis", "unweightedSpectralEntropy",
             "pearsonCorr", "weightedPearsonCorr", "spearmanCorr", "dotProduct", "weightedDotProduct", "numMatchedFragments",
-            "hypergeometricProbability", "intersection", "adjacentSimilarity", "bestScan", "bootstrapSimilarity"));
-    public static final HashSet<String> rtFeatures = new HashSet<>(Arrays.asList(
+            "hypergeometricProbability", "intersection", "adjacentSimilarity", "bestScan", "bootstrapSimilarity"});
+    public static final CaseInsensitiveHashSet rtFeatures = new CaseInsensitiveHashSet(
+            new String[] {
             "deltaRTlinear", "deltaRTbins", "deltaRTLOESS", "RTzscore", "RTprobability", "RTprobabilityUnifPrior",
-            "deltaRTLOESSnormalized", "calibratedRT", "predictedRT", "deltaRTLOESSreal", "predRTrealUnits"));
-    public static final HashSet<String> imFeatures =
-            new HashSet<>(Arrays.asList("deltaIMLOESS", "deltaIMLOESSnormalized", "IMprobabilityUnifPrior", "predictedIM",
-                    "ionmobility"));
+            "deltaRTLOESSnormalized", "calibratedRT", "predictedRT", "deltaRTLOESSreal", "predRTrealUnits"});
+    public static final CaseInsensitiveHashSet imFeatures = new CaseInsensitiveHashSet(
+            new String[] {"deltaIMLOESS", "deltaIMLOESSnormalized", "IMprobabilityUnifPrior",
+                    "predictedIM", "ionmobility"});
     //TODO: add to features list
     public static HashSet<String> matchedIntensitiesFeatures = null;
     public static HashSet<String> makeMatchedIntensitiesFeatures() {

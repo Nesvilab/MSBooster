@@ -586,6 +586,7 @@ public class MainClass {
                         Constants.spectraModel = bestModel;
                     }
                     Constants.calibrateNCE = false;
+                    Constants.autoSwitchFragmentation = false;
                     printInfo("Spectra model chosen is " + Constants.spectraModel);
                 }
 
@@ -868,6 +869,17 @@ public class MainClass {
                 }
                 for (String currentModel : Constants.spectraRTPredModel.split(",")) {
                     if (Constants.useKoina && !currentModel.equals("DIA-NN")) {
+                        //make sure using right model
+                        boolean changed = KoinaMethods.switchModel();
+                        if (changed) {
+                            for (int m = 0; m < models.size(); m++) {
+                                if (models.get(m).equals(currentModel)) {
+                                    models.set(m, Constants.spectraModel);
+                                }
+                            }
+                            currentModel = Constants.spectraModel;
+                        }
+
                         if (Constants.KoinaMS2models.contains(currentModel) && Constants.calibrateNCE &&
                         Constants.nceModels.contains(currentModel)) {
                             Object[] modelInfo = NCEcalibrator.calibrateNCE(currentModel, models, km,

@@ -20,14 +20,13 @@ package External;
 import static utils.Print.printInfo;
 
 import Features.*;
+import com.google.common.collect.ImmutableMap;
 import umich.ms.fileio.exceptions.FileParsingException;
 
 import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.LinkedList;
+import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ScheduledThreadPoolExecutor;
 
@@ -37,6 +36,14 @@ public class KoinaMethods {
     public HashSet<String> peptideSet = new HashSet<>();
     public HashMap<String, LinkedList<Integer>> scanNums = new HashMap<>();
     public HashMap<String, LinkedList<String>> peptides = new HashMap<>();
+
+    private static final Map<String, String> generalModels = ImmutableMap.of(
+            "Prosit_2020_intensity_HCD", "Prosit",
+            "Prosit_2020_intensity_CID", "Prosit");
+    private static final Map<String, String> modelConversion = ImmutableMap.of(
+            "HCD.Prosit", "Prosit_2020_intensity_HCD",
+            "CID.Prosit", "Prosit_2020_intensity_CID");
+
     public KoinaMethods(PinMzmlMatcher pmMatcher) {
         this.pmMatcher = pmMatcher;
     }
@@ -170,5 +177,28 @@ public class KoinaMethods {
             }
         }
         return peptideObjs;
+    }
+
+    //use nested hashmap to make sure correct version of model is assigned for given fragmentation type
+    //uses Constants information (FragmentationType and current spectraModel) to correct spectraModel
+    //solution: use composite key fragmentationtype + "." + modelType, where modelType is a HashMap of
+    //exact model name and more general type (i.e. Prosit models, APD models, etc)
+    //if hashset contains exact model name, return that general type
+    //returns true if model changed
+    public static boolean switchModel() {
+        //correct to CID model
+        //TODO do in opposite direction. Or more general method to get right fragmentation model
+        if (Constants.autoSwitchFragmentation && generalModels.containsKey(Constants.spectraModel)) {
+            String genModel = generalModels.get(Constants.spectraModel);
+            String newModel = modelConversion.get(Constants.FragmentationType + "." + genModel);
+            if (!newModel.equals(Constants.spectraModel)) {
+                printInfo("Switching from " + Constants.spectraModel + " to " + newModel);
+                Constants.spectraRTPredModel =
+                        Constants.spectraRTPredModel.replace(Constants.spectraModel, newModel);
+                Constants.spectraModel = newModel;
+                return true;
+            }
+        }
+        return false;
     }
 }

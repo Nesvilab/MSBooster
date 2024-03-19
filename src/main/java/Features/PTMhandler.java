@@ -41,6 +41,14 @@ public class PTMhandler {
         return map;
     }
     public static final HashMap<Double, Integer> modAAmassToUnimod = makeModAAToUnimod();
+    private static HashMap<Double, String> makeModAAToLocalization() {
+        //TODO: make more general, but how to deal with n-term mods?
+        //TODO: need to be able to update based on what model allows
+        HashMap<Double, String> map = new HashMap<>();
+        map.put(oxidationMass, "M");
+        return map;
+    }
+    public static final HashMap<Double, String> modAAToLocalization = makeModAAToLocalization();
     private static HashMap<String, Double> makeUnimodtoModAA() {
         HashMap<String, Double> map = new HashMap<>();
         for (Map.Entry<Double, Integer> entry : modAAmassToUnimod.entrySet()) {

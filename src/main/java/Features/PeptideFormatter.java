@@ -179,6 +179,12 @@ public class PeptideFormatter {
                 Double PTMmass = entry.getKey();
 
                 if (Math.abs(PTMmass - reportedMass) < 0.01) {
+                    if (PTMhandler.modAAToLocalization.containsKey(PTMmass)) {
+                        if (!PTMhandler.modAAToLocalization.get(PTMmass).contains(
+                                diann.substring(starts.get(i) - 1, starts.get(i)))) {
+                            break;
+                        }
+                    }
                     if (PTMmass == 229.1629) {
                         diann = diann.substring(0, starts.get(i) + 1) + "TMT" +
                                 diann.substring(ends.get(i));
@@ -186,8 +192,6 @@ public class PeptideFormatter {
                         diann = diann.substring(0, starts.get(i) + 1) + "UniMod:" + PTMhandler.modAAmassToUnimod.get(PTMmass) +
                                 diann.substring(ends.get(i));
                     }
-//                    diann = diann.substring(0, starts.get(i) + 1) + "UniMod:" + PTMhandler.modAAmassToUnimod.get(PTMmass) +
-//                                diann.substring(ends.get(i));
                     foundReplacement = true;
                     break;
                 }

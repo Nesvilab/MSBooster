@@ -170,7 +170,7 @@ public class MzmlReader {
         HashSet<String> LumosKeys = new HashSet<>(Arrays.asList("LTQ", "Lumos", "Fusion", "Elite", "Velos", "Eclipse", "Tribrid"));
         HashSet<String> QEKeys = new HashSet<>(Arrays.asList("QE", "Exactive", "Exploris"));
         HashSet<String> SciexTOFKeys = new HashSet<>(Arrays.asList("Sciex", "TripleTOF"));
-        HashSet<String> timsTOFKeys = new HashSet<>(List.of("flight"));
+        HashSet<String> timsTOFKeys = new HashSet<>(List.of("flight", "timsTOF"));
         HashSet<String> ThermoTOFKeys = new HashSet<>(List.of("Astral"));
 
         if (Constants.instrument.isEmpty()) {

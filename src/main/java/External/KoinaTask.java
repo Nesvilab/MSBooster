@@ -18,6 +18,7 @@
 package External;
 
 import static utils.Print.printError;
+import static utils.Print.printInfo;
 
 import Features.Constants;
 import Features.KoinaLibReader;
@@ -108,8 +109,13 @@ public class KoinaTask implements Callable<Boolean> {
                 printError("Retried calling " + filename + " " + failedAttempts +
                         " times. This many be fixable by sending prediction requests to Koina at a slower rate " +
                         "by lowering the --numThreads parameter in the parameter file.");
-                printError("Exiting");
-                System.exit(1);
+                if (Constants.foundBest) {
+                    printError("Exiting");
+                    System.exit(1);
+                } else {
+                    klr.failed = true;
+                    return true;
+                }
             }
 
             return false;

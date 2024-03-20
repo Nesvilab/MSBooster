@@ -37,7 +37,7 @@ public class MainClass {
     public static ScheduledThreadPoolExecutor executorService;
     public static void main(String[] args) throws Exception {
         Locale.setDefault(Locale.US);
-        printInfo("MSBooster v1.2.19");
+        printInfo("MSBooster v1.2.20");
 
         try {
             //accept command line inputs
@@ -605,6 +605,7 @@ public class MainClass {
             } else {
                 Constants.spectraModel = "";
             }
+            Constants.foundBest = true;
 
             //set useKoina based on model
             if (Constants.KoinaRTmodels.contains(Constants.rtModel) ||

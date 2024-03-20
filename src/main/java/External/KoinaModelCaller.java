@@ -394,7 +394,8 @@ public class KoinaModelCaller {
         }
     }
 
-    public void assignMissingPeptidePredictions(KoinaLibReader klr, String fulltsv) throws IOException {
+    public void assignMissingPeptidePredictions(KoinaLibReader klr, String fulltsv)
+            throws IOException {
         BufferedReader TSVReader = new BufferedReader(new FileReader(fulltsv));
         String l;
         String[] line;
@@ -434,8 +435,8 @@ public class KoinaModelCaller {
                         printError(modelType + " not supported by Koina");
                         System.exit(1);
                 }
+                MassCalculator mc = new MassCalculator(line[0], line[1]);
                 try {
-                    MassCalculator mc = new MassCalculator(line[0], line[1]);
                     float[] newMZs = new float[tmp.getMzs().length];
                     for (int i = 0; i < newMZs.length; i++) {
                         newMZs[i] = mc.calcMass(tmp.getFragNums()[i],
@@ -449,7 +450,14 @@ public class KoinaModelCaller {
                     newPred.setIM(tmp.getIM());
                     preds.put(mc.fullPeptide, newPred);
                 } catch (Exception e) {
-                    if (! PeptideSkipper.skipPeptide(stripped, baseCharge.split("\\|")[1])) {
+                    if (!Constants.foundBest && klr.failed) { //allow it to run without error
+                        new PredictionEntry();
+                        PredictionEntry newPred = new PredictionEntry(new float[]{0}, new float[]{0},
+                                new int[]{0}, new int[]{0}, new String[]{"y"});
+                        newPred.setRT(0);
+                        newPred.setIM(0);
+                        preds.put(mc.fullPeptide, newPred);
+                    } else if (! PeptideSkipper.skipPeptide(stripped, baseCharge.split("\\|")[1])) {
                         e.printStackTrace();
                         printError("Missing peptide to transfer prediction onto " + l + ": " + baseCharge);
                         printError("Exiting now.");

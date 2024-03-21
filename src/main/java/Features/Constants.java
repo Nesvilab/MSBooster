@@ -86,6 +86,7 @@ public class Constants {
     public static Boolean findBestSpectraModel = false;
     public static Boolean foundBest = false;
     //TODO: hashset with all models to check that model is acceptable?
+    public static String KoinaURL = ""; //https://koina.proteomicsdb.org/v2/models/
     public static CaseInsensitiveHashSet KoinaRTmodels = new CaseInsensitiveHashSet(
             new String[] {"AlphaPept_rt_generic", "Prosit_2019_irt",
                     "Prosit_2020_irt_TMT", "Deeplc_hela_hf"});
@@ -440,6 +441,9 @@ public class Constants {
         map.put("peptideCounts", "peptide_counts");
         return map;
     }
+    //////////////////////////////////////////////////////////////////////////////////////////////////////
+    //plotting
+    public static String plotExtension = "png";
     ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
     //methods

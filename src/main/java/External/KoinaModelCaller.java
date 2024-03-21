@@ -36,6 +36,7 @@ import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.Future;
 import java.util.concurrent.ScheduledThreadPoolExecutor;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 
@@ -51,6 +52,7 @@ public class KoinaModelCaller {
     private static final int ms2pipFragIdx = 0;
     private static String modelType;
     private static String finalModel;
+    private static AtomicBoolean emptyUrl = new AtomicBoolean(false);
     private static final HashMap<String, Integer> recommendedThreads = makeRecommendedThreads();
     private static HashMap<String, Integer> makeRecommendedThreads() {
         HashMap<String, Integer> map = new HashMap<>();
@@ -64,6 +66,12 @@ public class KoinaModelCaller {
     //TODO: add functions to clean this up
     public void callModel(String model, KoinaLibReader klr, String jsonFolder, ScheduledThreadPoolExecutor executorService,
                           boolean verbose, boolean makeFigure) {
+        if (Constants.KoinaURL.isEmpty() && !emptyUrl.get()) {
+            emptyUrl.set(true);
+            printError("You must specify a URL to use the Koina service via the --KoinaURL parameter");
+            printError("Exiting");
+            System.exit(1);
+        }
         modelType = model.toLowerCase().split("_")[0];
         finalModel = model;
 
@@ -109,7 +117,7 @@ public class KoinaModelCaller {
 
             for (int i = 0; i < numProcesses; i++) {
                 String command = "curl -s -H content-type:application/json -d @" + filenameArraylist.get(i) +
-                        " https://koina.proteomicsdb.org/v2/models/" + model + "/infer";
+                        " " + Constants.KoinaURL + model + "/infer";
                 KoinaTask task = new KoinaTask(filenameArraylist.get(i), command, property, model, i,
                         klr, waitTime, numTimes);
                 tasks.add(task);

@@ -96,8 +96,18 @@ public class ScoreHistogram {
                     decoyScores.get(feature).add(j + 0.5);
                 }
             }
-            CategoryChart chart = new CategoryChartBuilder().width(510).height(170).
-                    xAxisTitle(xAxisLabel).yAxisTitle(yAxisLabel).build();
+
+            int width = 510;
+            int height = 170;
+            CategoryChart chart = null;
+            if (Constants.plotExtension.equalsIgnoreCase("png")) {
+                chart = new CategoryChartBuilder().width(width * 3).height(height * 3).
+                        xAxisTitle(xAxisLabel).yAxisTitle(yAxisLabel).build();
+            } else if (Constants.plotExtension.equalsIgnoreCase("pdf")) {
+                chart = new CategoryChartBuilder().width(width).height(height).
+                        xAxisTitle(xAxisLabel).yAxisTitle(yAxisLabel).build();
+            }
+
             chart.getStyler().setPlotGridLinesVisible(false);
             //chart.getStyler().setXAxisTickMarkSpacingHint(10);
             chart.getStyler().setXAxisMaxLabelCount(10);
@@ -108,9 +118,15 @@ public class ScoreHistogram {
             chart.getStyler().setLegendPosition(Styler.LegendPosition.valueOf("OutsideS"));
             chart.getStyler().setLegendBorderColor(Color.white);
             chart.getStyler().setPlotBorderVisible(false);
-            chart.getStyler().setAxisTitleFont(new Font("Helvetica", Font.PLAIN, 7));
-            chart.getStyler().setLegendFont(new Font("Helvetica", Font.PLAIN, 7));
-            chart.getStyler().setAxisTickLabelsFont(new Font("Helvetica", Font.PLAIN, 5));
+            if (Constants.plotExtension.equalsIgnoreCase("png")) {
+                chart.getStyler().setAxisTitleFont(new Font("Helvetica", Font.PLAIN, 21));
+                chart.getStyler().setLegendFont(new Font("Helvetica", Font.PLAIN, 21));
+                chart.getStyler().setAxisTickLabelsFont(new Font("Helvetica", Font.PLAIN, 15));
+            } else if (Constants.plotExtension.equalsIgnoreCase("pdf")) {
+                chart.getStyler().setAxisTitleFont(new Font("Helvetica", Font.PLAIN, 7));
+                chart.getStyler().setLegendFont(new Font("Helvetica", Font.PLAIN, 7));
+                chart.getStyler().setAxisTickLabelsFont(new Font("Helvetica", Font.PLAIN, 5));
+            }
             chart.getStyler().setChartBackgroundColor(Color.white);
 
             //plot histogram
@@ -162,13 +178,16 @@ public class ScoreHistogram {
             if (!new File(dir + File.separator + "score_histograms").exists()) {
                 new File(dir + File.separator + "score_histograms").mkdirs();
             }
-//            BitmapEncoder.saveBitmap(chart, dir + File.separator + "score_histograms" + File.separator +
-//                            name.substring(0, name.length() - 4) + "_" + feature,
-//                    BitmapEncoder.BitmapFormat.PNG);
-            VectorGraphicsEncoder.saveVectorGraphic(chart,
-                    dir + File.separator + "score_histograms" + File.separator +
-                    name.substring(0, name.length() - 4) + "_" + feature,
-                    VectorGraphicsEncoder.VectorGraphicsFormat.PDF);
+            if (Constants.plotExtension.equalsIgnoreCase("png")) {
+                BitmapEncoder.saveBitmap(chart, dir + File.separator + "score_histograms" + File.separator +
+                                name.substring(0, name.length() - 4) + "_" + feature,
+                        BitmapEncoder.BitmapFormat.PNG);
+            } else if (Constants.plotExtension.equalsIgnoreCase("pdf")) {
+                VectorGraphicsEncoder.saveVectorGraphic(chart,
+                        dir + File.separator + "score_histograms" + File.separator +
+                                name.substring(0, name.length() - 4) + "_" + feature,
+                        VectorGraphicsEncoder.VectorGraphicsFormat.PDF);
+            }
         }
         pinReader.close();
     }

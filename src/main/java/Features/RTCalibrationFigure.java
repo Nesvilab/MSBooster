@@ -180,12 +180,15 @@ public class RTCalibrationFigure {
             j += 2;
         }
 
-//        BitmapEncoder.saveBitmap(chart, pinPath + File.separator + "MSBooster_plots" + File.separator +
-//                        "RT_calibration_curves" + File.separator + pinName.substring(0, pinName.length() - 4),
-//                BitmapEncoder.BitmapFormat.PNG);
-        VectorGraphicsEncoder.saveVectorGraphic(chart,
-                pinPath + File.separator + "MSBooster_plots" + File.separator +
-                        "RT_calibration_curves" + File.separator + pinName.substring(0, pinName.length() - 4),
-                VectorGraphicsEncoder.VectorGraphicsFormat.PDF);
+        if (Constants.plotExtension.equalsIgnoreCase("png")) {
+            BitmapEncoder.saveBitmap(chart, pinPath + File.separator + "MSBooster_plots" + File.separator +
+                            "RT_calibration_curves" + File.separator + pinName.substring(0, pinName.length() - 4),
+                    BitmapEncoder.BitmapFormat.PNG);
+        } else if (Constants.plotExtension.equalsIgnoreCase("pdf")) {
+            VectorGraphicsEncoder.saveVectorGraphic(chart,
+                    pinPath + File.separator + "MSBooster_plots" + File.separator +
+                            "RT_calibration_curves" + File.separator + pinName.substring(0, pinName.length() - 4),
+                    VectorGraphicsEncoder.VectorGraphicsFormat.PDF);
+        }
     }
 }

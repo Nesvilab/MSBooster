@@ -37,7 +37,7 @@ public class MainClass {
     public static ScheduledThreadPoolExecutor executorService;
     public static void main(String[] args) throws Exception {
         Locale.setDefault(Locale.US);
-        printInfo("MSBooster v1.2.20");
+        printInfo("MSBooster v1.2.21");
 
         try {
             //accept command line inputs
@@ -327,6 +327,20 @@ public class MainClass {
                 }
             }
             c.updateOutputDirectory();
+
+            //checking constants are appropriate
+            //robust to if url has / or not
+            if (!Constants.KoinaURL.isEmpty() &&
+                    Constants.KoinaURL.charAt(Constants.KoinaURL.length() - 1) != '/') {
+                Constants.KoinaURL += "/";
+            }
+            //checking plot output is fine extension
+            HashSet<String> extensions = new HashSet<>(Arrays.asList("png", "pdf"));
+            if (!extensions.contains(Constants.plotExtension.toLowerCase())) {
+                printError("plotExtension must be one of png or pdf, not " + Constants.plotExtension);
+                printError("Exiting");
+                System.exit(1);
+            }
 
             //defining num threads
             if (Constants.numThreads <= 0) {
@@ -1014,6 +1028,13 @@ public class MainClass {
             MyFileUtils.deleteWholeDirectory(Constants.outputDirectory + File.separator + "best_model");
             MyFileUtils.deleteWholeDirectory(Constants.outputDirectory + File.separator + "NCE_calibration");
             MyFileUtils.deleteWholeDirectory(Constants.JsonDirectory);
+
+            //file with used models
+            BufferedWriter modelsFile = new BufferedWriter(new FileWriter(
+                    Constants.outputDirectory + File.separator + "PDV_models.txt"));
+            modelsFile.write("spectraModel=" + Constants.spectraModel + "\n");
+            modelsFile.write("rtModel=" + Constants.rtModel);
+            modelsFile.close();
 
             long end = System.nanoTime();
             long duration = (end - start);

@@ -103,13 +103,13 @@ public class KoinaTask implements Callable<Boolean> {
             failedAttempts++;
 
             if (failedAttempts == Constants.numKoinaAttempts) {
-                printError(command);
-                printError(filename + " had output that ended in: ");
-                printError(ending);
-                printError("Retried calling " + filename + " " + failedAttempts +
-                        " times. This many be fixable by sending prediction requests to Koina at a slower rate " +
-                        "by lowering the --numThreads parameter in the parameter file.");
                 if (Constants.foundBest) {
+                    printError(command);
+                    printError(filename + " had output that ended in: ");
+                    printError(ending);
+                    printError("Retried calling " + filename + " " + failedAttempts +
+                            " times. This many be fixable by sending prediction requests to Koina at a slower rate " +
+                            "by lowering the --numThreads parameter in the parameter file.");
                     printError("Exiting");
                     System.exit(1);
                 } else {

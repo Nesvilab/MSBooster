@@ -109,7 +109,7 @@ public class NCEcalibrator {
 
             printInfo("Best NCE for " + currentModel + " after calibration is " + bestNCE);
             bestMedianDouble = bestMedian.get();
-            printInfo("Median similarity is " + String.format("%.4f", bestMedianDouble));
+            printInfo("Median similarity for " + currentModel + " is " + String.format("%.4f", bestMedianDouble));
             if (bestNCE.get() == Constants.minNCE) {
                 printInfo("Consider lowering minNCE below " + Constants.minNCE);
             } else if (bestNCE.get() == Constants.maxNCE) {

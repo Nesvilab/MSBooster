@@ -34,8 +34,8 @@ public class MgfFileReader implements SpectralPredictionMapper{
     //mgfFileReader can handle both single files and entire directories
 
     ArrayList<String> filenames = new ArrayList<>();
-    private ConcurrentHashMap<String, PredictionEntry> allPreds = new ConcurrentHashMap<>();
-    ConcurrentHashMap<String, PredictionEntry> allPredsHashMap = new ConcurrentHashMap<>();
+    private PredictionEntryHashMap allPreds = new PredictionEntryHashMap();
+    PredictionEntryHashMap allPredsHashMap = new PredictionEntryHashMap();
     public ConcurrentHashMap<Integer, MzmlScanNumber> scanNumberObjects = new ConcurrentHashMap<>();
     private final List<Future> futureList = new ArrayList<>(Constants.numThreads);
 
@@ -450,14 +450,14 @@ public class MgfFileReader implements SpectralPredictionMapper{
         }
     }
 
-    public ConcurrentHashMap<String, PredictionEntry> getPreds() {
+    public PredictionEntryHashMap getPreds() {
         if (allPredsHashMap.isEmpty()) {
-            allPredsHashMap = new ConcurrentHashMap<>(allPreds);
+            allPredsHashMap.putAll(allPreds);
             allPreds = null; //no longer need concurrency
         }
         return allPredsHashMap;
     }
-    public void setPreds(ConcurrentHashMap<String, PredictionEntry> preds) {
+    public void setPreds(PredictionEntryHashMap preds) {
         allPreds = preds;
     }
 

@@ -32,8 +32,8 @@ import java.util.concurrent.Future;
 import umich.ms.fileio.exceptions.FileParsingException;
 
 public interface SpectralPredictionMapper {
-    ConcurrentHashMap<String, PredictionEntry> getPreds() throws IOException;
-    void setPreds(ConcurrentHashMap<String, PredictionEntry> preds);
+    PredictionEntryHashMap getPreds() throws IOException;
+    void setPreds(PredictionEntryHashMap preds);
     void clear();
 
     float getMaxPredRT();
@@ -66,31 +66,5 @@ public interface SpectralPredictionMapper {
                                                                    ExecutorService executorService)
             throws IOException, InterruptedException, ExecutionException, FileParsingException {
         return new PredFullSpeclibReader(file, false, pinFiles, executorService);
-    }
-
-    default ConcurrentHashMap<String, PredictionEntry> filterTopFragments(ExecutorService executorService)
-            throws IOException {
-        ConcurrentHashMap<String, PredictionEntry> preds = this.getPreds();
-        String[] peptides = new String[preds.size()];
-        PredictionEntry[] predictions = new PredictionEntry[preds.size()];
-        int entryIdx = 0;
-        for (Map.Entry<String, PredictionEntry> entry : preds.entrySet()) {
-            peptides[entryIdx] = entry.getKey();
-            predictions[entryIdx] = entry.getValue();
-        }
-
-        List<Future> futureList = new ArrayList<>(Constants.numThreads);
-        for (int i = 0; i < Constants.numThreads; i++) {
-            int start = (int) (preds.size() * (long) i) / Constants.numThreads;
-            int end = (int) (preds.size() * (long) (i + 1)) / Constants.numThreads;
-            futureList.add(executorService.submit(() -> {
-                for (int j = start; j < end; j++) {
-                    PredictionEntry pe = predictions[j];
-                    pe.filterFragments();
-                    preds.put(peptides[j], pe);
-                }
-            }));
-        }
-        return preds;
     }
 }

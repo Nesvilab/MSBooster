@@ -28,6 +28,7 @@ import java.io.FileWriter;
 import java.io.IOException;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ScheduledThreadPoolExecutor;
 
 public class KoinaMethods {
@@ -117,7 +118,7 @@ public class KoinaMethods {
         return allHits;
     }
 
-    public ConcurrentHashMap<String, PredictionEntry> getKoinaPredictions(
+    public PredictionEntryHashMap getKoinaPredictions(
             HashSet<String> allHits, String model, int NCE, String folder, String fulltsv) {
         ScheduledThreadPoolExecutor executorService = new ScheduledThreadPoolExecutor(1);
 
@@ -149,7 +150,9 @@ public class KoinaMethods {
         return klr.allPreds;
     }
 
-    public PeptideObj[] getPeptideObjects(ConcurrentHashMap<String, PredictionEntry> allPreds) throws FileParsingException {
+    public PeptideObj[] getPeptideObjects(PredictionEntryHashMap allPreds) throws FileParsingException, ExecutionException, InterruptedException {
+        allPreds.filterTopFragments(new ScheduledThreadPoolExecutor(Constants.numThreads));
+
         int arrayLength = 0;
         for (LinkedList<Integer> scanNum : scanNums.values()) {
             arrayLength += scanNum.size();

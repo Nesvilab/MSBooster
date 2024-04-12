@@ -29,7 +29,6 @@ import java.io.*;
 import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
 import java.util.*;
-import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ScheduledThreadPoolExecutor;
 
 //this is what I use in the java jar file
@@ -391,6 +390,7 @@ public class MainClass {
 
             //if different RT and spectra models
             Constants.spectraRTPredModel = "";
+            HashMap<String, float[]> datapointsRT = new HashMap<>();
             if (Constants.useRT) {
                 //here, look for best rt model
                 if (Constants.findBestRtModel) {
@@ -409,7 +409,7 @@ public class MainClass {
 
                     HashMap<String, Float> MSEs = new HashMap<>();
                     for (String model : consideredModels) {
-                        ConcurrentHashMap<String, PredictionEntry> allPreds = null;
+                        PredictionEntryHashMap allPreds = null;
                         if (model.equals("DIA-NN")) { //mode for DIA-NN
                             MyFileUtils.createWholeDirectory(jsonOutFolder + File.separator + model);
 
@@ -450,11 +450,16 @@ public class MainClass {
                             LinkedList<String> thisPeptides = km.peptides.get(pmMatcher.mzmlFiles[j].getName());
 
                             for (int k = 0; k < thisScanNums.size(); k++) {
-                                int scanNum = thisScanNums.get(k);
-                                String peptide = thisPeptides.get(k).split(",")[0];
-                                MzmlScanNumber msn = mzmlReader.getScanNumObject(scanNum);
-                                expRTs.add(msn.RT);
-                                predRTs.add(allPreds.get(peptide).RT);
+                                try {
+                                    int scanNum = thisScanNums.get(k);
+                                    String peptide = thisPeptides.get(k).split(",")[0];
+                                    MzmlScanNumber msn = mzmlReader.getScanNumObject(scanNum);
+
+                                    float predRT = allPreds.get(peptide).RT;
+                                    float expRT = msn.RT;
+                                    predRTs.add(predRT);
+                                    expRTs.add(expRT);
+                                } catch (Exception e) {}
                             }
                         }
                         double[][] rts = new double[2][expRTs.size()];
@@ -470,10 +475,18 @@ public class MainClass {
                         for (int i = 0; i < bandwidths.length; i++) {
                             floatBandwidths[i] = Float.parseFloat(bandwidths[i]);
                         }
-                        float mse = StatMethods.gridSearchCV(rts, floatBandwidths)[1];
+                        float[] rtdiffs = StatMethods.gridSearchCV(rts, floatBandwidths);
+                        //System.out.println(Arrays.toString(rtdiffs));
+                        rtdiffs = Arrays.copyOfRange(rtdiffs, 1, rtdiffs.length);
+                        float mse = StatMethods.meanSquaredError(rtdiffs);
                         MSEs.put(model, mse);
                         printInfo(model + " has root mean squared error of " +
                                 String.format("%.4f", Math.sqrt(mse)));
+                        for (int i = 0; i < rtdiffs.length; i++) {
+                            rtdiffs[i] = Math.abs(rtdiffs[i]);
+                        }
+                        Arrays.sort(rtdiffs);
+                        datapointsRT.put(model, rtdiffs);
                     }
 
                     //get best model
@@ -486,6 +499,25 @@ public class MainClass {
                         }
                     }
                     printInfo("RT model chosen is " + Constants.rtModel);
+
+                    //write file that has all values for each model
+                    BufferedWriter bw = new BufferedWriter(new FileWriter(
+                            Constants.outputDirectory + File.separator + "bestrtmodel.tsv"));
+                    StringBuilder sb = new StringBuilder();
+                    ArrayList<String> models = new ArrayList<>();
+                    for (String model : datapointsRT.keySet()) {
+                        sb.append(model).append("\t");
+                        models.add(model);
+                    }
+                    sb.deleteCharAt(sb.length() - 1);
+                    bw.write(sb.toString() + "\n");
+                    for (int i = 0; i < datapointsRT.get(models.get(0)).length; i++) {
+                        for (String model : models) {
+                            bw.write(datapointsRT.get(model)[i] + "\t");
+                        }
+                        bw.write("\n");
+                    }
+                    bw.close();
                 }
 
                 if (Constants.rtModel.isEmpty()) {
@@ -518,6 +550,7 @@ public class MainClass {
 
                     HashMap<String, Double> medianSimilarities = new HashMap<>();
                     HashMap<String, TreeMap<Integer, ArrayList<Double>>> similarities = new HashMap<>();
+                    HashMap<String, ArrayList<Double>> datapoints = new HashMap<>();
                     for (String model : consideredModels) {
                         MyFileUtils.createWholeDirectory(jsonOutFolder + File.separator + model);
                         if (model.equals("DIA-NN")) { //mode for DIA-NN
@@ -538,9 +571,10 @@ public class MainClass {
                             myWriter.close();
 
                             DiannModelCaller.callModel(inputFile, false);
-                            ConcurrentHashMap<String, PredictionEntry> allPreds =
+                            PredictionEntryHashMap allPreds =
                                     SpectralPredictionMapper.createSpectralPredictionMapper(
                                     Constants.spectraRTPredFile, "DIA-NN", executorService).getPreds();
+                            //allPreds.filterTopFragments(executorService);
                             Constants.spectraRTPredFile = null;
 
                             //get median similarity
@@ -548,6 +582,10 @@ public class MainClass {
                             for (PeptideObj peptideObj : km.getPeptideObjects(allPreds)) {
                                 similarity.add(peptideObj.spectralSimObj.unweightedSpectralEntropy());
                             }
+                            try {
+                                similarity.sort(Comparator.naturalOrder());
+                                datapoints.put(model, similarity);
+                            } catch (Exception e) {}
                             double median = StatMethods.medianDouble(similarity);
                             medianSimilarities.put(model, median);
                             printInfo("Median similarity for DIA-NN is " +
@@ -560,19 +598,29 @@ public class MainClass {
                                 medianSimilarities.put(model + "&" + results[4], (Double) results[3]);
                                 similarities.put(model + "&" + results[4],
                                         (TreeMap<Integer, ArrayList<Double>>) results[2]);
+                                try {
+                                    ArrayList<Double> similarity = similarities.get(model + "&" + results[4]).get(results[4]);
+                                    similarity.sort(Comparator.naturalOrder());
+                                    datapoints.put(model, similarity);
+                                } catch (Exception e) {}
                             } else {
                                 HashSet<String> allHits = km.writeFullPeptideFile(jsonOutFolder +
                                         File.separator + model + "_full.tsv", model);
-                                ConcurrentHashMap<String, PredictionEntry> allPreds =
+                                PredictionEntryHashMap allPreds =
                                         km.getKoinaPredictions(allHits, model, 30,
                                                 jsonOutFolder + File.separator + model,
                                                 jsonOutFolder + File.separator + model + "_full.tsv");
+                                //allPreds.filterTopFragments(executorService);
 
                                 //get median similarity
                                 ArrayList<Double> similarity = new ArrayList<>();
                                 for (PeptideObj peptideObj : km.getPeptideObjects(allPreds)) {
                                     similarity.add(peptideObj.spectralSimObj.unweightedSpectralEntropy());
                                 }
+                                try {
+                                    similarity.sort(Comparator.naturalOrder());
+                                    datapoints.put(model, similarity);
+                                } catch (Exception e) {}
                                 double median = StatMethods.medianDouble(similarity);
                                 medianSimilarities.put(model, median);
                                 printInfo("Median similarity for " + model + " is " +
@@ -602,6 +650,25 @@ public class MainClass {
                     Constants.calibrateNCE = false;
                     Constants.autoSwitchFragmentation = false;
                     printInfo("Spectra model chosen is " + Constants.spectraModel);
+
+                    //write file that has all values for each model
+                    BufferedWriter bw = new BufferedWriter(new FileWriter(
+                            Constants.outputDirectory + File.separator + "bestms2model.tsv"));
+                    StringBuilder sb = new StringBuilder();
+                    ArrayList<String> models = new ArrayList<>();
+                    for (String model : datapoints.keySet()) {
+                        sb.append(model).append("\t");
+                        models.add(model);
+                    }
+                    sb.deleteCharAt(sb.length() - 1);
+                    bw.write(sb.toString() + "\n");
+                    for (int i = 0; i < datapoints.get(models.get(0)).size(); i++) {
+                        for (String model : models) {
+                            bw.write(datapoints.get(model).get(i) + "\t");
+                        }
+                        bw.write("\n");
+                    }
+                    bw.close();
                 }
 
                 if (Constants.spectraModel.isEmpty()) {
@@ -620,6 +687,8 @@ public class MainClass {
                 Constants.spectraModel = "";
             }
             Constants.foundBest = true;
+
+            //System.exit(0);
 
             //set useKoina based on model
             if (Constants.KoinaRTmodels.contains(Constants.rtModel) ||

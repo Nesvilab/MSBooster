@@ -476,10 +476,18 @@ public class StatMethods {
 
     public static double meanSquaredError(double[] a, double[] b) {
         double mse = 0f;
-        for(int i = 0; i < a.length; i++) {
+        for (int i = 0; i < a.length; i++) {
             mse += Math.pow(a[i] - b[i], 2);
         }
         return mse / a.length;
+    }
+
+    public static float meanSquaredError(float[] a) {
+        double mse = 0f;
+        for (float value : a) {
+            mse += Math.pow(value, 2);
+        }
+        return (float) (mse / a.length);
     }
 
     public static ArrayList<double[][][]> trainTestSplit(double[][] expAndPred) {
@@ -517,7 +525,7 @@ public class StatMethods {
         return splits;
     }
 
-    //finds the best bandwidth and mse
+    //finds the best bandwidth and absolute error between all points
     public static float[] gridSearchCV(double[][] rts, float[] bandwidths) {
         float[] bestBandwidths = new float[Constants.regressionSplits];
 
@@ -525,7 +533,7 @@ public class StatMethods {
         ArrayList<double[][][]> splits = trainTestSplit(rts);
 
         System.out.print("Iteration ");
-        double bestMSE = Double.MAX_VALUE;
+        double bestMSE;
         for (int Nsplit = 0; Nsplit < splits.size(); Nsplit++) {
             bestMSE = Double.MAX_VALUE;
             System.out.print(Nsplit + 1 + "...");
@@ -559,6 +567,29 @@ public class StatMethods {
         }
         System.out.println();
         float finalBandwidth = Float.parseFloat(String.format("%.4f", mean(bestBandwidths)));
-        return new float[]{finalBandwidth, (float) bestMSE};
+
+        //train one more loess and calculate mse
+        //or just have all indexes past 1 as rtDiffs
+        //final model trained on all data
+        bestMSE = Double.MAX_VALUE;
+        while (true) {
+            try {
+                Function1<Double, Double> loess = LOESS(rts, finalBandwidth, Constants.robustIters);
+                float[] rtDiffs = new float[rts[0].length + 1];
+                rtDiffs[0] = finalBandwidth;
+                for (int i = 0; i < rtDiffs.length - 1; i++) {
+                    double rt = rts[0][i];
+                    rtDiffs[i + 1] = (float) (loess.invoke(rt) - rts[1][i]);
+                }
+                return rtDiffs;
+            } catch (Exception e) {
+                e.printStackTrace();
+                if (finalBandwidth == 1) {
+                    return new float[]{finalBandwidth, (float) bestMSE};
+                }
+                finalBandwidth = Math.min(finalBandwidth * 2, 1);
+                printInfo("Regression failed, retrying with double the bandwidth: " + finalBandwidth);
+            }
+        }
     }
 }

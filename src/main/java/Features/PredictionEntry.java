@@ -35,6 +35,7 @@ public class PredictionEntry {
     HashMap<String, Float[]> scores = new HashMap<>();
     ArrayList<Integer> times = new ArrayList<>();
     double precursorMz = 0d;
+    boolean filtered = false;
 
     public PredictionEntry() {}
 
@@ -70,120 +71,123 @@ public class PredictionEntry {
     }
 
     public void filterFragments() {
-        if (intensities.length != 0) {
-            if (Constants.useBasePeak || Constants.useTopFragments) {
-                int potentialFragments = intensities.length;
-                int nonFragments = 0;
-                float[] tmpInts = new float[potentialFragments];
-                if (Constants.useBasePeak) {
-                    if (Constants.percentBasePeak < 100) {
-                        //get max intensity
-                        float maxIntensity = 0f;
-                        for (float f : intensities) {
-                            if (f > maxIntensity) {
-                                maxIntensity = f;
+        if (!filtered) {
+            filtered = true;
+            if (intensities.length != 0) {
+                if (Constants.useBasePeak || Constants.useTopFragments) {
+                    int potentialFragments = intensities.length;
+                    float[] tmpInts = new float[potentialFragments];
+                    for (int i = 0; i < potentialFragments; i++) {
+                        tmpInts[i] = intensities[i];
+                    }
+                    if (Constants.useBasePeak) {
+                        if (Constants.percentBasePeak < 100) {
+                            //get max intensity
+                            float maxIntensity = 0f;
+                            for (float f : intensities) {
+                                if (f > maxIntensity) {
+                                    maxIntensity = f;
+                                }
+                            }
+
+                            //make cutoff by percentage
+                            float cutoff = Constants.percentBasePeak / 100f * maxIntensity;
+                            for (int i = 0; i < tmpInts.length; i++) {
+                                if (tmpInts[i] < cutoff) {
+                                    tmpInts[i] = 0f;
+                                    potentialFragments--;
+                                }
                             }
                         }
-
-                        //make cutoff by percentage
-                        float cutoff = Constants.percentBasePeak / 100f * maxIntensity;
-                        for (int i = 0; i < intensities.length; i++) {
-                            float intensity = intensities[i];
-                            if (intensity < cutoff) {
-                                intensity = 0f; //0 means below cutoff
-                                nonFragments++;
-                            }
-                            tmpInts[i] = intensity;
-                        }
-                    }
-                }
-
-                potentialFragments -= nonFragments;
-                if ((potentialFragments > Constants.topFragments) &&
-                        (Constants.useTopFragments)) {
-                    potentialFragments = Constants.topFragments;
-
-                    ArrayList<Boolean> highestInt = new ArrayList<>(tmpInts.length);
-                    for (int i = 0; i < tmpInts.length; i++) {
-                        highestInt.add(false);
                     }
 
-                    //setting highest intensities to -1
-                    for (int i = 0; i < Constants.topFragments; i++) {
-                        float maxInt = tmpInts[0];
-                        int index = 0;
-                        for (int j = 1; j < tmpInts.length; j++) {
-                            float thisInt = tmpInts[j];
-                            if (thisInt > maxInt) {
-                                maxInt = thisInt;
-                                index = j;
-                            }
-                        }
-                        tmpInts[index] = -1f; //no longer highest intensity peak
-                    }
-                }
+                    if ((potentialFragments > Constants.topFragments) &&
+                            (Constants.useTopFragments)) {
+                        potentialFragments = Constants.topFragments;
 
-                //assigning final values
-                float[] predIntensities = new float[potentialFragments];
-                float[] predMZs = new float[potentialFragments];
-                int[] pfragNums = new int[potentialFragments];
-                int[] pflags = new int[potentialFragments];
-                int[] pcharges = new int[potentialFragments];
-                String[] pfragmentIonTypes = new String[potentialFragments];
-                int addIdx = 0;
-                for (int i = 0; i < tmpInts.length; i++) {
-                    if (Constants.useTopFragments) {
-                        if (tmpInts[i] == -1f) {
-                            predIntensities[addIdx] = intensities[i];
-                            predMZs[addIdx] = mzs[i];
-                            if (fragNums.length > 0) {
-                                pfragNums[addIdx] = fragNums[i];
+                        //setting highest intensities to -1
+                        for (int i = 0; i < Constants.topFragments; i++) {
+                            float maxInt = tmpInts[0];
+                            int index = 0;
+                            for (int j = 1; j < tmpInts.length; j++) {
+                                float thisInt = tmpInts[j];
+                                if (thisInt > maxInt) {
+                                    maxInt = thisInt;
+                                    index = j;
+                                }
                             }
-                            if (flags.length > 0) {
-                                pflags[addIdx] = flags[i];
-                            }
-                            if (charges.length > 0) {
-                                pcharges[addIdx] = charges[i];
-                            }
-                            if (fragmentIonTypes.length > 0) {
-                                pfragmentIonTypes[addIdx] = fragmentIonTypes[i];
-                            }
-                            addIdx++;
+                            tmpInts[index] = -1f; //no longer highest intensity peak
                         }
                     } else {
-                        if (tmpInts[i] != 0f) {
-                            predIntensities[addIdx] = intensities[i];
-                            predMZs[addIdx] = mzs[i];
-                            if (fragNums.length > 0) {
-                                pfragNums[addIdx] = fragNums[i];
+                        for (int i = 0; i < tmpInts.length; i++) {
+                            if (tmpInts[i] != 0f) {
+                                tmpInts[i] = -1f;
                             }
-                            if (flags.length > 0) {
-                                pflags[addIdx] = flags[i];
-                            }
-                            if (charges.length > 0) {
-                                pcharges[addIdx] = charges[i];
-                            }
-                            if (fragmentIonTypes.length > 0) {
-                                pfragmentIonTypes[addIdx] = fragmentIonTypes[i];
-                            }
-                            addIdx++;
                         }
                     }
-                }
 
-                mzs = predMZs;
-                intensities = predIntensities;
-                if (fragNums.length > 0) {
-                    fragNums = pfragNums;
-                }
-                if (flags.length > 0) {
-                    flags = pflags;
-                }
-                if (charges.length > 0) {
-                    charges = pcharges;
-                }
-                if (fragmentIonTypes.length > 0) {
-                    fragmentIonTypes = pfragmentIonTypes;
+                    //assigning final values
+                    float[] predIntensities = new float[potentialFragments];
+                    float[] predMZs = new float[potentialFragments];
+                    int[] pfragNums = new int[potentialFragments];
+                    int[] pflags = new int[potentialFragments];
+                    int[] pcharges = new int[potentialFragments];
+                    String[] pfragmentIonTypes = new String[potentialFragments];
+                    int addIdx = 0;
+                    for (int i = 0; i < tmpInts.length; i++) {
+                        if (Constants.useTopFragments) {
+                            if (tmpInts[i] == -1f) {
+                                predIntensities[addIdx] = intensities[i];
+                                predMZs[addIdx] = mzs[i];
+                                if (fragNums.length > 0) {
+                                    pfragNums[addIdx] = fragNums[i];
+                                }
+                                if (flags.length > 0) {
+                                    pflags[addIdx] = flags[i];
+                                }
+                                if (charges.length > 0) {
+                                    pcharges[addIdx] = charges[i];
+                                }
+                                if (fragmentIonTypes.length > 0) {
+                                    pfragmentIonTypes[addIdx] = fragmentIonTypes[i];
+                                }
+                                addIdx++;
+                            }
+                        } else {
+                            if (tmpInts[i] != 0f) {
+                                predIntensities[addIdx] = intensities[i];
+                                predMZs[addIdx] = mzs[i];
+                                if (fragNums.length > 0) {
+                                    pfragNums[addIdx] = fragNums[i];
+                                }
+                                if (flags.length > 0) {
+                                    pflags[addIdx] = flags[i];
+                                }
+                                if (charges.length > 0) {
+                                    pcharges[addIdx] = charges[i];
+                                }
+                                if (fragmentIonTypes.length > 0) {
+                                    pfragmentIonTypes[addIdx] = fragmentIonTypes[i];
+                                }
+                                addIdx++;
+                            }
+                        }
+                    }
+
+                    mzs = predMZs;
+                    intensities = predIntensities;
+                    if (fragNums.length > 0) {
+                        fragNums = pfragNums;
+                    }
+                    if (flags.length > 0) {
+                        flags = pflags;
+                    }
+                    if (charges.length > 0) {
+                        charges = pcharges;
+                    }
+                    if (fragmentIonTypes.length > 0) {
+                        fragmentIonTypes = pfragmentIonTypes;
+                    }
                 }
             }
         }

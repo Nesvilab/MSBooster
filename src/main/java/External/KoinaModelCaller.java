@@ -338,7 +338,7 @@ public class KoinaModelCaller {
 
     private static void assignRTs(String fileName, float[] RTs, KoinaLibReader klr) throws IOException {
         String[] peptides = readJSON(fileName, RTs.length);
-        ConcurrentHashMap<String, PredictionEntry> preds = klr.getPreds();
+        PredictionEntryHashMap preds = klr.getPreds();
         for (int i = 0; i < peptides.length; i++) {
             PeptideFormatter pf = new PeptideFormatter(peptides[i], 1, "diann");
             int entries = 0; //in case RT prediction is available but not MS2
@@ -374,7 +374,7 @@ public class KoinaModelCaller {
                                   String[][] fragmentIonTypes, int[][] fragNums, int[][] charges, KoinaLibReader klr)
             throws IOException {
         String[] peptides = readJSON(fileName, intensities.length);
-        ConcurrentHashMap<String, PredictionEntry> preds = klr.getPreds();
+        PredictionEntryHashMap preds = klr.getPreds();
         for (int i = 0; i < peptides.length; i++) {
             PeptideFormatter pf = new PeptideFormatter(peptides[i].split("\\|")[0],
                     peptides[i].split("\\|")[1], "diann");
@@ -407,7 +407,7 @@ public class KoinaModelCaller {
         BufferedReader TSVReader = new BufferedReader(new FileReader(fulltsv));
         String l;
         String[] line;
-        ConcurrentHashMap<String, PredictionEntry> preds = klr.getPreds();
+        PredictionEntryHashMap preds = klr.getPreds();
 
         while ((l = TSVReader.readLine()) != null) {
             line = l.split("\t");

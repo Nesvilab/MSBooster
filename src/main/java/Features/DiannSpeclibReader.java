@@ -33,7 +33,7 @@ import java.util.concurrent.ConcurrentHashMap;
 
 public class DiannSpeclibReader implements SpectralPredictionMapper{
     final ArrayList<String> filenames;
-    ConcurrentHashMap<String, PredictionEntry> allPreds = new ConcurrentHashMap<>();
+    PredictionEntryHashMap allPreds = new PredictionEntryHashMap();
 
     //https://stackoverflow.com/questions/46163114/get-bit-values-from-byte-array
     //https://www.geeksforgeeks.org/bitwise-operators-in-java/
@@ -172,8 +172,8 @@ public class DiannSpeclibReader implements SpectralPredictionMapper{
         return n >> (32 - offset - length) & ~(-1 << length);
     }
 
-    public ConcurrentHashMap<String, PredictionEntry> getPreds() { return allPreds; }
-    public void setPreds(ConcurrentHashMap<String, PredictionEntry> preds) {
+    public PredictionEntryHashMap getPreds() { return allPreds; }
+    public void setPreds(PredictionEntryHashMap preds) {
         allPreds = preds;
     }
 

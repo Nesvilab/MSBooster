@@ -37,7 +37,7 @@ import java.util.concurrent.Future;
 
 public class PercolatorFormatter {
 
-    static ConcurrentHashMap<String, PredictionEntry> allPreds;
+    static PredictionEntryHashMap allPreds;
     static RangeMap<Double, ArrayList<Integer>> allMatchedScans = TreeRangeMap.create();
 
     public static void editPin(PinMzmlMatcher pmMatcher, String mgf, String detectFile,
@@ -194,7 +194,6 @@ public class PercolatorFormatter {
                 predictedSpectra2 = null; //free up memory
             }
         }
-        predictedSpectra.setPreds(predictedSpectra.filterTopFragments(executorService));
         allPreds = predictedSpectra.getPreds();
         //TODO test to make sure predicted spectra and allpreds are same
 

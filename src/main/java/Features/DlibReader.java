@@ -38,7 +38,7 @@ import java.util.zip.Inflater;
 //refer to https://bitbucket.org/searleb/encyclopedia/wiki/EncyclopeDIA%20File%20Formats
 public class DlibReader implements SpectralPredictionMapper{
     ArrayList<String> filenames = new ArrayList<>();
-    ConcurrentHashMap<String, PredictionEntry> allPreds = new ConcurrentHashMap();
+    PredictionEntryHashMap allPreds = new PredictionEntryHashMap();
 
     public DlibReader(String dlib) throws SQLException, IOException, FileParsingException, ExecutionException, InterruptedException {
         File predsDirectory = new File(dlib);
@@ -269,10 +269,10 @@ public class DlibReader implements SpectralPredictionMapper{
         return decompressedData;
     }
 
-    public ConcurrentHashMap<String, PredictionEntry> getPreds() throws IOException {
+    public PredictionEntryHashMap getPreds() throws IOException {
         return allPreds;
     }
-    public void setPreds(ConcurrentHashMap<String, PredictionEntry> preds) {
+    public void setPreds(PredictionEntryHashMap preds) {
         allPreds = preds;
     }
 

@@ -288,7 +288,7 @@ public class MzmlReader {
         private final ArrayList<Integer> ranks = new ArrayList<>();
         private final ArrayList<Integer> tds = new ArrayList<>();
         private final ArrayList<String> escores = new ArrayList<>();
-        private final ConcurrentHashMap<String, PredictionEntry> allPreds;
+        private final PredictionEntryHashMap allPreds;
         private final int specIdx;
         private final int pepIdx;
         private final int rankIdx;
@@ -296,7 +296,7 @@ public class MzmlReader {
         private final int eScoreIdx;
         private final boolean calcEvalue;
         private final ProgressReporter pr;
-        public setScanNumPepObj(String scanNum, ConcurrentHashMap<String, PredictionEntry> allPreds,
+        public setScanNumPepObj(String scanNum, PredictionEntryHashMap allPreds,
                                 int specIdx, int pepIdx, int rankIdx, int labelIdx, int eScoreIdx, boolean calcEvalue,
                                 ProgressReporter pr) {
             this.scanNum = Integer.parseInt(scanNum);
@@ -349,7 +349,8 @@ public class MzmlReader {
     }
     public void setPinEntries(PinReader pin, SpectralPredictionMapper spm, ExecutorService executorService)
             throws AssertionError, Exception {
-        ConcurrentHashMap<String, PredictionEntry> allPreds = spm.getPreds();
+        PredictionEntryHashMap allPreds = spm.getPreds();
+        allPreds.filterTopFragments(executorService);
         ProgressReporter pr = new ProgressReporter(pin.getLength());
         futureList.clear();
         createScanNumObjects();

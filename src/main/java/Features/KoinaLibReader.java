@@ -21,12 +21,12 @@ import java.util.concurrent.ConcurrentHashMap;
 
 public class KoinaLibReader implements SpectralPredictionMapper {
     public boolean failed = false;
-    public ConcurrentHashMap<String, PredictionEntry> allPreds = new ConcurrentHashMap<>();
+    public PredictionEntryHashMap allPreds = new PredictionEntryHashMap();
 
     public KoinaLibReader() {}
 
-    public ConcurrentHashMap<String, PredictionEntry> getPreds() {return allPreds;}
-    public void setPreds(ConcurrentHashMap<String, PredictionEntry> preds) {
+    public PredictionEntryHashMap getPreds() {return allPreds;}
+    public void setPreds(PredictionEntryHashMap preds) {
         allPreds = preds;
     }
 

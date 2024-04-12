@@ -142,7 +142,7 @@ public class MzmlScanNumber {
     public float[] getExpIntensities() { return expIntensities; }
 
     public PeptideObj setPeptideObject(PeptideFormatter name, int rank, int targetORdecoy, String escore,
-                                 ConcurrentHashMap<String, PredictionEntry> allPreds, boolean set) {
+                                       PredictionEntryHashMap allPreds, boolean set) {
         PredictionEntry predictionEntry = allPreds.get(name.baseCharge);
         PeptideObj newPepObj = null;
         try {

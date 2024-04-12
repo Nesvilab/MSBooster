@@ -19,12 +19,7 @@ package External;
 
 import static utils.Print.printInfo;
 
-import Features.Constants;
-import Features.MainClass;
-import Features.MyFileUtils;
-import Features.PeptideObj;
-import Features.PredictionEntry;
-import Features.StatMethods;
+import Features.*;
 import com.google.common.util.concurrent.AtomicDouble;
 import java.io.File;
 import java.io.IOException;
@@ -34,9 +29,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.Future;
+import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicInteger;
 import org.knowm.xchart.BitmapEncoder;
 import org.knowm.xchart.BoxChart;
@@ -75,7 +68,7 @@ public class NCEcalibrator {
             for (int NCE = Constants.minNCE; NCE < Constants.maxNCE + 1; NCE++) {
                 int finalNCE = NCE;
                 futureList.add(MainClass.executorService.submit(() -> {
-                    ConcurrentHashMap<String, PredictionEntry> allPreds =
+                    PredictionEntryHashMap allPreds =
                             km.getKoinaPredictions(allHits, finalCurrentModel, finalNCE,
                                     jsonOutFolder + File.separator + finalNCE,
                                     jsonOutFolder + File.separator + "NCE_calibration_full.tsv");
@@ -88,7 +81,7 @@ public class NCEcalibrator {
                         for (PeptideObj peptideObj : km.getPeptideObjects(allPreds)) {
                             similarity.add(peptideObj.spectralSimObj.unweightedSpectralEntropy());
                         }
-                    } catch (FileParsingException e) {
+                    } catch (FileParsingException | ExecutionException | InterruptedException e) {
                         throw new RuntimeException(e);
                     }
 

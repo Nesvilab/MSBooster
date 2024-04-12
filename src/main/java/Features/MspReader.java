@@ -30,7 +30,7 @@ import java.util.concurrent.ConcurrentHashMap;
 
 public class MspReader implements SpectralPredictionMapper {
     final ArrayList<String> filenames;
-    ConcurrentHashMap<String, PredictionEntry> allPreds = new ConcurrentHashMap<>();
+    PredictionEntryHashMap allPreds = new PredictionEntryHashMap();
 
     //convert int flag to fragment ion type
     private static HashMap<Integer, String> makeFlagTOion() {
@@ -202,8 +202,8 @@ public class MspReader implements SpectralPredictionMapper {
         }
     }
 
-    public ConcurrentHashMap<String, PredictionEntry> getPreds() { return allPreds; }
-    public void setPreds(ConcurrentHashMap<String, PredictionEntry> preds) {
+    public PredictionEntryHashMap getPreds() { return allPreds; }
+    public void setPreds(PredictionEntryHashMap preds) {
         allPreds = preds;
     }
 

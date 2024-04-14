@@ -23,12 +23,7 @@ import Features.*;
 import com.google.common.util.concurrent.AtomicDouble;
 import java.io.File;
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.TreeMap;
+import java.util.*;
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicInteger;
 import org.knowm.xchart.BitmapEncoder;
@@ -39,7 +34,10 @@ import umich.ms.fileio.exceptions.FileParsingException;
 
 public class NCEcalibrator {
     public static Object[] calibrateNCE(String currentModel,
-                                        ArrayList<String> models, KoinaMethods km, String jsonOutFolder)
+                                        ArrayList<String> models, KoinaMethods km, String jsonOutFolder,
+                                        HashSet<String> peptideSet,
+                                        HashMap<String, LinkedList<Integer>> scanNums,
+                                        HashMap<String, LinkedList<String>> peptides)
             throws IOException, ExecutionException, InterruptedException {
         TreeMap<Integer, ArrayList<Double>> similarities = new TreeMap<>();
         double bestMedianDouble = 0d;
@@ -53,7 +51,7 @@ public class NCEcalibrator {
             //write full.tsv
             //get peptides formatted for jsonwriter
             HashSet<String> allHits = km.writeFullPeptideFile(
-                    jsonOutFolder + File.separator + "NCE_calibration_full.tsv", currentModel);
+                    jsonOutFolder + File.separator + "NCE_calibration_full.tsv", currentModel, peptideSet);
 
             //iterate through every NCE
             //TODO: make this into one method, taking a model and iterating through all NCEs
@@ -78,7 +76,7 @@ public class NCEcalibrator {
                     //can move this after reading in mzml files
                     ArrayList<Double> similarity = new ArrayList<>();
                     try {
-                        for (PeptideObj peptideObj : km.getPeptideObjects(allPreds)) {
+                        for (PeptideObj peptideObj : km.getPeptideObjects(allPreds, scanNums, peptides)) {
                             similarity.add(peptideObj.spectralSimObj.unweightedSpectralEntropy());
                         }
                     } catch (FileParsingException | ExecutionException | InterruptedException e) {

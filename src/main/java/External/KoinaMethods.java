@@ -38,6 +38,11 @@ public class KoinaMethods {
     public HashMap<String, LinkedList<Integer>> scanNums = new HashMap<>();
     public HashMap<String, LinkedList<String>> peptides = new HashMap<>();
 
+    //decoys
+    public HashSet<String> peptideSetDecoys = new HashSet<>();
+    public HashMap<String, LinkedList<Integer>> scanNumsDecoys = new HashMap<>();
+    public HashMap<String, LinkedList<String>> peptidesDecoys = new HashMap<>();
+
     private static final Map<String, String> generalModels = ImmutableMap.of(
             "Prosit_2020_intensity_HCD", "Prosit",
             "Prosit_2020_intensity_CID", "Prosit");
@@ -65,7 +70,23 @@ public class KoinaMethods {
         }
     }
 
-    public HashSet<String> writeFullPeptideFile(String filePath, String currentModel) throws IOException {
+    public void getDecoyPeptides() throws IOException {
+        //need to collect top 1000 peptides for calibration
+        //approximate by doing a subset per pin
+        int numTopPSMs = (int) Math.ceil((float) Constants.numPSMsToCalibrate /
+                (float) pmMatcher.pinFiles.length);
+
+        for (int j = 0; j < pmMatcher.pinFiles.length; j++) {
+            File pinFile = pmMatcher.pinFiles[j];
+            PinReader pinReader = new PinReader(pinFile.getAbsolutePath());
+            LinkedList[] decoyPSMs = pinReader.getDecoyPSMs(numTopPSMs);
+            peptideSetDecoys.addAll(decoyPSMs[0]);
+            scanNumsDecoys.put(pmMatcher.mzmlFiles[j].getName(), decoyPSMs[1]);
+            peptidesDecoys.put(pmMatcher.mzmlFiles[j].getName(), decoyPSMs[0]);
+        }
+    }
+
+    public HashSet<String> writeFullPeptideFile(String filePath, String currentModel, HashSet<String> peptideSet) throws IOException {
         FileWriter myWriter = new FileWriter(filePath);
         HashSet<String> allHits = new HashSet<>();
         for (String peptide : peptideSet) {
@@ -150,7 +171,10 @@ public class KoinaMethods {
         return klr.allPreds;
     }
 
-    public PeptideObj[] getPeptideObjects(PredictionEntryHashMap allPreds) throws FileParsingException, ExecutionException, InterruptedException {
+    public PeptideObj[] getPeptideObjects(PredictionEntryHashMap allPreds,
+                                          HashMap<String, LinkedList<Integer>> scanNums,
+                                          HashMap<String, LinkedList<String>> peptides)
+            throws FileParsingException, ExecutionException, InterruptedException {
         allPreds.filterTopFragments(new ScheduledThreadPoolExecutor(Constants.numThreads));
 
         int arrayLength = 0;

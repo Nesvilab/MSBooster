@@ -455,4 +455,36 @@ public class PinReader {
         reset();
         return new LinkedList[]{PSMs, scanNums};
     }
+
+    public LinkedList[] getDecoyPSMs(int num) throws IOException {
+        LinkedList<String> PSMs = new LinkedList<>();
+        LinkedList<Integer> scanNums = new LinkedList<>();
+
+        //quicker way of getting top NCE
+        PriorityQueue<Float> topEscores = new PriorityQueue<>(num, (a, b) -> Float.compare(b, a));
+        while (next(true)) {
+            if (getTD() == 0) {
+                float escore = Float.parseFloat(getEScore());
+                if (topEscores.size() < num) {
+                    topEscores.offer(escore);
+                } else if (escore < topEscores.peek()) {
+                    topEscores.poll();
+                    topEscores.offer(escore);
+                }
+            }
+        }
+        reset();
+        float eScoreCutoff = topEscores.peek();
+
+        while (next(true) && PSMs.size() < num) {
+            float escore = Float.parseFloat(getEScore());
+            if ((escore <= eScoreCutoff) && (getTD() == 0)) {
+                PeptideFormatter pf = getPep();
+                PSMs.add(pf.getBaseCharge() + "," + pf.getDiann() + "," + pf.getStripped());
+                scanNums.add(getScanNum());
+            }
+        }
+        reset();
+        return new LinkedList[]{PSMs, scanNums};
+    }
 }

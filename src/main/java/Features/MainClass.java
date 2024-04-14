@@ -374,12 +374,14 @@ public class MainClass {
             PinMzmlMatcher pmMatcher = new PinMzmlMatcher(Constants.mzmlDirectory, Constants.pinPepXMLDirectory);
 
             //needed for nce calibration and best model search
+            //TODO: could also make a new koinamethods object for decoys
             KoinaMethods km = new KoinaMethods(pmMatcher);
             boolean TMT = false;
             if (Constants.calibrateNCE || Constants.findBestRtModel || Constants.findBestSpectraModel ||
             Constants.KoinaMS2models.contains(Constants.spectraModel) ||
                     Constants.KoinaRTmodels.contains(Constants.rtModel)) {
                 km.getTopPeptides();
+                km.getDecoyPeptides();
                 for (String pep : km.peptideSet) {
                     if (pep.contains(String.valueOf(PTMhandler.tmtMass))) {
                         TMT = true;
@@ -414,7 +416,7 @@ public class MainClass {
                             MyFileUtils.createWholeDirectory(jsonOutFolder + File.separator + model);
 
                             km.writeFullPeptideFile(jsonOutFolder + File.separator + model + File.separator +
-                                    "spectraRT_full.tsv", model);
+                                    "spectraRT_full.tsv", model, km.peptideSet);
                             String inputFile = jsonOutFolder + File.separator + model + File.separator + "spectraRT.tsv";
                             FileWriter myWriter = new FileWriter(inputFile);
                             myWriter.write("peptide" + "\t" + "charge\n");
@@ -435,7 +437,8 @@ public class MainClass {
                             Constants.spectraRTPredFile = null;
                         } else { //mode for koina
                             HashSet<String> allHits = km.writeFullPeptideFile(
-                                    jsonOutFolder + File.separator + model + "_full.tsv", model);
+                                    jsonOutFolder + File.separator + model + "_full.tsv", model,
+                                    km.peptideSet);
                             allPreds = km.getKoinaPredictions(allHits, model, 30,
                                     jsonOutFolder + File.separator + model,
                                     jsonOutFolder + File.separator + model + "_full.tsv");
@@ -551,11 +554,12 @@ public class MainClass {
                     HashMap<String, Double> medianSimilarities = new HashMap<>();
                     HashMap<String, TreeMap<Integer, ArrayList<Double>>> similarities = new HashMap<>();
                     HashMap<String, ArrayList<Double>> datapoints = new HashMap<>();
+                    HashMap<String, ArrayList<Double>> datapointsDecoys = new HashMap<>();
                     for (String model : consideredModels) {
                         MyFileUtils.createWholeDirectory(jsonOutFolder + File.separator + model);
                         if (model.equals("DIA-NN")) { //mode for DIA-NN
                             km.writeFullPeptideFile(jsonOutFolder + File.separator + model + File.separator +
-                                    "spectraRT_full.tsv", model);
+                                    "spectraRT_full.tsv", model, km.peptideSet);
                             String inputFile = jsonOutFolder + File.separator + model + File.separator + "spectraRT.tsv";
                             FileWriter myWriter = new FileWriter(inputFile);
                             myWriter.write("peptide" + "\t" + "charge\n");
@@ -574,12 +578,11 @@ public class MainClass {
                             PredictionEntryHashMap allPreds =
                                     SpectralPredictionMapper.createSpectralPredictionMapper(
                                     Constants.spectraRTPredFile, "DIA-NN", executorService).getPreds();
-                            //allPreds.filterTopFragments(executorService);
                             Constants.spectraRTPredFile = null;
 
                             //get median similarity
                             ArrayList<Double> similarity = new ArrayList<>();
-                            for (PeptideObj peptideObj : km.getPeptideObjects(allPreds)) {
+                            for (PeptideObj peptideObj : km.getPeptideObjects(allPreds, km.scanNums, km.peptides)) {
                                 similarity.add(peptideObj.spectralSimObj.unweightedSpectralEntropy());
                             }
                             try {
@@ -590,31 +593,78 @@ public class MainClass {
                             medianSimilarities.put(model, median);
                             printInfo("Median similarity for DIA-NN is " +
                                     String.format("%.4f", median));
+
+                            //decoy
+                            km.writeFullPeptideFile(jsonOutFolder + File.separator + model + File.separator +
+                                    "spectraRT_full.tsv", model, km.peptideSetDecoys);
+                            inputFile = jsonOutFolder + File.separator + model + File.separator + "spectraRT.tsv";
+                            myWriter = new FileWriter(inputFile);
+                            myWriter.write("peptide" + "\t" + "charge\n");
+                            peptides = new HashSet<>();
+                            for (String pep : km.peptideSetDecoys) {
+                                String[] pepSplit = pep.split(",");
+                                String line = pepSplit[1] + "\t" + pepSplit[0].split("\\|")[1] + "\n";
+                                if (!peptides.contains(line)) {
+                                    myWriter.write(line);
+                                    peptides.add(line);
+                                }
+                            }
+                            myWriter.close();
+
+                            DiannModelCaller.callModel(inputFile, false);
+                            allPreds = SpectralPredictionMapper.createSpectralPredictionMapper(
+                                            Constants.spectraRTPredFile, "DIA-NN", executorService).getPreds();
+                            Constants.spectraRTPredFile = null;
+
+                            //get median similarity
+                            similarity = new ArrayList<>();
+                            for (PeptideObj peptideObj : km.getPeptideObjects(allPreds, km.scanNumsDecoys, km.peptidesDecoys)) {
+                                similarity.add(peptideObj.spectralSimObj.unweightedSpectralEntropy());
+                            }
+                            try {
+                                similarity.sort(Comparator.naturalOrder());
+                                datapointsDecoys.put(model, similarity);
+                            } catch (Exception e) {}
                         } else { //mode for koina
                             if (Constants.nceModels.contains(model)) {
                                 Object[] results = NCEcalibrator.calibrateNCE(model, new ArrayList<>(), km,
                                         Constants.outputDirectory + File.separator + "best_model" +
-                                                File.separator + model);
+                                                File.separator + model, km.peptideSet,
+                                        km.scanNums, km.peptides);
                                 medianSimilarities.put(model + "&" + results[4], (Double) results[3]);
-                                similarities.put(model + "&" + results[4],
+                                int bestNCE = (int) results[4];
+                                similarities.put(model + "&" + bestNCE,
                                         (TreeMap<Integer, ArrayList<Double>>) results[2]);
                                 try {
-                                    ArrayList<Double> similarity = similarities.get(model + "&" + results[4]).get(results[4]);
+                                    ArrayList<Double> similarity = similarities.get(model + "&" + bestNCE).get(bestNCE);
                                     similarity.sort(Comparator.naturalOrder());
                                     datapoints.put(model, similarity);
                                 } catch (Exception e) {}
+
+                                //decoy
+                                //just get similarities for decoys at same nce as targets
+                                results = NCEcalibrator.calibrateNCE(model, new ArrayList<>(), km,
+                                        Constants.outputDirectory + File.separator + "best_model" +
+                                                File.separator + model, km.peptideSetDecoys,
+                                        km.scanNumsDecoys, km.peptidesDecoys);
+                                TreeMap<Integer, ArrayList<Double>> decoysSims =
+                                        (TreeMap<Integer, ArrayList<Double>>) results[2];
+                                try {
+                                    ArrayList<Double> similarity = decoysSims.get(bestNCE);
+                                    similarity.sort(Comparator.naturalOrder());
+                                    datapointsDecoys.put(model, similarity);
+                                } catch (Exception e) {}
                             } else {
                                 HashSet<String> allHits = km.writeFullPeptideFile(jsonOutFolder +
-                                        File.separator + model + "_full.tsv", model);
+                                        File.separator + model + "_full.tsv", model, km.peptideSet);
                                 PredictionEntryHashMap allPreds =
                                         km.getKoinaPredictions(allHits, model, 30,
                                                 jsonOutFolder + File.separator + model,
                                                 jsonOutFolder + File.separator + model + "_full.tsv");
-                                //allPreds.filterTopFragments(executorService);
 
                                 //get median similarity
                                 ArrayList<Double> similarity = new ArrayList<>();
-                                for (PeptideObj peptideObj : km.getPeptideObjects(allPreds)) {
+                                for (PeptideObj peptideObj : km.getPeptideObjects(allPreds, km.scanNums, km.peptides)) {
                                     similarity.add(peptideObj.spectralSimObj.unweightedSpectralEntropy());
                                 }
                                 try {
@@ -625,6 +675,24 @@ public class MainClass {
                                 medianSimilarities.put(model, median);
                                 printInfo("Median similarity for " + model + " is " +
                                         String.format("%.4f", median));
+
+                                //decoy
+                                allHits = km.writeFullPeptideFile(jsonOutFolder +
+                                        File.separator + model + "_full.tsv", model, km.peptideSetDecoys);
+                                allPreds =
+                                        km.getKoinaPredictions(allHits, model, 30,
+                                                jsonOutFolder + File.separator + model,
+                                                jsonOutFolder + File.separator + model + "_full.tsv");
+
+                                //get median similarity
+                                similarity = new ArrayList<>();
+                                for (PeptideObj peptideObj : km.getPeptideObjects(allPreds, km.scanNumsDecoys, km.peptidesDecoys)) {
+                                    similarity.add(peptideObj.spectralSimObj.unweightedSpectralEntropy());
+                                }
+                                try {
+                                    similarity.sort(Comparator.naturalOrder());
+                                    datapointsDecoys.put(model, similarity);
+                                } catch (Exception e) {}
                             }
                         }
                     }
@@ -669,6 +737,25 @@ public class MainClass {
                         bw.write("\n");
                     }
                     bw.close();
+
+                    //decoy
+                    bw = new BufferedWriter(new FileWriter(
+                            Constants.outputDirectory + File.separator + "bestms2modelDecoy.tsv"));
+                    sb = new StringBuilder();
+                    models = new ArrayList<>();
+                    for (String model : datapointsDecoys.keySet()) {
+                        sb.append(model).append("\t");
+                        models.add(model);
+                    }
+                    sb.deleteCharAt(sb.length() - 1);
+                    bw.write(sb.toString() + "\n");
+                    for (int i = 0; i < datapointsDecoys.get(models.get(0)).size(); i++) {
+                        for (String model : models) {
+                            bw.write(datapointsDecoys.get(model).get(i) + "\t");
+                        }
+                        bw.write("\n");
+                    }
+                    bw.close();
                 }
 
                 if (Constants.spectraModel.isEmpty()) {
@@ -687,8 +774,6 @@ public class MainClass {
                 Constants.spectraModel = "";
             }
             Constants.foundBest = true;
-
-            //System.exit(0);
 
             //set useKoina based on model
             if (Constants.KoinaRTmodels.contains(Constants.rtModel) ||
@@ -967,7 +1052,8 @@ public class MainClass {
                         if (Constants.KoinaMS2models.contains(currentModel) && Constants.calibrateNCE &&
                         Constants.nceModels.contains(currentModel)) {
                             Object[] modelInfo = NCEcalibrator.calibrateNCE(currentModel, models, km,
-                                    Constants.outputDirectory + File.separator + "NCE_calibration");
+                                    Constants.outputDirectory + File.separator + "NCE_calibration",
+                                    km.peptideSet, km.scanNums, km.peptides);
                             currentModel = (String) modelInfo[0];
                             models = (ArrayList<String>) modelInfo[1];
                             Constants.NCE = String.valueOf((int) modelInfo[4]);

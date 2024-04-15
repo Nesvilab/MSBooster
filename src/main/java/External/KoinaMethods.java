@@ -86,7 +86,8 @@ public class KoinaMethods {
         }
     }
 
-    public HashSet<String> writeFullPeptideFile(String filePath, String currentModel, HashSet<String> peptideSet) throws IOException {
+    public HashSet<String> writeFullPeptideFile(String filePath, String currentModel, HashSet<String> peptideSet)
+            throws IOException {
         FileWriter myWriter = new FileWriter(filePath);
         HashSet<String> allHits = new HashSet<>();
         for (String peptide : peptideSet) {
@@ -128,6 +129,39 @@ public class KoinaMethods {
                     pep = "[UNIMOD:737]-" + pep;
                 }
             }
+
+            //TODO: method that reads in fields of supported UNIMOD mods for each koina model and removes if not supported
+            //seems like it's just prosit that has limitations. Others can handle
+            //get positions of all [UNIMOD:
+            if (currentModel.contains("Prosit")) {
+                List<Integer> indices = new ArrayList<>();
+                int index = pep.indexOf("[");
+                List<Integer> endBrackets = new ArrayList<>();
+                int endBracket = pep.indexOf("]");
+                while (index != -1) {
+                    indices.add(index);
+                    index = pep.indexOf("[", index + 1);
+                    endBrackets.add(endBracket);
+                    endBracket = pep.indexOf("]", endBracket + 1);
+                }
+
+                //check all backwards and remove if not allowed
+                for (int i = indices.size() - 1; i >= 0; i--) {
+                    boolean matches = false;
+                    for (String unimodNum : PTMhandler.prositMods) {
+                        if (pep.substring(indices.get(i) + 8).startsWith(unimodNum + "]")) {
+                            matches = true;
+                            break;
+                        }
+                    }
+
+                    if (!matches) {
+                        //need to remove string
+                        pep = pep.substring(0, indices.get(i)) + pep.substring(endBrackets.get(i) + 1);
+                    }
+                }
+            }
+
             String[] baseCharge = peptFormats[0].split("\\|");
             allHits.add(pep + "," + baseCharge[1]);
 

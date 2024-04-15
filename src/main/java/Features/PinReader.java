@@ -419,6 +419,36 @@ public class PinReader {
                     pep = "[UNIMOD:737]-" + pep;
                 }
             }
+
+            if (modelFormat.contains("Prosit")) {
+                List<Integer> indices = new ArrayList<>();
+                int index = pep.indexOf("[");
+                List<Integer> endBrackets = new ArrayList<>();
+                int endBracket = pep.indexOf("]");
+                while (index != -1) {
+                    indices.add(index);
+                    index = pep.indexOf("[", index + 1);
+                    endBrackets.add(endBracket);
+                    endBracket = pep.indexOf("]", endBracket + 1);
+                }
+
+                //check all backwards and remove if not allowed
+                for (int i = indices.size() - 1; i >= 0; i--) {
+                    boolean matches = false;
+                    for (String unimodNum : PTMhandler.prositMods) {
+                        if (pep.substring(indices.get(i) + 8).startsWith(unimodNum + "]")) {
+                            matches = true;
+                            break;
+                        }
+                    }
+
+                    if (!matches) {
+                        //need to remove string
+                        pep = pep.substring(0, indices.get(i)) + pep.substring(endBrackets.get(i) + 1);
+                    }
+                }
+            }
+
             String sb = pep + "," + pf.charge + "," +  Constants.NCE + "," +
                     Constants.instrument + "," + Constants.FragmentationType;
             peps.add(sb);
@@ -448,6 +478,7 @@ public class PinReader {
             float escore = Float.parseFloat(getEScore());
             if (escore <= eScoreCutoff) {
                 PeptideFormatter pf = getPep();
+                //TODO: need more generic way to handle any unimod ptm
                 PSMs.add(pf.getBaseCharge() + "," + pf.getDiann() + "," + pf.getStripped());
                 scanNums.add(getScanNum());
             }

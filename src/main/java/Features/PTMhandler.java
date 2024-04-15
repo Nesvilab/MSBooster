@@ -220,4 +220,7 @@ public class PTMhandler {
             e.printStackTrace();
         }
     }
+
+    /////////////////////////////////////////////KOINA///////////////////////////////////////////////////////
+    public static final HashSet<String> prositMods = new HashSet<>(Arrays.asList("737", "4", "35"));
 }

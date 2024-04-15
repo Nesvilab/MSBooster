@@ -814,8 +814,8 @@ public class MzmlReader {
                     continue;
                 }
 
-                float[] gridSearchResults = StatMethods.gridSearchCV(rts, floatBandwidths);
-                float finalBandwidth = gridSearchResults[0];
+                Object[] gridSearchResults = StatMethods.gridSearchCV(rts, floatBandwidths);
+                float finalBandwidth = (float) gridSearchResults[0];
 
                 printInfo("Best average bandwidth for mass " + mass + " from grid search of " +
                         Constants.rtBandwidth + " after " + Constants.regressionSplits + " iterations is " + finalBandwidth);

@@ -526,7 +526,7 @@ public class StatMethods {
     }
 
     //finds the best bandwidth and absolute error between all points
-    public static float[] gridSearchCV(double[][] rts, float[] bandwidths) {
+    public static Object[] gridSearchCV(double[][] rts, float[] bandwidths) {
         float[] bestBandwidths = new float[Constants.regressionSplits];
 
         //divide into train and test sets
@@ -572,20 +572,20 @@ public class StatMethods {
         //or just have all indexes past 1 as rtDiffs
         //final model trained on all data
         bestMSE = Double.MAX_VALUE;
+        Function1<Double, Double> loess = null;
         while (true) {
             try {
-                Function1<Double, Double> loess = LOESS(rts, finalBandwidth, Constants.robustIters);
-                float[] rtDiffs = new float[rts[0].length + 1];
-                rtDiffs[0] = finalBandwidth;
+                loess = LOESS(rts, finalBandwidth, Constants.robustIters);
+                float[] rtDiffs = new float[rts[0].length];
                 for (int i = 0; i < rtDiffs.length - 1; i++) {
                     double rt = rts[0][i];
-                    rtDiffs[i + 1] = (float) (loess.invoke(rt) - rts[1][i]);
+                    rtDiffs[i] = (float) Math.abs(loess.invoke(rt) - rts[1][i]);
                 }
-                return rtDiffs;
+                return new Object[]{finalBandwidth, loess, rtDiffs};
             } catch (Exception e) {
                 e.printStackTrace();
                 if (finalBandwidth == 1) {
-                    return new float[]{finalBandwidth, (float) bestMSE};
+                    return new Object[]{finalBandwidth, loess, (float) bestMSE};
                 }
                 finalBandwidth = Math.min(finalBandwidth * 2, 1);
                 printInfo("Regression failed, retrying with double the bandwidth: " + finalBandwidth);

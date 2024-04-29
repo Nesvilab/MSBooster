@@ -356,11 +356,21 @@ public class PinReader {
             peps.add(pf.base + "\t" + pf.charge);
 
             if (Constants.features.contains("peptideCounts")) {
-                if (Constants.peptideCounter.containsKey(pf.stripped)) {
-                    Constants.peptideCounter.put(pf.stripped,
-                            Constants.peptideCounter.get(pf.stripped) + 1);
+                if (Float.valueOf(getColumn("hyperscore")) > 10) {
+                    if (Constants.peptideCounter.containsKey(pf.stripped)) {
+                        HashSet<String> peptideSet = Constants.peptideCounter.get(pf.stripped);
+                        peptideSet.add(name);
+                        Constants.peptideCounter.put(pf.stripped, peptideSet);
+                    } else {
+                        HashSet<String> peptideSet = new HashSet<>();
+                        peptideSet.add(name);
+                        Constants.peptideCounter.put(pf.stripped, peptideSet);
+                    }
                 } else {
-                    Constants.peptideCounter.put(pf.stripped, 1);
+                    if (! Constants.peptideCounter.containsKey(pf.stripped)) {
+                        HashSet<String> peptideSet = new HashSet<>();
+                        Constants.peptideCounter.put(pf.stripped, peptideSet);
+                    }
                 }
             }
         }

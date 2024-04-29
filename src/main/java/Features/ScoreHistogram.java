@@ -24,16 +24,13 @@ import org.knowm.xchart.style.markers.Marker;
 import java.awt.*;
 import java.io.File;
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.HashMap;
+import java.util.*;
 import java.util.List;
-import java.util.Set;
 
 public class ScoreHistogram {
 
     Set<String> logScaleFeatures = Set.of("delta_RT_loess", "delta_RT_loess_normalized", "RT_probability_unif_prior",
             "hypergeometric_probability");
-    Set<String> logYScaleFeatures = Set.of("peptide_counts");
     Set<String> intScores = Set.of("peptide_counts"); //TODO: gets crowded for many bins, can consider binning by 10s
 
     public ScoreHistogram(PinReader pinReader, ArrayList<String> fs) throws IOException {
@@ -62,9 +59,9 @@ public class ScoreHistogram {
                 }
                 if (intScores.contains(feature)) {
                     if (pinReader.getTD() == 1) {
-                        targetScores.get(feature).add(score + 0.5);
+                        targetScores.get(feature).add(score - 0.5);
                     } else {
-                        decoyScores.get(feature).add(score + 0.5);
+                        decoyScores.get(feature).add(score - 0.5);
                     }
                 } else {
                     if (pinReader.getTD() == 1) {
@@ -89,13 +86,6 @@ public class ScoreHistogram {
                 xAxisLabel = "log(" + xAxisLabel + " + 0.01)";
             }
             String yAxisLabel = "PSMs";
-            if (logYScaleFeatures.contains(feature)) {
-                yAxisLabel = "log(PSMs + 1)";
-                for (Double j = scoreMin.get(feature); j < scoreMax.get(feature) + 1; j++) {
-                    targetScores.get(feature).add(j + 0.5);
-                    decoyScores.get(feature).add(j + 0.5);
-                }
-            }
 
             int width = 510;
             int height = 170;
@@ -138,34 +128,26 @@ public class ScoreHistogram {
                 Histogram histT;
                 if (intScores.contains(feature)) {
                     histT = new Histogram(targetScores.get(feature), numBins,
-                            scoreMin.get(feature), scoreMax.get(feature) + 1);
+                            scoreMin.get(feature) - 0.5, scoreMax.get(feature) + 1 - 0.5);
                 } else {
                     histT = new Histogram(targetScores.get(feature), numBins,
                             scoreMin.get(feature), scoreMax.get(feature));
                 }
                 List<Double> xData = histT.getxAxisData();
                 List<Double> yData = histT.getyAxisData();
-                if (logYScaleFeatures.contains(feature)) {
-                    xData.replaceAll(aDouble -> aDouble - 0.5);
-                    yData.replaceAll(Math::log10);
-                }
                 chart.addSeries("targets", xData, yData);
             } catch (Exception e) {e.printStackTrace();}
             try {
                 Histogram histD;
                 if (intScores.contains(feature)) {
                     histD = new Histogram(decoyScores.get(feature), numBins,
-                            scoreMin.get(feature), scoreMax.get(feature) + 1);
+                            scoreMin.get(feature) - 0.5, scoreMax.get(feature) + 1 - 0.5);
                 } else {
                     histD = new Histogram(decoyScores.get(feature), numBins,
                             scoreMin.get(feature), scoreMax.get(feature));
                 }
                 List<Double> xData = histD.getxAxisData();
                 List<Double> yData = histD.getyAxisData();
-                if (logYScaleFeatures.contains(feature)) {
-                    xData.replaceAll(aDouble -> aDouble - 0.5);
-                    yData.replaceAll(Math::log10);
-                }
                 chart.addSeries("decoys", xData, yData);
             } catch (Exception e) {e.printStackTrace();}
 

@@ -226,7 +226,7 @@ public class Constants {
     public static final Float IMIQR = 50f;
 
     //peptide counts
-    public static ConcurrentHashMap<String, Integer> peptideCounter = new ConcurrentHashMap<>();
+    public static ConcurrentHashMap<String, HashSet<String>> peptideCounter = new ConcurrentHashMap<>();
 
     //support for PredFull and Prosit
     public static String FragmentationType = "";

@@ -223,11 +223,21 @@ public class PercolatorFormatter {
                     //add to counter
                     while (pin.next(true)) {
                         PeptideFormatter pf = pin.getPep();
-                        if (Constants.peptideCounter.containsKey(pf.stripped)) {
-                            Constants.peptideCounter.put(pf.stripped,
-                                    Constants.peptideCounter.get(pf.stripped) + 1);
+                        if (Float.valueOf(pin.getColumn("hyperscore")) > 10) {
+                            if (Constants.peptideCounter.containsKey(pf.stripped)) {
+                                HashSet<String> peptideSet = Constants.peptideCounter.get(pf.stripped);
+                                peptideSet.add(pin.name);
+                                Constants.peptideCounter.put(pf.stripped, peptideSet);
+                            } else {
+                                HashSet<String> peptideSet = new HashSet<>();
+                                peptideSet.add(pin.name);
+                                Constants.peptideCounter.put(pf.stripped, peptideSet);
+                            }
                         } else {
-                            Constants.peptideCounter.put(pf.stripped, 1);
+                            if (! Constants.peptideCounter.containsKey(pf.stripped)) {
+                                HashSet<String> peptideSet = new HashSet<>();
+                                Constants.peptideCounter.put(pf.stripped, peptideSet);
+                            }
                         }
                     }
                     pin.close();

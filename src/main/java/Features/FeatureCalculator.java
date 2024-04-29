@@ -669,7 +669,7 @@ public class FeatureCalculator {
                             pepObj.intensity_distribution_similarity = value;
                             break;
                         case "peptideCounts":
-                            pepObj.peptideCounts = Constants.peptideCounter.get(stripped);
+                            pepObj.peptideCounts = Constants.peptideCounter.get(stripped).size();
                             break;
                     }
                 }

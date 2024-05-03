@@ -55,6 +55,11 @@ public class PeptideFormatter {
         //remove AA and period at beginning and end
         peptide = peptide.substring(2, peptide.length() - 2);
 
+        //TODO remove integer part that holds charge
+        while (Character.isDigit(peptide.charAt(peptide.length() - 1))) {
+            peptide = peptide.substring(0, peptide.length() - 1);
+        }
+
         //remove 0.0000
         peptide = peptide.replace("[0.0000]", "");
 

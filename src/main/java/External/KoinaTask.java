@@ -60,7 +60,7 @@ public class KoinaTask implements Callable<Boolean> {
         try {
             //delay so we don't overwhelm server
             if (index < Constants.numThreads && failedAttempts == 0) {
-                Thread.sleep(index * 100L);
+                Thread.sleep(index * 1000L);
             }
 
             long start = System.currentTimeMillis();

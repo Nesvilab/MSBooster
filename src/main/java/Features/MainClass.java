@@ -37,7 +37,7 @@ public class MainClass {
     public static ScheduledThreadPoolExecutor executorService;
     public static void main(String[] args) throws Exception {
         Locale.setDefault(Locale.US);
-        printInfo("MSBooster v1.2.23");
+        printInfo("MSBooster v1.2.24");
 
         try {
             //accept command line inputs
@@ -373,12 +373,18 @@ public class MainClass {
 
             //get matched pin files for mzML files
             PinMzmlMatcher pmMatcher = new PinMzmlMatcher(Constants.mzmlDirectory, Constants.pinPepXMLDirectory);
+            //if no pin files, continue
+            if (pmMatcher.pinFiles.length == 0) {
+                printInfo("No pin files to process. Continuing without MSBooster.");
+                executorService.shutdown();
+                System.exit(0);
+            }
 
             //needed for nce calibration and best model search
             //TODO: could also make a new koinamethods object for decoys
             KoinaMethods km = new KoinaMethods(pmMatcher);
             boolean TMT = false;
-            if (Constants.calibrateNCE || Constants.findBestRtModel || Constants.findBestSpectraModel ||
+            if (Constants.findBestRtModel || Constants.findBestSpectraModel ||
             Constants.KoinaMS2models.contains(Constants.spectraModel) ||
                     Constants.KoinaRTmodels.contains(Constants.rtModel)) {
                 km.getTopPeptides();

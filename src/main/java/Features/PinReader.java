@@ -54,7 +54,7 @@ public class PinReader {
     public PinReader(String pin) throws IOException {
         name = pin;
         in = new BufferedReader(new FileReader(name));
-        String line = in.readLine();
+        line = in.readLine();
         header = line.split("\t");
 
         //set column indices

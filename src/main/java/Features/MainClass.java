@@ -496,75 +496,75 @@ public class MainClass {
                         Arrays.sort(rtdiffs);
                         datapointsRT.put(model, rtdiffs);
 
-                        //decoy
-                        if (model.equals("DIA-NN")) { //mode for DIA-NN
-                            MyFileUtils.createWholeDirectory(jsonOutFolder + File.separator + model);
-
-                            km.writeFullPeptideFile(jsonOutFolder + File.separator + model + File.separator +
-                                    "spectraRT_full.tsv", model, km.peptideSetDecoys);
-                            String inputFile = jsonOutFolder + File.separator + model + File.separator + "spectraRT.tsv";
-                            FileWriter myWriter = new FileWriter(inputFile);
-                            myWriter.write("peptide" + "\t" + "charge\n");
-                            HashSet<String> peptides = new HashSet<>();
-                            for (String pep : km.peptideSetDecoys) {
-                                String[] pepSplit = pep.split(",");
-                                String line = pepSplit[1] + "\t" + pepSplit[0].split("\\|")[1] + "\n";
-                                if (!peptides.contains(line)) {
-                                    myWriter.write(line);
-                                    peptides.add(line);
-                                }
-                            }
-                            myWriter.close();
-
-                            DiannModelCaller.callModel(inputFile, false);
-                            allPreds = SpectralPredictionMapper.createSpectralPredictionMapper(
-                                    Constants.spectraRTPredFile, "DIA-NN", executorService).getPreds();
-                            Constants.spectraRTPredFile = null;
-                        } else { //mode for koina
-                            HashSet<String> allHits = km.writeFullPeptideFile(
-                                    jsonOutFolder + File.separator + model + "_full.tsv", model,
-                                    km.peptideSetDecoys);
-                            allPreds = km.getKoinaPredictions(allHits, model, 30,
-                                    jsonOutFolder + File.separator + model,
-                                    jsonOutFolder + File.separator + model + "_full.tsv");
-                        }
-
-                        //collect the data for testing
-                        expRTs = new ArrayList<>();
-                        predRTs = new ArrayList<>();
-                        for (int j = 0; j < pmMatcher.mzmlReaders.length; j++) {
-                            MzmlReader mzmlReader = pmMatcher.mzmlReaders[j];
-                            LinkedList<Integer> thisScanNums = km.scanNumsDecoys.get(pmMatcher.mzmlFiles[j].getName());
-                            LinkedList<String> thisPeptides = km.peptidesDecoys.get(pmMatcher.mzmlFiles[j].getName());
-
-                            for (int k = 0; k < thisScanNums.size(); k++) {
-                                try {
-                                    int scanNum = thisScanNums.get(k);
-                                    String peptide = thisPeptides.get(k).split(",")[0];
-                                    MzmlScanNumber msn = mzmlReader.getScanNumObject(scanNum);
-
-                                    float predRT = allPreds.get(peptide).RT;
-                                    float expRT = msn.RT;
-                                    predRTs.add(predRT);
-                                    expRTs.add(expRT);
-                                } catch (Exception e) {}
-                            }
-                        }
-                        rts = new double[2][expRTs.size()];
-                        for (int i = 0; i < expRTs.size(); i++) {
-                            //put pred first so it can be normalized to exp scale
-                            rts[0][i] = Math.round(predRTs.get(i) * 100d) / 100d;
-                            rts[1][i] = Math.round(expRTs.get(i) * 100d) / 100d;
-                        }
-
-                        //testing
-                        float[] rtDiffsDecoys = new float[rts[0].length];
-                        for (int i = 0; i < rtDiffsDecoys.length - 1; i++) {
-                            double rt = rts[0][i];
-                            rtDiffsDecoys[i] = (float) Math.abs(loess.invoke(rt) - rts[1][i]);
-                        }
-                        Arrays.sort(rtDiffsDecoys);
-                        datapointsRTDecoys.put(model, rtDiffsDecoys);
+//                        //decoy
+//                        if (model.equals("DIA-NN")) { //mode for DIA-NN
+//                            MyFileUtils.createWholeDirectory(jsonOutFolder + File.separator + model);
+//
+//                            km.writeFullPeptideFile(jsonOutFolder + File.separator + model + File.separator +
+//                                    "spectraRT_full.tsv", model, km.peptideSetDecoys);
+//                            String inputFile = jsonOutFolder + File.separator + model + File.separator + "spectraRT.tsv";
+//                            FileWriter myWriter = new FileWriter(inputFile);
+//                            myWriter.write("peptide" + "\t" + "charge\n");
+//                            HashSet<String> peptides = new HashSet<>();
+//                            for (String pep : km.peptideSetDecoys) {
+//                                String[] pepSplit = pep.split(",");
+//                                String line = pepSplit[1] + "\t" + pepSplit[0].split("\\|")[1] + "\n";
+//                                if (!peptides.contains(line)) {
+//                                    myWriter.write(line);
+//                                    peptides.add(line);
+//                                }
+//                            }
+//                            myWriter.close();
+//
+//                            DiannModelCaller.callModel(inputFile, false);
+//                            allPreds = SpectralPredictionMapper.createSpectralPredictionMapper(
+//                                    Constants.spectraRTPredFile, "DIA-NN", executorService).getPreds();
+//                            Constants.spectraRTPredFile = null;
+//                        } else { //mode for koina
+//                            HashSet<String> allHits = km.writeFullPeptideFile(
+//                                    jsonOutFolder + File.separator + model + "_full.tsv", model,
+//                                    km.peptideSetDecoys);
+//                            allPreds = km.getKoinaPredictions(allHits, model, 30,
+//                                    jsonOutFolder + File.separator + model,
+//                                    jsonOutFolder + File.separator + model + "_full.tsv");
+//                        }
+//
+//                        //collect the data for testing
+//                        expRTs = new ArrayList<>();
+//                        predRTs = new ArrayList<>();
+//                        for (int j = 0; j < pmMatcher.mzmlReaders.length; j++) {
+//                            MzmlReader mzmlReader = pmMatcher.mzmlReaders[j];
+//                            LinkedList<Integer> thisScanNums = km.scanNumsDecoys.get(pmMatcher.mzmlFiles[j].getName());
+//                            LinkedList<String> thisPeptides = km.peptidesDecoys.get(pmMatcher.mzmlFiles[j].getName());
+//
+//                            for (int k = 0; k < thisScanNums.size(); k++) {
+//                                try {
+//                                    int scanNum = thisScanNums.get(k);
+//                                    String peptide = thisPeptides.get(k).split(",")[0];
+//                                    MzmlScanNumber msn = mzmlReader.getScanNumObject(scanNum);
+//
+//                                    float predRT = allPreds.get(peptide).RT;
+//                                    float expRT = msn.RT;
+//                                    predRTs.add(predRT);
+//                                    expRTs.add(expRT);
+//                                } catch (Exception e) {}
+//                            }
+//                        }
+//                        rts = new double[2][expRTs.size()];
+//                        for (int i = 0; i < expRTs.size(); i++) {
+//                            //put pred first so it can be normalized to exp scale
+//                            rts[0][i] = Math.round(predRTs.get(i) * 100d) / 100d;
+//                            rts[1][i] = Math.round(expRTs.get(i) * 100d) / 100d;
+//                        }
+//
+//                        //testing
+//                        float[] rtDiffsDecoys = new float[rts[0].length];
+//                        for (int i = 0; i < rtDiffsDecoys.length - 1; i++) {
+//                            double rt = rts[0][i];
+//                            rtDiffsDecoys[i] = (float) Math.abs(loess.invoke(rt) - rts[1][i]);
+//                        }
+//                        Arrays.sort(rtDiffsDecoys);
+//                        datapointsRTDecoys.put(model, rtDiffsDecoys);
                     }
 
                     //get best model
@@ -597,23 +597,24 @@ public class MainClass {
                     }
                     bw.close();
 
-                    bw = new BufferedWriter(new FileWriter(
-                            Constants.outputDirectory + File.separator + "bestrtmodelDecoy.tsv"));
-                    sb = new StringBuilder();
-                    models = new ArrayList<>();
-                    for (String model : datapointsRTDecoys.keySet()) {
-                        sb.append(model).append("\t");
-                        models.add(model);
-                    }
-                    sb.deleteCharAt(sb.length() - 1);
-                    bw.write(sb.toString() + "\n");
-                    for (int i = 0; i < datapointsRTDecoys.get(models.get(0)).length; i++) {
-                        for (String model : models) {
-                            bw.write(datapointsRTDecoys.get(model)[i] + "\t");
-                        }
-                        bw.write("\n");
-                    }
-                    bw.close();
+//                    //decoy
+//                    bw = new BufferedWriter(new FileWriter(
+//                            Constants.outputDirectory + File.separator + "bestrtmodelDecoy.tsv"));
+//                    sb = new StringBuilder();
+//                    models = new ArrayList<>();
+//                    for (String model : datapointsRTDecoys.keySet()) {
+//                        sb.append(model).append("\t");
+//                        models.add(model);
+//                    }
+//                    sb.deleteCharAt(sb.length() - 1);
+//                    bw.write(sb.toString() + "\n");
+//                    for (int i = 0; i < datapointsRTDecoys.get(models.get(0)).length; i++) {
+//                        for (String model : models) {
+//                            bw.write(datapointsRTDecoys.get(model)[i] + "\t");
+//                        }
+//                        bw.write("\n");
+//                    }
+//                    bw.close();
                 }
 
                 if (Constants.rtModel.isEmpty()) {
@@ -687,37 +688,37 @@ public class MainClass {
                             printInfo("Median similarity for DIA-NN is " +
                                     String.format("%.4f", median));
 
-                            //decoy
-                            km.writeFullPeptideFile(jsonOutFolder + File.separator + model + File.separator +
-                                    "spectraRT_full.tsv", model, km.peptideSetDecoys);
-                            inputFile = jsonOutFolder + File.separator + model + File.separator + "spectraRT.tsv";
-                            myWriter = new FileWriter(inputFile);
-                            myWriter.write("peptide" + "\t" + "charge\n");
-                            peptides = new HashSet<>();
-                            for (String pep : km.peptideSetDecoys) {
-                                String[] pepSplit = pep.split(",");
-                                String line = pepSplit[1] + "\t" + pepSplit[0].split("\\|")[1] + "\n";
-                                if (!peptides.contains(line)) {
-                                    myWriter.write(line);
-                                    peptides.add(line);
-                                }
-                            }
-                            myWriter.close();
-
-                            DiannModelCaller.callModel(inputFile, false);
-                            allPreds = SpectralPredictionMapper.createSpectralPredictionMapper(
-                                            Constants.spectraRTPredFile, "DIA-NN", executorService).getPreds();
-                            Constants.spectraRTPredFile = null;
-
-                            //get median similarity
-                            similarity = new ArrayList<>();
-                            for (PeptideObj peptideObj : km.getPeptideObjects(allPreds, km.scanNumsDecoys, km.peptidesDecoys)) {
-                                similarity.add(peptideObj.spectralSimObj.unweightedSpectralEntropy());
-                            }
-                            try {
-                                similarity.sort(Comparator.naturalOrder());
-                                datapointsDecoys.put(model, similarity);
-                            } catch (Exception e) {}
+//                            //decoy
+//                            km.writeFullPeptideFile(jsonOutFolder + File.separator + model + File.separator +
+//                                    "spectraRT_full.tsv", model, km.peptideSetDecoys);
+//                            inputFile = jsonOutFolder + File.separator + model + File.separator + "spectraRT.tsv";
+//                            myWriter = new FileWriter(inputFile);
+//                            myWriter.write("peptide" + "\t" + "charge\n");
+//                            peptides = new HashSet<>();
+//                            for (String pep : km.peptideSetDecoys) {
+//                                String[] pepSplit = pep.split(",");
+//                                String line = pepSplit[1] + "\t" + pepSplit[0].split("\\|")[1] + "\n";
+//                                if (!peptides.contains(line)) {
+//                                    myWriter.write(line);
+//                                    peptides.add(line);
+//                                }
+//                            }
+//                            myWriter.close();
+//
+//                            DiannModelCaller.callModel(inputFile, false);
+//                            allPreds = SpectralPredictionMapper.createSpectralPredictionMapper(
+//                                            Constants.spectraRTPredFile, "DIA-NN", executorService).getPreds();
+//                            Constants.spectraRTPredFile = null;
+//
+//                            //get median similarity
+//                            similarity = new ArrayList<>();
+//                            for (PeptideObj peptideObj : km.getPeptideObjects(allPreds, km.scanNumsDecoys, km.peptidesDecoys)) {
+//                                similarity.add(peptideObj.spectralSimObj.unweightedSpectralEntropy());
+//                            }
+//                            try {
+//                                similarity.sort(Comparator.naturalOrder());
+//                                datapointsDecoys.put(model, similarity);
+//                            } catch (Exception e) {}
                         } else { //mode for koina
                             if (Constants.nceModels.contains(model)) {
                                 Object[] results = NCEcalibrator.calibrateNCE(model, new ArrayList<>(), km,
@@ -734,19 +735,19 @@ public class MainClass {
                                     datapoints.put(model, similarity);
                                 } catch (Exception e) {}
 
-                                //decoy
-                                //just get similarities for decoys at same nce as targets
-                                results = NCEcalibrator.calibrateNCE(model, new ArrayList<>(), km,
-                                        Constants.outputDirectory + File.separator + "best_model" +
-                                                File.separator + model, km.peptideSetDecoys,
-                                        km.scanNumsDecoys, km.peptidesDecoys);
-                                TreeMap<Integer, ArrayList<Double>> decoysSims =
-                                        (TreeMap<Integer, ArrayList<Double>>) results[2];
-                                try {
-                                    ArrayList<Double> similarity = decoysSims.get(bestNCE);
-                                    similarity.sort(Comparator.naturalOrder());
-                                    datapointsDecoys.put(model, similarity);
-                                } catch (Exception e) {}
+//                                //decoy
+//                                //just get similarities for decoys at same nce as targets
+//                                results = NCEcalibrator.calibrateNCE(model, new ArrayList<>(), km,
+//                                        Constants.outputDirectory + File.separator + "best_model" +
+//                                                File.separator + model, km.peptideSetDecoys,
+//                                        km.scanNumsDecoys, km.peptidesDecoys);
+//                                TreeMap<Integer, ArrayList<Double>> decoysSims =
+//                                        (TreeMap<Integer, ArrayList<Double>>) results[2];
+//                                try {
+//                                    ArrayList<Double> similarity = decoysSims.get(bestNCE);
+//                                    similarity.sort(Comparator.naturalOrder());
+//                                    datapointsDecoys.put(model, similarity);
+//                                } catch (Exception e) {}
                             } else {
                                 HashSet<String> allHits = km.writeFullPeptideFile(jsonOutFolder +
                                         File.separator + model + "_full.tsv", model, km.peptideSet);
@@ -769,23 +770,23 @@ public class MainClass {
                                 printInfo("Median similarity for " + model + " is " +
                                         String.format("%.4f", median));
 
-                                //decoy
-                                allHits = km.writeFullPeptideFile(jsonOutFolder +
-                                        File.separator + model + "_full.tsv", model, km.peptideSetDecoys);
-                                allPreds =
-                                        km.getKoinaPredictions(allHits, model, 30,
-                                                jsonOutFolder + File.separator + model,
-                                                jsonOutFolder + File.separator + model + "_full.tsv");
-
-                                //get median similarity
-                                similarity = new ArrayList<>();
-                                for (PeptideObj peptideObj : km.getPeptideObjects(allPreds, km.scanNumsDecoys, km.peptidesDecoys)) {
-                                    similarity.add(peptideObj.spectralSimObj.unweightedSpectralEntropy());
-                                }
-                                try {
-                                    similarity.sort(Comparator.naturalOrder());
-                                    datapointsDecoys.put(model, similarity);
-                                } catch (Exception e) {}
+//                                //decoy
+//                                allHits = km.writeFullPeptideFile(jsonOutFolder +
+//                                        File.separator + model + "_full.tsv", model, km.peptideSetDecoys);
+//                                allPreds =
+//                                        km.getKoinaPredictions(allHits, model, 30,
+//                                                jsonOutFolder + File.separator + model,
+//                                                jsonOutFolder + File.separator + model + "_full.tsv");
+//
+//                                //get median similarity
+//                                similarity = new ArrayList<>();
+//                                for (PeptideObj peptideObj : km.getPeptideObjects(allPreds, km.scanNumsDecoys, km.peptidesDecoys)) {
+//                                    similarity.add(peptideObj.spectralSimObj.unweightedSpectralEntropy());
+//                                }
+//                                try {
+//                                    similarity.sort(Comparator.naturalOrder());
+//                                    datapointsDecoys.put(model, similarity);
+//                                } catch (Exception e) {}
                             }
                         }
                     }
@@ -831,24 +832,24 @@ public class MainClass {
                     }
                     bw.close();
 
-                    //decoy
-                    bw = new BufferedWriter(new FileWriter(
-                            Constants.outputDirectory + File.separator + "bestms2modelDecoy.tsv"));
-                    sb = new StringBuilder();
-                    models = new ArrayList<>();
-                    for (String model : datapointsDecoys.keySet()) {
-                        sb.append(model).append("\t");
-                        models.add(model);
-                    }
-                    sb.deleteCharAt(sb.length() - 1);
-                    bw.write(sb.toString() + "\n");
-                    for (int i = 0; i < datapointsDecoys.get(models.get(0)).size(); i++) {
-                        for (String model : models) {
-                            bw.write(datapointsDecoys.get(model).get(i) + "\t");
-                        }
-                        bw.write("\n");
-                    }
-                    bw.close();
+//                    //decoy
+//                    bw = new BufferedWriter(new FileWriter(
+//                            Constants.outputDirectory + File.separator + "bestms2modelDecoy.tsv"));
+//                    sb = new StringBuilder();
+//                    models = new ArrayList<>();
+//                    for (String model : datapointsDecoys.keySet()) {
+//                        sb.append(model).append("\t");
+//                        models.add(model);
+//                    }
+//                    sb.deleteCharAt(sb.length() - 1);
+//                    bw.write(sb.toString() + "\n");
+//                    for (int i = 0; i < datapointsDecoys.get(models.get(0)).size(); i++) {
+//                        for (String model : models) {
+//                            bw.write(datapointsDecoys.get(model).get(i) + "\t");
+//                        }
+//                        bw.write("\n");
+//                    }
+//                    bw.close();
                 }
 
                 if (Constants.spectraModel.isEmpty()) {

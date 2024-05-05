@@ -406,13 +406,15 @@ public class MainClass {
                 if (Constants.findBestRtModel) {
                     printInfo("Searching for best RT model for your data");
                     ArrayList<String> consideredModels = new ArrayList<>();
-                    consideredModels.add("DIA-NN");
                     if (TMT) {
-                        consideredModels.add("Prosit_2020_irt_TMT");
+                        consideredModels.addAll(Constants.rtSearchModelsTMT);
                     } else {
-                        consideredModels.addAll(Constants.KoinaRTmodels);
-                        consideredModels.remove("Prosit_2020_irt_TMT");
+                        CaseInsensitiveHashSet rtSearchModels = new CaseInsensitiveHashSet(
+                                Constants.rtSearchModelsString.split(","));
+                        consideredModels.addAll(rtSearchModels);
                     }
+                    printInfo("Searching the following models: ");
+                    printInfo(String.valueOf(consideredModels));
 
                     String jsonOutFolder = Constants.outputDirectory + File.separator + "best_model";
                     MyFileUtils.createWholeDirectory(jsonOutFolder);
@@ -634,13 +636,15 @@ public class MainClass {
                 if (Constants.findBestSpectraModel) {
                     printInfo("Searching for best spectra model for your data");
                     ArrayList<String> consideredModels = new ArrayList<>();
-                    consideredModels.add("DIA-NN");
                     if (TMT) {
-                        consideredModels.add("Prosit_2020_intensity_TMT");
+                        consideredModels.addAll(Constants.ms2SearchModelsTMT);
                     } else {
-                        consideredModels.addAll(Constants.KoinaMS2models);
-                        consideredModels.remove("Prosit_2020_intensity_TMT");
+                        CaseInsensitiveHashSet ms2SearchModels = new CaseInsensitiveHashSet(
+                                Constants.ms2SearchModelsString.split(","));
+                        consideredModels.addAll(ms2SearchModels);
                     }
+                    printInfo("Searching the following models: ");
+                    printInfo(String.valueOf(consideredModels));
 
                     String jsonOutFolder = Constants.outputDirectory + File.separator + "best_model";
                     MyFileUtils.createWholeDirectory(jsonOutFolder);

@@ -96,6 +96,17 @@ public class Constants {
                     "Prosit_2023_intensity_timsTOF"});
     public static CaseInsensitiveHashSet KoinaTMTmodels = new CaseInsensitiveHashSet(
             new String[] {"Prosit_2020_irt_TMT", "Prosit_2020_intensity_TMT"});
+    public static String rtSearchModelsString = "DIA-NN,AlphaPept_rt_generic,Prosit_2019_irt,Deeplc_hela_hf";
+    public static final CaseInsensitiveHashSet rtSearchModelsTMT = new CaseInsensitiveHashSet(
+            new String[] {"DIA-NN", "Prosit_2020_irt_TMT"});
+    public static String ms2SearchModelsString = "DIA-NN,ms2pip_2021_HCD,AlphaPept_ms2_generic," +
+            "Prosit_2020_intensity_CID,Prosit_2020_intensity_HCD,Prosit_2023_intensity_timsTOF";
+    public static CaseInsensitiveHashSet ms2SearchModels = new CaseInsensitiveHashSet(
+            new String[] {"DIA-NN", "ms2pip_2021_HCD", "AlphaPept_ms2_generic",
+                    "Prosit_2020_intensity_CID", "Prosit_2020_intensity_HCD",
+                    "Prosit_2023_intensity_timsTOF"});
+    public static final CaseInsensitiveHashSet ms2SearchModelsTMT = new CaseInsensitiveHashSet(
+            new String[] {"DIA-NN", "Prosit_2020_intensity_TMT"});
     public static CaseInsensitiveHashSet nceModels = new CaseInsensitiveHashSet(
             new String[] {"PredFull", "Prosit", "PrositTMT", "alphapeptdeep",
                     "AlphaPept_ms2_generic", "Prosit_2019_intensity", "Prosit_2023_intensity_timsTOF",

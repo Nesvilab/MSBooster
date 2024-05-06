@@ -186,7 +186,7 @@ public class MzmlScanNumber {
 
             //remove higher ranked peaks
             //TODO: base off fragger.params topN?
-            if (Constants.removeRankPeaks) {
+            if (Constants.removeRankPeaks && set) {
                 for (int i = newPepObj.spectralSimObj.matchedIdx.size() - 1; i > -1; i--) {
                     expMZs = ArrayUtils.remove(expMZs, i);
                     expIntensities = ArrayUtils.remove(expIntensities, i);

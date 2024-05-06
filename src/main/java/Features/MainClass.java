@@ -388,7 +388,7 @@ public class MainClass {
             Constants.KoinaMS2models.contains(Constants.spectraModel) ||
                     Constants.KoinaRTmodels.contains(Constants.rtModel)) {
                 km.getTopPeptides();
-                km.getDecoyPeptides();
+                //km.getDecoyPeptides();
                 for (String pep : km.peptideSet) {
                     if (pep.contains(String.valueOf(PTMhandler.tmtMass))) {
                         TMT = true;

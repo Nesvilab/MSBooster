@@ -29,6 +29,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 import org.knowm.xchart.BitmapEncoder;
 import org.knowm.xchart.BoxChart;
 import org.knowm.xchart.BoxChartBuilder;
+import org.knowm.xchart.VectorGraphicsEncoder;
 import org.knowm.xchart.style.BoxStyler;
 import umich.ms.fileio.exceptions.FileParsingException;
 
@@ -112,23 +113,40 @@ public class NCEcalibrator {
     }
 
     public static void plotNCEchart(TreeMap<Integer, ArrayList<Double>> similarities) {
-        //create figure
-        BoxChart chart = new BoxChartBuilder().title("NCE calibration").
-                width(200 * (Constants.maxNCE - Constants.minNCE)).height(1000).
-                yAxisTitle("unweightedSpectralEntropy").build(); //TODO: adapt to any MS2 feature?
-        chart.getStyler().setBoxplotCalCulationMethod(BoxStyler.BoxplotCalCulationMethod.N_LESS_1);
-
-        for (Map.Entry<Integer, ArrayList<Double>> entry : similarities.entrySet()) {
-            chart.addSeries(String.valueOf(entry.getKey()), entry.getValue());
-        }
-
         try {
             String dir = Constants.outputDirectory + File.separator + "MSBooster_plots";
             if (!new File(dir).exists()) {
                 new File(dir).mkdirs();
             }
-            BitmapEncoder.saveBitmap(chart,  dir + File.separator + "NCE_calibration.png",
-                    BitmapEncoder.BitmapFormat.PNG);
+
+            int currentNCE = Constants.minNCE;
+            int added = 0;
+
+            while (currentNCE <= Constants.maxNCE) {
+                //create figure
+                BoxChart chart = new BoxChartBuilder().title("NCE calibration").
+                        width(510).height(340).
+                        yAxisTitle("unweightedSpectralEntropy").build(); //TODO: adapt to any MS2 feature?
+                chart.getStyler().setBoxplotCalCulationMethod(BoxStyler.BoxplotCalCulationMethod.N_LESS_1);
+
+                int startNCE = currentNCE;
+                while (added < 6 && currentNCE <= Constants.maxNCE) {
+                    chart.addSeries(String.valueOf(currentNCE), similarities.get(currentNCE));
+                    added++;
+                    currentNCE++;
+                }
+                int endNCE = currentNCE - 1;
+                added = 0;
+                if (Constants.plotExtension.equals("png")) {
+                    BitmapEncoder.saveBitmap(chart, dir + File.separator +
+                                    "NCE_calibration" + startNCE + "to" + endNCE + ".png",
+                            BitmapEncoder.BitmapFormat.PNG);
+                } else if (Constants.plotExtension.equals("pdf")) {
+                    VectorGraphicsEncoder.saveVectorGraphic(chart, dir + File.separator +
+                                    "NCE_calibration" + startNCE + "to" + endNCE + ".pdf",
+                            VectorGraphicsEncoder.VectorGraphicsFormat.PDF);
+                }
+            }
         } catch (IOException e) {
             e.printStackTrace();
         }

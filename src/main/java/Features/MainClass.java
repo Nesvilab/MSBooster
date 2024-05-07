@@ -37,7 +37,7 @@ public class MainClass {
     public static ScheduledThreadPoolExecutor executorService;
     public static void main(String[] args) throws Exception {
         Locale.setDefault(Locale.US);
-        printInfo("MSBooster v1.2.25");
+        printInfo("MSBooster v1.2.26");
 
         try {
             //accept command line inputs
@@ -419,7 +419,6 @@ public class MainClass {
                     String jsonOutFolder = Constants.outputDirectory + File.separator + "best_model";
                     MyFileUtils.createWholeDirectory(jsonOutFolder);
 
-                    HashMap<String, Float> MSEs = new HashMap<>();
                     for (String model : consideredModels) {
                         PredictionEntryHashMap allPreds = null;
                         if (model.equals("DIA-NN")) { //mode for DIA-NN
@@ -492,7 +491,6 @@ public class MainClass {
                         Function1<Double, Double> loess = (Function1<Double, Double>) bandwidth_loess_rtdiffs[1];
                         float[] rtdiffs = (float[]) bandwidth_loess_rtdiffs[2];
                         float mse = StatMethods.meanSquaredError(rtdiffs);
-                        MSEs.put(model, mse);
                         printInfo(model + " has root mean squared error of " +
                                 String.format("%.4f", Math.sqrt(mse)));
                         Arrays.sort(rtdiffs);
@@ -570,14 +568,35 @@ public class MainClass {
                     }
 
                     //get best model
-                    float bestMSE = Float.MAX_VALUE;
-                    for (Map.Entry<String, Float> entry : MSEs.entrySet()) {
-                        float mse = entry.getValue();
-                        if (mse < bestMSE) {
-                            bestMSE = mse;
-                            Constants.rtModel = entry.getKey();
+                    HashMap<String, Integer> votes = new HashMap<>();
+                    for (String model : datapointsRT.keySet()) {
+                        votes.put(model, 0);
+                    }
+                    for (int i = 0; i < 10; i++) {
+                        String bestModel = "";
+                        float bestRtDiff = Float.MAX_VALUE;
+
+                        for (String model : datapointsRT.keySet()) {
+                            float[] rtDiffs = datapointsRT.get(model);
+                            float deltaRT = rtDiffs[rtDiffs.length - 1 - i];
+                            if (deltaRT < bestRtDiff) {
+                                bestRtDiff = deltaRT;
+                                bestModel = model;
+                            }
+                        }
+
+                        votes.put(bestModel, votes.get(bestModel) + 1);
+                    }
+
+                    int mostVotes = 0;
+                    for (String model : votes.keySet()) {
+                        int vote = votes.get(model);
+                        if (vote > mostVotes) {
+                            mostVotes = vote;
+                            Constants.rtModel = model;
                         }
                     }
+
                     printInfo("RT model chosen is " + Constants.rtModel);
 
                     //write file that has all values for each model

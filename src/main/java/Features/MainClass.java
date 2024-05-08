@@ -29,6 +29,10 @@ import kotlin.jvm.functions.Function1;
 import java.io.*;
 import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
+import java.nio.file.Paths;
+import java.nio.file.Files;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.stream.Collectors;
 import java.util.*;
 import java.util.concurrent.ScheduledThreadPoolExecutor;
 
@@ -37,7 +41,7 @@ public class MainClass {
     public static ScheduledThreadPoolExecutor executorService;
     public static void main(String[] args) throws Exception {
         Locale.setDefault(Locale.US);
-        printInfo("MSBooster v1.2.26");
+        printInfo("MSBooster v1.2.27");
 
         try {
             //accept command line inputs
@@ -1302,11 +1306,41 @@ public class MainClass {
             MyFileUtils.deleteWholeDirectory(Constants.JsonDirectory);
 
             //file with used models
-            BufferedWriter modelsFile = new BufferedWriter(new FileWriter(
-                    Constants.outputDirectory + File.separator + "PDV_models.txt"));
-            modelsFile.write("spectraModel=" + Constants.spectraModel + "\n");
-            modelsFile.write("rtModel=" + Constants.rtModel);
-            modelsFile.close();
+            try {
+                // Read all lines from the file into a list
+                List<String> lines = Files.readAllLines(Paths.get(Constants.paramsList));
+                AtomicBoolean spectrafound = new AtomicBoolean(false);
+                AtomicBoolean rtfound = new AtomicBoolean(false);
+
+                // Stream the list, and if a line starts with the specified prefix,
+                // replace everything after the prefix with newSuffix
+                // Otherwise keep the line as is
+                List<String> modifiedLines = lines.stream()
+                        .map(line -> {
+                            if (line.trim().startsWith("spectraModel")) {
+                                spectrafound.set(true);
+                                return "spectraModel=" + Constants.spectraModel;
+                            } else if (line.trim().startsWith("rtModel")) {
+                                rtfound.set(true);
+                                return "rtModel=" + Constants.rtModel;
+                            }
+                            return line;
+                        })
+                        .collect(Collectors.toList());
+
+                // If no line was found with the specified prefix, add the new line
+                if (!spectrafound.get()) {
+                    modifiedLines.add("spectraModel=" + Constants.spectraModel);
+                }
+                if (!rtfound.get()) {
+                    modifiedLines.add("rtModel=" + Constants.rtModel);
+                }
+
+                // Write the modified lines back to the file
+                Files.write(Paths.get(Constants.paramsList), modifiedLines);
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
 
             long end = System.nanoTime();
             long duration = (end - start);

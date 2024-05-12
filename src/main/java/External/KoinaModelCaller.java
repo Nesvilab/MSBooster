@@ -24,6 +24,7 @@ import Features.*;
 import com.google.gson.Gson;
 import com.google.gson.stream.JsonReader;
 import org.knowm.xchart.BitmapEncoder;
+import org.knowm.xchart.VectorGraphicsEncoder;
 import org.knowm.xchart.XYChart;
 import org.knowm.xchart.XYChartBuilder;
 import org.knowm.xchart.style.Styler;
@@ -208,8 +209,16 @@ public class KoinaModelCaller {
                 if (!new File(dir).exists()) {
                     new File(dir).mkdirs();
                 }
-                BitmapEncoder.saveBitmap(chart, dir + File.separator + "Koina_timing_" +
-                        model + ".png", BitmapEncoder.BitmapFormat.PNG);
+
+                if (Constants.plotExtension.equalsIgnoreCase("png")) {
+                    BitmapEncoder.saveBitmap(chart,
+                            dir + File.separator + "Koina_timing_" + model + ".png",
+                            BitmapEncoder.BitmapFormat.PNG);
+                } else if (Constants.plotExtension.equalsIgnoreCase("pdf")) {
+                    VectorGraphicsEncoder.saveVectorGraphic(chart,
+                            dir + File.separator + "Koina_timing_" + model + ".pdf",
+                            VectorGraphicsEncoder.VectorGraphicsFormat.PDF);
+                }
             }
         } catch (Exception e) {
             e.printStackTrace();

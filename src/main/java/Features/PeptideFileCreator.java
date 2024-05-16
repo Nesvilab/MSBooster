@@ -129,7 +129,7 @@ public class PeptideFileCreator {
         try {
             String filename = "";
             if (Constants.useKoina && !modelFormat.equals("Diann")) {
-                JSONWriter jw = new JSONWriter(modelFormat, hSetHits);
+                JSONWriter jw = new JSONWriter(modelFormat, hSetHits, true);
                 if (!Constants.usedKoina) {
                     filename = jw.write(true,
                             Constants.outputDirectory + File.separator + "jsonFiles",

@@ -24,10 +24,7 @@ import java.io.FileWriter;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Paths;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.HashSet;
-import java.util.List;
+import java.util.*;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Future;
@@ -50,7 +47,7 @@ public class JSONWriter {
 
     public static final int maxJsonLength = 1000;
 
-    public JSONWriter(String url, HashSet<String> entries) {
+    public JSONWriter(String url, HashSet<String> entries, boolean fullSet) {
         this.url = url;
         this.model = url.toLowerCase().split("_")[0];
         if (Constants.KoinaRTmodels.contains(url)) {
@@ -68,15 +65,44 @@ public class JSONWriter {
         this.nces = new float[entries.size()];
         this.instruments = new String[entries.size()];
         this.fragmentations = new String[entries.size()];
-        int i = 0;
-        for (String entry : entries) {
-            String[] info = entry.split(",");
-            this.peptides[i] = info[0];
-            this.charges[i] = Integer.parseInt(info[1]);
-            this.nces[i] = Float.parseFloat(info[2]);
-            this.instruments[i] = info[3].toUpperCase();
-            this.fragmentations[i] = info[4];
-            i++;
+
+        //fullset is to indicate if the stripped peptide length is there
+        //this is true if using pinreader.createjson
+        if ((model.contains("alphapept")) && (fullSet)) {
+            List<String> sortedList = new ArrayList<>(entries);
+
+            // Custom comparator to sort strings based on their stripped length
+            Comparator<String> customComparator = (str1, str2) -> {
+                // Extract the numerical part from both strings.
+                int num1 = Integer.parseInt(str1.substring(str1.lastIndexOf(',') + 1));
+                int num2 = Integer.parseInt(str2.substring(str2.lastIndexOf(',') + 1));
+                // Compare these numerical parts
+                return Integer.compare(num1, num2);
+            };
+
+            Collections.sort(sortedList, customComparator);
+
+            int i = 0;
+            for (String entry : sortedList) {
+                String[] info = entry.split(",");
+                this.peptides[i] = info[0];
+                this.charges[i] = Integer.parseInt(info[1]);
+                this.nces[i] = Float.parseFloat(info[2]);
+                this.instruments[i] = info[3].toUpperCase();
+                this.fragmentations[i] = info[4];
+                i++;
+            }
+        } else {
+            int i = 0;
+            for (String entry : entries) {
+                String[] info = entry.split(",");
+                this.peptides[i] = info[0];
+                this.charges[i] = Integer.parseInt(info[1]);
+                this.nces[i] = Float.parseFloat(info[2]);
+                this.instruments[i] = info[3].toUpperCase();
+                this.fragmentations[i] = info[4];
+                i++;
+            }
         }
 
         numFiles = (int) Math.ceil((float) this.peptides.length / (float) maxJsonLength);

@@ -17,6 +17,7 @@
 
 package External;
 
+import static Features.Constants.KoinaThreads;
 import static utils.Print.printError;
 import static utils.Print.printInfo;
 
@@ -54,13 +55,6 @@ public class KoinaModelCaller {
     private static String modelType;
     private static String finalModel;
     private static AtomicBoolean emptyUrl = new AtomicBoolean(false);
-    private static final HashMap<String, Integer> recommendedThreads = makeRecommendedThreads();
-    private static HashMap<String, Integer> makeRecommendedThreads() {
-        HashMap<String, Integer> map = new HashMap<>();
-        map.put("AlphaPept_ms2_generic", 30);
-        map.put("Prosit_2020_intensity_TMT", 30);
-        return map;
-    }
 
     public KoinaModelCaller(){}
 
@@ -125,19 +119,11 @@ public class KoinaModelCaller {
                 futureList.add(executorService.submit(task));
             }
 
+            //empirically good number of parallel requests to maximize predictions per second without increasing latency too much
             AtomicInteger finishedJobs = new AtomicInteger(1);
             int ogSize = executorService.getCorePoolSize();
-
-            //hardcoded limitation of some models, until proven that Koina can handle more
-            for (Map.Entry<String, Integer> entry : recommendedThreads.entrySet()) {
-                if (entry.getKey().equals(model)) {
-                    if (entry.getValue() < ogSize) {
-                        executorService.setCorePoolSize(entry.getValue());
-                        executorService.setMaximumPoolSize(entry.getValue());
-                    }
-                    break;
-                }
-            }
+            executorService.setCorePoolSize(Math.min(ogSize, KoinaThreads));
+            executorService.setMaximumPoolSize(Math.min(ogSize, KoinaThreads));
 
             int newSize = executorService.getCorePoolSize();
             long jobStart = System.currentTimeMillis();
@@ -287,6 +273,7 @@ public class KoinaModelCaller {
                 acceptedIdx[i] = accepted;
             }
 
+            //TODO: when mz is calculated correcly by Koina for PTMs, can add back in
             //mz
 //            msInfo = dataResults[mzIdx].split("data\":\\[")[1];
 //            msInfo = msInfo.substring(0, msInfo.length() - 1);

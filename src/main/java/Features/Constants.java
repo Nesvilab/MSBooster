@@ -86,7 +86,7 @@ public class Constants {
     public static Boolean findBestSpectraModel = false;
     public static Boolean foundBest = false;
     //TODO: hashset with all models to check that model is acceptable?
-    public static String KoinaURL = ""; //https://koina.proteomicsdb.org/v2/models/
+    public static String KoinaURL = ""; //https://koina.proteomicsdb.org/v2/models/ or https://koina.wilhelmlab.org:443/v2/models/
     public static CaseInsensitiveHashSet KoinaRTmodels = new CaseInsensitiveHashSet(
             new String[] {"AlphaPept_rt_generic", "Prosit_2019_irt",
                     "Prosit_2020_irt_TMT", "Deeplc_hela_hf"});
@@ -116,6 +116,7 @@ public class Constants {
     public static Integer numKoinaAttempts = 3;
     public static Integer initialKoinaMillisecondsToWaitRt = 30000;
     public static Integer initialKoinaMillisecondsToWaitMs2 = 60000;
+    public static Integer KoinaThreads = 30;
     public static Float minIntensityToWriteToMgf = 0.01f;
     public static Boolean calibrateNCE = true;
     public static Integer numPSMsToCalibrate = 1000;

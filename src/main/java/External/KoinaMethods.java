@@ -182,7 +182,7 @@ public class KoinaMethods {
             hits.add(s + "," + NCE + "," + Constants.instrument + "," + Constants.FragmentationType);
         }
 
-        JSONWriter jw = new JSONWriter(model, hits);
+        JSONWriter jw = new JSONWriter(model, hits, false);
 
         String jsonFolder = "";
         try {

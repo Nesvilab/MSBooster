@@ -55,11 +55,11 @@ public class KoinaTask implements Callable<Boolean> {
     }
 
     @Override
-    public Boolean call() {
+    public Boolean call() throws InterruptedException {
         StringBuilder koinaSb = new StringBuilder();
         try {
             //delay so we don't overwhelm server
-            if (index < Constants.numThreads && failedAttempts == 0) {
+            if (index < Constants.KoinaThreads && failedAttempts == 0) {
                 Thread.sleep(index * 1000L);
             }
 
@@ -95,7 +95,7 @@ public class KoinaTask implements Callable<Boolean> {
             long timeDiff = System.currentTimeMillis() - start;
             long currentWaitTime = waitTime.get();
             waitTime.set(currentWaitTime + ((2 * timeDiff - currentWaitTime) /
-                    (Math.min(Constants.numThreads, numTimes.getAndIncrement()))
+                    (Math.min(Constants.KoinaThreads, numTimes.getAndIncrement()))
             )); //local mean
             return true;
         } catch (Exception e) {
@@ -109,7 +109,7 @@ public class KoinaTask implements Callable<Boolean> {
                     printError(ending);
                     printError("Retried calling " + filename + " " + failedAttempts +
                             " times. This many be fixable by sending prediction requests to Koina at a slower rate " +
-                            "by lowering the --numThreads parameter in the parameter file.");
+                            "by lowering the --KoinaThreads parameter in the parameter file.");
                     printError("Exiting");
                     System.exit(1);
                 } else {
@@ -117,6 +117,7 @@ public class KoinaTask implements Callable<Boolean> {
                     return true;
                 }
             }
+            Thread.sleep(5000L);
 
             return false;
         }

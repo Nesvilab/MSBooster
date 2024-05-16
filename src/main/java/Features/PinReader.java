@@ -460,7 +460,7 @@ public class PinReader {
             }
 
             String sb = pep + "," + pf.charge + "," +  Constants.NCE + "," +
-                    Constants.instrument + "," + Constants.FragmentationType;
+                    Constants.instrument + "," + Constants.FragmentationType + "," + pf.stripped.length();
             peps.add(sb);
         }
         return peps.toArray(new String[0]);

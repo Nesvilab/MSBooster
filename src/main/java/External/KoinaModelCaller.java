@@ -389,7 +389,7 @@ public class KoinaModelCaller {
             }
 
             PredictionEntry pe = new PredictionEntry(mzs, intensities[i], fragNums[i],
-                    charges[i], fragmentIonTypes[i]);
+                    charges[i], fragmentIonTypes[i], new int[0]);
 
             if (preds.containsKey(peptide)) {
                 pe.setRT(preds.get(peptide).getRT());
@@ -449,7 +449,7 @@ public class KoinaModelCaller {
 
                     //add to hashmap
                     PredictionEntry newPred = new PredictionEntry(newMZs, tmp.getIntensities(),
-                            tmp.getFragNums(), tmp.getCharges(), tmp.getFragmentIonTypes());
+                            tmp.getFragNums(), tmp.getCharges(), tmp.getFragmentIonTypes(), tmp.getFlags());
                     newPred.setRT(tmp.getRT());
                     newPred.setIM(tmp.getIM());
                     preds.put(mc.fullPeptide, newPred);
@@ -457,7 +457,7 @@ public class KoinaModelCaller {
                     if (!Constants.foundBest && klr.failed) { //allow it to run without error
                         new PredictionEntry();
                         PredictionEntry newPred = new PredictionEntry(new float[]{0}, new float[]{0},
-                                new int[]{0}, new int[]{0}, new String[]{"y"});
+                                new int[]{0}, new int[]{0}, new String[]{"y"}, new int[]{1});
                         newPred.setRT(0);
                         newPred.setIM(0);
                         preds.put(mc.fullPeptide, newPred);

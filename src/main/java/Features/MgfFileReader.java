@@ -294,7 +294,7 @@ public class MgfFileReader implements SpectralPredictionMapper{
                                         }
                                     } else { //act as predictions
                                         PredictionEntry newPred = new PredictionEntry(mzArray, intArray,
-                                                new int[0], new int[0], fragmentArray);
+                                                new int[0], new int[0], fragmentArray, new int[0]);
                                         newPred.setRT(RT);
                                         newPred.setIM(IM);
                                         //convert title to base format
@@ -415,7 +415,7 @@ public class MgfFileReader implements SpectralPredictionMapper{
                             }
                         } else { //act as predictions
                             PredictionEntry newPred = new PredictionEntry(mzArray, intArray,
-                                    new int[0], new int[0], fragmentArray);
+                                    new int[0], new int[0], fragmentArray, new int[0]);
                             newPred.setRT(RT);
                             newPred.setIM(IM);
                             if (mzArray.length != 0) {

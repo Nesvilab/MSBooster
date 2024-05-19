@@ -106,9 +106,9 @@ public class PercolatorFormatter {
                 //check what fragment ion types have been predicted by model 1
                 HashSet<String> model1FragmentIonTypes = new HashSet<>();
                 for (PredictionEntry pe : allPreds.values()) {
-                    if (pe.fragmentIonTypes == null) {
-                        pe.setFragmentIonTypes();
-                    }
+//                    if (pe.fragmentIonTypes == null) {
+//                        pe.setFragmentIonTypes();
+//                    }
                     model1FragmentIonTypes.addAll(Arrays.asList(pe.fragmentIonTypes));
                 }
 
@@ -179,7 +179,7 @@ public class PercolatorFormatter {
                             }
 
                             PredictionEntry newPe = new PredictionEntry(mzArray, intArray,
-                                    pe.getFragNums(), pe.getCharges(), typeArray);
+                                    pe.getFragNums(), pe.getCharges(), typeArray, new int[0]);
                             allPreds.put(key, newPe);
                         } else { //retain predfull intensities, just add RT from other model
                             //but if predfull has missing entry, use other model instead

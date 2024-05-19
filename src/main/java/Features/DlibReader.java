@@ -94,7 +94,7 @@ public class DlibReader implements SpectralPredictionMapper{
                     }
 
                     PredictionEntry newPred = new PredictionEntry(finalMZs, finalIntensities,
-                            new int[0], new int[0], new String[0]);
+                            new int[0], new int[0], new String[0], new int[0]);
                     newPred.setRT(RT);
                     allPreds.put(name, newPred);
                 }
@@ -161,7 +161,7 @@ public class DlibReader implements SpectralPredictionMapper{
                             decoyMZs[i] = mz;
                         }
                         PredictionEntry newPred = new PredictionEntry(decoyMZs, pe.intensities,
-                                new int[0], new int[0], new String[0]);
+                                new int[0], new int[0], new String[0], new int[0]);
                         newPred.setRT(pe.RT);
                         allPreds.put(pfDecoy.baseCharge, newPred);
                     }
@@ -227,7 +227,7 @@ public class DlibReader implements SpectralPredictionMapper{
 
                         //add to hashmap
                         PredictionEntry newPred = new PredictionEntry(newMZsArray, newIntensitiesArray,
-                                new int[0], new int[0], new String[0]);
+                                new int[0], new int[0], new String[0], new int[0]);
                         newPred.setRT(tmp.RT);
                         allPreds.put(pf.baseCharge, newPred);
                     }

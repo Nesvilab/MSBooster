@@ -144,10 +144,9 @@ public class MspReader implements SpectralPredictionMapper {
                     }
 
                     PredictionEntry newPred = new PredictionEntry(mzs, ints,
-                            fragNums, charges, new String[0]);
+                            fragNums, charges, new String[0], flags);
                     newPred.setRT(RT);
                     newPred.setIM(0f);
-                    newPred.setFlags(flags);
                     allPreds.put(pep, newPred);
                 }
 
@@ -188,8 +187,7 @@ public class MspReader implements SpectralPredictionMapper {
 
                         //add to hashmap
                         PredictionEntry newPred = new PredictionEntry(newMZs, tmp.intensities,
-                                tmp.fragNums, tmp.charges, new String[0]);
-                        newPred.setFlags(tmp.flags);
+                                tmp.fragNums, tmp.charges, new String[0], tmp.flags);
                         newPred.setRT(tmp.RT);
                         newPred.setIM(0f);
                         allPreds.put(mc.fullPeptide, newPred);

@@ -29,7 +29,6 @@ import java.io.InputStream;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.util.ArrayList;
-import java.util.concurrent.ConcurrentHashMap;
 
 public class DiannSpeclibReader implements SpectralPredictionMapper{
     final ArrayList<String> filenames;
@@ -87,7 +86,7 @@ public class DiannSpeclibReader implements SpectralPredictionMapper{
                     float[] intensities = new float[numFrags];
                     int[] fragNums = new int[numFrags];
                     int[] flags = new int[numFrags];
-                    //String[] fragmentIonTypes = new String[numFrags];
+                    String[] fragmentIonTypes = new String[numFrags];
                     int[] charges = new int[numFrags];
 
                     //load fragment info
@@ -111,16 +110,15 @@ public class DiannSpeclibReader implements SpectralPredictionMapper{
                         intensities[i] = intensity;
                         fragNums[i] = fragNum;
                         flags[i] = flag;
-                        //fragmentIonTypes[i] = ionType;
+                        fragmentIonTypes[i] = ionType;
                         charges[i] = charge;
                     }
 
                     //add to hashmap
                     PredictionEntry newPred = new PredictionEntry(mzs, intensities,
-                            fragNums, charges, new String[0]);
+                            fragNums, charges, fragmentIonTypes, flags);
                     newPred.setRT(iRT);
                     newPred.setIM(IM);
-                    newPred.setFlags(flags);
                     allPreds.put(mc.fullPeptide, newPred);
                 }
                 is.close();
@@ -154,7 +152,7 @@ public class DiannSpeclibReader implements SpectralPredictionMapper{
 
                         //add to hashmap
                         PredictionEntry newPred = new PredictionEntry(newMZs, tmp.intensities,
-                                tmp.fragNums, tmp.charges, tmp.fragmentIonTypes);
+                                tmp.fragNums, tmp.charges, tmp.fragmentIonTypes, tmp.flags);
                         newPred.setRT(tmp.RT);
                         newPred.setIM(tmp.IM);
                         allPreds.put(mc.fullPeptide, newPred);

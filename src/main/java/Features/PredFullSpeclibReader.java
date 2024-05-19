@@ -224,7 +224,7 @@ public class PredFullSpeclibReader extends MgfFileReader {
             }
 
             PredictionEntry newPred = new PredictionEntry(mzArray, intArray,
-                    new int[0], new int[0], fragmentArray);
+                    new int[0], new int[0], fragmentArray, new int[0]);
             newPred.setRT(pe.RT);
             newPred.setIM(pe.IM);
             this.allPredsHashMap.put(lSplit[0] + "|" + lSplit[1], newPred);

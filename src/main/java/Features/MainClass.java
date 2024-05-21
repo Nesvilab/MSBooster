@@ -246,8 +246,12 @@ public class MainClass {
                                 break;
                             case "precursor_charge":
                                 vals = val.split(" ");
-                                params.put("minPrecursorCharge", vals[0]);
-                                params.put("maxPrecursorCharge", vals[1]);
+                                params.put("minPrecursorCharge",
+                                        String.valueOf(Math.min(Integer.parseInt(vals[0]),
+                                                Constants.minPrecursorCharge)));
+                                params.put("maxPrecursorCharge",
+                                        String.valueOf(Math.max(Integer.parseInt(vals[1]),
+                                                Constants.maxPrecursorCharge)));
                                 break;
                             case "mass_offsets":
                                 if (!val.isEmpty()) {

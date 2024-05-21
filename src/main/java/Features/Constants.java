@@ -113,10 +113,11 @@ public class Constants {
                     "Prosit_2020_intensity_TMT", "Prosit_2020_intensity_HCD"});
     public static SpectralPredictionMapper spectralPredictionMapper;
 
-    public static Integer numKoinaAttempts = 3;
+    public static Integer numKoinaAttempts = 10;
     public static Integer initialKoinaMillisecondsToWaitRt = 30000;
     public static Integer initialKoinaMillisecondsToWaitMs2 = 60000;
-    public static Integer KoinaThreads = 30;
+//    public static Integer KoinaThreadsRT = 30;
+//    public static Integer KoinaThreadsMS2 = 30;
     public static Float minIntensityToWriteToMgf = 0.01f;
     public static Boolean calibrateNCE = true;
     public static Integer numPSMsToCalibrate = 1000;

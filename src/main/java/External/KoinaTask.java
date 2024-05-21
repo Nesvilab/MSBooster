@@ -35,47 +35,40 @@ public class KoinaTask implements Callable<Boolean> {
     private final String command;
     private final String property;
     private final String model;
-    public int index;
     KoinaLibReader klr;
     AtomicLong waitTime;
-    AtomicInteger numTimes;
-    private int failedAttempts = 0;
+    int failedAttempts = 0;
     public boolean completed = false;
 
-    public KoinaTask(String filename, String command, String property, String model, int index,
-                     KoinaLibReader klr, AtomicLong waitTime, AtomicInteger numTimes) {
+    public KoinaTask(String filename, String command, String property, String model,
+                     KoinaLibReader klr, AtomicLong waitTime) {
         this.filename = filename;
         this.command = command;
         this.property = property;
         this.model = model;
-        this.index = index;
         this.klr = klr;
         this.waitTime = waitTime;
-        this.numTimes = numTimes;
     }
 
     @Override
-    public Boolean call() throws InterruptedException {
+    public Boolean call() {
         StringBuilder koinaSb = new StringBuilder();
+        Process process = null;
         try {
-            //delay so we don't overwhelm server
-            if (index < Constants.KoinaThreads && failedAttempts == 0) {
-                Thread.sleep(index * 1000L);
-            }
-
             long start = System.currentTimeMillis();
             ProcessBuilder builder = new ProcessBuilder(command.split(" "));
             builder.redirectErrorStream(true);
-            Process process = builder.start();
+            process = builder.start();
             BufferedReader reader = new BufferedReader(new InputStreamReader(process.getInputStream()));
 
             //Goal is to cut off 504 error early
             Timer timer = new Timer();
+            Process finalProcess = process;
             TimerTask timerTask = new TimerTask() {
                 @Override
                 public void run() {
                     if (koinaSb.toString().isEmpty()) {
-                        process.destroy();
+                        finalProcess.destroyForcibly();
                     }
                 }
             };
@@ -94,22 +87,18 @@ public class KoinaTask implements Callable<Boolean> {
                     property, model, klr);
             long timeDiff = System.currentTimeMillis() - start;
             long currentWaitTime = waitTime.get();
-            waitTime.set(currentWaitTime + ((2 * timeDiff - currentWaitTime) /
-                    (Math.min(Constants.KoinaThreads, numTimes.getAndIncrement()))
-            )); //local mean
+            waitTime.set(currentWaitTime + ((3 * timeDiff - currentWaitTime) / 30));
             return true;
         } catch (Exception e) {
             String ending = koinaSb.substring(Math.max(0, koinaSb.toString().length() - 1000));
-            failedAttempts++;
+            process.destroyForcibly();
 
             if (failedAttempts == Constants.numKoinaAttempts) {
                 if (Constants.foundBest) {
                     printError(command);
                     printError(filename + " had output that ended in: ");
                     printError(ending);
-                    printError("Retried calling " + filename + " " + failedAttempts +
-                            " times. This many be fixable by sending prediction requests to Koina at a slower rate " +
-                            "by lowering the --KoinaThreads parameter in the parameter file.");
+                    printError("Retried calling " + filename + " " + failedAttempts + " times.");
                     printError("Exiting");
                     System.exit(1);
                 } else {
@@ -117,7 +106,6 @@ public class KoinaTask implements Callable<Boolean> {
                     return true;
                 }
             }
-            Thread.sleep(5000L);
 
             return false;
         }

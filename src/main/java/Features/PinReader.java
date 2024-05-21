@@ -405,6 +405,9 @@ public class PinReader {
             if (modelFormat.contains("Prosit") && modelFormat.contains("TMT") && pf.stripped.length() > 30) {
                 continue;
             }
+            if (modelFormat.contains("Prosit") && Integer.parseInt(pf.charge) > 6) {
+                continue;
+            }
 
             String pep = pf.diann.replace("UniMod", "UNIMOD");
             if (pep.contains("[TMT]")) {

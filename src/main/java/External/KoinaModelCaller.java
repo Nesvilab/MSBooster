@@ -17,7 +17,7 @@
 
 package External;
 
-import static Features.Constants.KoinaThreads;
+import static Features.Constants.*;
 import static utils.Print.printError;
 import static utils.Print.printInfo;
 
@@ -30,17 +30,22 @@ import org.knowm.xchart.XYChart;
 import org.knowm.xchart.XYChartBuilder;
 import org.knowm.xchart.style.Styler;
 
+import java.awt.*;
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileReader;
 import java.io.IOException;
 import java.util.*;
+import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.Future;
 import java.util.concurrent.ScheduledThreadPoolExecutor;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 public class KoinaModelCaller {
     private static final int AlphaPeptDeepMzIdx = 1;
@@ -54,6 +59,7 @@ public class KoinaModelCaller {
     private static final int ms2pipFragIdx = 0;
     private static String modelType;
     private static String finalModel;
+    private static String ms2ModelType;
     private static AtomicBoolean emptyUrl = new AtomicBoolean(false);
 
     public KoinaModelCaller(){}
@@ -81,6 +87,7 @@ public class KoinaModelCaller {
             property = "rt";
         } else if (Constants.KoinaMS2models.contains(model)) {
             property = "ms2";
+            ms2ModelType = modelType;
         } else {
             printError(model + " not in Koina models");
             System.exit(1);
@@ -105,59 +112,63 @@ public class KoinaModelCaller {
             } else {
                 waitTime = new AtomicLong(Constants.initialKoinaMillisecondsToWaitMs2);
             }
-            AtomicInteger numTimes = new AtomicInteger(10);
+
             ConcurrentHashMap<Integer, Long> completionTimes = new ConcurrentHashMap<>();
-            ArrayList<KoinaTask> tasks = new ArrayList<>();
-            List<Future> futureList = new ArrayList<>();
+            KoinaTask[] tasks = new KoinaTask[numProcesses];
+            Future[] futureList = new Future[numProcesses];
+            boolean[] needsToBeRun = new boolean[numProcesses]; //default is false
+            Arrays.fill(needsToBeRun, true);
+            AtomicLong nextAllowedSubmissionTime = new AtomicLong(System.currentTimeMillis());
+            long jobStart = System.currentTimeMillis();
 
             for (int i = 0; i < numProcesses; i++) {
-                String command = "curl -s -H content-type:application/json -d @" + filenameArraylist.get(i) +
+                String command = "curl -s --http1.1 -H content-type:application/json -d @" + filenameArraylist.get(i) +
                         " " + Constants.KoinaURL + model + "/infer";
-                KoinaTask task = new KoinaTask(filenameArraylist.get(i), command, property, model, i,
-                        klr, waitTime, numTimes);
-                tasks.add(task);
-                futureList.add(executorService.submit(task));
+                KoinaTask task = new KoinaTask(filenameArraylist.get(i), command, property, model,
+                        klr, waitTime);
+                tasks[i] = task;
             }
 
-            //empirically good number of parallel requests to maximize predictions per second without increasing latency too much
             AtomicInteger finishedJobs = new AtomicInteger(1);
-            int ogSize = executorService.getCorePoolSize();
-            executorService.setCorePoolSize(Math.min(ogSize, KoinaThreads));
-            executorService.setMaximumPoolSize(Math.min(ogSize, KoinaThreads));
+            AtomicInteger attemptedJobs = new AtomicInteger(0);
 
-            int newSize = executorService.getCorePoolSize();
-            long jobStart = System.currentTimeMillis();
-            while (finishedJobs.get() < tasks.size() + 1) {
-                for (int i = 0; i < tasks.size(); i++) {
-                    KoinaTask task = tasks.get(i);
-                    Future future = futureList.get(i);
-                    if (!task.completed && future.isDone()) {
-                        boolean success = (boolean) future.get();
-                        if (success) {
-                            if (verbose) {
-                                pr.progress();
-                            }
-                            completionTimes.put(finishedJobs.getAndIncrement(), System.currentTimeMillis() - jobStart);
-                            task.completed = true;
+            int allowedFailedAttempts = 0; //finish all tasks that have not been attempted before going to ones that have failed once, etc
 
-                            //put threads back in
-                            if (finishedJobs.get() % 10 == 0) {
-                                if (newSize < ogSize) {
-                                    newSize++;
-                                    executorService.setMaximumPoolSize(newSize);
-                                    executorService.setCorePoolSize(newSize);
+            while (finishedJobs.get() < tasks.length + 1) {
+                for (int i = 0; i < tasks.length; i++) {
+                    KoinaTask task = tasks[i];
+                    if (needsToBeRun[i] && task.failedAttempts == allowedFailedAttempts) {
+                        //0.01 seconds between submissions
+                        long delay = Math.max(10L - (System.currentTimeMillis() - nextAllowedSubmissionTime.get()), 0);
+                        futureList[i] = executorService.schedule(task, delay, TimeUnit.MILLISECONDS);
+                        nextAllowedSubmissionTime.set(System.currentTimeMillis() + delay + 10L);
+
+                        needsToBeRun[i] = false;
+                        attemptedJobs.incrementAndGet();
+                    }
+
+                    Future future = futureList[i];
+                    if (task.failedAttempts == allowedFailedAttempts) {
+                        if (!task.completed && future.isDone()) {
+                            boolean success = (boolean) future.get();
+                            if (success) {
+                                if (verbose) {
+                                    pr.progress();
                                 }
+                                completionTimes.put(finishedJobs.getAndIncrement(), System.currentTimeMillis() - jobStart);
+                                task.completed = true;
+                            } else {
+                                waitTime.addAndGet(5000);
+                                needsToBeRun[i] = true;
+                                futureList[i] = null;
+                                task.failedAttempts++;
                             }
-                        } else {
-                            if (newSize > 1) {
-                                newSize--;
-                                executorService.setCorePoolSize(newSize);
-                                executorService.setMaximumPoolSize(newSize);
-                            }
-                            waitTime.addAndGet(5000);
-                            futureList.set(i, executorService.submit(task));
+                            attemptedJobs.decrementAndGet();
                         }
                     }
+                }
+                if (attemptedJobs.get() == 0) {
+                    allowedFailedAttempts++;
                 }
                 Thread.sleep(100);
             }
@@ -167,9 +178,6 @@ public class KoinaModelCaller {
             if (verbose) {
                 printInfo("cURL and parse time in milliseconds: " + elapsedTime);
             }
-
-            executorService.setMaximumPoolSize(ogSize);
-            executorService.setCorePoolSize(ogSize);
 
             //create plot
             if (makeFigure) {
@@ -183,13 +191,18 @@ public class KoinaModelCaller {
                     yData[i] = i;
                 }
                 Arrays.sort(xData);
-                XYChart chart = new XYChartBuilder().width(1000).height(1000).build();
+                XYChart chart = new XYChartBuilder().width(500).height(500).build();
                 chart.setTitle("Koina timing");
                 chart.setXAxisTitle("Time (sec)");
                 chart.setYAxisTitle("Peptides predicted in " + JSONWriter.maxJsonLength + "'s");
                 chart.getStyler().setLegendPosition(Styler.LegendPosition.InsideNW);
                 chart.getStyler().setYAxisDecimalPattern("0");
                 chart.addSeries(model, xData, yData);
+
+                // Increase the font sizes
+                chart.getStyler().setAxisTitleFont(new Font("Helvetica", Font.PLAIN, 21));
+                chart.getStyler().setLegendFont(new Font("Helvetica", Font.PLAIN, 21));
+                chart.getStyler().setAxisTickLabelsFont(new Font("Helvetica", Font.PLAIN, 15));
 
                 String dir = Constants.outputDirectory + File.separator + "MSBooster_plots";
                 if (!new File(dir).exists()) {
@@ -340,7 +353,11 @@ public class KoinaModelCaller {
             int entries = 0; //in case RT prediction is available but not MS2
             for (int charge = Constants.minPrecursorCharge; charge < Constants.maxPrecursorCharge + 1; charge++) {
                 String peptide = pf.getBase() + "|" + charge;
-                if (modelType.equals("prosit")) {
+                String mtype = modelType;
+                if (ms2ModelType != null) { //rely on this to transfer preictions
+                    mtype = ms2ModelType;
+                }
+                if (mtype.equals("prosit")) {
                     peptide = peptide.replace("C[" + PTMhandler.carbamidomethylationMass + "]", "C");
                     peptide = peptide.replace("C", "C[" + PTMhandler.carbamidomethylationMass + "]");
                 }
@@ -413,7 +430,11 @@ public class KoinaModelCaller {
                 PredictionEntry tmp = null;
                 String stripped = "";
                 String baseCharge = "";
-                switch (modelType) {
+                String mtype = modelType;
+                if (ms2ModelType != null) { //rely on this to transfer preictions
+                    mtype = ms2ModelType;
+                }
+                switch (mtype) {
                     case "alphapept":
                     case "ms2pip":
                     case "deeplc":

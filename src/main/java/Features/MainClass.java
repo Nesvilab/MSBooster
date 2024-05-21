@@ -41,7 +41,7 @@ public class MainClass {
     public static ScheduledThreadPoolExecutor executorService;
     public static void main(String[] args) throws Exception {
         Locale.setDefault(Locale.US);
-        printInfo("MSBooster v1.2.29");
+        printInfo("MSBooster v1.2.30");
 
         try {
             //accept command line inputs
@@ -385,6 +385,21 @@ public class MainClass {
             if (pmMatcher.pinFiles.length == 0) {
                 printInfo("No pin files to process. Continuing without MSBooster.");
                 executorService.shutdown();
+                System.exit(0);
+            }
+
+            //make models properly uppercased, or throw error if not right
+            HashMap<String, String> modelMapper = LowercaseModelMapper.lowercaseToModel;
+            if (modelMapper.containsKey(Constants.spectraModel.toLowerCase())) {
+                Constants.spectraModel = modelMapper.get(Constants.spectraModel.toLowerCase());
+            } else {
+                printError("No spectra model called " + Constants.spectraModel + ". Exiting.");
+                System.exit(0);
+            }
+            if (modelMapper.containsKey(Constants.rtModel.toLowerCase())) {
+                Constants.rtModel = modelMapper.get(Constants.rtModel.toLowerCase());
+            } else {
+                printError("No RT model called " + Constants.rtModel + ". Exiting.");
                 System.exit(0);
             }
 

@@ -75,7 +75,7 @@ public class Constants {
     //locations of executables and other models
     public static Integer numThreads = 0;
     public static String DiaNN = null;
-    public static String spectraRTPredModel = "DIA-NN"; //can also include koina urls
+    public static String spectraRTPredModel = "DIA-NN"; //can also include koina urls //TODO remove in favor of separate spectra and rt models
     public static String spectraModel = "";
     public static String rtModel = "";
     public static Boolean addNonYb = true;

@@ -90,23 +90,29 @@ public class KoinaTask implements Callable<Boolean> {
             waitTime.set(currentWaitTime + ((3 * timeDiff - currentWaitTime) / 30));
             return true;
         } catch (Exception e) {
-            String ending = koinaSb.substring(Math.max(0, koinaSb.toString().length() - 1000));
-            process.destroyForcibly();
+            try {
+                String ending = koinaSb.substring(Math.max(0, koinaSb.toString().length() - 1000));
+                process.destroyForcibly();
 
-            if (failedAttempts == Constants.numKoinaAttempts) {
-                if (Constants.foundBest) {
-                    printError(command);
-                    printError(filename + " had output that ended in: ");
-                    printError(ending);
-                    printError("Retried calling " + filename + " " + failedAttempts + " times.");
-                    printError("Exiting");
-                    System.exit(1);
-                } else {
-                    klr.failed = true;
-                    return true;
+                if (failedAttempts == Constants.numKoinaAttempts) {
+                    if (Constants.foundBest) {
+                        printError(command);
+                        printError(filename + " had output that ended in: ");
+                        printError(ending);
+                        printError("Retried calling " + filename + " " + failedAttempts + " times.");
+                        printError("Exiting");
+                        System.exit(1);
+                    } else {
+                        klr.failed = true;
+                        return true;
+                    }
                 }
-            }
 
+                return false;
+            } catch (Exception e2) {
+                e.printStackTrace();
+                System.exit(1);
+            }
             return false;
         }
     }

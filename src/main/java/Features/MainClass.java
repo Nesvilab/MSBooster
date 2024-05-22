@@ -41,7 +41,7 @@ public class MainClass {
     public static ScheduledThreadPoolExecutor executorService;
     public static void main(String[] args) throws Exception {
         Locale.setDefault(Locale.US);
-        printInfo("MSBooster v1.2.30");
+        printInfo("MSBooster v1.2.31");
 
         try {
             //accept command line inputs
@@ -432,9 +432,15 @@ public class MainClass {
                     if (TMT) {
                         consideredModels.addAll(Constants.rtSearchModelsTMT);
                     } else {
-                        CaseInsensitiveHashSet rtSearchModels = new CaseInsensitiveHashSet(
-                                Constants.rtSearchModelsString.split(","));
-                        consideredModels.addAll(rtSearchModels);
+                        String[] rtSearchModels = Constants.rtSearchModelsString.split(",");
+                        for (String model : rtSearchModels) {
+                            if (modelMapper.containsKey(model.toLowerCase())) {
+                                consideredModels.add(modelMapper.get(model.toLowerCase()));
+                            } else {
+                                printError("No RT model called " + model + ". Exiting.");
+                                System.exit(0);
+                            }
+                        }
                     }
                     printInfo("Searching the following models: ");
                     printInfo(String.valueOf(consideredModels));
@@ -681,9 +687,15 @@ public class MainClass {
                     if (TMT) {
                         consideredModels.addAll(Constants.ms2SearchModelsTMT);
                     } else {
-                        CaseInsensitiveHashSet ms2SearchModels = new CaseInsensitiveHashSet(
-                                Constants.ms2SearchModelsString.split(","));
-                        consideredModels.addAll(ms2SearchModels);
+                        String[] ms2SearchModels = Constants.ms2SearchModelsString.split(",");
+                        for (String model : ms2SearchModels) {
+                            if (modelMapper.containsKey(model.toLowerCase())) {
+                                consideredModels.add(modelMapper.get(model.toLowerCase()));
+                            } else {
+                                printError("No spectra model called " + model + ". Exiting.");
+                                System.exit(0);
+                            }
+                        }
                     }
                     printInfo("Searching the following models: ");
                     printInfo(String.valueOf(consideredModels));

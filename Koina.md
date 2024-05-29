@@ -31,6 +31,11 @@ Command line MSBooster has more flexible Koina functionality.
 
 ### FragPipe GUI
 ![Alt text](README_imgs/fragpipe_koina_interface.png)
+The core functionalities of Koina in MSBooster are implemented here.
+- A dropdown menu allows you to choose your MS/MS and RT models
+- Find best RT/spectral model can be checked to run a heuristic algorithm that attempts to find the best MS2 and/or RT
+model for your data
+- Koina server URL must be filled to tell MSBooster where to send its HTTP requests for prediction
 
 ### Command line
 You can use the following command to run MSBooster, adjusting the -Xmx to how much RAM you have available.
@@ -63,8 +68,9 @@ Important parameters when using Koina are explained below:
     search. By default, this is set to all models (<code>DIA-NN,ms2pip_2021_HCD,AlphaPept_ms2_generic,
     Prosit_2020_intensity_CID,Prosit_2020_intensity_HCD,Prosit_2023_intensity_timsTOF</code>). If you would like to take
     out specific models, you can remove them from here. For example, if you are working with timsTOF data, you may want 
-    to reduce the search to only those models tha explicitly have timsTOF models (<code>AlphaPept_ms2_generic,
-    Prosit_2023_intensity_timsTOF</code>)</li>
+    to reduce the search to only those models that explicitly have timsTOF models (<code>AlphaPept_ms2_generic,
+    Prosit_2023_intensity_timsTOF</code>). Models are case-insensitive (e.g. prosit_2020_Intensity_cid), but they must 
+    be spelled correctly</li>
     <li><code>rtSearchModelsString</code>: Same as <code>ms2SearchModelsString</code>, but for RT models. By default, it
     is set to <code>DIA-NN,AlphaPept_rt_generic,Prosit_2019_irt,Deeplc_hela_hf</code></li>
     <li><code>calibrateNCE</code>: Set to <code>true</code> if you would like to find the optimal collision energy for 

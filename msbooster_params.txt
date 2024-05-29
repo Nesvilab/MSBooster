@@ -4,3 +4,6 @@ renamePin = 1
 deletePreds = false
 mzmlDirectory = 
 pinPepXMLDirectory =
+KoinaURL =
+rtModel =
+spectraModel =

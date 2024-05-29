@@ -30,20 +30,18 @@ MSBooster is equipped to handle multiple input file formats and models:
 | .pin |
 | .pepXML (in progress) |
 
-| Prediction model |
-| --- |
+| Prediction model                             |
+|----------------------------------------------|
 | [DIA-NN](https://github.com/vdemichev/DiaNN) |
+| [Koina models](Koina.md)                     |
 
 ## Installation and running guide
 ### In FragPipe
 MSBooster can be run in Windows and Linux systems. If using FragPipe, no other installation steps are
 needed besides installing FragPipe. MSBooster is located in the "Validation" tab. Choose to enable 
-retention time features with "Predict RT" and MS/MS spectral features with "Predict spectra". "Use 
-correlated features" calculates multiple linearly correlated features, such as dot product and spectral 
-entropy, to add to your output file. This may increase or decrease your peptide IDs, as noted in the 
-[MSBooster manuscript](https://www.nature.com/articles/s41467-023-40129-9). Please refer to the 
+retention time features with "Predict RT" and MS/MS spectral features with "Predict spectra". Please refer to the 
 [FragPipe](https://fragpipe.nesvilab.org/) documentation for how to run an analysis.
-![Alt text](README_imgs/Picture7.png)
+![Alt text](README_imgs/fragpipe_koina_interface.png)
 
 ### On the command line
 If using standalone MSBooster to run in the command line, please download the latest jar file from 

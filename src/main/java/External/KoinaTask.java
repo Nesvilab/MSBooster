@@ -18,21 +18,22 @@
 package External;
 
 import static utils.Print.printError;
-import static utils.Print.printInfo;
 
 import Features.Constants;
 import Features.KoinaLibReader;
-import java.io.BufferedReader;
-import java.io.InputStreamReader;
+
+import javax.net.ssl.HttpsURLConnection;
+import java.io.*;
+import java.nio.charset.StandardCharsets;
 import java.util.Timer;
 import java.util.TimerTask;
 import java.util.concurrent.Callable;
-import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 
+import java.net.URL;
+
 public class KoinaTask implements Callable<Boolean> {
-    private final String filename;
-    private final String command;
+    private final String jsonFilePath;
     private final String property;
     private final String model;
     KoinaLibReader klr;
@@ -40,50 +41,67 @@ public class KoinaTask implements Callable<Boolean> {
     int failedAttempts = 0;
     public boolean completed = false;
 
-    public KoinaTask(String filename, String command, String property, String model,
+    public KoinaTask(String jsonFilePath, String property, String model,
                      KoinaLibReader klr, AtomicLong waitTime) {
-        this.filename = filename;
-        this.command = command;
+        this.jsonFilePath = jsonFilePath;
         this.property = property;
         this.model = model;
         this.klr = klr;
         this.waitTime = waitTime;
     }
 
+    // Utility method to read the content of the JSON file into a byte array
+    private static byte[] readFile(String file) throws Exception {
+        FileInputStream fis = new FileInputStream(file);
+        byte[] data = new byte[fis.available()];
+        fis.read(data);
+        fis.close();
+
+        return data;
+    }
+
     @Override
-    public Boolean call() {
-        StringBuilder koinaSb = new StringBuilder();
-        Process process = null;
+    public Boolean call() throws Exception {
+        URL url = new URL(Constants.KoinaURL + model + "/infer");
+        HttpsURLConnection connection = (HttpsURLConnection) url.openConnection();
+        connection.setRequestMethod("POST");
+        connection.setRequestProperty("Content-Type", "application/json; utf-8");
+        connection.setDoOutput(true);
+
+        // Read the JSON file's contents into a string
+        String jsonInputString = new String(readFile(jsonFilePath), StandardCharsets.UTF_8);
+
+        try (OutputStream os = connection.getOutputStream()) {
+            byte[] input = jsonInputString.getBytes(StandardCharsets.UTF_8);
+            os.write(input, 0, input.length);
+        }
+
+        StringBuilder response = new StringBuilder();
         try {
             long start = System.currentTimeMillis();
-            ProcessBuilder builder = new ProcessBuilder(command.split(" "));
-            builder.redirectErrorStream(true);
-            process = builder.start();
-            BufferedReader reader = new BufferedReader(new InputStreamReader(process.getInputStream()));
+            BufferedReader in = new BufferedReader(new InputStreamReader(connection.getInputStream()));
 
             //Goal is to cut off 504 error early
             Timer timer = new Timer();
-            Process finalProcess = process;
             TimerTask timerTask = new TimerTask() {
                 @Override
                 public void run() {
-                    if (koinaSb.toString().isEmpty()) {
-                        finalProcess.destroyForcibly();
+                    if (response.toString().isEmpty()) {
+                        try {
+                            in.close();
+                        } catch (IOException ignored) {}
                     }
                 }
             };
             timer.schedule(timerTask, waitTime.get());
 
-            String line = "";
-            while ((line = reader.readLine()) != null) {
-                koinaSb.append(line);
+            String inputLine;
+            while ((inputLine = in.readLine()) != null) {
+                response.append(inputLine);
             }
-            reader.close();
-            process.waitFor();
-            process.destroy();
+            in.close();
 
-            timer.cancel();
-            KoinaModelCaller.parseKoinaOutput(filename, koinaSb.toString(),
+            KoinaModelCaller.parseKoinaOutput(jsonFilePath, response.toString(),
                     property, model, klr);
             long timeDiff = System.currentTimeMillis() - start;
             long currentWaitTime = waitTime.get();
@@ -91,15 +109,11 @@ public class KoinaTask implements Callable<Boolean> {
             return true;
         } catch (Exception e) {
             try {
-                String ending = koinaSb.substring(Math.max(0, koinaSb.toString().length() - 1000));
-                process.destroyForcibly();
-
                 if (failedAttempts == Constants.numKoinaAttempts) {
                     if (Constants.foundBest) {
-                        printError(command);
-                        printError(filename + " had output that ended in: ");
-                        printError(ending);
-                        printError("Retried calling " + filename + " " + failedAttempts + " times.");
+                        printError(jsonFilePath + " had the following output: ");
+                        printError(response.toString());
+                        printError("Retried calling " + jsonFilePath + " " + failedAttempts + " times.");
                         printError("Exiting");
                         System.exit(1);
                     } else {

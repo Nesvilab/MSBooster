@@ -122,9 +122,7 @@ public class KoinaModelCaller {
             long jobStart = System.currentTimeMillis();
 
             for (int i = 0; i < numProcesses; i++) {
-                String command = "curl -s --http1.1 -H content-type:application/json -d @" + filenameArraylist.get(i) +
-                        " " + Constants.KoinaURL + model + "/infer";
-                KoinaTask task = new KoinaTask(filenameArraylist.get(i), command, property, model,
+                KoinaTask task = new KoinaTask(filenameArraylist.get(i), property, model,
                         klr, waitTime);
                 tasks[i] = task;
             }

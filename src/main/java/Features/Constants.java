@@ -182,7 +182,7 @@ public class Constants {
     public static Integer topFragments = 20;
     public static Boolean adaptiveFragmentNum = false;
     public static Boolean removeRankPeaks = true; //whether to remove peaks from higher ranks
-    public static Boolean useBasePeak = false;
+    public static Boolean useBasePeak = true;
     public static Float percentBasePeak = 1f;
     //public static Boolean sqrtPredIntensities = false;
     //public static Float percentBasePeakExperimental = 1f;

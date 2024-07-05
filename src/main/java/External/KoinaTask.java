@@ -23,6 +23,7 @@ import Features.Constants;
 import Features.KoinaLibReader;
 
 import javax.net.ssl.HttpsURLConnection;
+import java.net.HttpURLConnection;
 import java.io.*;
 import java.nio.charset.StandardCharsets;
 import java.util.Timer;
@@ -63,7 +64,13 @@ public class KoinaTask implements Callable<Boolean> {
     @Override
     public Boolean call() throws Exception {
         URL url = new URL(Constants.KoinaURL + model + "/infer");
-        HttpsURLConnection connection = (HttpsURLConnection) url.openConnection();
+        HttpURLConnection connection;
+        if (Constants.KoinaURL.startsWith("http:")) {
+            connection = (HttpURLConnection) url.openConnection();
+        } else { //https:
+            connection = (HttpsURLConnection) url.openConnection();
+        }
+
         connection.setRequestMethod("POST");
         connection.setRequestProperty("Content-Type", "application/json; utf-8");
         connection.setDoOutput(true);

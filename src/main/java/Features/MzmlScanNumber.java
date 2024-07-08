@@ -71,7 +71,12 @@ public class MzmlScanNumber {
         }
         this.RT = scan.getRt().floatValue();
         if (Constants.useIM) {
-            this.IM = scan.getIm().floatValue();
+            try {
+                this.IM = scan.getIm().floatValue();
+            } catch (Exception e) {
+                printInfo("Ion mobility values not found in data files, setting useIM to false.");
+                Constants.useIM = false;
+            }
         }
         lowerLimit = scan.getScanMzWindowLower();
         upperLimit = scan.getScanMzWindowUpper();

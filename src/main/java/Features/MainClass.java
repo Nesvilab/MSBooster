@@ -41,7 +41,7 @@ public class MainClass {
     public static ScheduledThreadPoolExecutor executorService;
     public static void main(String[] args) throws Exception {
         Locale.setDefault(Locale.US);
-        printInfo("MSBooster v1.2.34");
+        printInfo("MSBooster v1.2.35");
 
         try {
             //accept command line inputs
@@ -359,13 +359,13 @@ public class MainClass {
             executorService = new ScheduledThreadPoolExecutor(Constants.numThreads);
 
             if (!Objects.equals(Constants.massDiffToVariableMod, "0")) {
-                if (!Constants.RTmassesForCalibration.isEmpty()) {
-                    Constants.RTmassesForCalibration += ",";
+                if (!Constants.massesForLoessCalibration.isEmpty()) {
+                    Constants.massesForLoessCalibration += ",";
                 }
                 if (!Constants.massOffsetsDetailed.isEmpty()) {
-                    Constants.RTmassesForCalibration += Constants.massOffsetsDetailed;
+                    Constants.massesForLoessCalibration += Constants.massOffsetsDetailed;
                 } else if (!Constants.massOffsets.isEmpty()) {
-                    Constants.RTmassesForCalibration += Constants.massOffsets;
+                    Constants.massesForLoessCalibration += Constants.massOffsets;
                 }
             }
 
@@ -511,7 +511,7 @@ public class MainClass {
                         }
 
                         //testing
-                        String[] bandwidths = Constants.rtBandwidth.split(",");
+                        String[] bandwidths = Constants.loessBandwidth.split(",");
                         float[] floatBandwidths = new float[bandwidths.length];
                         for (int i = 0; i < bandwidths.length; i++) {
                             floatBandwidths[i] = Float.parseFloat(bandwidths[i]);
@@ -1022,10 +1022,8 @@ public class MainClass {
                 if (Constants.useIM) {
                     Set<String> intersection = new HashSet<>(featureLL);
                     intersection.retainAll(Constants.imFeatures);
-                    if (intersection.size() == 0) {
+                    if (intersection.isEmpty()) {
                         featureLL.add("deltaIMLOESS");
-                        featureLL.add("deltaIMLOESSnormalized");
-                        featureLL.add("IMprobabilityUnifPrior");
                     }
                 } else {
                     for (String feature : Constants.imFeatures) {

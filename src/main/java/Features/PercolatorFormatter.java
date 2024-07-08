@@ -30,7 +30,6 @@ import java.io.File;
 import java.io.IOException;
 import java.sql.SQLException;
 import java.util.*;
-import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Future;
@@ -577,18 +576,26 @@ public class PercolatorFormatter {
                     }
                 }
                 if (featuresList.contains("deltaRTLOESS") || featuresList.contains("deltaRTLOESSnormalized")) {
-                    mzml.setLOESS(Constants.RTregressionSize, Constants.rtBandwidth, Constants.robustIters, "RT");
+                    mzml.setLOESS(Constants.rtLoessRegressionSize, Constants.loessBandwidth, Constants.robustIters, "RT");
                     mzml.predictRTLOESS(executorService); //potentially only invoke once if normalized included
 
                     //generate calibration figure, need mzml and loess
-                    if (! Constants.noRTscores) {
-                        new RTCalibrationFigure(mzml, pinFiles[i].getCanonicalPath(), 0.2f);
+                    boolean plot = false;
+                    for (Map.Entry<String, double[][]> entry : mzml.expAndPredRTs.entrySet()) {
+                        if (entry.getValue() != null) {
+                            plot = true;
+                            break;
+                        }
+                    }
+                    if (plot) {
+                        new RTCalibrationFigure(mzml, pinFiles[i].getCanonicalPath(), 0.2f,
+                                mzml.expAndPredRTs, mzml.RTLOESS);
                     }
                 }
                 if (featuresList.contains("deltaRTlinear")) {
                     if (mzml.expAndPredRTs != null) {
                         mzml.setBetas();
-                    } else { mzml.setBetas(predictedSpectra, Constants.RTregressionSize);
+                    } else { mzml.setBetas(predictedSpectra, Constants.rtLoessRegressionSize);
                     }
                     mzml.normalizeRTs(executorService);
                 }
@@ -624,8 +631,22 @@ public class PercolatorFormatter {
                     mzml.setKernelDensities(executorService, "RT");
                 }
                 if (featuresList.contains("deltaIMLOESS") || featuresList.contains("deltaIMLOESSnormalized")) {
-                    mzml.setLOESS(Constants.IMregressionSize, Constants.imBandwidth, Constants.robustIters, "IM");
+                    mzml.setLOESS(Constants.imLoessRegressionSize, Constants.loessBandwidth, Constants.robustIters, "IM");
                     mzml.predictIMLOESS(executorService);
+
+                    for (int charge : mzml.expAndPredIMsHashMap.keySet()) {
+                        boolean plot = false;
+                        for (Map.Entry<String, double[][]> entry : mzml.expAndPredIMsHashMap.get(charge).entrySet()) {
+                            if (entry.getValue() != null) {
+                                plot = true;
+                                break;
+                            }
+                        }
+                        if (plot) {
+                            new IMCalibrationFigure(mzml, pinFiles[i].getCanonicalPath(), 0.2f,
+                                    mzml.expAndPredIMsHashMap.get(charge), mzml.IMLOESS.get(charge - 1), charge);
+                        }
+                    }
                 }
                 if (featuresList.contains("deltaIMLOESSnormalized") || featuresList.contains("IMprobabilityUnifPrior")) {
                     mzml.setIMbins();

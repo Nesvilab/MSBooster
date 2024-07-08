@@ -17,6 +17,7 @@
 
 package Features;
 
+import static Features.Constants.minLoessRegressionSize;
 import static utils.Print.printInfo;
 
 import com.github.sanity.pav.PairAdjacentViolators;
@@ -229,8 +230,8 @@ public class StatMethods {
         }
 
         //fit loess
-        if (newX.length < 50) {
-            bandwidth = 1d;
+        if (newX.length < minLoessRegressionSize) {
+            bandwidth = 1d; //linear regression
         }
 
         LoessInterpolator loessInterpolator = new LoessInterpolator(bandwidth, robustIters);
@@ -260,7 +261,6 @@ public class StatMethods {
         results = fittingRound(loessInterpolator, newX, newY, fittedY, true);
         fittedY = results[0];
         newX = results[1];
-        newY = results[2];
 
         return isotonicRegressor(newX, fittedY);
     }
@@ -286,7 +286,7 @@ public class StatMethods {
         if (y.length > 100) {
             if (extra) {
                 for (int i = 0; i < y.length; i++) {
-                    y[i] = y[i] - newY[i];
+                    y[i] = y[i] - newY[i]; //y now represents difference
                 }
 
                 //remove outliers
@@ -306,8 +306,13 @@ public class StatMethods {
 
             double[] weights = new double[y.length];
             for (int i = 0; i < y.length; i++) {
-                weights[i] = Math.abs(median(Arrays.copyOfRange(y, Math.max(i - y.length/100, 0),
-                        Math.min(i + y.length/100, y.length))));
+                int start = Math.max(i - y.length / 100, 0);
+                int end = Math.min(i + y.length / 100, y.length);
+                if (start != end) {
+                    weights[i] = Math.abs(median(Arrays.copyOfRange(y, start, end)));
+                } else {
+                    weights[i] = y[i];
+                }
             }
 
             //redo loess with weights
@@ -583,12 +588,12 @@ public class StatMethods {
                 }
                 return new Object[]{finalBandwidth, loess, rtDiffs};
             } catch (Exception e) {
-                e.printStackTrace();
+                //e.printStackTrace();
                 if (finalBandwidth == 1) {
                     return new Object[]{finalBandwidth, loess, (float) bestMSE};
                 }
                 finalBandwidth = Math.min(finalBandwidth * 2, 1);
-                printInfo("Regression failed, retrying with double the bandwidth: " + finalBandwidth);
+                //printInfo("Regression failed, retrying with double the bandwidth: " + finalBandwidth);
             }
         }
     }

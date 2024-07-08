@@ -17,6 +17,8 @@
 
 package Features;
 
+import static Features.Constants.minLinearRegressionSize;
+import static Features.Constants.minLoessRegressionSize;
 import static Features.StatMethods.LOESS;
 import static Features.StatMethods.characterizebins;
 import static Features.StatMethods.movingAverage;
@@ -28,13 +30,11 @@ import java.io.IOException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.*;
-import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentSkipListMap;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Future;
 import kotlin.jvm.functions.Function1;
-import org.checkerframework.checker.units.qual.A;
 import umich.ms.datatypes.LCMSDataSubset;
 import umich.ms.datatypes.scan.IScan;
 import umich.ms.datatypes.scan.StorageStrategy;
@@ -62,9 +62,9 @@ public class MzmlReader {
     public float[] unifProbIM;
     public ArrayList<Float>[][] IMbins = null;
     public float[][][] IMbinStats = new float[IMFunctions.numCharges][2 * Constants.IMbinMultiplier + 1][3];
-    private final ArrayList<Function1<Double, Double>> IMLOESS = new ArrayList<>();
-    public HashMap<String, ArrayList<Float>> peptideIMs = new HashMap<>();
+    public ArrayList<HashMap<String, Function1<Double, Double>>> IMLOESS = new ArrayList<>();
     public HashMap<String, double[][]> expAndPredRTs;
+    public HashMap<Integer, HashMap<String, double[][]>> expAndPredIMsHashMap = new HashMap<>();
     public List<Future> futureList = new ArrayList<>(Constants.numThreads);
 
     public MzmlReader(String filename) throws FileParsingException, ExecutionException, InterruptedException {
@@ -78,7 +78,6 @@ public class MzmlReader {
         scans.setDefaultStorageStrategy(StorageStrategy.STRONG);
         scans.setDataSource(source);
         source.setNumThreadsForParsing(Constants.numThreads);
-        Constants.useIM = false;
 
         scans.loadData(LCMSDataSubset.STRUCTURE_ONLY);
         getInstrument();
@@ -668,44 +667,44 @@ public class MzmlReader {
     }
 
     public void calculateDeltaIMLOESSnormalized(ExecutorService executorService) throws ExecutionException, InterruptedException {
-        futureList.clear();
-
-        //iterate over this list of scan numbers
-        ArrayList<Integer> scanNums = new ArrayList<>();
-        for (int num : getScanNums()) {
-            scanNums.add(num);
-        }
-        for (int i = 0; i < Constants.numThreads; i++) {
-            int start = (int) (scanNumberObjects.size() * (long) i) / Constants.numThreads;
-            int end = (int) (scanNumberObjects.size() * (long) (i + 1)) / Constants.numThreads;
-            futureList.add(executorService.submit(() -> {
-                for (int j = start; j < end; j++) {
-                    MzmlScanNumber msn = null;
-                    try {
-                        msn = getScanNumObject(scanNums.get(j));
-                    } catch (FileParsingException e) {
-                        throw new RuntimeException(e);
-                    }
-
-                    //get stats based on experimental RT bin
-                    int idx = (int) (msn.IM * Constants.IMbinMultiplier);
-
-                    //now calculate deltaRTs
-                    for (PeptideObj pep : msn.peptideObjects) {
-                        if (pep == null) {
-                            break;
-                        }
-                        float binIqr = IMbinStats[pep.charge - 1][idx][2];
-                        double LOESSIM = IMLOESS.get(pep.charge - 1).invoke((double) msn.IM);
-                        //pep.deltaIMLOESSnormalized = Math.abs(LOESSIM - pep.IM) / binStd;
-                        pep.deltaIMLOESSnormalized = Math.abs(LOESSIM - pep.IM) / binIqr;
-                    }
-                }
-            }));
-        }
-        for (Future future : futureList) {
-            future.get();
-        }
+//        futureList.clear();
+//
+//        //iterate over this list of scan numbers
+//        ArrayList<Integer> scanNums = new ArrayList<>();
+//        for (int num : getScanNums()) {
+//            scanNums.add(num);
+//        }
+//        for (int i = 0; i < Constants.numThreads; i++) {
+//            int start = (int) (scanNumberObjects.size() * (long) i) / Constants.numThreads;
+//            int end = (int) (scanNumberObjects.size() * (long) (i + 1)) / Constants.numThreads;
+//            futureList.add(executorService.submit(() -> {
+//                for (int j = start; j < end; j++) {
+//                    MzmlScanNumber msn = null;
+//                    try {
+//                        msn = getScanNumObject(scanNums.get(j));
+//                    } catch (FileParsingException e) {
+//                        throw new RuntimeException(e);
+//                    }
+//
+//                    //get stats based on experimental RT bin
+//                    int idx = (int) (msn.IM * Constants.IMbinMultiplier);
+//
+//                    //now calculate deltaRTs
+//                    for (PeptideObj pep : msn.peptideObjects) {
+//                        if (pep == null) {
+//                            break;
+//                        }
+//                        float binIqr = IMbinStats[pep.charge - 1][idx][2];
+//                        double LOESSIM = IMLOESS.get(pep.charge - 1).invoke((double) msn.IM);
+//                        //pep.deltaIMLOESSnormalized = Math.abs(LOESSIM - pep.IM) / binStd;
+//                        pep.deltaIMLOESSnormalized = Math.abs(LOESSIM - pep.IM) / binIqr;
+//                    }
+//                }
+//            }));
+//        }
+//        for (Future future : futureList) {
+//            future.get();
+//        }
     }
 
     public void setKernelDensities(ExecutorService executorService, String mode) throws ExecutionException, InterruptedException {
@@ -792,33 +791,62 @@ public class MzmlReader {
     }
 
     public void setLOESS(int regressionSize, String bandwidth, int robustIters, String mode) throws FileParsingException {
+        //setting up calibrations for each mass
+        ArrayList<String> masses = new ArrayList<>();
+        if (Constants.massesForLoessCalibration.isEmpty()) {
+            masses.add("");
+        } else {
+            masses.addAll(Arrays.asList(Constants.massesForLoessCalibration.split(",")));
+            masses.add("others");
+        }
+
+        String[] bandwidths = bandwidth.split(",");
+        float[] floatBandwidths = new float[bandwidths.length];
+        for (int i = 0; i < bandwidths.length; i++) {
+            floatBandwidths[i] = Float.parseFloat(bandwidths[i]);
+        }
+
         if (mode.equals("RT")) {
-            expAndPredRTs = RTFunctions.getRTarrays(this, regressionSize);
-            ArrayList<String> masses = new ArrayList<>();
-            if (Constants.RTmassesForCalibration.isEmpty()) {
-                masses.add("");
-            } else {
-                masses.addAll(Arrays.asList(Constants.RTmassesForCalibration.split(",")));
-                masses.add("others");
-            }
+            expAndPredRTs = LoessUtilities.getArrays(this, regressionSize, mode, 0);
+
+            //repeat this process for each mass shift group
             for (String mass : masses) {
-                String[] bandwidths = bandwidth.split(",");
-                float[] floatBandwidths = new float[bandwidths.length];
-                for (int i = 0; i < bandwidths.length; i++) {
-                    floatBandwidths[i] = Float.parseFloat(bandwidths[i]);
-                }
                 double[][] rts = expAndPredRTs.get(mass);
-                if (rts[0].length < 50) {
+
+                //continue if insufficient PSMs
+                if (rts == null) {
                     RTLOESS.put(mass, null);
                     RTLOESS_realUnits.put(mass, null);
                     continue;
                 }
 
+                //linear regression if too few points
+                if (rts[0].length < minLoessRegressionSize) {
+                    Function1<Double, Double> RTLOESSentry = null;
+                    Function1<Double, Double> RTLOESS_realUnitsentry = null;
+                    if (rts[0].length > minLinearRegressionSize) {
+                        //get slope and intercept
+                        float[] parameters = StatMethods.linearRegression(rts[0], rts[1]);
+
+                        //create function class
+                        //beta0 + beta1 * x
+                        RTLOESSentry = new LinearEquation(parameters[1], parameters[0]).invoke();
+
+                        //now do in opposite direction
+                        parameters = StatMethods.linearRegression(rts[1], rts[0]);
+                        RTLOESS_realUnitsentry = new LinearEquation(parameters[1], parameters[0]).invoke();
+                    }
+                    RTLOESS.put(mass, RTLOESSentry);
+                    RTLOESS_realUnits.put(mass, RTLOESS_realUnitsentry);
+                    continue;
+                }
+
+                //find best bandwidth if enough datapoints
                 Object[] gridSearchResults = StatMethods.gridSearchCV(rts, floatBandwidths);
                 float finalBandwidth = (float) gridSearchResults[0];
 
                 printInfo("Best average bandwidth for mass " + mass + " from grid search of " +
-                        Constants.rtBandwidth + " after " + Constants.regressionSplits + " iterations is " + finalBandwidth);
+                        Constants.loessBandwidth + " after " + Constants.regressionSplits + " iterations is " + finalBandwidth);
 
                 //final model trained on all data
                 while (true) {
@@ -842,12 +870,62 @@ public class MzmlReader {
                 }
             }
         } else if (mode.equals("IM")) {
-            double[][][] expAndPredIMs = IMFunctions.getIMarrays(this, regressionSize);
-            for (double[][] bins : expAndPredIMs) {
-                if (bins[0] == null) {
-                    continue;
+            for (int charge = 1; charge < IMFunctions.numCharges + 1; charge++) {
+                HashMap<String, double[][]> expAndPredIMs =
+                        LoessUtilities.getArrays(this, regressionSize, mode, charge);
+                HashMap<String, Function1<Double, Double>> IMLOESSmap = new HashMap<>();
+
+                for (String mass : masses) {
+                    double[][] ims = expAndPredIMs.get(mass);
+
+                    //continue if insufficient PSMs
+                    if (ims == null) {
+                        IMLOESSmap.put(mass, null);
+                        expAndPredIMsHashMap.put(charge, expAndPredIMs);
+                        continue;
+                    }
+
+                    //linear regression if too few points
+                    if (ims[0].length < minLoessRegressionSize) {
+                        Function1<Double, Double> IMLOESSentry = null;
+                        if (ims[0].length > minLinearRegressionSize) {
+                            //get slope and intercept
+                            float[] parameters = StatMethods.linearRegression(ims[0], ims[1]);
+
+                            //create function class
+                            //beta0 + beta1 * x
+                            IMLOESSentry = new LinearEquation(parameters[1], parameters[0]).invoke();
+                            expAndPredIMsHashMap.put(charge, expAndPredIMs);
+                        }
+                        IMLOESSmap.put(mass, IMLOESSentry);
+                        continue;
+                    }
+
+                    //find best bandwidth if enough datapoints
+                    Object[] gridSearchResults = StatMethods.gridSearchCV(ims, floatBandwidths);
+                    float finalBandwidth = (float) gridSearchResults[0];
+
+                    printInfo("Best average bandwidth for mass " + mass + " from grid search of " +
+                            Constants.loessBandwidth + " after " + Constants.regressionSplits + " iterations is " + finalBandwidth);
+
+                    //final model trained on all data
+                    while (true) {
+                        try {
+                            IMLOESSmap.put(mass, LOESS(ims, finalBandwidth, robustIters));
+                            expAndPredIMsHashMap.put(charge, expAndPredIMs);
+                            break;
+                        } catch (Exception e) {
+                            if (finalBandwidth == 1) {
+                                printInfo("Regression still not possible with bandwidth 1. Setting IM score to 0");
+                                IMLOESSmap.put(mass, null);
+                                break;
+                            }
+                            finalBandwidth = Math.min(finalBandwidth * 2, 1);
+                            printInfo("Regression failed, retrying with double the bandwidth: " + finalBandwidth);
+                        }
+                    }
                 }
-                IMLOESS.add(LOESS(bins, Float.parseFloat(bandwidth), robustIters)); //needs more smoothing?
+                IMLOESS.add(IMLOESSmap);
             }
         } else {
             throw new IllegalArgumentException("only choose RT or IM");
@@ -856,7 +934,6 @@ public class MzmlReader {
 
     //this assumes min delta RT is the best method, but could also be average across mass calibratioin curves
     public void predictRTLOESS(ExecutorService executorService) throws ExecutionException, InterruptedException {
-        //long startTime = System.nanoTime();
         futureList.clear();
 
         //iterate over this list of scan numbers
@@ -887,7 +964,7 @@ public class MzmlReader {
                         if (pep == null) {
                             break;
                         }
-                        double finalDelta = Double.MAX_VALUE;
+                        double finalDelta = 1000;
                         boolean isNone = true;
                         for (String mass : LOESSRT.keySet()) {
                             String[] masses = mass.split("/");
@@ -927,7 +1004,6 @@ public class MzmlReader {
     }
 
     public void predictIMLOESS(ExecutorService executorService) throws ExecutionException, InterruptedException {
-        //long startTime = System.nanoTime();
         futureList.clear();
 
         //iterate over this list of scan numbers
@@ -946,33 +1022,43 @@ public class MzmlReader {
                     } catch (FileParsingException e) {
                         throw new RuntimeException(e);
                     }
-
                     for (PeptideObj pep : msn.peptideObjects) {
                         if (pep == null) {
                             break;
                         }
-                        double LOESSIM = IMLOESS.get(pep.charge - 1).invoke((double) msn.IM);
-                        pep.deltaIMLOESS = Math.abs(LOESSIM - pep.IM);
 
-//                        //min
-//                        ArrayList<Float> potentialIMs = peptideIMs.get(pep.name);
-//                        ArrayList<Double> deltas = new ArrayList<>(potentialIMs.size());
-//                        for (int k = 0; k < potentialIMs.size(); k++) {
-//                            deltas.add(Math.abs(IMLOESS.get(pep.charge - 1).invoke((double) potentialIMs.get(k)) - pep.IM));
-//                            pep.deltaIMLOESS = Collections.min(deltas);
-//                        }
+                        HashMap<String, Function1<Double, Double>> ImChargeEntry = IMLOESS.get(pep.charge - 1);
+                        HashMap<String, Double> LOESSIM = new HashMap<>();
+                        for (String mass : ImChargeEntry.keySet()) {
+                            //if null
+                            if (ImChargeEntry.get(mass) == null) {
+                                continue;
+                            }
+                            LOESSIM.put(mass, ImChargeEntry.get(mass).invoke((double) msn.IM));
+                        }
 
-//                        //median
-//                        ArrayList<Float> potentialIMs = peptideIMs.get(pep.name);
-//                        double med = StatMethods.median(potentialIMs);
-//                        double LOESSIM = IMLOESS.get(pep.charge - 1).invoke(med);
-//                        pep.deltaIMLOESS = Math.abs(LOESSIM - pep.IM);
-
-//                        //(weighted) mean
-//                        ArrayList<Float> potentialIMs = peptideIMs.get(pep.name);
-//                        double mean = StatMethods.mean(potentialIMs);
-//                        double LOESSIM = IMLOESS.get(pep.charge - 1).invoke(mean);
-//                        pep.deltaIMLOESS = Math.abs(LOESSIM - pep.IM);
+                        double finalDelta = 3;
+                        boolean isNone = true;
+                        for (String mass : LOESSIM.keySet()) {
+                            String[] masses = mass.split("/");
+                            for (String minimass : masses) {
+                                if (pep.name.contains(minimass)) {
+                                    isNone = false;
+                                    double im = LOESSIM.get(mass);
+                                    double delta = Math.abs(im - pep.IM);
+                                    if (delta < finalDelta) {
+                                        finalDelta = delta;
+                                    }
+                                }
+                            }
+                        }
+                        if (isNone) {
+                            if (!LOESSIM.isEmpty()) {
+                                finalDelta = Math.abs(LOESSIM.get("others") - pep.IM);
+                            }
+                        }
+                        //if still max value, make something that won't result in infinity, or just make init value 1
+                        pep.deltaIMLOESS = finalDelta * 1000; //too many PSMs have delta IM so small that we need to multiply
                     }
                 }
             }));
@@ -980,9 +1066,6 @@ public class MzmlReader {
         for (Future future : futureList) {
             future.get();
         }
-        //long endTime = System.nanoTime();
-        //long duration = (endTime - startTime);
-        //printInfo("Calculating deltaIMLOESS took " + duration / 1000000 +" milliseconds");
     }
 
     public void clear() {

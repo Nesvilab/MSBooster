@@ -196,43 +196,40 @@ public class Constants {
 
     //these constants for RT features
     public static Boolean useRT = true;
-    public static Integer RTregressionSize = 5000;
-    public static Integer minRTregressionSize = 1000;
+
     public static Double uniformPriorPercentile = 10d;
-    public static Float RTescoreCutoff = (float) Math.pow(10, -3.5); //PSMs with e score higher than this won't make it into RT regression modeling
     public static Integer RTbinMultiplier = 1;
     public static Float RTIQR = 50f;
-    public static Boolean noRTscores = false; //TODO: better handling of this
-    public static String RTfigure_masses = ""; //separate by comma
     public static Integer washGradientBins = 100;
     public static Double rtCutoff = Double.NaN;
     public static Boolean removeWashGradient = false;
-    public static Boolean writeCalibration = false;
-    public static String RTmassesForCalibration = "";
+    public static Float realMinuteFilter = 10000f;
+    public static Float percentRTgradientFilter = 100f;
+
+    //ion mobility
+    public static Boolean useIM = false;
+    public static Integer IMbinMultiplier = 100;
+    public static final Float IMIQR = 50f;
+
+    //LOESS
+    public static Float loessEscoreCutoff = (float) Math.pow(10, -3.5); //PSMs with e score higher than this won't make it into regression modeling
+    public static Integer rtLoessRegressionSize = 5000;
+    public static Integer imLoessRegressionSize = 1000;
+    public static Integer minLoessRegressionSize = 100;
+    public static Integer minLinearRegressionSize = 10;
+    public static String loessBandwidth = "0.01,0.05,0.1,0.2";
+    public static Integer robustIters = 2;
+    public static Integer regressionSplits = 5;
+    public static String massesForLoessCalibration = "";
     public static String massOffsets = "";
     public static String massOffsetsDetailed = "";
     public static String massDiffToVariableMod = "0";
-
-    //LOESS
-    public static String rtBandwidth = "0.01,0.05,0.1,0.2";
-    public static Integer robustIters = 2;
-    public static Integer regressionSplits = 5;
-    public static Float realMinuteFilter = 10000f;
-    public static Float percentRTgradientFilter = 100f;
 
     //detect
     public static Boolean useDetect = false;
     public static final Float detectThreshold = 0.0000002f; //for detectability filtering
     public static final Float detectFractionGreaterNumerator = 1f;
     public static final Float detectFractionGreaterDenominator = 2f; //prior
-
-    //ion mobility
-    public static Boolean useIM = null;
-    public static Integer IMregressionSize = 5000;
-    public static String imBandwidth = "0.1";
-    public static Float IMescoreCutoff = (float) Math.pow(10, -3.5);
-    public static Integer IMbinMultiplier = 100;
-    public static final Float IMIQR = 50f;
 
     //peptide counts
     public static ConcurrentHashMap<String, HashSet<String>> peptideCounter = new ConcurrentHashMap<>();

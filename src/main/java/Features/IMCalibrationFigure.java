@@ -22,17 +22,19 @@ import kotlin.jvm.functions.Function1;
 import java.io.IOException;
 import java.util.HashMap;
 
-public class RTCalibrationFigure extends CalibrationFigure {
+public class IMCalibrationFigure extends CalibrationFigure {
 
-    private static final String FOLDER_STRING = "RT_calibration_curves";
-    private static final String MODE = "RT";
+    private static final String FOLDER_STRING = "IM_calibration_curves";
+    private static final String MODE = "IM";
 
-    public RTCalibrationFigure(MzmlReader mzml, String outFile, float opacity,
+    public IMCalibrationFigure(MzmlReader mzml, String outFile, float opacity,
                                HashMap<String, double[][]> massToData,
-                               HashMap<String, Function1<Double, Double>> loessFunctions) throws IOException {
+                               HashMap<String, Function1<Double, Double>> loessFunctions,
+                               int charge) throws IOException {
         super();
         super.folderString = FOLDER_STRING;
         super.mode = MODE;
+        super.charge = String.valueOf(charge);
         plotFigure(mzml, outFile, opacity, massToData, loessFunctions);
     }
 }

@@ -247,47 +247,22 @@ public class FeatureCalculator {
 //                        writer.addValue("detect_prot_spearman_diff", maxSpearmanDiff);
 //                        break;
                         case "deltaRTlinear":
-                            if (Constants.noRTscores) {
-                                pepObj.deltaRT = 0;
-                            }
                             break;
                         case "deltaRTbins":
-                            if (Constants.noRTscores) {
-                                pepObj.deltaRTbin = 0;
-                            }
                             break;
                         case "deltaRTLOESS":
-                            if (Constants.noRTscores) {
-                                pepObj.deltaRTLOESS = 0;
-                            }
                             break;
                         case "deltaRTLOESSreal":
-                            if (Constants.noRTscores) {
-                                pepObj.deltaRTLOESS_real = 0;
-                            }
                             break;
                         case "deltaRTLOESSnormalized":
-                            if (Constants.noRTscores) {
-                                pepObj.deltaRTLOESSnormalized = 0;
-                            }
                             break;
                         case "RTzscore":
-                            if (Constants.noRTscores) {
-                                pepObj.RTzscore = 0;
-                            }
                             break;
                         case "RTprobability":
-                            if (Constants.noRTscores) {
-                                pepObj.RTprob = 0;
-                            }
                             break;
                         case "RTprobabilityUnifPrior":
-                            if (Constants.noRTscores) {
-                                pepObj.RTprobabilityUnifPrior = 0;
-                            } else {
-                                pepObj.RTprobabilityUnifPrior = StatMethods.probabilityWithUniformPrior(mzml.unifPriorSize,
-                                        mzml.unifProb, pepObj.scanNumObj.RTbinSize, (float) pepObj.RTprob);
-                            }
+                            pepObj.RTprobabilityUnifPrior = StatMethods.probabilityWithUniformPrior(mzml.unifPriorSize,
+                                    mzml.unifProb, pepObj.scanNumObj.RTbinSize, (float) pepObj.RTprob);
                             break;
                         case "calibratedRT":
                             break;

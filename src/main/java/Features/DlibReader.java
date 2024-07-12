@@ -30,13 +30,12 @@ import java.nio.FloatBuffer;
 import java.sql.*;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutionException;
 import java.util.zip.DataFormatException;
 import java.util.zip.Inflater;
 
 //refer to https://bitbucket.org/searleb/encyclopedia/wiki/EncyclopeDIA%20File%20Formats
-public class DlibReader implements SpectralPredictionMapper{
+public class DlibReader implements LibraryPredictionMapper {
     ArrayList<String> filenames = new ArrayList<>();
     PredictionEntryHashMap allPreds = new PredictionEntryHashMap();
 
@@ -278,15 +277,5 @@ public class DlibReader implements SpectralPredictionMapper{
 
     public void clear() {
         allPreds.clear();
-    }
-
-    public float getMaxPredRT() {
-        float maxRT = 0f;
-        for (PredictionEntry entry : allPreds.values()) {
-            if (entry.RT > maxRT) {
-                maxRT = entry.RT;
-            }
-        }
-        return maxRT;
     }
 }

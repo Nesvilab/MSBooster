@@ -30,7 +30,7 @@ import java.util.List;
 public class ScoreHistogram {
 
     Set<String> logScaleFeatures = Set.of("delta_RT_loess", "delta_RT_loess_normalized", "RT_probability_unif_prior",
-            "hypergeometric_probability");
+            "hypergeometric_probability", "delta_IM_loess");
     Set<String> intScores = Set.of("peptide_counts"); //TODO: gets crowded for many bins, can consider binning by 10s
 
     public ScoreHistogram(PinReader pinReader, ArrayList<String> fs) throws IOException {

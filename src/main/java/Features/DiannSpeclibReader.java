@@ -30,7 +30,7 @@ import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.util.ArrayList;
 
-public class DiannSpeclibReader implements SpectralPredictionMapper{
+public class DiannSpeclibReader implements LibraryPredictionMapper {
     final ArrayList<String> filenames;
     PredictionEntryHashMap allPreds = new PredictionEntryHashMap();
 
@@ -173,16 +173,6 @@ public class DiannSpeclibReader implements SpectralPredictionMapper{
     public PredictionEntryHashMap getPreds() { return allPreds; }
     public void setPreds(PredictionEntryHashMap preds) {
         allPreds = preds;
-    }
-
-    public float getMaxPredRT() {
-        float maxRT = 0f;
-        for (PredictionEntry entry : allPreds.values()) {
-            if (entry.RT > maxRT) {
-                maxRT = entry.RT;
-            }
-        }
-        return maxRT;
     }
 
     public void clear() {

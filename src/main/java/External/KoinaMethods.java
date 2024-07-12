@@ -254,8 +254,6 @@ public class KoinaMethods {
             String newModel = modelConversion.get(Constants.FragmentationType + "." + genModel);
             if (!newModel.equals(Constants.spectraModel)) {
                 printInfo("Switching from " + Constants.spectraModel + " to " + newModel);
-                Constants.spectraRTPredModel =
-                        Constants.spectraRTPredModel.replace(Constants.spectraModel, newModel);
                 Constants.spectraModel = newModel;
                 return true;
             }

@@ -26,16 +26,16 @@ import java.io.*;
 import java.nio.file.Files;
 
 public class DiannModelCaller {
-    public static void callModel(String inputFile, boolean verbose) {
+    public static String callModel(String inputFile, boolean verbose) {
         long startTime = System.nanoTime();
+        String predFileString = null;
         try {
             boolean useTMT = false;
             //DIA-NN command
             if (verbose) {
                 printInfo("Generating DIA-NN predictions");
             }
-            Constants.spectraRTPredFile =
-                    inputFile.substring(0, inputFile.length() - 4) + ".predicted.bin";
+            predFileString = inputFile.substring(0, inputFile.length() - 4) + ".predicted.bin";
             String line;
 
             //check for TMT
@@ -162,10 +162,10 @@ public class DiannModelCaller {
                     //adapted from https://stackoverflow.com/questions/2243073/java-multiple-connection-downloading/2243731#2243731
                     int data = 0;
                     try {
-                        File filename = new File(Constants.spectraRTPredFile + ".total");
+                        File filename = new File(predFileString + ".total");
                         FileWriter outfile = new FileWriter(filename, true);
 
-                        filename = new File(Constants.spectraRTPredFile);
+                        filename = new File(predFileString);
                         RandomAccessFile infile = new RandomAccessFile(filename, "r");
                         data = infile.read();
                         while (data != -1) {
@@ -180,11 +180,11 @@ public class DiannModelCaller {
                 }
             }
 
-            File predFile = new File(Constants.spectraRTPredFile);
+            File predFile = new File(predFileString);
             //move total file to typical name, if total file exists
             if (Constants.splitPredInputFile != 1) {
                 predFile.delete();
-                File oldFile = new File(Constants.spectraRTPredFile + ".total");
+                File oldFile = new File(predFileString + ".total");
                 oldFile.renameTo(predFile);
             }
 
@@ -206,5 +206,7 @@ public class DiannModelCaller {
             long duration = (endTime - startTime);
             printInfo("Model running took " + duration / 1000000 + " milliseconds");
         }
+        
+        return predFileString;
     }
 }

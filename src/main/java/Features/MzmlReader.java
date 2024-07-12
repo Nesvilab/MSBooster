@@ -346,9 +346,8 @@ public class MzmlReader {
             }
         }
     }
-    public void setPinEntries(PinReader pin, SpectralPredictionMapper spm, ExecutorService executorService)
+    public void setPinEntries(PinReader pin, PredictionEntryHashMap allPreds, ExecutorService executorService)
             throws AssertionError, Exception {
-        PredictionEntryHashMap allPreds = spm.getPreds();
         allPreds.filterTopFragments(executorService);
         ProgressReporter pr = new ProgressReporter(pin.getLength());
         futureList.clear();
@@ -403,7 +402,7 @@ public class MzmlReader {
         }
     }
 
-    public void setBetas(SpectralPredictionMapper preds, int RTregressionSize) throws IOException, FileParsingException {
+    public void setBetas(int RTregressionSize) throws FileParsingException {
         betas = RTFunctions.getBetas(this, RTregressionSize);
     }
     public void setBetas() {
@@ -1037,7 +1036,7 @@ public class MzmlReader {
                             LOESSIM.put(mass, ImChargeEntry.get(mass).invoke((double) msn.IM));
                         }
 
-                        double finalDelta = 3;
+                        double finalDelta = 0.5;
                         boolean isNone = true;
                         for (String mass : LOESSIM.keySet()) {
                             String[] masses = mass.split("/");

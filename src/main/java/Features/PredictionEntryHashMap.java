@@ -36,4 +36,14 @@ public class PredictionEntryHashMap extends ConcurrentHashMap<String, Prediction
             future.get();
         }
     }
+
+    public float getMaxPredRT() {
+        float maxRT = 0f;
+        for (PredictionEntry entry : this.values()) {
+            if (entry.RT > maxRT) {
+                maxRT = entry.RT;
+            }
+        }
+        return maxRT;
+    };
 }

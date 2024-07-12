@@ -63,12 +63,11 @@ public class NCEcalibrator {
             Constants.removeRankPeaks = false;
 
             List<Future> futureList = new ArrayList<>(Constants.numThreads);
-            String finalCurrentModel = currentModel;
             for (int NCE = Constants.minNCE; NCE < Constants.maxNCE + 1; NCE++) {
                 int finalNCE = NCE;
                 futureList.add(MainClass.executorService.submit(() -> {
                     PredictionEntryHashMap allPreds =
-                            km.getKoinaPredictions(allHits, finalCurrentModel, finalNCE,
+                            km.getKoinaPredictions(allHits, currentModel, finalNCE,
                                     jsonOutFolder + File.separator + finalNCE,
                                     jsonOutFolder + File.separator + "NCE_calibration_full.tsv");
 
@@ -109,7 +108,10 @@ public class NCEcalibrator {
             }
             bestNCEint = bestNCE.get();
         }
-        return new Object[]{currentModel, models, similarities, bestMedianDouble, bestNCEint};
+        return new Object[]{similarities, bestMedianDouble, bestNCEint};
+        //similarities is ordered map of NCE and list of similarities for PSMs
+        //bestMedianDouble is best median similarity across NCEs
+        //bestNCEint is NCE at which highest median similarity is achieved
     }
 
     public static void plotNCEchart(TreeMap<Integer, ArrayList<Double>> similarities) {

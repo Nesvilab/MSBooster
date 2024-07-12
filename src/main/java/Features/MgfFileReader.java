@@ -17,8 +17,6 @@
 
 package Features;
 
-import umich.ms.fileio.exceptions.FileParsingException;
-
 import java.io.*;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
@@ -26,11 +24,10 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Future;
 
-public class MgfFileReader implements SpectralPredictionMapper{
+public class MgfFileReader implements LibraryPredictionMapper {
     //mgfFileReader can handle both single files and entire directories
 
     ArrayList<String> filenames = new ArrayList<>();
@@ -66,8 +63,7 @@ public class MgfFileReader implements SpectralPredictionMapper{
     }
 
     //this version for uncalibrated mgf acting as mzml
-    public MgfFileReader(String file, boolean createScanNumObjects, ExecutorService executorService, String model)
-            throws IOException, FileParsingException, ExecutionException, InterruptedException {
+    public MgfFileReader(String file, boolean createScanNumObjects, ExecutorService executorService, String model) {
         try {
             //load allowed fragment ion types
             Set<String> ignoredFragmentIonTypesSet = Constants.makeIgnoredFragmentIonTypes();
@@ -459,16 +455,6 @@ public class MgfFileReader implements SpectralPredictionMapper{
     }
     public void setPreds(PredictionEntryHashMap preds) {
         allPreds = preds;
-    }
-
-    public float getMaxPredRT() {
-        float maxRT = 0f;
-        for (PredictionEntry entry : allPreds.values()) {
-            if (entry.RT > maxRT) {
-                maxRT = entry.RT;
-            }
-        }
-        return maxRT;
     }
 
     public void clear() {

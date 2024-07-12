@@ -203,7 +203,7 @@ public class LoessUtilities {
             String defaultValue = "0";
             if (mode.equals("IM")) {
                 messageEnding.append(" for charge ").append(charge);
-                defaultValue = "3000";
+                defaultValue = "500";
             }
             if (sizeLimit < minLinearRegressionSize) { //hard coded
                 if (numPSMsIgnoreEvalue != 0) {

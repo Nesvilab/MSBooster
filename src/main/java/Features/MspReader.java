@@ -26,9 +26,8 @@ import java.io.FileReader;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.concurrent.ConcurrentHashMap;
 
-public class MspReader implements SpectralPredictionMapper {
+public class MspReader implements LibraryPredictionMapper {
     final ArrayList<String> filenames;
     PredictionEntryHashMap allPreds = new PredictionEntryHashMap();
 
@@ -156,11 +155,11 @@ public class MspReader implements SpectralPredictionMapper {
                 while ((line = TSVReader.readLine()) != null) {
                     String[] lineSplit2 = line.split("\t");
                     PeptideFormatter pf = null;
-                    if (Constants.spectraRTPredModel.equals("Prosit")) {
+                    if (Constants.spectraModel.equals("Prosit") || Constants.rtModel.equals("Prosit")) {
                         pf = new PeptideFormatter(
                                 new PeptideFormatter(lineSplit2[0], lineSplit2[1], "base").prosit,
                                 lineSplit2[1], "prosit");
-                    } else if (Constants.spectraRTPredModel.equals("PrositTMT")) {
+                    } else if (Constants.spectraModel.equals("PrositTMT") || Constants.rtModel.equals("PrositTMT")) {
                         pf = new PeptideFormatter(
                                 new PeptideFormatter(lineSplit2[0], lineSplit2[1], "base").prositTMT,
                                 lineSplit2[1], "prosit");
@@ -203,16 +202,6 @@ public class MspReader implements SpectralPredictionMapper {
     public PredictionEntryHashMap getPreds() { return allPreds; }
     public void setPreds(PredictionEntryHashMap preds) {
         allPreds = preds;
-    }
-
-    public float getMaxPredRT() {
-        float maxRT = 0f;
-        for (PredictionEntry entry : allPreds.values()) {
-            if (entry.RT > maxRT) {
-                maxRT = entry.RT;
-            }
-        }
-        return maxRT;
     }
 
     public void clear() {

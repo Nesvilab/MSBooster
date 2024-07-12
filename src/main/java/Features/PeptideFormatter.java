@@ -355,8 +355,9 @@ public class PeptideFormatter {
             baseTOpredfull();
             baseTOprosit();
             strippedTOdlib();
-            if (Constants.spectraRTPredModel.contains("pDeep") ||
-            Constants.spectraRTPredModel.contains("alphapeptdeep")) {
+            if (Constants.spectraModel.contains("pDeep") || Constants.spectraModel.contains("alphapeptdeep") ||
+                    Constants.rtModel.contains("pDeep") || Constants.rtModel.contains("alphapeptdeep") ||
+                    Constants.imModel.contains("alphapeptdeep")) {
                 baseToMods();
             }
             baseCharge = base + "|" + charge;

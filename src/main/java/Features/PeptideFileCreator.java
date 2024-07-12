@@ -17,6 +17,7 @@
 
 package Features;
 
+import static Features.Constants.KoinaModels;
 import static utils.Print.printError;
 import static utils.Print.printInfo;
 
@@ -45,12 +46,9 @@ public class PeptideFileCreator {
         File[] mzmlFiles = pmm.mzmlFiles;
 
         //read in mzml files if needed
-        if ((Constants.useKoina && !modelFormat.equals("Diann")) || modelFormat.contains("Prosit") ||
-                modelFormat.equals("PredFull") || modelFormat.equals("alphapeptdeep")) {
-            for (int i = 0; i < mzmlFiles.length; i++) {
-                if (Constants.NCE.equals("") && pmm.mzmlReaders[i] == null) {
-                    pmm.mzmlReaders[i] = new MzmlReader(mzmlFiles[i].getCanonicalPath());
-                }
+        for (int i = 0; i < mzmlFiles.length; i++) {
+            if (pmm.mzmlReaders[i] == null) {
+                pmm.mzmlReaders[i] = new MzmlReader(mzmlFiles[i].getCanonicalPath());
             }
         }
 
@@ -104,7 +102,7 @@ public class PeptideFileCreator {
                             hitsToAdd = pin.createAlphapeptdeepList(mzmlf, pmm);
                             break;
                     }
-                    if (Constants.useKoina && !modelFormat.equals("Diann")) {
+                    if (KoinaModels.contains(modelFormat)) {
                         hitsToAdd = pin.createJSON(mzmlf, pmm, modelFormat);
                     }
                     pin.close();
@@ -128,7 +126,7 @@ public class PeptideFileCreator {
         //write to file
         try {
             String filename = "";
-            if (Constants.useKoina && !modelFormat.equals("Diann")) {
+            if (KoinaModels.contains(modelFormat)) {
                 JSONWriter jw = new JSONWriter(modelFormat, hSetHits, true);
                 if (!Constants.usedKoina) {
                     filename = jw.write(true,
@@ -200,7 +198,7 @@ public class PeptideFileCreator {
             long endTime = System.nanoTime();
             long duration = (endTime - startTime);
             printInfo(modelFormat + " input file generation took " + duration / 1000000 +" milliseconds");
-            if (Constants.useKoina && !modelFormat.equals("Diann")) {
+            if (KoinaModels.contains(modelFormat)) {
                 printInfo("Input files in " + filename);
                 Constants.JsonDirectory = filename;
             } else {

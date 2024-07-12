@@ -36,11 +36,11 @@ import java.util.concurrent.Future;
 
 public class PercolatorFormatter {
 
-    static PredictionEntryHashMap allPreds;
+    static PredictionEntryHashMap allPreds = new PredictionEntryHashMap();
     static RangeMap<Double, ArrayList<Integer>> allMatchedScans = TreeRangeMap.create();
 
-    public static void editPin(PinMzmlMatcher pmMatcher, String mgf, String detectFile,
-                               String[] features, String outfile, ExecutorService executorService)
+    public static void editPin(PinMzmlMatcher pmMatcher, String[] features, String outfile,
+                               ExecutorService executorService)
             throws IOException, InterruptedException, ExecutionException, FileParsingException, SQLException {
 
         ArrayList<String> featuresList = new ArrayList<>(Arrays.asList(features));
@@ -55,160 +55,90 @@ public class PercolatorFormatter {
         MzmlReader[] mzmlReaders = pmMatcher.mzmlReaders;
 
         //load predicted spectra
-        SpectralPredictionMapper predictedSpectra = null;
-        SpectralPredictionMapper predictedSpectra2 = null; //first is prosit/diann, second predfull
-        if (Constants.spectralPredictionMapper != null) {
-            predictedSpectra = Constants.spectralPredictionMapper;
-        }
+        LibraryPredictionMapper predictedSpectra;
+        LibraryPredictionMapper predictedRT;
+        LibraryPredictionMapper predictedIM;
+        LibraryPredictionMapper predictedAuxSpectra;
+        //SpectralPredictionMapper predictedSpectra2 = null; //first is prosit/diann, second predfull
 
-        //Special preparations dependent on features we require
-        //only time this isn't needed is detect
-        //could consider an mgf constant
-        if (mgf != null) {
-            String[] mgfSplit = mgf.split(",");
+        if (Constants.predictedLibrary != null) { //library ready from koina predictions
+            allPreds = Constants.predictedLibrary.getPreds();
+        } else {
+            HashMap<String, LibraryPredictionMapper> allLibraries = new HashMap<>(); //key: library file path, value: library
+            HashMap<String, String> allProperties = new HashMap<>(); //key: property, value: library file path
 
-            if (mgfSplit.length == 1) {
-                printInfo("Loading predicted library");
-                if (Constants.spectraRTPredModel.equals("PredFull")) {
-                    predictedSpectra = SpectralPredictionMapper.createSpectralPredictionMapper(
-                            mgfSplit[1], pinFiles, executorService);
+            //could use aux spectra if primary spectra missing
+            if (Constants.spectraPredFile != null) {
+                printInfo("Loading predicted spectra");
+                if (Constants.spectraModel.equals("PredFull")) {
+                    predictedSpectra = LibraryPredictionMapper.createLibraryPredictionMapper(
+                            Constants.spectraPredFile, pinFiles, executorService);
                 } else {
-                    predictedSpectra = SpectralPredictionMapper.createSpectralPredictionMapper(
-                            mgf, Constants.spectraRTPredModel, executorService);
+                    predictedSpectra = LibraryPredictionMapper.createLibraryPredictionMapper(
+                            Constants.spectraPredFile, Constants.spectraModel, executorService);
                 }
-            } else if (mgfSplit.length == 2){
-                //if fragment from predfull is not y/b, add.
-                //Prosit/diann is first, predfull second
-                //can also add two models, the first being for RT, the second for spectra
-                String[] modelSplit = Constants.spectraRTPredModel.split(",");
+                allLibraries.put(Constants.spectraPredFile, predictedSpectra);
+                allProperties.put("spectra", Constants.spectraPredFile);
+            }
 
-                printInfo("Loading predicted RT: " + mgfSplit[0]);
-                predictedSpectra = SpectralPredictionMapper.createSpectralPredictionMapper(
-                        mgfSplit[0], modelSplit[0], executorService);
-                printInfo("Loading predicted spectra: " + mgfSplit[1]);
-                if (modelSplit[1].equals("PredFull")) {
-                    predictedSpectra2 = SpectralPredictionMapper.createSpectralPredictionMapper(
-                            mgfSplit[1], pinFiles, executorService); //get predfull library
-                } else {
-                    predictedSpectra2 = SpectralPredictionMapper.createSpectralPredictionMapper(
-                            mgfSplit[1], modelSplit[1], executorService); //get other library
-                    Constants.addNonYb = false; //probably just want to use separate spectra and RT models
+            if (Constants.RTPredFile != null) {
+                if (! allLibraries.containsKey(Constants.RTPredFile)) {
+                    printInfo("Loading predicted retention times");
+                    predictedRT = LibraryPredictionMapper.createLibraryPredictionMapper(
+                            Constants.RTPredFile, Constants.rtModel, executorService);
+                    allLibraries.put(Constants.RTPredFile, predictedRT);
                 }
-                printInfo("Merging libraries");
+                allProperties.put("RT", Constants.RTPredFile);
+            }
 
-                //get all possible keys from both preds1 and preds2
-                Set<String> totalKeyset = new HashSet<String>();
-                allPreds = predictedSpectra.getPreds();
-                totalKeyset.addAll(allPreds.keySet());
-                totalKeyset.addAll(predictedSpectra2.getPreds().keySet());
-
-                //check what fragment ion types have been predicted by model 1
-                HashSet<String> model1FragmentIonTypes = new HashSet<>();
-                for (PredictionEntry pe : allPreds.values()) {
-//                    if (pe.fragmentIonTypes == null) {
-//                        pe.setFragmentIonTypes();
-//                    }
-                    model1FragmentIonTypes.addAll(Arrays.asList(pe.fragmentIonTypes));
+            if (Constants.IMPredFile != null) {
+                if (! allLibraries.containsKey(Constants.IMPredFile)) {
+                    printInfo("Loading predicted ion mobilities");
+                    predictedIM = LibraryPredictionMapper.createLibraryPredictionMapper(
+                            Constants.IMPredFile, Constants.imModel, executorService);
+                    allLibraries.put(Constants.IMPredFile, predictedIM);
                 }
+                allProperties.put("IM", Constants.IMPredFile);
+            }
 
-                for (String key : totalKeyset) {
-                    PredictionEntry pe = allPreds.get(key);
-                    if (pe == null) { //missing in prosit/diann
-                        allPreds.put(key, predictedSpectra2.getPreds().get(key));
-                    } else { //add non-y/b ions
-                        ArrayList<Float> mzs = new ArrayList<>();
-                        ArrayList<Float> intensities = new ArrayList<>();
-                        ArrayList<String> fragTypes = new ArrayList<>();
+            if (Constants.auxSpectraPredFile != null) {
+                if (! allLibraries.containsKey(Constants.auxSpectraPredFile)) {
+                    printInfo("Loading predicted auxiliary spectra");
+                    predictedAuxSpectra = LibraryPredictionMapper.createLibraryPredictionMapper(
+                            Constants.auxSpectraPredFile, Constants.auxSpectraModel, executorService);
+                    allLibraries.put(Constants.auxSpectraPredFile, predictedAuxSpectra);
+                }
+                allProperties.put("auxSpectra", Constants.auxSpectraPredFile);
+            }
 
-                        if (Constants.addNonYb) {
-                            float maxIntensity = Constants.modelMaxIntensity.get(modelSplit[0]);
-                            float maxIntensityMZ = Float.NaN;
-
-                            //add original peaks
-                            for(int i = 0; i < pe.mzs.length; i++) {
-                                float mz = pe.mzs[i];
-                                float intensity = pe.intensities[i];
-                                String fragType = pe.fragmentIonTypes[i];
-
-                                if (intensity == maxIntensity) {
-                                    maxIntensityMZ = mz;
-                                }
-
-                                mzs.add(mz);
-                                intensities.add(intensity);
-                                fragTypes.add(fragType);
-                            }
-
-                            float minMZ = maxIntensityMZ - Constants.DaTolerance;
-                            float maxMZ = maxIntensityMZ + Constants.DaTolerance;
-
-                            //add new peaks
-                            //Scale so that max intensity fragment of diann has same intensity as matched fragment in predfull
-                            //TODO: multiply pe2 intensity by (diann max intensity / predfull intensity of matching fragment)
-                            PredictionEntry pe2 = predictedSpectra2.getPreds().get(key);
-                            //if null, convert to base format
-
-                            if ((!Objects.isNull(pe2)) && (!Objects.isNull(pe2.fragmentIonTypes))) {
-                                float matchedFragInt = Constants.modelMaxIntensity.get(modelSplit[1]);
-                                for (int i = 0; i < pe2.mzs.length; i++) {
-                                    float potentialMZ = pe2.mzs[i];
-                                    float potentialInt = pe2.intensities[i];
-                                    if ((potentialMZ >= minMZ) & (potentialMZ <= maxMZ) & (potentialInt > matchedFragInt)) {
-                                        matchedFragInt = potentialInt;
-                                    }
-                                }
-
-                                for (int i = 0; i < pe2.fragmentIonTypes.length; i++) {
-                                    if (!model1FragmentIonTypes.contains(pe2.fragmentIonTypes[i])) {
-                                        mzs.add(pe2.mzs[i]);
-                                        intensities.add(pe2.intensities[i] * maxIntensity / matchedFragInt); //putting intensities on same scale
-                                        fragTypes.add(pe2.fragmentIonTypes[i]);
-                                    }
-                                }
-                            }
-
-                            //convert back to array
-                            float[] mzArray = new float[mzs.size()];
-                            float[] intArray = new float[intensities.size()];
-                            String[] typeArray = new String[fragTypes.size()];
-                            for (int i = 0; i < mzArray.length; i++) {
-                                mzArray[i] = mzs.get(i);
-                                intArray[i] = intensities.get(i);
-                                typeArray[i] = fragTypes.get(i);
-                            }
-
-                            PredictionEntry newPe = new PredictionEntry(mzArray, intArray,
-                                    pe.getFragNums(), pe.getCharges(), typeArray, new int[0]);
-                            allPreds.put(key, newPe);
-                        } else { //retain predfull intensities, just add RT from other model
-                            //but if predfull has missing entry, use other model instead
-                            PredictionEntry pe2 = predictedSpectra2.getPreds().get(key);
-                            if (!Objects.isNull(pe2)) {
-                                pe2.setRT(pe.getRT());
-                                allPreds.put(key, pe2);
-                            }
-                        }
+            //merging libraries
+            printInfo("Merging libraries");
+            for (Map.Entry<String, LibraryPredictionMapper> entry : allLibraries.entrySet()) {
+                String libraryPath = entry.getKey();
+                LibraryPredictionMapper library = entry.getValue();
+                for (Map.Entry<String, String> prop : allProperties.entrySet()) {
+                    if (prop.getValue().equals(libraryPath)) {
+                        library.mergeLibraries(allPreds, prop.getKey());
                     }
                 }
-                predictedSpectra2 = null; //free up memory
+
             }
         }
-        allPreds = predictedSpectra.getPreds();
         //TODO test to make sure predicted spectra and allpreds are same
 
         //create detectMap to store detectabilities for base sequence peptides
         //store peptide detectabilities in PredictionEntry
-        DetectMap dm = null;
-        ArrayList<String> dFeatures = new ArrayList<String>(Constants.detectFeatures);
-        dFeatures.retainAll(featuresList);
-        //long startTime = System.nanoTime();
-        if (dFeatures.size() > 0) {
-            dm = new DetectMap(detectFile);
-            for (Map.Entry<String, PredictionEntry> e : allPreds.entrySet()) {
-                e.getValue().setDetectability(dm.getDetectability(
-                        new PeptideFormatter(e.getKey().split("\\|")[0], e.getKey().split("\\|")[1], "pin").stripped));
-            }
-        }
+//        DetectMap dm = null;
+//        ArrayList<String> dFeatures = new ArrayList<String>(Constants.detectFeatures);
+//        dFeatures.retainAll(featuresList);
+//        //long startTime = System.nanoTime();
+//        if (dFeatures.size() > 0) {
+//            dm = new DetectMap(detectFile);
+//            for (Map.Entry<String, PredictionEntry> e : allPreds.entrySet()) {
+//                e.getValue().setDetectability(dm.getDetectability(
+//                        new PeptideFormatter(e.getKey().split("\\|")[0], e.getKey().split("\\|")[1], "pin").stripped));
+//            }
+//        }
 
         FastaReader fasta = null;
 
@@ -331,7 +261,7 @@ public class PercolatorFormatter {
                 }
 
                 //Special preparations dependent on features we require
-                mzml.setPinEntries(pin, predictedSpectra, executorService);
+                mzml.setPinEntries(pin, allPreds, executorService);
                 //these require all experimental peaks before removing higher rank peaks
                 if (Constants.removeRankPeaks &&
                         (featuresList.contains("hypergeometricProbability") ||
@@ -595,7 +525,7 @@ public class PercolatorFormatter {
                 if (featuresList.contains("deltaRTlinear")) {
                     if (mzml.expAndPredRTs != null) {
                         mzml.setBetas();
-                    } else { mzml.setBetas(predictedSpectra, Constants.rtLoessRegressionSize);
+                    } else { mzml.setBetas(Constants.rtLoessRegressionSize);
                     }
                     mzml.normalizeRTs(executorService);
                 }
@@ -625,7 +555,7 @@ public class PercolatorFormatter {
                     mzml.unifPriorSize = binSizes[cutoff];
 
                     //also need uniform probability with right bound of max predicted RT
-                    mzml.unifProb = 1.0f / predictedSpectra.getMaxPredRT(); //TODO: might need to change, if this is ever revisited. Need negative range
+                    mzml.unifProb = 1.0f / allPreds.getMaxPredRT(); //TODO: might need to change, if this is ever revisited. Need negative range
                 }
                 if (featuresList.contains("RTprobability") || featuresList.contains("RTprobabilityUnifPrior")) {
                     mzml.setKernelDensities(executorService, "RT");

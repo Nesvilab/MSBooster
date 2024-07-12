@@ -23,8 +23,8 @@ import java.io.IOException;
 import java.util.Map;
 
 public class MgfFileWriter {
-    SpectralPredictionMapper spm;
-    public MgfFileWriter(SpectralPredictionMapper spm) {
+    LibraryPredictionMapper spm;
+    public MgfFileWriter(LibraryPredictionMapper spm) {
         this.spm = spm;
     }
 

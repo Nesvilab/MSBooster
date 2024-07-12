@@ -17,9 +17,7 @@
 
 package Features;
 
-import java.util.concurrent.ConcurrentHashMap;
-
-public class KoinaLibReader implements SpectralPredictionMapper {
+public class KoinaLibReader implements LibraryPredictionMapper {
     public boolean failed = false;
     public PredictionEntryHashMap allPreds = new PredictionEntryHashMap();
 
@@ -32,9 +30,5 @@ public class KoinaLibReader implements SpectralPredictionMapper {
 
     public void clear() {
         allPreds.clear();
-    }
-
-    public float getMaxPredRT() {
-        return 0;
     }
 }

@@ -44,7 +44,10 @@ public class Constants {
     public static Integer renamePin = 1;
     public static String spectraRTPrefix = null;
     public static String detectPredInput = null;
-    public static String spectraRTPredFile = null;
+    public static String spectraPredFile = null;
+    public static String RTPredFile = null;
+    public static String IMPredFile = null;
+    public static String auxSpectraPredFile = null;
     public static String detectPredFile = null;
     public static Boolean deletePreds = false;
     public static Integer loadingPercent = 10;
@@ -78,15 +81,23 @@ public class Constants {
     public static String spectraRTPredModel = "DIA-NN"; //can also include koina urls //TODO remove in favor of separate spectra and rt models
     public static String spectraModel = "";
     public static String rtModel = "";
-    public static Boolean addNonYb = true;
+    public static String imModel = "";
+    public static String auxSpectraModel = "";
     public static Integer splitPredInputFile = 1;
     public static Boolean useKoina = false;
     public static Boolean usedKoina = false;
     public static Boolean findBestRtModel = false;
     public static Boolean findBestSpectraModel = false;
+    public static Boolean findBestImModel = false;
     public static Boolean foundBest = false;
     //TODO: hashset with all models to check that model is acceptable?
     public static String KoinaURL = ""; //https://koina.proteomicsdb.org/v2/models/ or https://koina.wilhelmlab.org:443/v2/models/
+    public static CaseInsensitiveHashSet KoinaModels = new CaseInsensitiveHashSet(
+            new String[] {"AlphaPept_rt_generic", "Prosit_2019_irt",
+                    "Prosit_2020_irt_TMT", "Deeplc_hela_hf",
+                    "ms2pip_2021_HCD", "AlphaPept_ms2_generic", "Prosit_2019_intensity",
+                    "Prosit_2020_intensity_CID", "Prosit_2020_intensity_TMT", "Prosit_2020_intensity_HCD",
+                    "Prosit_2023_intensity_timsTOF", "AlphaPept_ccs_generic"});
     public static CaseInsensitiveHashSet KoinaRTmodels = new CaseInsensitiveHashSet(
             new String[] {"AlphaPept_rt_generic", "Prosit_2019_irt",
                     "Prosit_2020_irt_TMT", "Deeplc_hela_hf"});
@@ -94,6 +105,8 @@ public class Constants {
             new String[] {"ms2pip_2021_HCD", "AlphaPept_ms2_generic", "Prosit_2019_intensity",
                     "Prosit_2020_intensity_CID", "Prosit_2020_intensity_TMT", "Prosit_2020_intensity_HCD",
                     "Prosit_2023_intensity_timsTOF"});
+    public static CaseInsensitiveHashSet KoinaIMmodels = new CaseInsensitiveHashSet(
+            new String[] {"AlphaPept_ccs_generic"});
     public static CaseInsensitiveHashSet KoinaTMTmodels = new CaseInsensitiveHashSet(
             new String[] {"Prosit_2020_irt_TMT", "Prosit_2020_intensity_TMT"});
     public static String rtSearchModelsString = "DIA-NN,AlphaPept_rt_generic,Prosit_2019_irt,Deeplc_hela_hf";
@@ -101,13 +114,14 @@ public class Constants {
             new String[] {"DIA-NN", "Prosit_2020_irt_TMT"});
     public static String ms2SearchModelsString = "DIA-NN,ms2pip_2021_HCD,AlphaPept_ms2_generic," +
             "Prosit_2020_intensity_CID,Prosit_2020_intensity_HCD,Prosit_2023_intensity_timsTOF";
+    public static String imSearchModelsString = "DIA-NN,AlphaPept_ccs_generic";
     public static final CaseInsensitiveHashSet ms2SearchModelsTMT = new CaseInsensitiveHashSet(
             new String[] {"DIA-NN", "Prosit_2020_intensity_TMT"});
     public static CaseInsensitiveHashSet nceModels = new CaseInsensitiveHashSet(
             new String[] {"PredFull", "Prosit", "PrositTMT", "alphapeptdeep",
                     "AlphaPept_ms2_generic", "Prosit_2019_intensity", "Prosit_2023_intensity_timsTOF",
                     "Prosit_2020_intensity_TMT", "Prosit_2020_intensity_HCD"});
-    public static SpectralPredictionMapper spectralPredictionMapper;
+    public static LibraryPredictionMapper predictedLibrary;
 
     public static Integer numKoinaAttempts = 10;
     public static Integer initialKoinaMillisecondsToWaitRt = 30000;

@@ -216,16 +216,20 @@ public class MzmlScanNumber {
                     peptideObjects.add(newPepObj);
                 }
             } else {
-                String[] periodSplit = Constants.spectraRTPredFile.split("\\.");
-                if (periodSplit[periodSplit.length - 1].equals("dlib")) { //won't always include every entry
-                    newPepObj = new PeptideObj(this, name.baseCharge, rank, targetORdecoy, escore,
-                            zeroFloatArray, zeroFloatArray, predRT, predIM);
-                    peptideObjects.add(newPepObj);
-                } else {
-                    printError("Prediction missing in file for " + name.baseCharge);
-                    e.printStackTrace();
-                    System.exit(-1);
-                }
+                //TODO: if we start using dlib again
+//                String[] periodSplit = Constants.spectraRTPredFile.split("\\.");
+//                if (periodSplit[periodSplit.length - 1].equals("dlib")) { //won't always include every entry
+//                    newPepObj = new PeptideObj(this, name.baseCharge, rank, targetORdecoy, escore,
+//                            zeroFloatArray, zeroFloatArray, predRT, predIM);
+//                    peptideObjects.add(newPepObj);
+//                } else {
+//                    printError("Prediction missing in file for " + name.baseCharge);
+//                    e.printStackTrace();
+//                    System.exit(-1);
+//                }
+                printError("Prediction missing in file for " + name.baseCharge);
+                e.printStackTrace();
+                System.exit(-1);
             }
         }
         return newPepObj;

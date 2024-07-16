@@ -290,7 +290,7 @@ public class MassCalculator {
         return mass;
     }
 
-    private MassCalculator() {}
+    public MassCalculator() {}
     //y is which y fragment
     private MassCalculator makeInternalPeptide(int y) {
         if (y >= this.peptide.length()) { //only make smaller peptides

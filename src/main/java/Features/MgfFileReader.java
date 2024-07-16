@@ -449,7 +449,7 @@ public class MgfFileReader implements LibraryPredictionMapper {
     public PredictionEntryHashMap getPreds() {
         if (allPredsHashMap.isEmpty()) {
             allPredsHashMap.putAll(allPreds);
-            allPreds = null; //no longer need concurrency
+            allPreds.clear(); //no longer need concurrency
         }
         return allPredsHashMap;
     }
@@ -459,6 +459,7 @@ public class MgfFileReader implements LibraryPredictionMapper {
 
     public void clear() {
         allPreds.clear();
+        allPredsHashMap.clear();
         scanNumberObjects.clear();
         futureList.clear();
     }

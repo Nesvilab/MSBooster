@@ -109,6 +109,8 @@ public class Constants {
             new String[] {"AlphaPept_ccs_generic"});
     public static CaseInsensitiveHashSet KoinaTMTmodels = new CaseInsensitiveHashSet(
             new String[] {"Prosit_2020_irt_TMT", "Prosit_2020_intensity_TMT"});
+    public static CaseInsensitiveHashSet KoinaCCSmodels = new CaseInsensitiveHashSet(
+            new String[] {"AlphaPept_ccs_generic"});
     public static String rtSearchModelsString = "DIA-NN,AlphaPept_rt_generic,Prosit_2019_irt,Deeplc_hela_hf";
     public static final CaseInsensitiveHashSet rtSearchModelsTMT = new CaseInsensitiveHashSet(
             new String[] {"DIA-NN", "Prosit_2020_irt_TMT"});
@@ -124,7 +126,7 @@ public class Constants {
     public static LibraryPredictionMapper predictedLibrary;
 
     public static Integer numKoinaAttempts = 10;
-    public static Integer initialKoinaMillisecondsToWaitRt = 30000;
+    public static Integer initialKoinaMillisecondsToWaitRtIm = 30000;
     public static Integer initialKoinaMillisecondsToWaitMs2 = 60000;
 //    public static Integer KoinaThreadsRT = 30;
 //    public static Integer KoinaThreadsMS2 = 30;

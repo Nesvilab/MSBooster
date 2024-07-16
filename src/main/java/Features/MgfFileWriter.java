@@ -41,6 +41,7 @@ public class MgfFileWriter {
             bw.write("TITLE=" + peptide[0] + "\n");
             bw.write("CHARGE=" + peptide[1] + "\n");
             bw.write("RT=" + pe.RT + "\n");
+            bw.write("1/K0=" + pe.IM + "\n");
             for (int i = 0; i < pe.mzs.length; i++) {
                 if (pe.intensities[i] > Constants.minIntensityToWriteToMgf) {
                     bw.write(pe.mzs[i] + "\t" + pe.intensities[i] + "\n");

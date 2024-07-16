@@ -54,6 +54,8 @@ public class JSONWriter {
             property = "rt";
         } else if (Constants.KoinaMS2models.contains(url)) {
             property = "ms2";
+        } else if (Constants.KoinaIMmodels.contains(url)) {
+            property = "im";
         }
         if (Constants.KoinaTMTmodels.contains(url)) {
             TMT = true;
@@ -118,6 +120,8 @@ public class JSONWriter {
             property = "rt";
         } else if (Constants.KoinaMS2models.contains(url)) {
             property = "ms2";
+        } else if (Constants.KoinaIMmodels.contains(url)) {
+            property = "im";
         }
         if (Constants.KoinaTMTmodels.contains(url)) {
             TMT = true;
@@ -185,11 +189,6 @@ public class JSONWriter {
                     JSONArray peptideData = new JSONArray();
                     JSONArray innerArray;
 
-//                    if (TMT) {
-//                        for (int i = 0; i < peptides.length; i++) {
-//                            peptides[i] = "[UNIMOD:737]-" + peptides[i];
-//                        }
-//                    }
                     for (String pep : peptides) {
                         innerArray = new JSONArray();
                         innerArray.put(pep);
@@ -271,6 +270,23 @@ public class JSONWriter {
                             fragmentationObject.put("data", fragmentationData);
                             inputsArray.put(fragmentationObject);
                         }
+                    } else if (property.equals("im")) {
+                        //precursor charges
+                        JSONObject chargeObject = new JSONObject();
+                        chargeObject.put("name", "precursor_charges");
+                        chargeObject.put("shape", new JSONArray("[" + peptides.length + ",1]"));
+                        chargeObject.put("datatype", "INT32");
+
+                        JSONArray chargeData = new JSONArray();
+
+                        for (int charge : charges) {
+                            innerArray = new JSONArray();
+                            innerArray.put(charge);
+                            chargeData.put(innerArray);
+                        }
+
+                        chargeObject.put("data", chargeData);
+                        inputsArray.put(chargeObject);
                     }
 
                     jsonData.put("inputs", inputsArray);

@@ -390,7 +390,7 @@ public class MainClass {
             }
 
             //make models properly uppercased, or throw error if not right
-            HashMap<String, String> modelMapper = LowercaseModelMapper.lowercaseToModel;
+            HashMap<String, String> modelMapper = LowercaseModelMapper.lowercaseToModel; //TODO will be a pain to keep updating for every new model
             if (modelMapper.containsKey(Constants.spectraModel.toLowerCase())) {
                 Constants.spectraModel = modelMapper.get(Constants.spectraModel.toLowerCase());
             } else {
@@ -685,6 +685,20 @@ public class MainClass {
             } else {
                 Constants.rtModel = "";
             }
+
+            if (Constants.useIM) {
+                if (Constants.imModel.isEmpty()) {
+                    Constants.imModel = "DIA-NN";
+                }
+                for (String model : Constants.KoinaIMmodels) {
+                    if (model.equalsIgnoreCase(Constants.imModel)) {
+                        Constants.imModel = model;
+                    }
+                }
+            } else {
+                Constants.imModel = "";
+            }
+
             if (Constants.useSpectra) {
                 //here, look for best spectra model
                 if (Constants.findBestSpectraModel) {

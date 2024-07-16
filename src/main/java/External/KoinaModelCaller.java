@@ -17,7 +17,6 @@
 
 package External;
 
-import static Features.Constants.*;
 import static utils.Print.printError;
 import static utils.Print.printInfo;
 
@@ -36,7 +35,6 @@ import java.io.File;
 import java.io.FileReader;
 import java.io.IOException;
 import java.util.*;
-import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.Future;
 import java.util.concurrent.ScheduledThreadPoolExecutor;
@@ -44,8 +42,6 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 
 public class KoinaModelCaller {
     private static final int AlphaPeptDeepMzIdx = 1;
@@ -59,7 +55,6 @@ public class KoinaModelCaller {
     private static final int ms2pipFragIdx = 0;
     private static String modelType;
     private static String finalModel;
-    private static String ms2ModelType;
     private static AtomicBoolean emptyUrl = new AtomicBoolean(false);
 
     public KoinaModelCaller(){}
@@ -87,7 +82,8 @@ public class KoinaModelCaller {
             property = "rt";
         } else if (Constants.KoinaMS2models.contains(model)) {
             property = "ms2";
-            ms2ModelType = modelType;
+        } else if (Constants.KoinaIMmodels.contains(model)) {
+            property = "im";
         } else {
             printError(model + " not in Koina models");
             System.exit(1);
@@ -107,8 +103,8 @@ public class KoinaModelCaller {
 
             ProgressReporter pr = new ProgressReporter(numProcesses);
             AtomicLong waitTime;
-            if (property.equals("rt")) {
-                waitTime = new AtomicLong(Constants.initialKoinaMillisecondsToWaitRt);
+            if (property.equals("rt") || property.equals("im")) {
+                waitTime = new AtomicLong(Constants.initialKoinaMillisecondsToWaitRtIm);
             } else {
                 waitTime = new AtomicLong(Constants.initialKoinaMillisecondsToWaitMs2);
             }
@@ -233,6 +229,15 @@ public class KoinaModelCaller {
             }
 
             assignRTs(fileName, parsedResults, klr);
+        } if (property.equalsIgnoreCase("im")) {
+            String ims = koinaString.split("data")[2];
+            String[] results = ims.substring(3, ims.length() - 4).split(",");
+            float[] parsedResults = new float[results.length];
+            for (int i = 0; i < results.length; i++) {
+                parsedResults[i] = Float.parseFloat(results[i]);
+            }
+
+            assignIMs(fileName, parsedResults, klr);
         } else if (property.equalsIgnoreCase("ms2")) {
             //get indices for processing
             int mzIdx = 0;
@@ -348,36 +353,61 @@ public class KoinaModelCaller {
         PredictionEntryHashMap preds = klr.getPreds();
         for (int i = 0; i < peptides.length; i++) {
             PeptideFormatter pf = new PeptideFormatter(peptides[i], 1, "diann");
+            String peptide = pf.getBase() + "|";
+            if (modelType.equals("prosit")) {
+                peptide = peptide.replace("C[" + PTMhandler.carbamidomethylationMass + "]", "C");
+                peptide = peptide.replace("C", "C[" + PTMhandler.carbamidomethylationMass + "]");
+            }
+
             int entries = 0; //in case RT prediction is available but not MS2
             for (int charge = Constants.minPrecursorCharge; charge < Constants.maxPrecursorCharge + 1; charge++) {
-                String peptide = pf.getBase() + "|" + charge;
-                String mtype = modelType;
-                if (ms2ModelType != null) { //rely on this to transfer preictions
-                    mtype = ms2ModelType;
-                }
-                if (mtype.equals("prosit")) {
-                    peptide = peptide.replace("C[" + PTMhandler.carbamidomethylationMass + "]", "C");
-                    peptide = peptide.replace("C", "C[" + PTMhandler.carbamidomethylationMass + "]");
-                }
-                if (preds.containsKey(peptide)) {
-                    PredictionEntry pe = preds.get(peptide);
+                String peptideCharge = peptide + charge;
+                if (preds.containsKey(peptideCharge)) {
+                    PredictionEntry pe = preds.get(peptideCharge);
                     pe.setRT(RTs[i]);
-                    preds.put(peptide, pe);
+                    preds.put(peptideCharge, pe);
                     entries++;
                 }
             }
             if (entries == 0) { //RT was predicted but not MS2
                 for (int charge = Constants.minPrecursorCharge; charge < Constants.maxPrecursorCharge + 1; charge++) {
-                    String peptide = pf.getBase() + "|" + charge;
-                    if (modelType.equals("prosit")) {
-                        peptide = peptide.replace("C[" + PTMhandler.carbamidomethylationMass + "]", "C");
-                        peptide = peptide.replace("C", "C[" + PTMhandler.carbamidomethylationMass + "]");
-                    }
+                    String peptideCharge = peptide + charge;
                     PredictionEntry pe = new PredictionEntry();
                     pe.setRT(RTs[i]);
-                    preds.put(peptide, pe);
+                    preds.put(peptideCharge, pe);
                 }
             }
+        }
+    }
+
+    private static void assignIMs(String fileName, float[] IMs, KoinaLibReader klr) throws IOException {
+        double CCS_IM_COEF = 1059.62245;
+        double IM_GAS_MASS = 28.0;
+
+        String[] peptides = readJSON(fileName, IMs.length);
+        PredictionEntryHashMap preds = klr.getPreds();
+        for (int i = 0; i < peptides.length; i++) {
+            String[] peptideSplit = peptides[i].split("\\|");
+            PeptideFormatter pf = new PeptideFormatter(peptideSplit[0], peptideSplit[1], "diann");
+            String peptide = pf.getBaseCharge();
+
+            PredictionEntry pe;
+            if (preds.containsKey(peptide)) {
+                pe = preds.get(peptide);
+            } else {
+                pe = new PredictionEntry();
+            }
+            float im = IMs[i];
+            if (Constants.KoinaCCSmodels.contains(finalModel)) {
+                //convert from ccs to 1/K0
+                //Mason Schampp according to https://github.com/MannLabs/alphabase/blob/bbaecc380ae157d0f4cc87fffec097ecb7a8ceca/alphabase/peptide/mobility.py#L18
+                MassCalculator mc = new MassCalculator(pf.getBase(), peptideSplit[1]);
+                double reducedMass = mc.mass + mc.charge * mc.proton;
+                reducedMass = reducedMass * IM_GAS_MASS / (reducedMass + IM_GAS_MASS);
+                im = (float) (im * Math.sqrt(reducedMass) / mc.charge / CCS_IM_COEF);
+            }
+            pe.setIM(im);
+            preds.put(peptide, pe);
         }
     }
 
@@ -387,8 +417,8 @@ public class KoinaModelCaller {
         String[] peptides = readJSON(fileName, intensities.length);
         PredictionEntryHashMap preds = klr.getPreds();
         for (int i = 0; i < peptides.length; i++) {
-            PeptideFormatter pf = new PeptideFormatter(peptides[i].split("\\|")[0],
-                    peptides[i].split("\\|")[1], "diann");
+            String[] peptideSplit = peptides[i].split("\\|");
+            PeptideFormatter pf = new PeptideFormatter(peptideSplit[0], peptideSplit[1], "diann");
             String peptide = pf.getBaseCharge();
             if (modelType.equals("prosit")) {
                 peptide = peptide.replace("C[" + PTMhandler.carbamidomethylationMass + "]", "C");
@@ -407,7 +437,9 @@ public class KoinaModelCaller {
                     charges[i], fragmentIonTypes[i], new int[0]);
 
             if (preds.containsKey(peptide)) {
-                pe.setRT(preds.get(peptide).getRT());
+                PredictionEntry oldPe = preds.get(peptide);
+                pe.setRT(oldPe.getRT());
+                pe.setIM(oldPe.getIM());
             }
             preds.put(peptide, pe);
         }
@@ -428,11 +460,7 @@ public class KoinaModelCaller {
                 PredictionEntry tmp = null;
                 String stripped = "";
                 String baseCharge = "";
-                String mtype = modelType;
-                if (ms2ModelType != null) { //rely on this to transfer preictions
-                    mtype = ms2ModelType;
-                }
-                switch (mtype) {
+                switch (modelType) {
                     case "alphapept":
                     case "ms2pip":
                     case "deeplc":

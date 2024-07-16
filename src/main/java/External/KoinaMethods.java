@@ -37,6 +37,9 @@ public class KoinaMethods {
     public HashSet<String> peptideSet = new HashSet<>();
     public HashMap<String, LinkedList<Integer>> scanNums = new HashMap<>();
     public HashMap<String, LinkedList<String>> peptides = new HashMap<>();
+    public HashSet<String> peptideSetIM = new HashSet<>();
+    public HashMap<String, LinkedList<Integer>> scanNumsIM = new HashMap<>();
+    public HashMap<String, LinkedList<String>> peptidesIM = new HashMap<>();
 
     //decoys
     public HashSet<String> peptideSetDecoys = new HashSet<>();
@@ -63,10 +66,16 @@ public class KoinaMethods {
         for (int j = 0; j < pmMatcher.pinFiles.length; j++) {
             File pinFile = pmMatcher.pinFiles[j];
             PinReader pinReader = new PinReader(pinFile.getAbsolutePath());
-            LinkedList[] topPSMs = pinReader.getTopPSMs(numTopPSMs);
+            LinkedList[] topPSMs = pinReader.getTopPSMs(numTopPSMs, false);
             peptideSet.addAll(topPSMs[0]);
             scanNums.put(pmMatcher.mzmlFiles[j].getName(), topPSMs[1]);
             peptides.put(pmMatcher.mzmlFiles[j].getName(), topPSMs[0]);
+            if (Constants.useIM) {
+                LinkedList[] topPSMsIM = pinReader.getTopPSMs(numTopPSMs, true);
+                peptideSetIM.addAll(topPSMsIM[0]);
+                scanNumsIM.put(pmMatcher.mzmlFiles[j].getName(), topPSMsIM[1]);
+                peptidesIM.put(pmMatcher.mzmlFiles[j].getName(), topPSMsIM[0]);
+            }
         }
     }
 

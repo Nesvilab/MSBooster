@@ -469,13 +469,18 @@ public class PinReader {
         return peps.toArray(new String[0]);
     }
 
-    public LinkedList[] getTopPSMs(int num) throws IOException {
+    public LinkedList[] getTopPSMs(int num, boolean charge2forIM) throws IOException {
         LinkedList<String> PSMs = new LinkedList<>();
         LinkedList<Integer> scanNums = new LinkedList<>();
 
         //quicker way of getting top NCE
         PriorityQueue<Float> topEscores = new PriorityQueue<>(num, (a, b) -> Float.compare(b, a));
         while (next(true)) {
+            if (charge2forIM) {
+                if (getColumn("charge_2").equals("0")) {
+                    continue;
+                }
+            }
             float escore = Float.parseFloat(getEScore());
             if (topEscores.size() < num) {
                 topEscores.offer(escore);
@@ -488,6 +493,11 @@ public class PinReader {
         float eScoreCutoff = topEscores.peek();
 
         while (next(true) && PSMs.size() < num) {
+            if (charge2forIM) {
+                if (getColumn("charge_2").equals("0")) {
+                    continue;
+                }
+            }
             float escore = Float.parseFloat(getEScore());
             if (escore <= eScoreCutoff) {
                 PeptideFormatter pf = getPep();

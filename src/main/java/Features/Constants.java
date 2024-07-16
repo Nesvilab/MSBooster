@@ -451,6 +451,7 @@ public class Constants {
         map.put("predictedRT", "predicted_RT");
         map.put("deltaIMLOESS", "delta_IM_loess");
         map.put("deltaIMLOESSnormalized", "delta_IM_loess_normalized");
+        map.put("ionmobility", "ion_mobility");
         map.put("IMprobabilityUnifPrior", "IM_probability_unif_prior");
         map.put("predictedIM", "predicted_IM");
         map.put("detectProtSpearmanDiff", "detect_prot_spearman_diff");

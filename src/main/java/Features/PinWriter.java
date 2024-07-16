@@ -497,7 +497,7 @@ public class PinWriter {
                             formattedWrite("predicted_IM", pepObj.IM);
                             break;
                         case "ionmobility":
-                            formattedWrite("ionmobility", pepObj.scanNumObj.IM);
+                            formattedWrite("ion_mobility", pepObj.scanNumObj.IM);
                             break;
                         case "y_matched_intensity":
                             formattedWrite("y_matched_intensity", pepObj.matchedIntensities.get("y"));

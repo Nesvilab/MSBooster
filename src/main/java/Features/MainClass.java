@@ -25,7 +25,6 @@ import External.KoinaMethods;
 import External.KoinaModelCaller;
 import External.NCEcalibrator;
 import kotlin.jvm.functions.Function1;
-import org.checkerframework.checker.units.qual.A;
 
 import java.io.*;
 import java.lang.reflect.Field;
@@ -507,7 +506,7 @@ public class MainClass {
                                     float expRT = msn.RT;
                                     predRTs.add(predRT);
                                     expRTs.add(expRT);
-                                } catch (Exception e) {}
+                                } catch (Exception ignored) {}
                             }
                         }
                         double[][] rts = new double[2][expRTs.size()];
@@ -686,7 +685,136 @@ public class MainClass {
                 Constants.rtModel = "";
             }
 
+            HashMap<String, float[]> datapointsIM = new HashMap<>();
             if (Constants.useIM) {
+                if (Constants.findBestImModel) {
+                    printInfo("Searching for best IM model for your data");
+                    ArrayList<String> consideredModels = new ArrayList<>();
+                    String[] imSearchModels = Constants.imSearchModelsString.split(",");
+                    for (String model : imSearchModels) {
+                        if (modelMapper.containsKey(model.toLowerCase())) {
+                            consideredModels.add(modelMapper.get(model.toLowerCase()));
+                        } else {
+                            printError("No IM model called " + model + ". Exiting.");
+                            System.exit(0);
+                        }
+                    }
+                    printInfo("Searching the following models: ");
+                    printInfo(String.valueOf(consideredModels));
+
+                    String jsonOutFolder = Constants.outputDirectory + File.separator + "best_model";
+                    MyFileUtils.createWholeDirectory(jsonOutFolder);
+
+                    for (String model : consideredModels) {
+                        PredictionEntryHashMap imPreds = null;
+                        if (model.equals("DIA-NN")) { //mode for DIA-NN
+                            MyFileUtils.createWholeDirectory(jsonOutFolder + File.separator + model);
+
+                            km.writeFullPeptideFile(jsonOutFolder + File.separator + model + File.separator +
+                                    "spectraRT_full.tsv", model, km.peptideSetIM);
+                            String inputFile = jsonOutFolder + File.separator + model + File.separator + "spectraRT.tsv";
+                            FileWriter myWriter = new FileWriter(inputFile);
+                            myWriter.write("peptide" + "\t" + "charge\n");
+                            HashSet<String> peptides = new HashSet<>();
+                            for (String pep : km.peptideSetIM) {
+                                String[] pepSplit = pep.split(",");
+                                String line = pepSplit[1] + "\t" + pepSplit[0].split("\\|")[1] + "\n";
+                                if (!peptides.contains(line)) {
+                                    myWriter.write(line);
+                                    peptides.add(line);
+                                }
+                            }
+                            myWriter.close();
+
+                            String predFileString = DiannModelCaller.callModel(inputFile, false);
+                            imPreds = LibraryPredictionMapper.createLibraryPredictionMapper(
+                                    predFileString, "DIA-NN", executorService).getPreds();
+                        } else { //mode for koina
+                            HashSet<String> allHits = km.writeFullPeptideFile(
+                                    jsonOutFolder + File.separator + model + "_full.tsv", model,
+                                    km.peptideSetIM);
+                            imPreds = km.getKoinaPredictions(allHits, model, 30,
+                                    jsonOutFolder + File.separator + model,
+                                    jsonOutFolder + File.separator + model + "_full.tsv");
+                        }
+
+                        //collect the data for testing
+                        ArrayList<Float> expIMs = new ArrayList<>();
+                        ArrayList<Float> predIMs = new ArrayList<>();
+                        for (int j = 0; j < pmMatcher.mzmlReaders.length; j++) {
+                            MzmlReader mzmlReader = pmMatcher.mzmlReaders[j];
+                            LinkedList<Integer> thisScanNums = km.scanNumsIM.get(pmMatcher.mzmlFiles[j].getName());
+                            LinkedList<String> thisPeptides = km.peptidesIM.get(pmMatcher.mzmlFiles[j].getName());
+
+                            for (int k = 0; k < thisScanNums.size(); k++) {
+                                try {
+                                    int scanNum = thisScanNums.get(k);
+                                    String peptide = thisPeptides.get(k).split(",")[0];
+                                    MzmlScanNumber msn = mzmlReader.getScanNumObject(scanNum);
+
+                                    float predIM = imPreds.get(peptide).IM;
+                                    float expIM = msn.IM;
+                                    predIMs.add(predIM);
+                                    expIMs.add(expIM);
+                                } catch (Exception ignored) {}
+                            }
+                        }
+                        double[][] ims = new double[2][expIMs.size()];
+                        for (int i = 0; i < expIMs.size(); i++) {
+                            //put pred first so it can be normalized to exp scale
+                            ims[0][i] = Math.round(predIMs.get(i) * 100d) / 100d;
+                            ims[1][i] = Math.round(expIMs.get(i) * 100d) / 100d;
+                        }
+
+                        //testing
+                        String[] bandwidths = Constants.loessBandwidth.split(",");
+                        float[] floatBandwidths = new float[bandwidths.length];
+                        for (int i = 0; i < bandwidths.length; i++) {
+                            floatBandwidths[i] = Float.parseFloat(bandwidths[i]);
+                        }
+                        Object[] bandwidth_loess_imdiffs = StatMethods.gridSearchCV(ims, floatBandwidths);
+                        Function1<Double, Double> loess = (Function1<Double, Double>) bandwidth_loess_imdiffs[1];
+                        float[] imdiffs = (float[]) bandwidth_loess_imdiffs[2];
+                        float mse = StatMethods.meanSquaredError(imdiffs);
+                        printInfo(model + " has root mean squared error of " +
+                                String.format("%.4f", Math.sqrt(mse)));
+                        Arrays.sort(imdiffs);
+                        datapointsIM.put(model, imdiffs);
+                    }
+
+                    //get best model //TODO: test which method is more accurate
+                    HashMap<String, Integer> votes = new HashMap<>();
+                    for (String model : datapointsIM.keySet()) {
+                        votes.put(model, 0);
+                    }
+                    for (int i = 0; i < 10; i++) {
+                        String bestModel = "";
+                        float bestImDiff = Float.MAX_VALUE;
+
+                        for (String model : datapointsIM.keySet()) {
+                            float[] imDiffs = datapointsIM.get(model);
+                            float deltaIM = imDiffs[imDiffs.length - 1 - i];
+                            if (deltaIM < bestImDiff) {
+                                bestImDiff = deltaIM;
+                                bestModel = model;
+                            }
+                        }
+
+                        votes.put(bestModel, votes.get(bestModel) + 1);
+                    }
+
+                    int mostVotes = 0;
+                    for (String model : votes.keySet()) {
+                        int vote = votes.get(model);
+                        if (vote > mostVotes) {
+                            mostVotes = vote;
+                            Constants.imModel = model;
+                        }
+                    }
+
+                    printInfo("IM model chosen is " + Constants.imModel);
+                }
+
                 if (Constants.imModel.isEmpty()) {
                     Constants.imModel = "DIA-NN";
                 }
@@ -1033,6 +1161,7 @@ public class MainClass {
                     intersection.retainAll(Constants.imFeatures);
                     if (intersection.isEmpty()) {
                         featureLL.add("deltaIMLOESS");
+                        featureLL.add("ionmobility");
                     }
                 } else {
                     for (String feature : Constants.imFeatures) {
@@ -1403,6 +1532,7 @@ public class MainClass {
                 List<String> lines = Files.readAllLines(Paths.get(Constants.paramsList));
                 AtomicBoolean spectrafound = new AtomicBoolean(false);
                 AtomicBoolean rtfound = new AtomicBoolean(false);
+                AtomicBoolean imfound = new AtomicBoolean(false);
 
                 // Stream the list, and if a line starts with the specified prefix,
                 // replace everything after the prefix with newSuffix
@@ -1415,6 +1545,9 @@ public class MainClass {
                             } else if (line.trim().startsWith("rtModel")) {
                                 rtfound.set(true);
                                 return "rtModel=" + Constants.rtModel;
+                            } else if (line.trim().startsWith("imModel")) {
+                                imfound.set(true);
+                                return "imModel=" + Constants.imModel;
                             }
                             return line;
                         })
@@ -1426,6 +1559,9 @@ public class MainClass {
                 }
                 if (!rtfound.get()) {
                     modifiedLines.add("rtModel=" + Constants.rtModel);
+                }
+                if (!imfound.get()) {
+                    modifiedLines.add("imModel=" + Constants.imModel);
                 }
 
                 // Write the modified lines back to the file

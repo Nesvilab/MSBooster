@@ -466,8 +466,8 @@ public class FeatureCalculator {
                             break;
 //                    case "predictedIM":
 //                        break;
-//                    case "ionmobility":
-//                        break;
+                    case "ionmobility":
+                        break;
 //                    case "y_matched_intensity":
 //                        break;
 //                    case "b_matched_intensity":

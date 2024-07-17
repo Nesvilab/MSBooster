@@ -65,6 +65,8 @@ public class MzmlReader {
     public ArrayList<HashMap<String, Function1<Double, Double>>> IMLOESS = new ArrayList<>();
     public HashMap<String, double[][]> expAndPredRTs;
     public HashMap<Integer, HashMap<String, double[][]>> expAndPredIMsHashMap = new HashMap<>();
+    public HashMap<String, ArrayList<String>> RTpeptides;
+    public HashMap<String, ArrayList<String>> IMpeptides = new HashMap<>();
     public List<Future> futureList = new ArrayList<>(Constants.numThreads);
 
     public MzmlReader(String filename) throws FileParsingException, ExecutionException, InterruptedException {
@@ -806,7 +808,9 @@ public class MzmlReader {
         }
 
         if (mode.equals("RT")) {
-            expAndPredRTs = LoessUtilities.getArrays(this, regressionSize, mode, 0);
+            Object[] arraysAndPeptides = LoessUtilities.getArrays(this, regressionSize, mode, 0);
+            expAndPredRTs = (HashMap<String, double[][]>) arraysAndPeptides[0];
+            RTpeptides = (HashMap<String, ArrayList<String>>) arraysAndPeptides[1];
 
             //repeat this process for each mass shift group
             for (String mass : masses) {
@@ -870,8 +874,18 @@ public class MzmlReader {
             }
         } else if (mode.equals("IM")) {
             for (int charge = 1; charge < IMFunctions.numCharges + 1; charge++) {
-                HashMap<String, double[][]> expAndPredIMs =
-                        LoessUtilities.getArrays(this, regressionSize, mode, charge);
+                Object[] arraysAndPeptides = LoessUtilities.getArrays(this, regressionSize, mode, charge);
+                HashMap<String, double[][]> expAndPredIMs = (HashMap<String, double[][]>) arraysAndPeptides[0];
+                HashMap<String, ArrayList<String>> peptideMap =
+                        (HashMap<String, ArrayList<String>>) arraysAndPeptides[1];
+                for (Map.Entry<String, ArrayList<String>> entry : peptideMap.entrySet()) {
+                    if (!IMpeptides.containsKey(entry.getKey())) {
+                        IMpeptides.put(entry.getKey(), new ArrayList<>());
+                    }
+                    ArrayList<String> peptides = IMpeptides.get(entry.getKey());
+                    peptides.addAll(entry.getValue());
+                    IMpeptides.put(entry.getKey(), peptides);
+                }
                 HashMap<String, Function1<Double, Double>> IMLOESSmap = new HashMap<>();
 
                 for (String mass : masses) {

@@ -55,7 +55,9 @@ public class RTFunctions {
     //assumes peptide objects already set
     //TODO: only supporting getting PSMs for supported PTMs
     public static float[] getBetas(MzmlReader mzml, int RTregressionSize) throws FileParsingException {
-        double[][] RTs = LoessUtilities.getArrays(mzml, RTregressionSize, "RT", 0).get("");
+        HashMap<String, double[][]> arrays = (HashMap<String, double[][]>)
+                LoessUtilities.getArrays(mzml, RTregressionSize, "RT", 0)[0];
+        double[][] RTs = arrays.get("");
         return StatMethods.linearRegression(RTs[0], RTs[1]);
     }
 

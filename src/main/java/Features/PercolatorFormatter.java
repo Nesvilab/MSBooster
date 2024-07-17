@@ -23,10 +23,13 @@ import static utils.Print.printInfo;
 import com.google.common.collect.Range;
 import com.google.common.collect.RangeMap;
 import com.google.common.collect.TreeRangeMap;
+import kotlin.jvm.functions.Function1;
 import org.apache.commons.lang3.ArrayUtils;
 import umich.ms.fileio.exceptions.FileParsingException;
 
+import java.io.BufferedWriter;
 import java.io.File;
+import java.io.FileWriter;
 import java.io.IOException;
 import java.sql.SQLException;
 import java.util.*;
@@ -518,8 +521,45 @@ public class PercolatorFormatter {
                         }
                     }
                     if (plot) {
-                        new RTCalibrationFigure(mzml, pinFiles[i].getCanonicalPath(), 0.2f,
+                        CalibrationFigure cf = new RTCalibrationFigure(mzml, pinFiles[i].getCanonicalPath(), 0.2f,
                                 mzml.expAndPredRTs, mzml.RTLOESS);
+
+                        //individual figures by mass
+                        //separate figures
+                        for (String mass : mzml.expAndPredRTs.keySet()) {
+                            if (!mass.isEmpty()) {
+                                HashMap<String, double[][]> miniMassToData = new HashMap<>();
+                                miniMassToData.put(mass, mzml.expAndPredRTs.get(mass));
+                                HashMap<String, Function1<Double, Double>> miniLoessFunctions = new HashMap<>();
+                                miniLoessFunctions.put(mass, mzml.RTLOESS.get(mass));
+                                new RTCalibrationFigure(mzml,
+                                        pinFiles[i].getCanonicalPath().substring(0,
+                                                pinFiles[i].getCanonicalPath().length() - 4) + "_" + mass + ".pin",
+                                        0.2f, miniMassToData, miniLoessFunctions);
+                            }
+                        }
+
+                        //write peptides used
+                        File f = new File(pinFiles[i].getCanonicalPath());
+                        String calibrationPeptideFilePathBase =
+                                f.getParent() + File.separator + "MSBooster_plots" + File.separator + cf.folderString +
+                                File.separator + f.getName().substring(0, f.getName().length() - 4) +
+                                "_RTcalibrationPeptides";
+                        for (Map.Entry<String, ArrayList<String>> entry : mzml.RTpeptides.entrySet()) {
+                            String calibrationPeptideFilePath = calibrationPeptideFilePathBase;
+                            if (!entry.getKey().isEmpty()) {
+                                calibrationPeptideFilePath += "_" + entry.getKey();
+                            }
+                            try (BufferedWriter writer = new BufferedWriter(
+                                    new FileWriter(calibrationPeptideFilePath + ".txt"))) {
+                                for (String peptide : entry.getValue()) {
+                                    writer.write(peptide);
+                                    writer.newLine();
+                                }
+                            } catch (IOException e) {
+                                e.printStackTrace();
+                            }
+                        }
                     }
                 }
                 if (featuresList.contains("deltaRTlinear")) {
@@ -564,6 +604,8 @@ public class PercolatorFormatter {
                     mzml.setLOESS(Constants.imLoessRegressionSize, Constants.loessBandwidth, Constants.robustIters, "IM");
                     mzml.predictIMLOESS(executorService);
 
+                    CalibrationFigure cf = null;
+                    boolean writePeptides = false;
                     for (int charge : mzml.expAndPredIMsHashMap.keySet()) {
                         boolean plot = false;
                         for (Map.Entry<String, double[][]> entry : mzml.expAndPredIMsHashMap.get(charge).entrySet()) {
@@ -573,8 +615,47 @@ public class PercolatorFormatter {
                             }
                         }
                         if (plot) {
-                            new IMCalibrationFigure(mzml, pinFiles[i].getCanonicalPath(), 0.2f,
+                            cf = new IMCalibrationFigure(mzml, pinFiles[i].getCanonicalPath(), 0.2f,
                                     mzml.expAndPredIMsHashMap.get(charge), mzml.IMLOESS.get(charge - 1), charge);
+                            writePeptides = true;
+
+                            //individual figures by mass
+                            //separate figures
+                            for (String mass : mzml.expAndPredIMsHashMap.get(charge).keySet()) {
+                                if (!mass.isEmpty()) {
+                                    HashMap<String, double[][]> miniMassToData = new HashMap<>();
+                                    miniMassToData.put(mass, mzml.expAndPredIMsHashMap.get(charge).get(mass));
+                                    HashMap<String, Function1<Double, Double>> miniLoessFunctions = new HashMap<>();
+                                    miniLoessFunctions.put(mass, mzml.IMLOESS.get(charge - 1).get(mass));
+                                    new IMCalibrationFigure(mzml,
+                                            pinFiles[i].getCanonicalPath().substring(0,
+                                                    pinFiles[i].getCanonicalPath().length() - 4) + "_" + mass + ".pin",
+                                            0.2f, miniMassToData, miniLoessFunctions, charge);
+                                }
+                            }
+                        }
+                    }
+                    if (writePeptides) {
+                        //write peptides used
+                        File f = new File(pinFiles[i].getCanonicalPath());
+                        String calibrationPeptideFilePathBase =
+                                f.getParent() + File.separator + "MSBooster_plots" + File.separator + cf.folderString +
+                                        File.separator + f.getName().substring(0, f.getName().length() - 4) +
+                                        "_IMcalibrationPeptides";
+                        for (Map.Entry<String, ArrayList<String>> entry : mzml.IMpeptides.entrySet()) {
+                            String calibrationPeptideFilePath = calibrationPeptideFilePathBase;
+                            if (!entry.getKey().isEmpty()) {
+                                calibrationPeptideFilePath += "_" + entry.getKey();
+                            }
+                            try (BufferedWriter writer = new BufferedWriter(
+                                    new FileWriter(calibrationPeptideFilePath + ".txt"))) {
+                                for (String peptide : entry.getValue()) {
+                                    writer.write(peptide);
+                                    writer.newLine();
+                                }
+                            } catch (IOException e) {
+                                e.printStackTrace();
+                            }
                         }
                     }
                 }

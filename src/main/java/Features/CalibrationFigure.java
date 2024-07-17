@@ -33,6 +33,7 @@ public class CalibrationFigure {
     String charge;
     public CalibrationFigure() {}
 
+    //TODO: repeat but with single entries at a time, with different outFile names
     public void plotFigure(MzmlReader mzml, String outFile, float opacity,
                            HashMap<String, double[][]> massToData,
                            HashMap<String, Function1<Double, Double>> loessFunctions) throws IOException {

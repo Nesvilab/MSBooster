@@ -71,8 +71,9 @@ public class LoessUtilities {
 
     //utility for getBetas and LOESS
     //returns exp and pred RT arrays
-    public static HashMap<String, double[][]> getArrays(MzmlReader mzml, int regressionSize, String mode, int charge)
+    public static Object[] getArrays(MzmlReader mzml, int regressionSize, String mode, int charge)
             throws FileParsingException {
+        //returns HashMap<String, double[][]> for arrays, and HashMap<String, ArrayList<String>> for peptides
         ArrayList<Float> expValues = new ArrayList<>();
         ArrayList<Float> predValues = new ArrayList<>();
         ArrayList<Float> eScores = new ArrayList<>(); //for sorting
@@ -146,15 +147,18 @@ public class LoessUtilities {
             massesList.add("");
         }
 
+        HashMap<String, ArrayList<String>> peptideMap = new HashMap<>();
         for (String mass : massesList) {
             ArrayList<Float> thisExpValues = new ArrayList<>();
             ArrayList<Float> thisPredValues = new ArrayList<>();
             ArrayList<Float> thisEscores = new ArrayList<>();
+            ArrayList<String> finalPeptides = new ArrayList<>();
             //get PSMs specific to this mass
             if (mass.isEmpty()) {
                 thisExpValues = expValues;
                 thisPredValues = predValues;
                 thisEscores = eScores;
+                finalPeptides = peptides;
             } else if (mass.equals("others")) {
                 for (int i = 0; i < peptides.size(); i++) {
                     boolean peptideContains = false;
@@ -175,6 +179,7 @@ public class LoessUtilities {
                         thisExpValues.add(expValues.get(i));
                         thisPredValues.add(predValues.get(i));
                         thisEscores.add(eScores.get(i));
+                        finalPeptides.add(peptides.get(i));
                     }
                 }
             } else {
@@ -185,6 +190,7 @@ public class LoessUtilities {
                             thisExpValues.add(expValues.get(i));
                             thisPredValues.add(predValues.get(i));
                             thisEscores.add(eScores.get(i));
+                            finalPeptides.add(peptides.get(i));
                             break;
                         }
                     }
@@ -231,11 +237,14 @@ public class LoessUtilities {
                 int[] sortedIndices2 = Arrays.copyOfRange(sortedIndices, 0, regressionSize);
 
                 double[][] thisValues = new double[2][regressionSize];
+                ArrayList<String> newFinalPeptides = new ArrayList<>();
                 for (int i = 0; i < regressionSize; i++) {
                     int idx = sortedIndices2[i];
                     thisValues[0][i] = thisExpValues.get(idx);
                     thisValues[1][i] = thisPredValues.get(idx);
+                    newFinalPeptides.add(finalPeptides.get(idx));
                 }
+                finalPeptides = newFinalPeptides;
                 massToDataMap.put(mass, thisValues);
             } else {
                 if (mass.isEmpty()) {
@@ -248,7 +257,9 @@ public class LoessUtilities {
                 thisValues[1] = thisPredValues.stream().mapToDouble(i -> i).toArray();
                 massToDataMap.put(mass, thisValues);
             }
+
+            peptideMap.put(mass, finalPeptides);
         }
-        return massToDataMap;
+        return new Object[] {massToDataMap, peptideMap};
     }
 }

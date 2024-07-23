@@ -81,7 +81,6 @@ public class MzmlReader {
         scans.setDataSource(source);
         source.setNumThreadsForParsing(Constants.numThreads);
 
-        scans.loadData(LCMSDataSubset.STRUCTURE_ONLY);
         getInstrument();
         //this.getMzFreq(); only if we end up using weights
     }
@@ -176,6 +175,7 @@ public class MzmlReader {
 
         if (Constants.instrument.isEmpty()) {
             try {
+                scans.loadData(LCMSDataSubset.STRUCTURE_ONLY);
                 String model = scans.getRunInfo().getDefaultInstrument().getModel();
                 String analyzer = scans.getRunInfo().getDefaultInstrument().getAnalyzer();
                 for (String k : LumosKeys) {
@@ -224,6 +224,10 @@ public class MzmlReader {
                         "or 'instrument=' in the param file.");
                 Constants.instrument = "Lumos";
                 return "Lumos"; //default if nothing found
+            } catch (FileParsingException e) {
+                e.printStackTrace();
+                System.exit(1);
+                return "";
             }
         } else {
             return Constants.instrument;

@@ -396,7 +396,8 @@ public class PinReader {
         while (next(true)) {
             PeptideFormatter pf = getPep();
             if ((modelFormat.contains("Prosit") || modelFormat.contains("ms2pip") || modelFormat.contains("Deeplc"))
-                    && pf.stripped.contains("U")) { // no peptides with U
+                    && (pf.stripped.contains("U") || pf.stripped.contains("B") || pf.stripped.contains("J") ||
+                    pf.stripped.contains("O") || pf.stripped.contains("X") || pf.stripped.contains("Z"))) {
                 continue;
             }
             if (modelFormat.contains("ms2pip") && pf.stripped.length() > 30) { //peptide has length limit

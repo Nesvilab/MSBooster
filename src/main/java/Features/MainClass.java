@@ -41,7 +41,7 @@ public class MainClass {
     public static ScheduledThreadPoolExecutor executorService;
     public static void main(String[] args) throws Exception {
         Locale.setDefault(Locale.US);
-        printInfo("MSBooster v1.2.38");
+        printInfo("MSBooster v1.2.39");
 
         try {
             //accept command line inputs
@@ -288,6 +288,36 @@ public class MainClass {
                                 break;
                             case "mass_diff_to_variable_mod":
                                 params.put("massDiffToVariableMod", val);
+                                break;
+                            case "add_B_user_amino_acid":
+                                if (! val.equals("0.0")) {
+                                    MassCalculator.AAmap.put('B', Float.valueOf(val));
+                                }
+                                break;
+                            case "add_J_user_amino_acid":
+                                if (! val.equals("0.0")) {
+                                    MassCalculator.AAmap.put('J', Float.valueOf(val));
+                                }
+                                break;
+                            case "add_O_user_amino_acid":
+                                if (! val.equals("0.0")) {
+                                    MassCalculator.AAmap.put('O', Float.valueOf(val));
+                                }
+                                break;
+                            case "add_U_user_amino_acid":
+                                if (! val.equals("0.0")) {
+                                    MassCalculator.AAmap.put('U', Float.valueOf(val));
+                                }
+                                break;
+                            case "add_Z_user_amino_acid":
+                                if (! val.equals("0.0")) {
+                                    MassCalculator.AAmap.put('Z', Float.valueOf(val));
+                                }
+                                break;
+                            case "add_X_user_amino_acid":
+                                if (! val.equals("0.0")) {
+                                    MassCalculator.AAmap.put('X', Float.valueOf(val));
+                                }
                                 break;
                         }
                     }

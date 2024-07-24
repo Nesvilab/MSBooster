@@ -53,7 +53,7 @@ public class MassCalculator {
 
     //TODO: get immonium ion masses by taking amino acid and subtracting 26.99 Da. This holds for modified AA too (Falick et al 1993)
     //TODO: should we consider related ions, not just immonium?
-    public final HashMap<Character, Float> AAmap = new HashMap<Character, Float>()
+    public static HashMap<Character, Float> AAmap = new HashMap<Character, Float>()
     {{
         put('A', 71.03711f);
         put('R', 156.10111f);
@@ -80,6 +80,7 @@ public class MassCalculator {
         put('Z', 0f);
         put('B', 0f);
         put('X', 0f);
+        put('J', 0f);
     }};
 
     private final HashMap<String, double[]> series = new HashMap<>();

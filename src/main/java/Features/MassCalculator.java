@@ -75,7 +75,7 @@ public class MassCalculator {
         put('W', 186.07931f);
         put('Y', 163.06333f);
         put('V', 99.06841f);
-        put('O', 255.15829f);
+        put('O', 237.14773f);
         put('U', 150.95363f);
         put('Z', 0f);
         put('B', 0f);

@@ -7,3 +7,7 @@ pinPepXMLDirectory =
 KoinaURL =
 rtModel =
 spectraModel =
+imModel =
+findBestSpectaModel = false
+findBestRtModel = false
+findBestImModel = false

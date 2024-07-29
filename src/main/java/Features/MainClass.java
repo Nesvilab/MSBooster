@@ -41,7 +41,7 @@ public class MainClass {
     public static ScheduledThreadPoolExecutor executorService;
     public static void main(String[] args) throws Exception {
         Locale.setDefault(Locale.US);
-        printInfo("MSBooster v1.2.39");
+        printInfo("MSBooster v1.2.40");
 
         try {
             //accept command line inputs
@@ -203,7 +203,7 @@ public class MainClass {
             if (params.containsKey("fragger")) { //upload fasta digestion params from fragger file. Does not use PTM info. Will override paramsList
                 if (!params.get("fragger").equals("null")) {
                     String line;
-                    boolean DaToPPM = false;
+                    boolean ppmToDa = false; //set Da tolernace once all parameters read in. No guarantee which param is read first
                     BufferedReader reader = new BufferedReader(new FileReader(params.get("fragger")));
                     while ((line = reader.readLine()) != null) {
                         String[] lineSplit = line.split("#")[0].split("=");
@@ -218,7 +218,7 @@ public class MainClass {
                                 break;
                             case "fragment_mass_units":
                                 if (val.equals("0")) {
-                                    DaToPPM = true;
+                                    ppmToDa = true;
                                 }
                                 break;
                             case "decoy_prefix":
@@ -322,18 +322,19 @@ public class MainClass {
                         }
                     }
 
-                    float tol;
-                    if (DaToPPM) {
-                        tol = (float) Math.ceil(Float.parseFloat(params.get("ppmTolerance")) * 1000f);
+                    float tol = Float.parseFloat(params.get("ppmTolerance"));
+                    if (ppmToDa) {
+                        Constants.matchWithDaltons = true;
+                        Constants.DaTolerance = tol;
+                        printInfo("Using Dalton tolerance of " + Constants.DaTolerance + " Da");
                     } else {
-                        tol = Float.parseFloat(params.get("ppmTolerance"));
+                        if (tol >= 100f) {
+                            params.put("lowResppmTolerance", String.valueOf(tol));
+                        } else {
+                            params.put("highResppmTolerance", String.valueOf(tol));
+                        }
+                        Constants.ppmTolerance = Constants.highResppmTolerance;
                     }
-                    if (tol >= 100f) {
-                        params.put("lowResppmTolerance", String.valueOf(tol));
-                    } else {
-                        params.put("highResppmTolerance", String.valueOf(tol));
-                    }
-                    Constants.ppmTolerance = Constants.highResppmTolerance;
                 }
             }
 

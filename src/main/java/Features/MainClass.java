@@ -663,6 +663,7 @@ public class MainClass {
                         }
                     }
 
+                    printInfo("Choosing RT model based on top 10 consensus method");
                     printInfo("RT model chosen is " + Constants.rtModel);
 
                     //write file that has all values for each model
@@ -843,6 +844,7 @@ public class MainClass {
                         }
                     }
 
+                    printInfo("Choosing IM model based on top 10 consensus method");
                     printInfo("IM model chosen is " + Constants.imModel);
                 }
 

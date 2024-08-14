@@ -157,11 +157,11 @@ public class MspReader implements LibraryPredictionMapper {
                     PeptideFormatter pf = null;
                     if (Constants.spectraModel.equals("Prosit") || Constants.rtModel.equals("Prosit")) {
                         pf = new PeptideFormatter(
-                                new PeptideFormatter(lineSplit2[0], lineSplit2[1], "base").prosit,
+                                new PeptideFormatter(lineSplit2[0], lineSplit2[1], "base").getProsit(),
                                 lineSplit2[1], "prosit");
                     } else if (Constants.spectraModel.equals("PrositTMT") || Constants.rtModel.equals("PrositTMT")) {
                         pf = new PeptideFormatter(
-                                new PeptideFormatter(lineSplit2[0], lineSplit2[1], "base").prositTMT,
+                                new PeptideFormatter(lineSplit2[0], lineSplit2[1], "base").getPrositTMT(),
                                 lineSplit2[1], "prosit");
                     } else {
                         printError("spectraRTPredModel must either be Prosit or PrositTMT");
@@ -173,7 +173,8 @@ public class MspReader implements LibraryPredictionMapper {
                         PredictionEntry tmp = allPreds.get(pf.baseCharge);
 
                         if (tmp == null) { //valid reasons to be empty
-                            if (PeptideSkipper.skipPeptide(pf.stripped, pf.charge)) {
+                            if (PeptideSkipper.skipPeptide(pf.getStripped(), pf.charge,
+                                    Constants.spectraModel + Constants.rtModel + Constants.imModel)) {
                                 continue;
                             }
                         }

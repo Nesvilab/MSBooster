@@ -17,6 +17,7 @@
 
 package Features;
 
+import static Features.InstrumentUtils.mapInstrumentToModelSpecific;
 import static utils.Print.printInfo;
 
 import org.apache.commons.lang3.ArrayUtils;
@@ -248,7 +249,7 @@ public class PinReader {
         ArrayList<String> peps = new ArrayList<String>();
         while (next(true)) {
             PeptideFormatter pf = getPep();
-            peps.add(pf.stripped + "\t" + pf.mods + "\t" + pf.charge);
+            peps.add(pf.getStripped() + "\t" + pf.getMods() + "\t" + pf.charge);
         }
         return peps.toArray(new String[0]);
     }
@@ -257,7 +258,7 @@ public class PinReader {
         ArrayList<String> peps = new ArrayList<String>();
         while (next(true)) {
             PeptideFormatter pf = getPep();
-            peps.add("." + "\t" + "." + "\t" + pf.stripped + "\t" + pf.mods + "\t" + pf.charge);
+            peps.add("." + "\t" + "." + "\t" + pf.getStripped() + "\t" + pf.getMods() + "\t" + pf.charge);
         }
         return peps.toArray(new String[0]);
     }
@@ -265,7 +266,7 @@ public class PinReader {
     public String[] createDeepMSPeptideList() throws IOException {
         ArrayList<String> peps = new ArrayList<String>();
         while (next(true)) {
-            peps.add(getPep().stripped);
+            peps.add(getPep().getStripped());
         }
         return peps.toArray(new String[0]);
     }
@@ -275,7 +276,7 @@ public class PinReader {
         //TreeMap<Integer, Integer> modMap = new TreeMap<>(); //sorted for future use
         while (next(true)) {
             PeptideFormatter pf = getPep();
-            peps.add(pf.diann + "\t" + pf.charge);
+            peps.add(pf.getDiann() + "\t" + pf.charge);
         }
         return peps.toArray(new String[0]);
     }
@@ -291,10 +292,10 @@ public class PinReader {
         }
         while (next(true)) {
             PeptideFormatter pf = getPep();
-            if (! pf.stripped.contains("O") && ! pf.stripped.contains("U") &&
-                    ! pf.stripped.contains("Z") && ! pf.stripped.contains("B") &&
-                    ! pf.stripped.contains("X")) {
-                peps.add(pf.predfull + "\t" + pf.charge + "\t" + Constants.FragmentationType + "\t" + Constants.NCE);
+            if (! pf.getStripped().contains("O") && ! pf.getStripped().contains("U") &&
+                    ! pf.getStripped().contains("Z") && ! pf.getStripped().contains("B") &&
+                    ! pf.getStripped().contains("X")) {
+                peps.add(pf.getPredfull() + "\t" + pf.charge + "\t" + Constants.FragmentationType + "\t" + Constants.NCE);
             }
         }
         return peps.toArray(new String[0]);
@@ -311,7 +312,7 @@ public class PinReader {
         }
         while (next(true)) {
             PeptideFormatter pf = getPep();
-            peps.add(pf.prosit + "," + Constants.NCE + "," + pf.charge);
+            peps.add(pf.getProsit() + "," + Constants.NCE + "," + pf.charge);
         }
         return peps.toArray(new String[0]);
     }
@@ -327,7 +328,7 @@ public class PinReader {
         }
         while (next(true)) {
             PeptideFormatter pf = getPep();
-            peps.add(pf.prosit + "," + Constants.NCE + "," + pf.charge + "," + Constants.FragmentationType);
+            peps.add(pf.getProsit() + "," + Constants.NCE + "," + pf.charge + "," + Constants.FragmentationType);
         }
         return peps.toArray(new String[0]);
     }
@@ -343,7 +344,7 @@ public class PinReader {
         }
         while (next(true)) {
             PeptideFormatter pf = getPep();
-            peps.add(pf.stripped + "," + pf.alphapeptdeepMods + "," + pf.modPositions + "," + pf.charge + "," +
+            peps.add(pf.getStripped() + "," + pf.getAlphapeptdeepMods() + "," + pf.getModPositions() + "," + pf.charge + "," +
                     Constants.NCE + "," + Constants.instrument + "," + pf.base);
         }
         return peps.toArray(new String[0]);
@@ -357,19 +358,19 @@ public class PinReader {
 
             if (Constants.features.contains("peptideCounts")) {
                 if (Float.valueOf(getColumn("hyperscore")) > 10) {
-                    if (Constants.peptideCounter.containsKey(pf.stripped)) {
-                        HashSet<String> peptideSet = Constants.peptideCounter.get(pf.stripped);
+                    if (Constants.peptideCounter.containsKey(pf.getStripped())) {
+                        HashSet<String> peptideSet = Constants.peptideCounter.get(pf.getStripped());
                         peptideSet.add(name);
-                        Constants.peptideCounter.put(pf.stripped, peptideSet);
+                        Constants.peptideCounter.put(pf.getStripped(), peptideSet);
                     } else {
                         HashSet<String> peptideSet = new HashSet<>();
                         peptideSet.add(name);
-                        Constants.peptideCounter.put(pf.stripped, peptideSet);
+                        Constants.peptideCounter.put(pf.getStripped(), peptideSet);
                     }
                 } else {
-                    if (! Constants.peptideCounter.containsKey(pf.stripped)) {
+                    if (! Constants.peptideCounter.containsKey(pf.getStripped())) {
                         HashSet<String> peptideSet = new HashSet<>();
-                        Constants.peptideCounter.put(pf.stripped, peptideSet);
+                        Constants.peptideCounter.put(pf.getStripped(), peptideSet);
                     }
                 }
             }
@@ -393,85 +394,35 @@ public class PinReader {
         } else if (pmm.mzmlReaders[fileI] != null) {
             mzml = pmm.mzmlReaders[fileI];
         }
+
+        //instrument restriction for unispec QE charge 1
+        boolean charge1none = false;
+        if (Constants.instrument.equals("QE") && modelFormat.contains("UniSpec")) {
+            charge1none = true;
+        }
         while (next(true)) {
             PeptideFormatter pf = getPep();
-            if ((modelFormat.contains("Prosit") || modelFormat.contains("ms2pip") || modelFormat.contains("Deeplc"))
-                    && (pf.stripped.contains("U") || pf.stripped.contains("B") || pf.stripped.contains("J") ||
-                    pf.stripped.contains("O") || pf.stripped.contains("X") || pf.stripped.contains("Z"))) {
-                continue;
-            }
-            if (modelFormat.contains("ms2pip") && pf.stripped.length() > 30) { //peptide has length limit
-                continue;
-            }
-            if (modelFormat.contains("Prosit") && modelFormat.contains("TMT") && pf.stripped.length() > 30) {
-                continue;
-            }
-            if (modelFormat.contains("Prosit") && Integer.parseInt(pf.charge) > 6) {
+            if (PeptideSkipper.skipPeptide(pf.getStripped(), pf.charge, modelFormat)) {
                 continue;
             }
 
-            String pep = pf.diann.replace("UniMod", "UNIMOD");
-            if (pep.contains("[TMT]")) {
-                pep = pep.replace("[TMT]", "[UNIMOD:737]");
+            String instrument = Constants.instrument;
+            if (modelFormat.contains("UniSpec")) {
+                instrument = mapInstrumentToModelSpecific("unispec");
             }
-
-            if (pep.startsWith("[")) { //this is the case for all n term mods //TODO deal with c term mods
-                int splitpoint = pep.indexOf("]");
-                if (modelFormat.contains("Prosit")) {
-                    if (modelFormat.contains("TMT") && pep.startsWith("[UNIMOD:737]")) {
-                        pep = pep.substring(0, splitpoint + 1) + "-" + pep.substring(splitpoint + 1);
-                    } else {
-                        pep = pep.substring(splitpoint + 1);
-                    }
-                } else {
-                    pep = pep.substring(0, splitpoint + 1) + "-" + pep.substring(splitpoint + 1);
-                }
+            if (charge1none && pf.charge.equals("1")) {
+                instrument = "NONE";
             }
-            if (modelFormat.contains("Prosit") && modelFormat.contains("TMT")) {
-                pep = pep.replace("S[UNIMOD:737]", "S");
-                if (!pep.startsWith("[")) {
-                    pep = "[UNIMOD:737]-" + pep;
-                }
-            }
-
-            if (modelFormat.contains("Prosit")) {
-                List<Integer> indices = new ArrayList<>();
-                int index = pep.indexOf("[");
-                List<Integer> endBrackets = new ArrayList<>();
-                int endBracket = pep.indexOf("]");
-                while (index != -1) {
-                    indices.add(index);
-                    index = pep.indexOf("[", index + 1);
-                    endBrackets.add(endBracket);
-                    endBracket = pep.indexOf("]", endBracket + 1);
-                }
-
-                //check all backwards and remove if not allowed
-                for (int i = indices.size() - 1; i >= 0; i--) {
-                    boolean matches = false;
-                    for (String unimodNum : PTMhandler.prositMods) {
-                        if (pep.substring(indices.get(i) + 8).startsWith(unimodNum + "]")) {
-                            matches = true;
-                            break;
-                        }
-                    }
-
-                    if (!matches) {
-                        //need to remove string
-                        pep = pep.substring(0, indices.get(i)) + pep.substring(endBrackets.get(i) + 1);
-                    }
-                }
-            }
-
+            String pep = pf.getModel(modelFormat);
             String sb = pep + "," + pf.charge + "," +  Constants.NCE + "," +
-                    Constants.instrument + "," + Constants.FragmentationType + "," + pf.stripped.length();
+                    instrument + "," + Constants.FragmentationType + "," + pf.getStripped().length();
             peps.add(sb);
         }
         return peps.toArray(new String[0]);
     }
 
     public LinkedList[] getTopPSMs(int num, boolean charge2forIM) throws IOException {
-        LinkedList<String> PSMs = new LinkedList<>();
+        LinkedList<PeptideFormatter> PSMs = new LinkedList<>();
         LinkedList<Integer> scanNums = new LinkedList<>();
 
         //quicker way of getting top NCE
@@ -501,9 +452,8 @@ public class PinReader {
             }
             float escore = Float.parseFloat(getEScore());
             if (escore <= eScoreCutoff) {
-                PeptideFormatter pf = getPep();
-                //TODO: need more generic way to handle any unimod ptm
-                PSMs.add(pf.getBaseCharge() + "," + pf.getDiann() + "," + pf.getStripped());
+                PeptideFormatter pf = getPep(); //pf.getBaseCharge() + "," + pf.getDiann() + "," + pf.getStripped()
+                PSMs.add(pf);
                 scanNums.add(getScanNum());
             }
         }

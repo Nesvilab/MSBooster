@@ -73,7 +73,7 @@ public class FeatureCalculator {
                     periodSplit[periodSplit.length - 1].split("_")[0], "pin");
             this.pep = pf.baseCharge;
             this.scanNum = Integer.parseInt(row[scanNumIdx]);
-            this.stripped = pf.stripped;
+            this.stripped = pf.getStripped();
 
             PeptideObj pepObj = null;
             try {

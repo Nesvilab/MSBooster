@@ -41,7 +41,7 @@ public class MainClass {
     public static ScheduledThreadPoolExecutor executorService;
     public static void main(String[] args) throws Exception {
         Locale.setDefault(Locale.US);
-        printInfo("MSBooster v1.2.40");
+        printInfo("MSBooster v1.2.43");
 
         try {
             //accept command line inputs
@@ -400,6 +400,15 @@ public class MainClass {
                 }
             }
 
+            //get matched pin files for mzML files
+            PinMzmlMatcher pmMatcher = new PinMzmlMatcher(Constants.mzmlDirectory, Constants.pinPepXMLDirectory);
+            //if no pin files, continue
+            if (pmMatcher.pinFiles.length == 0) {
+                printInfo("No pin files to process. Continuing without MSBooster.");
+                executorService.shutdown();
+                System.exit(0);
+            }
+
             //update fragment ion types based on fragmentation type
             //update Constants to be null initially
             Constants.fragmentIonHierarchy = Constants.makeFragmentIonHierarchy();
@@ -409,15 +418,6 @@ public class MainClass {
             Constants.predIntensitiesFeatures = Constants.makePredIntensitiesFeatures();
             Constants.individualSpectralSimilaritiesFeatures = Constants.makeIndividualSpectralSimilarities();
             Constants.intensitiesDifferenceFeatures = Constants.makeintensitiesDifference();
-
-            //get matched pin files for mzML files
-            PinMzmlMatcher pmMatcher = new PinMzmlMatcher(Constants.mzmlDirectory, Constants.pinPepXMLDirectory);
-            //if no pin files, continue
-            if (pmMatcher.pinFiles.length == 0) {
-                printInfo("No pin files to process. Continuing without MSBooster.");
-                executorService.shutdown();
-                System.exit(0);
-            }
 
             //make models properly uppercased, or throw error if not right
             HashMap<String, String> modelMapper = LowercaseModelMapper.lowercaseToModel; //TODO will be a pain to keep updating for every new model
@@ -451,8 +451,8 @@ public class MainClass {
             ) {
                 km.getTopPeptides();
                 //km.getDecoyPeptides();
-                for (String pep : km.peptideSet) {
-                    if (pep.contains(String.valueOf(PTMhandler.tmtMass))) {
+                for (PeptideFormatter pf : km.peptideArraylist) {
+                    if (pf.base.contains(String.valueOf(PTMhandler.tmtMass))) {
                         TMT = true;
                         break;
                     }
@@ -487,19 +487,21 @@ public class MainClass {
                     MyFileUtils.createWholeDirectory(jsonOutFolder);
 
                     for (String model : consideredModels) {
+                        Constants.rtModel = model;
                         PredictionEntryHashMap rtPreds = null;
                         if (model.equals("DIA-NN")) { //mode for DIA-NN
                             MyFileUtils.createWholeDirectory(jsonOutFolder + File.separator + model);
 
-                            km.writeFullPeptideFile(jsonOutFolder + File.separator + model + File.separator +
-                                    "spectraRT_full.tsv", model, km.peptideSet);
+                            PeptideFileCreator.createPartialFile(
+                                    jsonOutFolder + File.separator + model + File.separator + "spectraRT_full.tsv",
+                                    model, km.peptideArraylist);
+                            KoinaMethods.createPartialKoinaSet(model, km.peptideArraylist);
                             String inputFile = jsonOutFolder + File.separator + model + File.separator + "spectraRT.tsv";
                             FileWriter myWriter = new FileWriter(inputFile);
                             myWriter.write("peptide" + "\t" + "charge\n");
                             HashSet<String> peptides = new HashSet<>();
-                            for (String pep : km.peptideSet) {
-                                String[] pepSplit = pep.split(",");
-                                String line = pepSplit[1] + "\t" + pepSplit[0].split("\\|")[1] + "\n";
+                            for (PeptideFormatter pf : km.peptideArraylist) {
+                                String line = pf.getDiann() + "\t" + pf.charge + "\n";
                                 if (!peptides.contains(line)) {
                                     myWriter.write(line);
                                     peptides.add(line);
@@ -511,9 +513,10 @@ public class MainClass {
                             rtPreds = LibraryPredictionMapper.createLibraryPredictionMapper(
                                     predFileString, "DIA-NN", executorService).getPreds();
                         } else { //mode for koina
-                            HashSet<String> allHits = km.writeFullPeptideFile(
-                                    jsonOutFolder + File.separator + model + "_full.tsv", model,
-                                    km.peptideSet);
+                            PeptideFileCreator.createPartialFile(
+                                    jsonOutFolder + File.separator + model + "_full.tsv",
+                                    model, km.peptideArraylist);
+                            HashSet<String> allHits = KoinaMethods.createPartialKoinaSet(model, km.peptideArraylist);
                             rtPreds = km.getKoinaPredictions(allHits, model, 30,
                                     jsonOutFolder + File.separator + model,
                                     jsonOutFolder + File.separator + model + "_full.tsv");
@@ -525,12 +528,12 @@ public class MainClass {
                         for (int j = 0; j < pmMatcher.mzmlReaders.length; j++) {
                             MzmlReader mzmlReader = pmMatcher.mzmlReaders[j];
                             LinkedList<Integer> thisScanNums = km.scanNums.get(pmMatcher.mzmlFiles[j].getName());
-                            LinkedList<String> thisPeptides = km.peptides.get(pmMatcher.mzmlFiles[j].getName());
+                            LinkedList<PeptideFormatter> thisPeptides = km.peptides.get(pmMatcher.mzmlFiles[j].getName());
 
                             for (int k = 0; k < thisScanNums.size(); k++) {
                                 try {
                                     int scanNum = thisScanNums.get(k);
-                                    String peptide = thisPeptides.get(k).split(",")[0];
+                                    String peptide = thisPeptides.get(k).getBaseCharge();
                                     MzmlScanNumber msn = mzmlReader.getScanNumObject(scanNum);
 
                                     float predRT = rtPreds.get(peptide).RT;
@@ -738,19 +741,21 @@ public class MainClass {
                     MyFileUtils.createWholeDirectory(jsonOutFolder);
 
                     for (String model : consideredModels) {
+                        Constants.imModel = model;
                         PredictionEntryHashMap imPreds = null;
                         if (model.equals("DIA-NN")) { //mode for DIA-NN
                             MyFileUtils.createWholeDirectory(jsonOutFolder + File.separator + model);
 
-                            km.writeFullPeptideFile(jsonOutFolder + File.separator + model + File.separator +
-                                    "spectraRT_full.tsv", model, km.peptideSetIM);
+                            PeptideFileCreator.createPartialFile(
+                                    jsonOutFolder + File.separator + model + File.separator + "spectraRT_full.tsv",
+                                    model, km.peptideArrayListIM);
+                            KoinaMethods.createPartialKoinaSet(model, km.peptideArrayListIM);
                             String inputFile = jsonOutFolder + File.separator + model + File.separator + "spectraRT.tsv";
                             FileWriter myWriter = new FileWriter(inputFile);
                             myWriter.write("peptide" + "\t" + "charge\n");
                             HashSet<String> peptides = new HashSet<>();
-                            for (String pep : km.peptideSetIM) {
-                                String[] pepSplit = pep.split(",");
-                                String line = pepSplit[1] + "\t" + pepSplit[0].split("\\|")[1] + "\n";
+                            for (PeptideFormatter pf : km.peptideArrayListIM) {
+                                String line = pf.getDiann() + "\t" + pf.charge + "\n";
                                 if (!peptides.contains(line)) {
                                     myWriter.write(line);
                                     peptides.add(line);
@@ -762,9 +767,10 @@ public class MainClass {
                             imPreds = LibraryPredictionMapper.createLibraryPredictionMapper(
                                     predFileString, "DIA-NN", executorService).getPreds();
                         } else { //mode for koina
-                            HashSet<String> allHits = km.writeFullPeptideFile(
-                                    jsonOutFolder + File.separator + model + "_full.tsv", model,
-                                    km.peptideSetIM);
+                            PeptideFileCreator.createPartialFile(
+                                    jsonOutFolder + File.separator + model + "_full.tsv",
+                                    model, km.peptideArrayListIM);
+                            HashSet<String> allHits = KoinaMethods.createPartialKoinaSet(model, km.peptideArrayListIM);
                             imPreds = km.getKoinaPredictions(allHits, model, 30,
                                     jsonOutFolder + File.separator + model,
                                     jsonOutFolder + File.separator + model + "_full.tsv");
@@ -776,12 +782,12 @@ public class MainClass {
                         for (int j = 0; j < pmMatcher.mzmlReaders.length; j++) {
                             MzmlReader mzmlReader = pmMatcher.mzmlReaders[j];
                             LinkedList<Integer> thisScanNums = km.scanNumsIM.get(pmMatcher.mzmlFiles[j].getName());
-                            LinkedList<String> thisPeptides = km.peptidesIM.get(pmMatcher.mzmlFiles[j].getName());
+                            LinkedList<PeptideFormatter> thisPeptides = km.peptidesIM.get(pmMatcher.mzmlFiles[j].getName());
 
                             for (int k = 0; k < thisScanNums.size(); k++) {
                                 try {
                                     int scanNum = thisScanNums.get(k);
-                                    String peptide = thisPeptides.get(k).split(",")[0];
+                                    String peptide = thisPeptides.get(k).getBaseCharge();
                                     MzmlScanNumber msn = mzmlReader.getScanNumObject(scanNum);
 
                                     float predIM = imPreds.get(peptide).IM;
@@ -889,17 +895,19 @@ public class MainClass {
                     HashMap<String, ArrayList<Double>> datapoints = new HashMap<>();
                     HashMap<String, ArrayList<Double>> datapointsDecoys = new HashMap<>();
                     for (String model : consideredModels) {
+                        Constants.spectraModel = model;
                         MyFileUtils.createWholeDirectory(jsonOutFolder + File.separator + model);
                         if (model.equals("DIA-NN")) { //mode for DIA-NN
-                            km.writeFullPeptideFile(jsonOutFolder + File.separator + model + File.separator +
-                                    "spectraRT_full.tsv", model, km.peptideSet);
+                            PeptideFileCreator.createPartialFile(
+                                    jsonOutFolder + File.separator + model + File.separator + "spectraRT_full.tsv",
+                                    model, km.peptideArraylist);
+                            KoinaMethods.createPartialKoinaSet(model, km.peptideArraylist);
                             String inputFile = jsonOutFolder + File.separator + model + File.separator + "spectraRT.tsv";
                             FileWriter myWriter = new FileWriter(inputFile);
                             myWriter.write("peptide" + "\t" + "charge\n");
                             HashSet<String> peptides = new HashSet<>();
-                            for (String pep : km.peptideSet) {
-                                String[] pepSplit = pep.split(",");
-                                String line = pepSplit[1] + "\t" + pepSplit[0].split("\\|")[1] + "\n";
+                            for (PeptideFormatter pf : km.peptideArraylist) {
+                                String line = pf.getDiann() + "\t" + pf.charge + "\n";
                                 if (!peptides.contains(line)) {
                                     myWriter.write(line);
                                     peptides.add(line);
@@ -959,9 +967,9 @@ public class MainClass {
 //                            } catch (Exception e) {}
                         } else { //mode for koina
                             if (Constants.nceModels.contains(model)) {
-                                Object[] results = NCEcalibrator.calibrateNCE(model, new ArrayList<>(), km,
+                                Object[] results = NCEcalibrator.calibrateNCE(model, km,
                                         Constants.outputDirectory + File.separator + "best_model" +
-                                                File.separator + model, km.peptideSet,
+                                                File.separator + model, km.peptideArraylist,
                                         km.scanNums, km.peptides);
                                 medianSimilarities.put(model + "&" + results[2], (Double) results[1]);
                                 int bestNCE = (int) results[2];
@@ -987,8 +995,10 @@ public class MainClass {
 //                                    datapointsDecoys.put(model, similarity);
 //                                } catch (Exception e) {}
                             } else {
-                                HashSet<String> allHits = km.writeFullPeptideFile(jsonOutFolder +
-                                        File.separator + model + "_full.tsv", model, km.peptideSet);
+                                PeptideFileCreator.createPartialFile(
+                                        jsonOutFolder + File.separator + model + "_full.tsv",
+                                        model, km.peptideArraylist);
+                                HashSet<String> allHits = KoinaMethods.createPartialKoinaSet(model, km.peptideArraylist);
                                 PredictionEntryHashMap allPreds =
                                         km.getKoinaPredictions(allHits, model, 30,
                                                 jsonOutFolder + File.separator + model,
@@ -1103,26 +1113,26 @@ public class MainClass {
             }
             Constants.foundBest = true;
 
-            if (Constants.adaptiveFragmentNum) {
-                Constants.topFragments = 36; //TODO think of better way than hardcoding
-            } else if (Constants.divideFragments.equals("1")) { //standard setting of yb vs others
-                Constants.divideFragments = "y_b;immonium_a_y-NL_b-NL_a-NL_internal_internal-NL_unknown";
-                Constants.topFragments = 12;
-            } else if (Constants.divideFragments.equals("2")) {
-                Constants.divideFragments = "y;b;immonium;a;y-NL;b-NL;a-NL;internal;internal-NL;unknown";
-                Constants.topFragments = 6;
-            } else if (Constants.divideFragments.equals("3")) { //standard setting of yb vs others
-                Constants.divideFragments = "y_b_y-NL_b-NL;immonium_a_a-NL_internal_internal-NL_unknown";
-                Constants.topFragments = 12;
-            } else if (Constants.divideFragments.equals("4")) { //etd
-                Constants.divideFragments = "c_z;zdot_y_unknown";
-                Constants.topFragments = 12;
-            } else if (Constants.divideFragments.equals("5")) { //ethcd
-                Constants.divideFragments = "b_y_c_z;immonium_a_cdot_zdot_y-NL_b-NL_a-NL_internal_internal-NL_unknown";
-                Constants.topFragments = 12;
-            } else if (Constants.divideFragments.equals("0") && Constants.spectraModel.equals("DIA-NN")) {
-                Constants.topFragments = 20; //TODO: automatically find best number of fragments to use
-            }
+//            if (Constants.adaptiveFragmentNum) {
+//                Constants.topFragments = 36; //TODO think of better way than hardcoding
+//            } else if (Constants.divideFragments.equals("1")) { //standard setting of yb vs others
+//                Constants.divideFragments = "y_b;immonium_a_y-NL_b-NL_a-NL_internal_internal-NL_unknown";
+//                Constants.topFragments = 12;
+//            } else if (Constants.divideFragments.equals("2")) {
+//                Constants.divideFragments = "y;b;immonium;a;y-NL;b-NL;a-NL;internal;internal-NL;unknown";
+//                Constants.topFragments = 6;
+//            } else if (Constants.divideFragments.equals("3")) { //standard setting of yb vs others
+//                Constants.divideFragments = "y_b_y-NL_b-NL;immonium_a_a-NL_internal_internal-NL_unknown";
+//                Constants.topFragments = 12;
+//            } else if (Constants.divideFragments.equals("4")) { //etd
+//                Constants.divideFragments = "c_z;zdot_y_unknown";
+//                Constants.topFragments = 12;
+//            } else if (Constants.divideFragments.equals("5")) { //ethcd
+//                Constants.divideFragments = "b_y_c_z;immonium_a_cdot_zdot_y-NL_b-NL_a-NL_internal_internal-NL_unknown";
+//                Constants.topFragments = 12;
+//            } else if (Constants.divideFragments.equals("0") && Constants.spectraModel.equals("DIA-NN")) {
+//                Constants.topFragments = 20; //TODO: automatically find best number of fragments to use
+//            }
 
             //check that at least pinPepXMLDirectory and mzmlDirectory are provided
             if (Constants.pinPepXMLDirectory == null) {
@@ -1372,9 +1382,9 @@ public class MainClass {
                         if (Constants.KoinaModels.contains(currentModel)) {
                             if (Constants.KoinaMS2models.contains(currentModel) && Constants.calibrateNCE &&
                                     Constants.nceModels.contains(currentModel)) {
-                                Object[] modelInfo = NCEcalibrator.calibrateNCE(currentModel, models, km,
+                                Object[] modelInfo = NCEcalibrator.calibrateNCE(currentModel, km,
                                         Constants.outputDirectory + File.separator + "NCE_calibration",
-                                        km.peptideSet, km.scanNums, km.peptides);
+                                        km.peptideArraylist, km.scanNums, km.peptides);
                                 Constants.NCE = String.valueOf((int) modelInfo[2]);
                                 NCEcalibrator.plotNCEchart((TreeMap<Integer, ArrayList<Double>>) modelInfo[0]);
                             }

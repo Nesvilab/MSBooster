@@ -45,7 +45,7 @@ public class JSONWriter {
     int iteration = -1;
     public List<Future> futureList = new ArrayList<>(Constants.numThreads);
 
-    public static final int maxJsonLength = 1000;
+    public static int maxJsonLength = 1000;
 
     public JSONWriter(String url, HashSet<String> entries, boolean fullSet) {
         this.url = url;
@@ -59,6 +59,11 @@ public class JSONWriter {
         }
         if (Constants.KoinaTMTmodels.contains(url)) {
             TMT = true;
+        }
+        if (model.equals("unispec")) {
+            maxJsonLength = 500; //output is big, need smaller files
+        } else {
+            maxJsonLength = 1000;
         }
 
         //set entries
@@ -176,6 +181,7 @@ public class JSONWriter {
                 case "prosit":
                 case "ms2pip":
                 case "deeplc":
+                case "unispec":
                     // Create the JSON data structure
                     JSONObject jsonData = new JSONObject();
                     jsonData.put("id", "0");
@@ -236,7 +242,7 @@ public class JSONWriter {
                         }
 
                         //instrument types
-                        if (model.equals("alphapept")) {
+                        if (model.equals("alphapept") || model.equals("unispec")) {
                             JSONObject instrumentObject = new JSONObject();
                             instrumentObject.put("name", "instrument_types");
                             instrumentObject.put("shape", new JSONArray("[" + peptides.length + ",1]"));

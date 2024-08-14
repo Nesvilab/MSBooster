@@ -19,13 +19,7 @@ package Features;
 
 import static utils.Print.printError;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Set;
-import java.util.SortedMap;
-import java.util.TreeMap;
+import java.util.*;
 
 public class MassCalculator {
     public final float proton = 1.00727647f;
@@ -87,7 +81,36 @@ public class MassCalculator {
     Set<String> leftIons = new HashSet<>(Arrays.asList("a", "b", "c", "cdot"));
     Set<String> rightIons = new HashSet<>(Arrays.asList("x", "y", "z", "zdot"));
 
-    //first formatting DIA-NN format to common one
+    private static HashMap<Integer, String> makeFlagTOion() {
+        HashMap<Integer, String> map = new HashMap<>();
+        map.put(0, "b");
+        map.put(1, "y");
+        map.put(2, "b-NL");
+        map.put(3, "y-NL");
+        map.put(4, "a");
+        map.put(5, "x");
+        map.put(6, "a-NL");
+        map.put(7, "x-NL");
+        map.put(8, "c");
+        map.put(9, "z");
+        map.put(10, "c-NL");
+        map.put(11, "z-NL");
+        map.put(12, "imm"); //immonium
+        map.put(13, "int"); //internal
+        map.put(14, "p"); //precursor
+        return map;
+    }
+    public static HashMap<Integer, String> flagTOion = makeFlagTOion();
+
+    private static HashMap<String, Integer> makeIonToFlag() {
+        HashMap<String, Integer> map = new HashMap<>();
+        for (Map.Entry<Integer, String> entry : flagTOion.entrySet()) {
+            map.put(entry.getValue(), entry.getKey());
+        }
+        return map;
+    }
+    public static HashMap<String, Integer> ionTOflag = makeIonToFlag();
+
     public MassCalculator(String pep, Object charge) {
         fullPeptide = pep + "|" + charge;
 

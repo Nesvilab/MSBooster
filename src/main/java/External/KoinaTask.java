@@ -119,7 +119,7 @@ public class KoinaTask implements Callable<Boolean> {
                 if (failedAttempts == Constants.numKoinaAttempts) {
                     if (Constants.foundBest) {
                         printError(jsonFilePath + " had the following output: ");
-                        printError(response.toString());
+                        printError(response.toString()); //TODO need actual message
                         printError("Retried calling " + jsonFilePath + " " + failedAttempts + " times.");
                         printError("Exiting");
                         System.exit(1);

@@ -35,10 +35,10 @@ import umich.ms.fileio.exceptions.FileParsingException;
 
 public class NCEcalibrator {
     public static Object[] calibrateNCE(String currentModel,
-                                        ArrayList<String> models, KoinaMethods km, String jsonOutFolder,
-                                        HashSet<String> peptideSet,
+                                        KoinaMethods km, String jsonOutFolder,
+                                        ArrayList<PeptideFormatter> peptideFormatterArrayList,
                                         HashMap<String, LinkedList<Integer>> scanNums,
-                                        HashMap<String, LinkedList<String>> peptides)
+                                        HashMap<String, LinkedList<PeptideFormatter>> peptides)
             throws IOException, ExecutionException, InterruptedException {
         TreeMap<Integer, ArrayList<Double>> similarities = new TreeMap<>();
         double bestMedianDouble = 0d;
@@ -51,8 +51,9 @@ public class NCEcalibrator {
 
             //write full.tsv
             //get peptides formatted for jsonwriter
-            HashSet<String> allHits = km.writeFullPeptideFile(
-                    jsonOutFolder + File.separator + "NCE_calibration_full.tsv", currentModel, peptideSet);
+            PeptideFileCreator.createPartialFile(jsonOutFolder + File.separator + "NCE_calibration_full.tsv",
+                    currentModel, peptideFormatterArrayList);
+            HashSet<String> allHits = KoinaMethods.createPartialKoinaSet(currentModel, peptideFormatterArrayList);
 
             //iterate through every NCE
             //TODO: make this into one method, taking a model and iterating through all NCEs

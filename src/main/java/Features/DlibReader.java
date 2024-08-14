@@ -167,10 +167,10 @@ public class DlibReader implements LibraryPredictionMapper {
                 } else { //add modified peptides as needed
                     //if basecharge names are not the same, but stripped name is the same, add new entry
                     PeptideFormatter pf = pin.getPep();
-                    if ((allPreds.containsKey(pf.dlib)) && (!allPreds.containsKey(pf.baseCharge))) {
+                    if ((allPreds.containsKey(pf.getDlib())) && (!allPreds.containsKey(pf.baseCharge))) {
                         //get predictionEntry
-                        PredictionEntry tmp = allPreds.get(pf.dlib);
-                        MassCalculator mc = new MassCalculator(pf.dlib.split("\\|")[0], pf.charge);
+                        PredictionEntry tmp = allPreds.get(pf.getDlib());
+                        MassCalculator mc = new MassCalculator(pf.getDlib().split("\\|")[0], pf.charge);
                         String[][] info = mc.annotateMZs(tmp.mzs);
                         String[] annotations = info[0];
 
@@ -185,7 +185,7 @@ public class DlibReader implements LibraryPredictionMapper {
                             ArrayList<Float> finalmz = new ArrayList<>();
                             for (String anno : colonSplit) {
                                 if (anno.equals("unknown")) {
-                                    printInfo(pf.dlib);
+                                    printInfo(pf.getDlib());
                                     printInfo(Arrays.toString(annotations));
                                     printInfo(Arrays.toString(tmp.mzs));
                                     printInfo(mc.fragmentIons.keySet().toString());

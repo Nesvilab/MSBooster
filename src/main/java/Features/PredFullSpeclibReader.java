@@ -77,13 +77,13 @@ public class PredFullSpeclibReader extends MgfFileReader {
                 continue;
             }
 
-            PeptideFormatter peptideToSearch = new PeptideFormatter(formattedPeptide.predfull,
+            PeptideFormatter peptideToSearch = new PeptideFormatter(formattedPeptide.getPredfull(),
                     lSplit[1], "predfull");
 
             PredictionEntry pe = this.allPredsHashMap.get(peptideToSearch.baseCharge);
 
             if (pe == null) { //valid reasons to be empty
-                if (PeptideSkipper.skipPeptide(peptideToSearch.stripped, peptideToSearch.charge)) {
+                if (PeptideSkipper.skipPeptide(peptideToSearch.getStripped(), peptideToSearch.charge, "predfull")) {
                     continue;
                 }
             }

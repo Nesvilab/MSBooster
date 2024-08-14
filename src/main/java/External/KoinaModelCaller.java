@@ -53,6 +53,9 @@ public class KoinaModelCaller {
     private static final int ms2pipMzIdx = 1;
     private static final int ms2pipIntIdx = 2;
     private static final int ms2pipFragIdx = 0;
+    private static final int unispecMzIdx = 1;
+    private static final int unispecIntIdx = 0;
+    private static final int unispecFragIdx = 2;
     private static String modelType;
     private static String finalModel;
     private static AtomicBoolean emptyUrl = new AtomicBoolean(false);
@@ -69,6 +72,9 @@ public class KoinaModelCaller {
             System.exit(1);
         }
         modelType = model.toLowerCase().split("_")[0];
+        if (modelType.equals("prosit") && model.contains("TMT")) {
+            modelType = "prosittmt";
+        }
         finalModel = model;
 
         if (verbose) {
@@ -255,6 +261,10 @@ public class KoinaModelCaller {
                 mzIdx = ms2pipMzIdx;
                 intIdx = ms2pipIntIdx;
                 fragIdx = ms2pipFragIdx;
+            } else if (model.contains("UniSpec")) {
+                mzIdx = unispecMzIdx;
+                intIdx = unispecIntIdx;
+                fragIdx = unispecFragIdx;
             }
 
             String msInfo = koinaString.split("outputs")[1];
@@ -291,24 +301,26 @@ public class KoinaModelCaller {
 
             //TODO: when mz is calculated correcly by Koina for PTMs, can add back in
             //mz
-//            msInfo = dataResults[mzIdx].split("data\":\\[")[1];
-//            msInfo = msInfo.substring(0, msInfo.length() - 1);
-//            results = msInfo.split(",");
-//            float[][] allMZs = new float[numPeptides][];
-//            for (int i = 0; i < numPeptides; i++) {
-//                ArrayList<Float> mz = new ArrayList<>();
-//                for (int j = i * vectorLength; j < (i + 1) * vectorLength; j++) {
-//                    String result = results[j];
-//                    if (acceptedIdx[i].contains(j)) {
-//                        mz.add(Float.parseFloat(result));
-//                    }
-//                }
-//                float[] mzArray = new float[mz.size()];
-//                for (int j = 0; j < mz.size(); j++) {
-//                    mzArray[j] = mz.get(j);
-//                }
-//                allMZs[i] = mzArray;
-//            }
+            float[][] allMZs = new float[numPeptides][];
+            if (model.contains("UniSpec")) {
+                msInfo = dataResults[mzIdx].split("data\":\\[")[1];
+                msInfo = msInfo.substring(0, msInfo.length() - 1);
+                results = msInfo.split(",");
+                for (int i = 0; i < numPeptides; i++) {
+                    ArrayList<Float> mz = new ArrayList<>();
+                    for (int j = i * vectorLength; j < (i + 1) * vectorLength; j++) {
+                        String result = results[j];
+                        if (acceptedIdx[i].contains(j)) {
+                            mz.add(Float.parseFloat(result));
+                        }
+                    }
+                    float[] mzArray = new float[mz.size()];
+                    for (int j = 0; j < mz.size(); j++) {
+                        mzArray[j] = mz.get(j);
+                    }
+                    allMZs[i] = mzArray;
+                }
+            }
 
             //fragment annotations
             msInfo = dataResults[fragIdx].split("data\":\\[")[1];
@@ -321,14 +333,88 @@ public class KoinaModelCaller {
                 ArrayList<String> fragmentIonTypes = new ArrayList<>();
                 ArrayList<Integer> fragNums = new ArrayList<>();
                 ArrayList<Integer> charges = new ArrayList<>();
+                ArrayList<Float> mzs = new ArrayList<>();
                 for (int j = i * vectorLength; j < (i + 1) * vectorLength; j++) {
                     String result = results[j];
                     result = result.substring(1, result.length() - 1);
                     if (acceptedIdx[i].contains(j)) {
-                        String[] info = result.split("\\+");
-                        charges.add(Integer.parseInt(info[1]));
-                        fragmentIonTypes.add(info[0].substring(0, 1));
-                        fragNums.add(Integer.parseInt(info[0].substring(1)));
+                        if (model.contains("UniSpec")) {
+                            //this version for unispec
+
+                            //charge
+                            String[] info = result.split("^");
+                            if (info.length > 1) {
+                                charges.add(Integer.parseInt(info[1].substring(0, 1)));
+                            } else {
+                                charges.add(1);
+                            }
+
+                            //fragment ion type
+                            boolean NL = result.contains("-"); //neutral loss
+                            char first = result.charAt(0);
+                            switch(first) {
+                                case 'y':
+                                    if (NL) {
+                                        fragmentIonTypes.add("y");
+                                    } else {
+                                        fragmentIonTypes.add("y-NL");
+                                    }
+                                    break;
+                                case 'b':
+                                    if (NL) {
+                                        fragmentIonTypes.add("b");
+                                    } else {
+                                        fragmentIonTypes.add("b-NL");
+                                    }
+                                    break;
+                                case 'a':
+                                    if (NL) {
+                                        fragmentIonTypes.add("a");
+                                    } else {
+                                        fragmentIonTypes.add("a-NL");
+                                    }
+                                    break;
+
+                                //not regular frag num
+                                case 'p':
+                                    fragmentIonTypes.add("p");
+                                    break;
+                                case 'I': //internal or immonium
+                                    if (result.startsWith("Int")) {
+                                        fragmentIonTypes.add("int");
+                                    } else {
+                                        fragmentIonTypes.add("imm");
+                                    }
+                                    break;
+                            }
+
+                            //fragment number
+                            switch(first) {
+                                case 'y':
+                                case 'b':
+                                case 'a':
+                                    String num = "";
+                                    for (int cidx = 1; cidx < result.length(); cidx++) {
+                                        char c = result.charAt(cidx);
+                                        if (Character.isDigit(c)) {
+                                            num += c;
+                                        } else {
+                                            break;
+                                        }
+                                    }
+                                    fragNums.add(Integer.parseInt(num));
+                                    break;
+                                default:
+                                    fragNums.add(0);
+                                    break;
+                            }
+                        } else {
+                            //this version for other models
+                            String[] info = result.split("\\+");
+                            charges.add(Integer.parseInt(info[1]));
+                            fragmentIonTypes.add(info[0].substring(0, 1));
+                            fragNums.add(Integer.parseInt(info[0].substring(1)));
+                        }
                     }
                 }
                 String[] fragmentIonTypesArray = new String[fragmentIonTypes.size()];
@@ -343,8 +429,11 @@ public class KoinaModelCaller {
                 allFragNums[i] = fragNumsArray;
                 allCharges[i] = chargesArray;
             }
-
-            assignMS2(fileName, allIntensities, allFragmentIonTypes, allFragNums, allCharges, klr);
+            if (model.contains("UniSpec")) {
+                assignMS2(fileName, allMZs, allIntensities, allFragmentIonTypes, allFragNums, allCharges, klr);
+            } else {
+                assignMS2(fileName, allIntensities, allFragmentIonTypes, allFragNums, allCharges, klr);
+            }
         }
     }
 
@@ -354,7 +443,7 @@ public class KoinaModelCaller {
         for (int i = 0; i < peptides.length; i++) {
             PeptideFormatter pf = new PeptideFormatter(peptides[i], 1, "diann");
             String peptide = pf.getBase() + "|";
-            if (modelType.equals("prosit")) {
+            if (modelType.contains("prosit")) {
                 peptide = peptide.replace("C[" + PTMhandler.carbamidomethylationMass + "]", "C");
                 peptide = peptide.replace("C", "C[" + PTMhandler.carbamidomethylationMass + "]");
             }
@@ -420,7 +509,7 @@ public class KoinaModelCaller {
             String[] peptideSplit = peptides[i].split("\\|");
             PeptideFormatter pf = new PeptideFormatter(peptideSplit[0], peptideSplit[1], "diann");
             String peptide = pf.getBaseCharge();
-            if (modelType.equals("prosit")) {
+            if (modelType.contains("prosit")) {
                 peptide = peptide.replace("C[" + PTMhandler.carbamidomethylationMass + "]", "C");
                 peptide = peptide.replace("C", "C[" + PTMhandler.carbamidomethylationMass + "]");
             }
@@ -445,6 +534,29 @@ public class KoinaModelCaller {
         }
     }
 
+    private static void assignMS2(String fileName, float[][] mzs, float[][] intensities,
+                                  String[][] fragmentIonTypes, int[][] fragNums, int[][] charges, KoinaLibReader klr)
+            throws IOException {
+        String[] peptides = readJSON(fileName, intensities.length);
+        PredictionEntryHashMap preds = klr.getPreds();
+        for (int i = 0; i < peptides.length; i++) {
+            String[] peptideSplit = peptides[i].split("\\|");
+            PeptideFormatter pf = new PeptideFormatter(peptideSplit[0], peptideSplit[1], "diann");
+            String peptide = pf.getBaseCharge();
+
+            PredictionEntry pe = new PredictionEntry(mzs[i], intensities[i], fragNums[i],
+                    charges[i], fragmentIonTypes[i], new int[0]);
+
+            if (preds.containsKey(peptide)) {
+                PredictionEntry oldPe = preds.get(peptide);
+                pe.setRT(oldPe.getRT());
+                pe.setIM(oldPe.getIM());
+            }
+            preds.put(peptide, pe);
+
+        }
+    }
+
     public void assignMissingPeptidePredictions(KoinaLibReader klr, String fulltsv)
             throws IOException {
         BufferedReader TSVReader = new BufferedReader(new FileReader(fulltsv));
@@ -460,24 +572,16 @@ public class KoinaModelCaller {
                 PredictionEntry tmp = null;
                 String stripped = "";
                 String baseCharge = "";
+                //TODO: generic method
                 switch (modelType) {
                     case "alphapept":
                     case "ms2pip":
                     case "deeplc":
-                        pf = new PeptideFormatter(
-                                new PeptideFormatter(line[0], line[1], "base").getDiann(), line[1], "diann");
-                        baseCharge = pf.getBaseCharge();
-                        tmp = preds.get(baseCharge);
-                        stripped = pf.getStripped();
-                        break;
+                    case "unispec":
                     case "prosit":
-                        if (finalModel.contains("TMT")) {
-                            pf = new PeptideFormatter(
-                                    new PeptideFormatter(line[0], line[1], "base").getPrositTMT(), line[1], "prosit");
-                        } else {
-                            pf = new PeptideFormatter(
-                                    new PeptideFormatter(line[0], line[1], "base").getProsit(), line[1], "prosit");
-                        }
+                    case "prosittmt":
+                        pf = new PeptideFormatter(
+                                new PeptideFormatter(line[0], line[1], "base").getModel(modelType), line[1], modelType);
                         baseCharge = pf.getBaseCharge();
                         tmp = preds.get(baseCharge);
                         stripped = pf.getStripped();
@@ -491,7 +595,7 @@ public class KoinaModelCaller {
                     float[] newMZs = new float[tmp.getMzs().length];
                     for (int i = 0; i < newMZs.length; i++) {
                         newMZs[i] = mc.calcMass(tmp.getFragNums()[i],
-                                Constants.flagTOion.get(tmp.getFlags()[i]), tmp.getCharges()[i]);
+                                MassCalculator.flagTOion.get(tmp.getFlags()[i]), tmp.getCharges()[i]);
                     }
 
                     //add to hashmap
@@ -508,7 +612,7 @@ public class KoinaModelCaller {
                         newPred.setRT(0);
                         newPred.setIM(0);
                         preds.put(mc.fullPeptide, newPred);
-                    } else if (! PeptideSkipper.skipPeptide(stripped, baseCharge.split("\\|")[1])) {
+                    } else if (! PeptideSkipper.skipPeptide(stripped, baseCharge.split("\\|")[1], modelType)) {
                         e.printStackTrace();
                         printError("Missing peptide to transfer prediction onto " + l + ": " + baseCharge);
                         printError("Exiting now.");

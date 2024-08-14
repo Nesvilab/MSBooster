@@ -25,19 +25,23 @@ import java.util.Map;
 //lots of different ways to format peptide string
 public class PeptideFormatter {
     String base;
-    String diann;
-    String predfull;
-    String prosit;
-    String prositTMT;
-    String stripped;
+    private String diann;
+    private String predfull;
+    private String prosit;
+    private String prositTMT;
+    private String unispec;
+    private String ms2pip;
+    private String deeplc;
+    private String alphapept;
+    private String stripped;
     String baseCharge;
-    String dlib;
-    String mods = "";
-    String alphapeptdeepMods = "";
-    String modPositions = "";
+    private String dlib;
+    private String mods = "";
+    private String alphapeptdeepMods = "";
+    private String modPositions = "";
 
-    ArrayList<Integer> starts = new ArrayList<>();
-    ArrayList<Integer> ends = new ArrayList<>();
+    private ArrayList<Integer> starts = new ArrayList<>();
+    private ArrayList<Integer> ends = new ArrayList<>();
 
     String charge;
 
@@ -55,7 +59,6 @@ public class PeptideFormatter {
         //remove AA and period at beginning and end
         peptide = peptide.substring(2, peptide.length() - 2);
 
-        //TODO remove integer part that holds charge
         while (Character.isDigit(peptide.charAt(peptide.length() - 1))) {
             peptide = peptide.substring(0, peptide.length() - 1);
         }
@@ -70,53 +73,20 @@ public class PeptideFormatter {
         peptide = peptide.replace("c","");
 
         base = peptide;
-        findPTMlocations();
     }
 
     private void diannTObase(String peptide) {
-        peptide = peptide.toUpperCase();
-        peptide = peptide.replace("UNIMOD:","");
-        peptide = peptide.replace("[TMT]","[737]");
-
-        //for koina
-        peptide = peptide.replace("]-", "]");
-        peptide = peptide.replace("-[", "[");
-        //convert unimod to mass
-        ArrayList<Integer> newStarts = new ArrayList<>();
-        ArrayList<Integer> newEnds = new ArrayList<>();
-        for (int i = 0; i < peptide.length(); i++) {
-            if (peptide.charAt(i) == '[') {
-                newStarts.add(i);
-            } else if (peptide.charAt(i) == ']') {
-                newEnds.add(i);
-            }
-        }
-        for (int i = newStarts.size() - 1; i > -1; i--) {
-            try {
-                peptide = peptide.substring(0, newStarts.get(i) + 1) +
-                        PTMhandler.unimodtoModAAmass.get(peptide.substring(newStarts.get(i) + 1, newEnds.get(i))) +
-                        peptide.substring(newEnds.get(i));
-            } catch (Exception ignored) {
-
-            }
-        }
-
-        base = peptide;
-        findPTMlocations();
+        peptide = peptide.replace("[TMT]", "[" + PTMhandler.modMassToUnimod.get(PTMhandler.tmtMass) + "]");
+        base = PTMhandler.formatPeptideSpecificToBase(peptide);
     }
-
-    private void prositTObase(String peptide) {
-        //remove (O) and add [57] to C
-        base = peptide.replace("(ox)", "[" + PTMhandler.oxidationMass + "]")
-                .replace("C", "C[" + PTMhandler.carbamidomethylationMass + "]");
-        findPTMlocations();
+    private void koinaTObase(String peptide) {
+        base = PTMhandler.formatPeptideSpecificToBase(peptide);
     }
 
     private void predfullTObase(String peptide) {
         //remove (O) and add [57] to C
         base = peptide.replace("(O)", "[" + PTMhandler.oxidationMass + "]")
                 .replace("C", "C[" + PTMhandler.carbamidomethylationMass + "]");
-        findPTMlocations();
     }
 
     private void mspTObase(String peptide) {
@@ -132,8 +102,6 @@ public class PeptideFormatter {
                         PTMhandler.prositToModAAmass.get(modsSplit[2]) + "]" + base.substring(position);
             }
         }
-
-        findPTMlocations();
     }
 
     private void pdeep3TObase(String peptide) { //need to make robust for mods not accepted
@@ -153,7 +121,6 @@ public class PeptideFormatter {
                         newPeptide.substring(position);
             }
             base = newPeptide;
-            findPTMlocations();
         }
     }
 
@@ -178,33 +145,57 @@ public class PeptideFormatter {
         diann = base;
 
         for (int i = starts.size() - 1; i > -1; i--) {
-            double reportedMass = Double.parseDouble(diann.substring(starts.get(i) + 1, ends.get(i)));
-            boolean foundReplacement = false;
-            for (Map.Entry<Double, Integer> entry : PTMhandler.modAAmassToUnimod.entrySet()) {
-                Double PTMmass = entry.getKey();
+            int start = starts.get(i);
+            int end = ends.get(i);
 
-                if (Math.abs(PTMmass - reportedMass) < 0.01) {
-                    if (PTMhandler.modAAToLocalization.containsKey(PTMmass)) {
-                        if (!PTMhandler.modAAToLocalization.get(PTMmass).contains(
-                                diann.substring(starts.get(i) - 1, starts.get(i)))) {
-                            break;
-                        }
-                    }
-                    if (PTMmass == 229.1629) {
-                        diann = diann.substring(0, starts.get(i) + 1) + "TMT" +
-                                diann.substring(ends.get(i));
-                    } else {
-                        diann = diann.substring(0, starts.get(i) + 1) + "UniMod:" + PTMhandler.modAAmassToUnimod.get(PTMmass) +
-                                diann.substring(ends.get(i));
-                    }
-                    foundReplacement = true;
-                    break;
-                }
-            }
-            if (! foundReplacement) {
-                //DIANN won't predict this anyway
-                diann = diann.substring(0, starts.get(i)) + diann.substring(ends.get(i) + 1);
-            }
+            diann = PTMhandler.formatPeptideBaseToSpecific(diann, start, end, "diann");
+        }
+
+        //special TMT formatting
+        diann = diann.replaceAll("UniMod:" + PTMhandler.modMassToUnimod.get(PTMhandler.tmtMass), "TMT");
+    }
+
+    private void baseTOunispec() {
+        unispec = base;
+
+        for (int i = starts.size() - 1; i > -1; i--) {
+            int start = starts.get(i);
+            int end = ends.get(i);
+
+            unispec = PTMhandler.formatPeptideBaseToSpecific(unispec, start, end, "unispec");
+        }
+    }
+
+    private void baseTOms2pip() {
+        ms2pip = base;
+
+        for (int i = starts.size() - 1; i > -1; i--) {
+            int start = starts.get(i);
+            int end = ends.get(i);
+
+            ms2pip = PTMhandler.formatPeptideBaseToSpecific(ms2pip, start, end, "ms2pip");
+        }
+    }
+
+    private void baseTOdeeplc() {
+        deeplc = base;
+
+        for (int i = starts.size() - 1; i > -1; i--) {
+            int start = starts.get(i);
+            int end = ends.get(i);
+
+            deeplc = PTMhandler.formatPeptideBaseToSpecific(deeplc, start, end, "deeplc");
+        }
+    }
+
+    private void baseTOalphapept() {
+        alphapept = base;
+
+        for (int i = starts.size() - 1; i > -1; i--) {
+            int start = starts.get(i);
+            int end = ends.get(i);
+
+            alphapept = PTMhandler.formatPeptideBaseToSpecific(alphapept, start, end, "alphapept");
         }
     }
 
@@ -230,21 +221,29 @@ public class PeptideFormatter {
     private void baseTOprosit() {
         prosit = base;
 
-        //PredFull only supports oxM and assumes C is carbamidomethylated. Below, we format it this way, but also keep on other PTM masses so m/z values for fragments can be adjusted
         for (int i = starts.size() - 1; i > -1; i--) {
-            double reportedMass = Double.parseDouble(prosit.substring(starts.get(i) + 1, ends.get(i)));
-            if (starts.get(i) - 1 > -1) { //no changes to nterm mod
-                if (Math.abs(PTMhandler.oxidationMass - reportedMass) < 0.01 &&
-                        prosit.charAt(starts.get(i) - 1) == 'M') {
-                    prosit = prosit.substring(0, starts.get(i)) + "(ox)" + prosit.substring(ends.get(i) + 1);
-                } else if (Math.abs(PTMhandler.tmtMass - reportedMass) < 0.01) {
-                    continue;
-                } else { //mod unsupported, remove for now. Or C carbamidomethylation
-                    prosit = prosit.substring(0, starts.get(i)) + prosit.substring(ends.get(i) + 1);
+            int start = starts.get(i);
+            int end = ends.get(i);
+
+            prosit = PTMhandler.formatPeptideBaseToSpecific(prosit, start, end, "prosit");
+        }
+
+        //C is required to have carbamidomethyl
+        for (int i = prosit.length() - 1; i > -1; i--) {
+            char c = prosit.charAt(i);
+            if (c == 'C') {
+                boolean substituteC = false;
+
+                if (i == prosit.length() - 1) {
+                    substituteC = true;
+                } else if (prosit.charAt(i + 1) != '[') {
+                    substituteC = true;
                 }
-            } else { //deal with nterm mod by deleting
-                if (!prosit.substring(starts.get(i), ends.get(i) + 1).contains(String.valueOf(PTMhandler.tmtMass))) {
-                    prosit = prosit.substring(0, starts.get(i)) + prosit.substring(ends.get(i) + 1);
+
+                if (substituteC) {
+                    prosit = prosit.substring(0, i + 1) + "[UNIMOD:" +
+                            PTMhandler.modMassToUnimod.get(PTMhandler.carbamidomethylationMass) + "]" +
+                            prosit.substring(i + 1);
                 }
             }
         }
@@ -253,7 +252,7 @@ public class PeptideFormatter {
     private void prositTOprositTMT() {
         //Prosit TMT assumes n-term are TMT-labeled
         if (!prosit.startsWith("[")) {
-            String tmtLabel = "[" + PTMhandler.tmtMass + "]";
+            String tmtLabel = "[UNIMOD:" + PTMhandler.modMassToUnimod.get(PTMhandler.tmtMass) + "]-";
             prositTMT = tmtLabel + prosit;
         } else {
             prositTMT = prosit;
@@ -340,107 +339,188 @@ public class PeptideFormatter {
         }
     }
 
+    //only sets base and basecharge
     public PeptideFormatter(String peptide, Object c, String format) {
-//        try {
-//            charge = (String) c;
-//        } catch (Exception e) {
-//            charge = c.toString();
-//        }
         charge = c.toString();
 
-        if (format.equals("pin")) {
-            pinTObase(peptide);
-            baseTOdiann();
-            baseTOstripped();
-            baseTOpredfull();
-            baseTOprosit();
-            strippedTOdlib();
-            if (Constants.spectraModel.contains("pDeep") || Constants.spectraModel.contains("alphapeptdeep") ||
-                    Constants.rtModel.contains("pDeep") || Constants.rtModel.contains("alphapeptdeep") ||
-                    Constants.imModel.contains("alphapeptdeep")) {
-                baseToMods();
-            }
-            baseCharge = base + "|" + charge;
+        switch(format) {
+            case "pin":
+                pinTObase(peptide);
+                break;
+            case "diann":
+                diann = peptide;
+                diannTObase(peptide);
+                break;
+            case "base":
+                base = peptide;
+                break;
+            case "predfull":
+                predfull = peptide;
+                predfullTObase(peptide);
+                break;
+            case "unispec":
+                unispec = peptide;
+                koinaTObase(peptide);
+                break;
+            case "prosit":
+                prosit = peptide;
+                koinaTObase(peptide);
+                break;
+            case "prosittmt":
+                prositTMT = peptide;
+                koinaTObase(peptide);
+                break;
+            case "ms2pip":
+                ms2pip = peptide;
+                koinaTObase(peptide);
+                break;
+            case "deeplc":
+                deeplc = peptide;
+                koinaTObase(peptide);
+                break;
+            case "alphapept":
+                alphapept = peptide;
+                koinaTObase(peptide);
+                break;
+            case "msp":
+                mspTObase(peptide);
+                break;
+            case "pdeep3":
+                pdeep3TObase(peptide);
+                break;
         }
 
-        if (format.equals("diann")) {
-            diann = peptide;
-            diannTObase(peptide);
-            baseTOstripped();
-            baseTOpredfull();
-            baseTOprosit();
-            baseCharge = base + "|" + charge;
-        }
-
-        if (format.equals("base")) {
-            base = peptide;
-
-            //find locations of PTMs
-            for (int i = 0; i < base.length(); i++) {
-                if (base.charAt(i) == '[') {
-                    starts.add(i);
-                } else if (base.charAt(i) == ']') {
-                    ends.add(i);
-                }
-            }
-
-            baseTOstripped();
-            baseTOpredfull();
-            baseTOdiann();
-            baseTOprosit();
-            prositTOprositTMT();
-            baseCharge = base + "|" + charge;
-        }
-
-        if (format.equals("predfull")) {
-            predfull = peptide;
-            predfullTObase(peptide);
-            baseTOstripped();
-            baseTOdiann();
-            baseTOprosit();
-            baseCharge = base + "|" + charge;
-        }
-
-        if (format.equals("msp")) {
-            mspTObase(peptide);
-            baseTOstripped();
-            baseTOpredfull();
-            baseTOdiann();
-            baseTOprosit();
-            baseCharge = base + "|" + charge;
-        }
-
-        if (format.equals("prosit")) {
-            prosit = peptide;
-            prositTObase(peptide);
-            baseTOstripped();
-            baseTOpredfull();
-            baseTOdiann();
-            baseCharge = base + "|" + charge;
-        }
-
-        if (format.equals("pdeep3")) {
-            pdeep3TObase(peptide);
-            baseTOstripped();
-            baseCharge = base + "|" + charge;
-        }
+        findPTMlocations();
+        baseCharge = base + "|" + charge;
     }
 
     public String getBaseCharge() {
         return baseCharge;
     }
+
     public String getBase() {
         return base;
     }
+
+    public String getCharge() {
+        return charge;
+    }
+
     public String getDiann() {
+        if (diann == null) {
+            baseTOdiann();
+        }
         return diann;
     }
+
     public String getProsit() {
+        if (prosit == null) {
+            baseTOprosit();
+        }
         return prosit;
     }
+
     public String getStripped() {
+        if (stripped == null) {
+            baseTOstripped();
+        }
         return stripped;
     }
 
-    public String getPrositTMT() { return prositTMT; }
+    public String getPrositTMT() {
+        if (prositTMT == null) {
+            getProsit();
+            prositTOprositTMT();
+        }
+        return prositTMT;
+    }
+
+    public String getPredfull() {
+        if (predfull == null) {
+            baseTOpredfull();
+        }
+        return predfull;
+    }
+
+    public String getUnispec() {
+        if (unispec == null) {
+            baseTOunispec();
+        }
+        return unispec;
+    }
+
+    public String getMs2pip() {
+        if (ms2pip == null) {
+            baseTOms2pip();
+        }
+        return ms2pip;
+    }
+
+    public String getDeeplc() {
+        if (deeplc == null) {
+            baseTOdeeplc();
+        }
+        return deeplc;
+    }
+
+    public String getAlphapept() {
+        if (alphapept == null) {
+            baseTOalphapept();
+        }
+        return alphapept;
+    }
+
+    public String getModel(String model) { //model is whole url name
+        switch(model.toLowerCase().split("_")[0]) {
+            case "diann":
+                return getDiann();
+            case "prosit":
+                if (model.contains("TMT")) {
+                    return getPrositTMT();
+                }
+                return getProsit();
+            case "prosittmt":
+                return getPrositTMT();
+            case "unispec":
+                return getUnispec();
+            case "ms2pip":
+                return getMs2pip();
+            case "deeplc":
+                return getDeeplc();
+            case "alphapept":
+                return getAlphapept();
+            default:
+                //TODO implement all
+                return "";
+        }
+    }
+
+    public String getDlib() {
+        if (dlib == null) {
+            baseTOstripped();
+            strippedTOdlib();
+        }
+        return dlib;
+    }
+
+    public String getMods() {
+        if (mods == null) {
+            baseToMods();
+        }
+        return mods;
+    }
+
+    public String getAlphapeptdeepMods() {
+        if (alphapeptdeepMods == null) {
+            baseToMods();
+        }
+        return alphapeptdeepMods;
+    }
+
+    public String getModPositions() {
+        if (modPositions == null) {
+            baseToMods();
+        }
+        return modPositions;
+    }
 }

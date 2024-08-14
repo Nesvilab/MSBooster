@@ -122,7 +122,7 @@ public class SpectrumComparison {
             predMZs = null;
         }
     }
-    public SpectrumComparison() {}
+    private SpectrumComparison() {}
 
     //get new scan read in
     public void reload(PeptideObj pobj, float[] eMZs, float[] eIntensities) {

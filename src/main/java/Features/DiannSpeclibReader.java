@@ -102,7 +102,7 @@ public class DiannSpeclibReader implements LibraryPredictionMapper {
                         int charge = bits(fragInt, 30, 2) + 1; //start from end
 
                         //get fragment m/z
-                        String ionType = Constants.flagTOion.get(flag);
+                        String ionType = MassCalculator.flagTOion.get(flag);
                         float fragMZ = mc.calcMass(fragNum, ionType, charge);
 
                         //add to arrays
@@ -139,7 +139,7 @@ public class DiannSpeclibReader implements LibraryPredictionMapper {
                     line = l.split("\t");
                     //check if diann to base results in same base peptide
                     PeptideFormatter pf = new PeptideFormatter(
-                            new PeptideFormatter(line[0], line[1], "base").diann, line[1], "diann");
+                            new PeptideFormatter(line[0], line[1], "base").getDiann(), line[1], "diann");
 
                     if (! pf.base.equals(line[0])) {
                         //get predictionEntry
@@ -147,7 +147,7 @@ public class DiannSpeclibReader implements LibraryPredictionMapper {
                         MassCalculator mc = new MassCalculator(line[0], line[1]);
                         float[] newMZs = new float[tmp.mzs.length];
                         for (int i = 0; i < newMZs.length; i++) {
-                            newMZs[i] = mc.calcMass(tmp.fragNums[i], Constants.flagTOion.get(tmp.flags[i]), tmp.charges[i]);
+                            newMZs[i] = mc.calcMass(tmp.fragNums[i], MassCalculator.flagTOion.get(tmp.flags[i]), tmp.charges[i]);
                         }
 
                         //add to hashmap

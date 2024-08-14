@@ -17,6 +17,8 @@
 
 package Features;
 
+import org.checkerframework.checker.units.qual.Mass;
+
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.stream.IntStream;
@@ -207,7 +209,7 @@ public class PredictionEntry {
     private void setFlags() {
         this.flags = new int[fragmentIonTypes.length];
         for (int i = 0; i < fragmentIonTypes.length; i++) {
-            this.flags[i] = Constants.ionTOflag.get(fragmentIonTypes[i]);
+            this.flags[i] = MassCalculator.ionTOflag.get(fragmentIonTypes[i]);
         }
     }
     public int[] getFlags() {return flags;}
@@ -220,7 +222,7 @@ public class PredictionEntry {
     private void setFragmentIonTypes() {
         this.fragmentIonTypes = new String[flags.length];
         for (int i = 0; i < flags.length; i++) {
-            this.fragmentIonTypes[i] = Constants.flagTOion.get(flags[i]);
+            this.fragmentIonTypes[i] = MassCalculator.flagTOion.get(flags[i]);
         }
     }
     public String[] getFragmentIonTypes() {return fragmentIonTypes;}

@@ -20,6 +20,7 @@ public class LowercaseModelMapper {
         lowercaseToModel.put("prosit_2020_intensity_tmt", "Prosit_2020_intensity_TMT");
         lowercaseToModel.put("prosit_2020_intensity_hcd", "Prosit_2020_intensity_HCD");
         lowercaseToModel.put("prosit_2023_intensity_timstof", "Prosit_2023_intensity_timsTOF");
+        lowercaseToModel.put("unispec", "UniSpec");
 
         lowercaseToModel.put("alphapept_ccs_generic", "AlphaPept_ccs_generic");
     }

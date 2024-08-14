@@ -212,4 +212,21 @@ public class PeptideFileCreator {
             //return null;
         }
     }
+
+    //give it a list of peptides to write instead of all peptides in pin file
+    //writes spectraRT_full.tsv that has base peptide format
+    public static void createPartialFile(String filePath, String currentModel,
+                                  ArrayList<PeptideFormatter> peptideFormatters) throws IOException {
+        FileWriter myWriter = new FileWriter(filePath);
+
+        for (PeptideFormatter pf : peptideFormatters) {
+            if (PeptideSkipper.skipPeptide(pf.getStripped(), pf.charge, currentModel)) {
+                continue;
+            }
+
+            myWriter.write(pf.base + "\t" + pf.charge + "\n");
+        }
+
+        myWriter.close();
+    }
 }

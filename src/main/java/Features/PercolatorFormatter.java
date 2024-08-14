@@ -156,19 +156,19 @@ public class PercolatorFormatter {
                     while (pin.next(true)) {
                         PeptideFormatter pf = pin.getPep();
                         if (Float.valueOf(pin.getColumn("hyperscore")) > 10) {
-                            if (Constants.peptideCounter.containsKey(pf.stripped)) {
-                                HashSet<String> peptideSet = Constants.peptideCounter.get(pf.stripped);
+                            if (Constants.peptideCounter.containsKey(pf.getStripped())) {
+                                HashSet<String> peptideSet = Constants.peptideCounter.get(pf.getStripped());
                                 peptideSet.add(pin.name);
-                                Constants.peptideCounter.put(pf.stripped, peptideSet);
+                                Constants.peptideCounter.put(pf.getStripped(), peptideSet);
                             } else {
                                 HashSet<String> peptideSet = new HashSet<>();
                                 peptideSet.add(pin.name);
-                                Constants.peptideCounter.put(pf.stripped, peptideSet);
+                                Constants.peptideCounter.put(pf.getStripped(), peptideSet);
                             }
                         } else {
-                            if (! Constants.peptideCounter.containsKey(pf.stripped)) {
+                            if (! Constants.peptideCounter.containsKey(pf.getStripped())) {
                                 HashSet<String> peptideSet = new HashSet<>();
-                                Constants.peptideCounter.put(pf.stripped, peptideSet);
+                                Constants.peptideCounter.put(pf.getStripped(), peptideSet);
                             }
                         }
                     }

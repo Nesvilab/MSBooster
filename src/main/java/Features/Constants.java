@@ -97,14 +97,14 @@ public class Constants {
                     "Prosit_2020_irt_TMT", "Deeplc_hela_hf",
                     "ms2pip_2021_HCD", "AlphaPept_ms2_generic", "Prosit_2019_intensity",
                     "Prosit_2020_intensity_CID", "Prosit_2020_intensity_TMT", "Prosit_2020_intensity_HCD",
-                    "Prosit_2023_intensity_timsTOF", "AlphaPept_ccs_generic"});
+                    "Prosit_2023_intensity_timsTOF", "AlphaPept_ccs_generic", "UniSpec"});
     public static CaseInsensitiveHashSet KoinaRTmodels = new CaseInsensitiveHashSet(
             new String[] {"AlphaPept_rt_generic", "Prosit_2019_irt",
                     "Prosit_2020_irt_TMT", "Deeplc_hela_hf"});
     public static CaseInsensitiveHashSet KoinaMS2models = new CaseInsensitiveHashSet(
             new String[] {"ms2pip_2021_HCD", "AlphaPept_ms2_generic", "Prosit_2019_intensity",
                     "Prosit_2020_intensity_CID", "Prosit_2020_intensity_TMT", "Prosit_2020_intensity_HCD",
-                    "Prosit_2023_intensity_timsTOF"});
+                    "Prosit_2023_intensity_timsTOF", "UniSpec"});
     public static CaseInsensitiveHashSet KoinaIMmodels = new CaseInsensitiveHashSet(
             new String[] {"AlphaPept_ccs_generic"});
     public static CaseInsensitiveHashSet KoinaTMTmodels = new CaseInsensitiveHashSet(
@@ -115,17 +115,17 @@ public class Constants {
     public static final CaseInsensitiveHashSet rtSearchModelsTMT = new CaseInsensitiveHashSet(
             new String[] {"DIA-NN", "Prosit_2020_irt_TMT"});
     public static String ms2SearchModelsString = "DIA-NN,ms2pip_2021_HCD,AlphaPept_ms2_generic," +
-            "Prosit_2020_intensity_CID,Prosit_2020_intensity_HCD,Prosit_2023_intensity_timsTOF";
+            "Prosit_2020_intensity_CID,Prosit_2020_intensity_HCD,Prosit_2023_intensity_timsTOF,UniSpec";
     public static String imSearchModelsString = "DIA-NN,AlphaPept_ccs_generic";
     public static final CaseInsensitiveHashSet ms2SearchModelsTMT = new CaseInsensitiveHashSet(
             new String[] {"DIA-NN", "Prosit_2020_intensity_TMT"});
     public static CaseInsensitiveHashSet nceModels = new CaseInsensitiveHashSet(
             new String[] {"PredFull", "Prosit", "PrositTMT", "alphapeptdeep",
                     "AlphaPept_ms2_generic", "Prosit_2019_intensity", "Prosit_2023_intensity_timsTOF",
-                    "Prosit_2020_intensity_TMT", "Prosit_2020_intensity_HCD"});
+                    "Prosit_2020_intensity_TMT", "Prosit_2020_intensity_HCD", "UniSpec"});
     public static LibraryPredictionMapper predictedLibrary;
 
-    public static Integer numKoinaAttempts = 10;
+    public static Integer numKoinaAttempts = 10; //TODO: change to 3
     public static Integer initialKoinaMillisecondsToWaitRtIm = 30000;
     public static Integer initialKoinaMillisecondsToWaitMs2 = 60000;
 //    public static Integer KoinaThreadsRT = 30;
@@ -148,29 +148,6 @@ public class Constants {
 
     ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
     //miscellaneous inner workings
-    //convert int flag to fragment ion type
-    private static HashMap<Integer, String> makeFlagTOion() {
-        HashMap<Integer, String> map = new HashMap<>();
-        map.put(0, "b");
-        map.put(1, "y");
-        map.put(2, "b-NL");
-        map.put(3, "y-NL");
-        return map;
-    }
-    public static HashMap<Integer, String> flagTOion = makeFlagTOion();
-
-    private static HashMap<String, Integer> makeIonToFlag() {
-        HashMap<String, Integer> map = new HashMap<>();
-        map.put("b", 0);
-        map.put("y", 1);
-        map.put("b-NL", 2);
-        map.put("y-NL", 3);
-        map.put("c", 4);
-        map.put("z", 5);
-        return map;
-    }
-    public static HashMap<String, Integer> ionTOflag = makeIonToFlag();
-
     private static HashMap<String, Integer> makeModelMaxIntensity() {
         HashMap<String, Integer> map = new HashMap<>();
         map.put("DIA-NN", 60000);

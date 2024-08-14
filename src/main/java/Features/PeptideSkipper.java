@@ -19,18 +19,33 @@ package Features;
 
 public class PeptideSkipper {
     //provide peptide and see if it may be problematic
-    public static boolean skipPeptide(String stripped, String charge) {
+    public static boolean skipPeptide(String stripped, String charge, String model) {
+        model = model.toLowerCase();
         //letters
-        for (char c : "OUBZJX".toCharArray()) {
-            if (stripped.indexOf(c) != -1) {
-                return true;
+        if (model.contains("prosit") || model.contains("ms2pip") || model.contains("deeplc") ||
+                model.contains("unispec") || model.contains("predfull")) {
+            for (char c : "OUBZJX".toCharArray()) {
+                if (stripped.indexOf(c) != -1) {
+                    return true;
+                }
             }
         }
         //length
-        if (stripped.length() < 7 || stripped.length() > 20) {
+        if ((model.contains("ms2pip") || model.contains("predfull") ||
+                (model.contains("prosit") && model.contains("tmt"))) && stripped.length() > 30) {
+            return true;
+        }
+        if (model.contains("unispec") && stripped.length() > 40) {
             return true;
         }
         //charge
-        return Integer.parseInt(charge) > 6;
+        int chargeInt = Integer.parseInt(charge);
+        if (model.contains("unispec") && chargeInt > 5) {
+            return true;
+        }
+        if ((model.contains("prosit") || model.contains("predfull")) && chargeInt > 6) {
+            return true;
+        }
+        return false;
     }
 }

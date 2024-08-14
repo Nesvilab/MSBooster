@@ -81,7 +81,7 @@ public class MzmlReader {
         scans.setDataSource(source);
         source.setNumThreadsForParsing(Constants.numThreads);
 
-        getInstrument();
+        InstrumentUtils.getInstrument(scans);
         //this.getMzFreq(); only if we end up using weights
     }
 
@@ -164,75 +164,6 @@ public class MzmlReader {
 //            return averagedCountsList;
 //        }
 //    }
-
-    //TODO: support for astral model?
-    private String getInstrument() {
-        HashSet<String> LumosKeys = new HashSet<>(Arrays.asList("LTQ", "Lumos", "Fusion", "Elite", "Velos", "Eclipse", "Tribrid"));
-        HashSet<String> QEKeys = new HashSet<>(Arrays.asList("QE", "Exactive", "Exploris"));
-        HashSet<String> SciexTOFKeys = new HashSet<>(Arrays.asList("Sciex", "TripleTOF"));
-        HashSet<String> timsTOFKeys = new HashSet<>(List.of("flight", "timsTOF"));
-        HashSet<String> ThermoTOFKeys = new HashSet<>(List.of("Astral"));
-
-        if (Constants.instrument.isEmpty()) {
-            try {
-                scans.loadData(LCMSDataSubset.STRUCTURE_ONLY);
-                String model = scans.getRunInfo().getDefaultInstrument().getModel();
-                String analyzer = scans.getRunInfo().getDefaultInstrument().getAnalyzer();
-                for (String k : LumosKeys) {
-                    if (model.contains(k) || analyzer.contains(k)) {
-                        printInfo("Instrument detected: Lumos");
-                        Constants.instrument = "Lumos";
-                        return "Lumos";
-                    }
-                }
-                for (String k : QEKeys) {
-                    if (model.contains(k) || analyzer.contains(k)) {
-                        printInfo("Instrument detected: QE");
-                        Constants.instrument = "QE";
-                        return "QE";
-                    }
-                }
-                for (String k : SciexTOFKeys) {
-                    if (model.contains(k) || analyzer.contains(k)) {
-                        printInfo("Instrument detected: SciexTOF");
-                        Constants.instrument = "SciexTOF";
-                        return "SciexTOF";
-                    }
-                }
-                for (String k : timsTOFKeys) {
-                    if (model.contains(k) || analyzer.contains(k)) {
-                        printInfo("Instrument detected: timsTOF");
-                        Constants.instrument = "timsTOF";
-                        return "timsTOF";
-                    }
-                }
-                for (String k : ThermoTOFKeys) {
-                    if (model.contains(k) || analyzer.contains(k)) {
-                        printInfo("Instrument detected: ThermoTOF");
-                        Constants.instrument = "ThermoTOF";
-                        return "ThermoTOF";
-                    }
-                }
-                printInfo("Could not detect instrument type. Setting to Lumos. " +
-                        "If a different instrument was used, specify using '--instrument' via the command line " +
-                        "or 'instrument=' in the param file.");
-                Constants.instrument = "Lumos";
-                return "Lumos"; //default if nothing found
-            } catch (NullPointerException e) {
-                printInfo("Could not detect instrument type. Setting to Lumos. " +
-                        "If a different instrument was used, specify using '--instrument' via the command line " +
-                        "or 'instrument=' in the param file.");
-                Constants.instrument = "Lumos";
-                return "Lumos"; //default if nothing found
-            } catch (FileParsingException e) {
-                e.printStackTrace();
-                System.exit(1);
-                return "";
-            }
-        } else {
-            return Constants.instrument;
-        }
-    }
 
     public void createScanNumObjects() throws FileParsingException {
         printInfo("Processing " + pathStr);

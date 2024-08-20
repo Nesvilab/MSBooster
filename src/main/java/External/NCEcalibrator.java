@@ -62,6 +62,7 @@ public class NCEcalibrator {
             AtomicInteger bestNCE = new AtomicInteger();
             boolean old = Constants.removeRankPeaks;
             Constants.removeRankPeaks = false;
+            ProgressReporter pr = new ProgressReporter(Constants.maxNCE - Constants.minNCE + 1);
 
             List<Future> futureList = new ArrayList<>(Constants.numThreads);
             for (int NCE = Constants.minNCE; NCE < Constants.maxNCE + 1; NCE++) {
@@ -91,6 +92,7 @@ public class NCEcalibrator {
                         bestMedian.set(median);
                         bestNCE.set(finalNCE);
                     }
+                    pr.progress();
                 }));
             }
             for (Future future : futureList) {

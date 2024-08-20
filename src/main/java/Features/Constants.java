@@ -90,7 +90,6 @@ public class Constants {
     public static Boolean findBestSpectraModel = false;
     public static Boolean findBestImModel = false;
     public static Boolean foundBest = false;
-    //TODO: hashset with all models to check that model is acceptable?
     public static String KoinaURL = ""; //https://koina.proteomicsdb.org/v2/models/ or https://koina.wilhelmlab.org:443/v2/models/
     public static CaseInsensitiveHashSet KoinaModels = new CaseInsensitiveHashSet(
             new String[] {"AlphaPept_rt_generic", "Prosit_2019_irt",
@@ -125,7 +124,7 @@ public class Constants {
                     "Prosit_2020_intensity_TMT", "Prosit_2020_intensity_HCD", "UniSpec"});
     public static LibraryPredictionMapper predictedLibrary;
 
-    public static Integer numKoinaAttempts = 10; //TODO: change to 3
+    public static Integer numKoinaAttempts = 3;
     public static Integer initialKoinaMillisecondsToWaitRtIm = 30000;
     public static Integer initialKoinaMillisecondsToWaitMs2 = 60000;
 //    public static Integer KoinaThreadsRT = 30;

@@ -117,9 +117,17 @@ public class KoinaTask implements Callable<Boolean> {
         } catch (Exception e) {
             try {
                 if (failedAttempts == Constants.numKoinaAttempts) {
+                    BufferedReader inErrors = new BufferedReader(new InputStreamReader(connection.getErrorStream()));
+                    String inputLine;
+                    while ((inputLine = inErrors.readLine()) != null) {
+                        response.append(inputLine);
+                    }
+                    inErrors.close();
+
+                    printError(jsonFilePath + " had the following output: ");
+                    printError(response.toString());
+
                     if (Constants.foundBest) {
-                        printError(jsonFilePath + " had the following output: ");
-                        printError(response.toString()); //TODO need actual message
                         printError("Retried calling " + jsonFilePath + " " + failedAttempts + " times.");
                         printError("Exiting");
                         System.exit(1);

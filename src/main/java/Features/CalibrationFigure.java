@@ -20,6 +20,7 @@ package Features;
 import kotlin.jvm.functions.Function1;
 import org.knowm.xchart.*;
 import org.knowm.xchart.style.Styler;
+import org.knowm.xchart.style.markers.SeriesMarkers;
 
 import java.awt.*;
 import java.io.File;
@@ -33,7 +34,6 @@ public class CalibrationFigure {
     String charge;
     public CalibrationFigure() {}
 
-    //TODO: repeat but with single entries at a time, with different outFile names
     public void plotFigure(MzmlReader mzml, String outFile, float opacity,
                            HashMap<String, double[][]> massToData,
                            HashMap<String, Function1<Double, Double>> loessFunctions) throws IOException {
@@ -57,7 +57,6 @@ public class CalibrationFigure {
         chart.setTitle(mzml.pathStr);
         chart.setXAxisTitle("experimental " + mode);
         chart.setYAxisTitle("predicted " + mode);
-        chart.getStyler().setLegendVisible(false);
         chart.getStyler().setMarkerSize(8);
         chart.getStyler().setYAxisGroupPosition(0, Styler.YAxisPosition.Right);
         chart.getStyler().setLegendVisible(true);
@@ -67,16 +66,16 @@ public class CalibrationFigure {
         List<Float> xData = new ArrayList<Float>();
         List<Float> yData = new ArrayList<Float>();
 
-        //for PTMs besides oxM and C57
-        List<List<Float>> xDataMod = new ArrayList<>();
-        List<List<Float>> yDataMod = new ArrayList<>();
+        //for massOffsets or other masses specified
+        HashMap<String, List<Float>> xDataMod = new HashMap<>();
+        HashMap<String, List<Float>> yDataMod = new HashMap<>();
 
-        ArrayList<String> massesList = new ArrayList<>();
-        massesList.addAll(Arrays.asList(Constants.massesForLoessCalibration.split(",")));
+        ArrayList<String> massesList = new ArrayList<>(massToData.keySet());
         massesList.remove("");
-        for (int i = 0; i < massesList.size(); i++) {
-            xDataMod.add(new ArrayList<>());
-            yDataMod.add(new ArrayList<>());
+        massesList.remove("others");
+        for (String mass : massesList) {
+            xDataMod.put(mass, new ArrayList<>());
+            yDataMod.put(mass, new ArrayList<>());
         }
 
         //set y lim
@@ -100,7 +99,7 @@ public class CalibrationFigure {
             } else {
                 try { //might be empty if no regression
                     for (double d : entry.getValue()[0]) {
-                        xDataMod.get(modIdx).add((float) d);
+                        xDataMod.get(entry.getKey()).add((float) d);
                         if (d < minVal) {
                             minVal = (float) d;
                         }
@@ -109,7 +108,7 @@ public class CalibrationFigure {
                         }
                     }
                     for (double d : entry.getValue()[1]) {
-                        yDataMod.get(modIdx).add((float) d);
+                        yDataMod.get(entry.getKey()).add((float) d);
                     }
                 } catch (Exception ignored) {}
                 modIdx++;
@@ -122,7 +121,7 @@ public class CalibrationFigure {
                 ymax = f;
             }
         }
-        for (List<Float> listf : yDataMod) {
+        for (List<Float> listf : yDataMod.values()) {
             for (float f : listf) {
                 if (f > ymax) {
                     ymax = f;
@@ -131,18 +130,68 @@ public class CalibrationFigure {
         }
         chart.getStyler().setYAxisMax(ymax);
 
+        ArrayList<List<Float>> allXdata = new ArrayList<>();
+        ArrayList<List<Float>> allYdata = new ArrayList<>();
+        ArrayList<List<Color>> allColorData = new ArrayList<>();
+        ArrayList<List<String>> allNameData = new ArrayList<>();
         if (!xData.isEmpty()) {
-            XYSeries series = chart.addSeries("scatter", xData, yData);
-            series.setMarkerColor(new Color(0, 0, 0, opacity));
+            allXdata.add(xData);
+            allYdata.add(yData);
+
+            List<Color> colorList = new ArrayList<>();
+            List<String> nameList = new ArrayList<>();
+            for (int i = 0; i < xData.size(); i++) {
+                nameList.add("scatter");
+                colorList.add(new Color(0, 0, 0, opacity));
+            }
+            allColorData.add(colorList);
+            allNameData.add(nameList);
         }
 
-        for (int i = 0; i < xDataMod.size(); i++) {
-            List<Float> ix = xDataMod.get(i);
-            List<Float> iy = yDataMod.get(i);
+        int colorI = 0;
+        for (String mass : massesList) {
+            List<Float> ix = xDataMod.get(mass);
+            List<Float> iy = yDataMod.get(mass);
             if (!ix.isEmpty()) {
-                XYSeries seriesMod = chart.addSeries("scatterMods - " + massesList.get(i), ix, iy);
-                seriesMod.setMarkerColor(new Color(65 * (i + 1) % 255, 105 * (i + 1) % 255, 225 * (i + 1) % 255));
+                allXdata.add(ix);
+                allYdata.add(iy);
+
+                List<Color> colorList = new ArrayList<>();
+                List<String> nameList = new ArrayList<>();
+                for (int j = 0; j < ix.size(); j++) {
+                    nameList.add("scatterMods - " + mass);
+                    colorList.add(new Color(
+                            65 * (colorI + 1) % 255, 105 * (colorI + 1) % 255, 225 * (colorI + 1) % 255,
+                            (int) (Math.min(opacity * 2, 1) * 255f)));
+                }
+                allColorData.add(colorList);
+                allNameData.add(nameList);
+
+                colorI++;
             }
+        }
+
+        ArrayList<Float> oneX = mixSeriesFloat(allXdata);
+        ArrayList<Float> oneY = mixSeriesFloat(allYdata);
+        ArrayList<Color> oneColor = mixSeriesColor(allColorData);
+        ArrayList<String> oneName = mixSeriesString(allNameData);
+
+        HashSet<String> includedSeries = new HashSet<>();
+        for (int i = 0; i < oneX.size(); i++) {
+            boolean showInLegend = false;
+            String seriesName = oneName.get(i);
+            if (!includedSeries.contains(seriesName)) {
+                showInLegend = true;
+                includedSeries.add(seriesName);
+            } else {
+                seriesName = String.valueOf(i);
+            }
+
+            XYSeries series = chart.addSeries(seriesName,
+                    Collections.singletonList(oneX.get(i)), Collections.singletonList(oneY.get(i)));
+            series.setMarkerColor(oneColor.get(i));
+            series.setMarker(SeriesMarkers.CIRCLE);
+            series.setShowInLegend(showInLegend);
         }
 
         //loess regression
@@ -166,8 +215,8 @@ public class CalibrationFigure {
             } else {
                 series1 = chart.addSeries("regression - " + mass, x1Data, y1Data);
             }
-            series1.setMarkerColor(new Color(243 * j % 255, 9 * j % 255, 9 * j % 255));
-            j += 2;
+            series1.setMarkerColor(new Color(255, 50 * j % 255, 0));
+            j++;
         }
 
         if (Constants.plotExtension.equalsIgnoreCase("png")) {
@@ -180,6 +229,71 @@ public class CalibrationFigure {
                             File.separator + pinName.substring(0, pinName.length() - 4),
                     VectorGraphicsEncoder.VectorGraphicsFormat.PDF);
         }
+    }
+
+    //mixes series so that they appear evenly dispersed in plot
+    //do this for x and y separately
+    private ArrayList<Float> mixSeriesFloat(ArrayList<List<Float>> series) {
+        int maxLength = 0;
+        for (List<Float> s : series) {
+            if (s.size() > maxLength) {
+                maxLength = s.size();
+            }
+        }
+
+        ArrayList<Float> allPoints = new ArrayList<>();
+        for (int i = 0; i < maxLength; i++) {
+            for (List<Float> s : series) {
+                if (i < s.size()) {
+                    allPoints.add(s.get(i));
+                }
+            }
+        }
+
+        Collections.reverse(allPoints);
+        return allPoints;
+    }
+
+    private ArrayList<Color> mixSeriesColor(ArrayList<List<Color>> series) {
+        int maxLength = 0;
+        for (List<Color> s : series) {
+            if (s.size() > maxLength) {
+                maxLength = s.size();
+            }
+        }
+
+        ArrayList<Color> allPoints = new ArrayList<>();
+        for (int i = 0; i < maxLength; i++) {
+            for (List<Color> s : series) {
+                if (i < s.size()) {
+                    allPoints.add(s.get(i));
+                }
+            }
+        }
+
+        Collections.reverse(allPoints);
+        return allPoints;
+    }
+
+    private ArrayList<String> mixSeriesString(ArrayList<List<String>> series) {
+        int maxLength = 0;
+        for (List<String> s : series) {
+            if (s.size() > maxLength) {
+                maxLength = s.size();
+            }
+        }
+
+        ArrayList<String> allPoints = new ArrayList<>();
+        for (int i = 0; i < maxLength; i++) {
+            for (List<String> s : series) {
+                if (i < s.size()) {
+                    allPoints.add(s.get(i));
+                }
+            }
+        }
+
+        Collections.reverse(allPoints);
+        return allPoints;
     }
 }
 

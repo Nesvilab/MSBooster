@@ -915,7 +915,7 @@ public class MzmlReader {
                         double finalDelta = 1000;
                         boolean isNone = true;
                         for (String mass : LOESSRT.keySet()) {
-                            String[] masses = mass.split("/");
+                            String[] masses = mass.split("&");
                             for (String minimass : masses) {
                                 if (pep.name.contains(minimass)) {
                                     isNone = false;
@@ -988,7 +988,7 @@ public class MzmlReader {
                         double finalDelta = 0.5;
                         boolean isNone = true;
                         for (String mass : LOESSIM.keySet()) {
-                            String[] masses = mass.split("/");
+                            String[] masses = mass.split("&");
                             for (String minimass : masses) {
                                 if (pep.name.contains(minimass)) {
                                     isNone = false;

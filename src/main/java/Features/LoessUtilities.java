@@ -148,6 +148,16 @@ public class LoessUtilities {
         }
 
         HashMap<String, ArrayList<String>> peptideMap = new HashMap<>();
+
+        //create ignorable mass offsets
+        HashSet<String> ignorableMassOffsets = new HashSet<>();
+        for (String mass : massesList) {
+            if (mass.contains("&")) {
+                String[] masses = mass.split("&");
+                ignorableMassOffsets.addAll(List.of(masses));
+            }
+        }
+
         for (String mass : massesList) {
             ArrayList<Float> thisExpValues = new ArrayList<>();
             ArrayList<Float> thisPredValues = new ArrayList<>();
@@ -166,7 +176,7 @@ public class LoessUtilities {
                         if (m.equals("others")) {
                             continue;
                         }
-                        String[] masses = m.split("/");
+                        String[] masses = m.split("&");
                         for (String minimass : masses) {
                             if (peptides.get(i).contains(minimass)) {
                                 peptideContains = true;
@@ -183,15 +193,37 @@ public class LoessUtilities {
                     }
                 }
             } else {
-                String[] masses = mass.split("/");
-                for (int i = 0; i < peptides.size(); i++) {
-                    for (String minimass : masses) {
-                        if (peptides.get(i).contains(minimass)) {
+                //if it's a regular variable mod, don't include mass offsets
+                if (mass.contains("&")) {
+                    String[] masses = mass.split("&");
+                    for (int i = 0; i < peptides.size(); i++) {
+                        for (String minimass : masses) {
+                            if (peptides.get(i).contains(minimass)) {
+                                thisExpValues.add(expValues.get(i));
+                                thisPredValues.add(predValues.get(i));
+                                thisEscores.add(eScores.get(i));
+                                finalPeptides.add(peptides.get(i));
+                                break;
+                            }
+                        }
+                    }
+                } else {
+                    for (int i = 0; i < peptides.size(); i++) {
+                        boolean offsetContinue = false;
+                        for (String massOffset : ignorableMassOffsets) {
+                            if (peptides.get(i).contains(massOffset)) {
+                                offsetContinue = true;
+                                break;
+                            }
+                        }
+                        if (offsetContinue) {
+                            continue;
+                        }
+                        if (peptides.get(i).contains(mass)) {
                             thisExpValues.add(expValues.get(i));
                             thisPredValues.add(predValues.get(i));
                             thisEscores.add(eScores.get(i));
                             finalPeptides.add(peptides.get(i));
-                            break;
                         }
                     }
                 }

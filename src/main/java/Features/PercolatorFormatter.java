@@ -521,7 +521,7 @@ public class PercolatorFormatter {
                         }
                     }
                     if (plot) {
-                        CalibrationFigure cf = new RTCalibrationFigure(mzml, pinFiles[i].getCanonicalPath(), 0.2f,
+                        CalibrationFigure cf = new RTCalibrationFigure(mzml, pinFiles[i].getCanonicalPath(), Constants.loessScatterOpacity,
                                 mzml.expAndPredRTs, mzml.RTLOESS);
 
                         //individual figures by mass
@@ -535,7 +535,7 @@ public class PercolatorFormatter {
                                 new RTCalibrationFigure(mzml,
                                         pinFiles[i].getCanonicalPath().substring(0,
                                                 pinFiles[i].getCanonicalPath().length() - 4) + "_" + mass + ".pin",
-                                        0.2f, miniMassToData, miniLoessFunctions);
+                                        Constants.loessScatterOpacity, miniMassToData, miniLoessFunctions);
                             }
                         }
 
@@ -543,8 +543,8 @@ public class PercolatorFormatter {
                         File f = new File(pinFiles[i].getCanonicalPath());
                         String calibrationPeptideFilePathBase =
                                 f.getParent() + File.separator + "MSBooster_plots" + File.separator + cf.folderString +
-                                File.separator + f.getName().substring(0, f.getName().length() - 4) +
-                                "_RTcalibrationPeptides";
+                                        File.separator + f.getName().substring(0, f.getName().length() - 4) +
+                                        "_RTcalibrationPeptides";
                         for (Map.Entry<String, ArrayList<String>> entry : mzml.RTpeptides.entrySet()) {
                             String calibrationPeptideFilePath = calibrationPeptideFilePathBase;
                             if (!entry.getKey().isEmpty()) {
@@ -615,7 +615,7 @@ public class PercolatorFormatter {
                             }
                         }
                         if (plot) {
-                            cf = new IMCalibrationFigure(mzml, pinFiles[i].getCanonicalPath(), 0.2f,
+                            cf = new IMCalibrationFigure(mzml, pinFiles[i].getCanonicalPath(), Constants.loessScatterOpacity,
                                     mzml.expAndPredIMsHashMap.get(charge), mzml.IMLOESS.get(charge - 1), charge);
                             writePeptides = true;
 
@@ -630,7 +630,7 @@ public class PercolatorFormatter {
                                     new IMCalibrationFigure(mzml,
                                             pinFiles[i].getCanonicalPath().substring(0,
                                                     pinFiles[i].getCanonicalPath().length() - 4) + "_" + mass + ".pin",
-                                            0.2f, miniMassToData, miniLoessFunctions, charge);
+                                            Constants.loessScatterOpacity, miniMassToData, miniLoessFunctions, charge);
                                 }
                             }
                         }

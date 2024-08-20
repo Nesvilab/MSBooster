@@ -41,7 +41,7 @@ public class MainClass {
     public static ScheduledThreadPoolExecutor executorService;
     public static void main(String[] args) throws Exception {
         Locale.setDefault(Locale.US);
-        printInfo("MSBooster v1.2.44");
+        printInfo("MSBooster v1.2.45");
 
         try {
             //accept command line inputs
@@ -261,7 +261,7 @@ public class MainClass {
                                         float fv = Float.parseFloat(v);
                                         if (fv != 0) {
                                             if (!final_vals.isEmpty()) {
-                                                final_vals += "/";
+                                                final_vals += "&";
                                             }
                                             final_vals += String.format("%.4f", fv);
                                         }
@@ -278,7 +278,7 @@ public class MainClass {
                                         float fv = Float.parseFloat(v);
                                         if (fv != 0) {
                                             if (!final_vals.isEmpty()) {
-                                                final_vals += "/";
+                                                final_vals += "&";
                                             }
                                             final_vals += v;
                                         }

@@ -60,6 +60,11 @@ public class JSONWriter {
         if (Constants.KoinaTMTmodels.contains(url)) {
             TMT = true;
         }
+        if (model.contains("unispec")) {
+            maxJsonLength = 100;
+        } else {
+            maxJsonLength = 1000;
+        }
 
         //set entries
         this.peptides = new String[entries.size()];

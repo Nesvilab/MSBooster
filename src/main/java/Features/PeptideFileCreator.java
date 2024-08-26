@@ -123,6 +123,22 @@ public class PeptideFileCreator {
         HashSet<String> hSetHits = new HashSet<>(allHits.keySet());
         printInfo(hSetHits.size() + " PSMs for prediction");
 
+        if ((KoinaModels.contains(modelFormat)) &&
+                (modelFormat.contains("AlphaPept"))) {
+            //want to see what unimods were assigned
+            HashSet<String> unimodCodes = new HashSet<>();
+            for (String hit : hSetHits) {
+                String[] unimodSplit = hit.split(",")[0].split("UNIMOD:");
+                if (unimodSplit.length > 1) {
+                    for (int i = 1; i < unimodSplit.length; i++) {
+                        String split = unimodSplit[i];
+                        unimodCodes.add(split.split("]")[0]);
+                    }
+                }
+            }
+            printInfo("AlphaPept using UniMod codes " + unimodCodes);
+        }
+
         //write to file
         try {
             String filename = "";

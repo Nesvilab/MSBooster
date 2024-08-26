@@ -17,10 +17,11 @@
 
 package Features;
 
+import static Features.PTMhandler.*;
 import static utils.Print.printError;
 
 import java.util.ArrayList;
-import java.util.Map;
+import java.util.HashSet;
 
 //lots of different ways to format peptide string
 public class PeptideFormatter {
@@ -44,6 +45,8 @@ public class PeptideFormatter {
     private ArrayList<Integer> ends = new ArrayList<>();
 
     String charge;
+
+    public HashSet<String> foundUnimods = new HashSet<>(); //collection of previously used unimod codes
 
     private void findPTMlocations() {
         for (int i = 0; i < base.length(); i++) {
@@ -76,11 +79,15 @@ public class PeptideFormatter {
     }
 
     private void diannTObase(String peptide) {
-        peptide = peptide.replace("[TMT]", "[" + PTMhandler.modMassToUnimod.get(PTMhandler.tmtMass) + "]");
-        base = PTMhandler.formatPeptideSpecificToBase(peptide);
+        peptide = peptide.replace("[TMT]", "[" + PTMhandler.tmtUnimod + "]");
+        base = PTMhandler.formatPeptideSpecificToBase(peptide, unimodToModMass);
     }
     private void koinaTObase(String peptide) {
-        base = PTMhandler.formatPeptideSpecificToBase(peptide);
+        base = PTMhandler.formatPeptideSpecificToBase(peptide, unimodToModMass);
+    }
+
+    private void alphapeptTObase(String peptide) {
+        base = PTMhandler.formatPeptideSpecificToBase(peptide, unimodToModMassAlphaPeptDeep);
     }
 
     private void predfullTObase(String peptide) {
@@ -148,11 +155,16 @@ public class PeptideFormatter {
             int start = starts.get(i);
             int end = ends.get(i);
 
-            diann = PTMhandler.formatPeptideBaseToSpecific(diann, start, end, "diann");
+            String[] peptideUnimod = PTMhandler.formatPeptideBaseToSpecific(
+                    diann, start, end, "diann", foundUnimods);
+            diann = peptideUnimod[0];
+            if (!peptideUnimod[1].isEmpty()) {
+                foundUnimods.add(peptideUnimod[1]);
+            }
         }
 
         //special TMT formatting
-        diann = diann.replaceAll("UniMod:" + PTMhandler.modMassToUnimod.get(PTMhandler.tmtMass), "TMT");
+        diann = diann.replaceAll("UniMod:" + PTMhandler.tmtUnimod, "TMT");
     }
 
     private void baseTOunispec() {
@@ -162,7 +174,12 @@ public class PeptideFormatter {
             int start = starts.get(i);
             int end = ends.get(i);
 
-            unispec = PTMhandler.formatPeptideBaseToSpecific(unispec, start, end, "unispec");
+            String[] peptideUnimod = PTMhandler.formatPeptideBaseToSpecific(
+                    unispec, start, end, "unispec", foundUnimods);
+            unispec = peptideUnimod[0];
+            if (!peptideUnimod[1].isEmpty()) {
+                foundUnimods.add(peptideUnimod[1]);
+            }
         }
     }
 
@@ -173,7 +190,12 @@ public class PeptideFormatter {
             int start = starts.get(i);
             int end = ends.get(i);
 
-            ms2pip = PTMhandler.formatPeptideBaseToSpecific(ms2pip, start, end, "ms2pip");
+            String[] peptideUnimod = PTMhandler.formatPeptideBaseToSpecific(
+                    ms2pip, start, end, "ms2pip", foundUnimods);
+            ms2pip = peptideUnimod[0];
+            if (!peptideUnimod[1].isEmpty()) {
+                foundUnimods.add(peptideUnimod[1]);
+            }
         }
     }
 
@@ -184,7 +206,12 @@ public class PeptideFormatter {
             int start = starts.get(i);
             int end = ends.get(i);
 
-            deeplc = PTMhandler.formatPeptideBaseToSpecific(deeplc, start, end, "deeplc");
+            String[] peptideUnimod = PTMhandler.formatPeptideBaseToSpecific(
+                    deeplc, start, end, "deeplc", foundUnimods);
+            deeplc = peptideUnimod[0];
+            if (!peptideUnimod[1].isEmpty()) {
+                foundUnimods.add(peptideUnimod[1]);
+            }
         }
     }
 
@@ -195,7 +222,13 @@ public class PeptideFormatter {
             int start = starts.get(i);
             int end = ends.get(i);
 
-            alphapept = PTMhandler.formatPeptideBaseToSpecific(alphapept, start, end, "alphapept");
+            String[] peptideUnimod = PTMhandler.formatPeptideBaseToSpecific(
+                    alphapept, start, end, "alphapept", foundUnimods);
+            //System.out.println(Arrays.toString(peptideUnimod));
+            alphapept = peptideUnimod[0];
+            if (!peptideUnimod[1].isEmpty()) {
+                foundUnimods.add(peptideUnimod[1]);
+            }
         }
     }
 
@@ -225,7 +258,12 @@ public class PeptideFormatter {
             int start = starts.get(i);
             int end = ends.get(i);
 
-            prosit = PTMhandler.formatPeptideBaseToSpecific(prosit, start, end, "prosit");
+            String[] peptideUnimod = PTMhandler.formatPeptideBaseToSpecific(
+                    prosit, start, end, "prosit", foundUnimods);
+            prosit = peptideUnimod[0];
+            if (!peptideUnimod[1].isEmpty()) {
+                foundUnimods.add(peptideUnimod[1]);
+            }
         }
 
         //C is required to have carbamidomethyl
@@ -242,7 +280,7 @@ public class PeptideFormatter {
 
                 if (substituteC) {
                     prosit = prosit.substring(0, i + 1) + "[UNIMOD:" +
-                            PTMhandler.modMassToUnimod.get(PTMhandler.carbamidomethylationMass) + "]" +
+                            PTMhandler.carbamidomethylationUnimod + "]" +
                             prosit.substring(i + 1);
                 }
             }
@@ -252,7 +290,7 @@ public class PeptideFormatter {
     private void prositTOprositTMT() {
         //Prosit TMT assumes n-term are TMT-labeled
         if (!prosit.startsWith("[")) {
-            String tmtLabel = "[UNIMOD:" + PTMhandler.modMassToUnimod.get(PTMhandler.tmtMass) + "]-";
+            String tmtLabel = "[UNIMOD:" + PTMhandler.tmtUnimod + "]-";
             prositTMT = tmtLabel + prosit;
         } else {
             prositTMT = prosit;
@@ -380,7 +418,7 @@ public class PeptideFormatter {
                 break;
             case "alphapept":
                 alphapept = peptide;
-                koinaTObase(peptide);
+                alphapeptTObase(peptide);
                 break;
             case "msp":
                 mspTObase(peptide);

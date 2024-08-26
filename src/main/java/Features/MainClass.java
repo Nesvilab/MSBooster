@@ -41,7 +41,7 @@ public class MainClass {
     public static ScheduledThreadPoolExecutor executorService;
     public static void main(String[] args) throws Exception {
         Locale.setDefault(Locale.US);
-        printInfo("MSBooster v1.2.45");
+        printInfo("MSBooster v1.2.46");
 
         try {
             //accept command line inputs
@@ -1459,14 +1459,14 @@ public class MainClass {
             ArrayList<String> predFilePaths = new ArrayList<>(); //replace "koina" with final name later
             HashMap<String, String> modelToPath = new HashMap<>();
             if (createSpectraRTPredFile) {
+                boolean ranKoina = false;
                 for (String currentModel : models) {
                     if (Constants.KoinaModels.contains(currentModel)) {
                         if (! modelToPath.containsKey(currentModel)) {
                             kmc.callModel(currentModel, klr, Constants.JsonDirectory, executorService,
                                     true, true);
-                            kmc.assignMissingPeptidePredictions(klr,
-                                    Constants.spectraRTPrefix + "_full.tsv");
                             modelToPath.put(currentModel, "koina");
+                            ranKoina = true;
                         }
                         predFilePaths.add("koina");
                     } else {
@@ -1478,6 +1478,9 @@ public class MainClass {
                         }
                         predFilePaths.add(modelToPath.get(currentModel));
                     }
+                }
+                if (ranKoina) {
+                    kmc.assignMissingPeptidePredictions(klr, Constants.spectraRTPrefix + "_full.tsv");
                 }
 
                 String koinaPredFilePath = "koina.mgf";

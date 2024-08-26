@@ -96,7 +96,7 @@ public class KoinaModelCaller {
         }
 
         try {
-            //pass json files to curl http request
+            //pass json files to http request
             File[] fileArray = new File(jsonFolder).listFiles();
             ArrayList<String> filenameArraylist = new ArrayList<>();
             for (File f : fileArray) {
@@ -176,7 +176,7 @@ public class KoinaModelCaller {
             long endTime = System.currentTimeMillis();
             long elapsedTime = endTime - startTime;
             if (verbose) {
-                printInfo("cURL and parse time in milliseconds: " + elapsedTime);
+                printInfo("HTTP request and parse time in milliseconds: " + elapsedTime);
             }
 
             //create plot

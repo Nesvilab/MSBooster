@@ -226,7 +226,7 @@ public class JSONWriter {
                         inputsArray.put(chargeObject);
 
                         //collision energies
-                        if (!url.equals("Prosit_2020_intensity_CID") && !url.equals("ms2pip_2021_HCD")) {
+                        if (!url.equals("Prosit_2020_intensity_CID") && !url.contains("ms2pip")) {
                             JSONObject nceObject = new JSONObject();
                             nceObject.put("name", "collision_energies");
                             nceObject.put("shape", new JSONArray("[" + peptides.length + ",1]"));

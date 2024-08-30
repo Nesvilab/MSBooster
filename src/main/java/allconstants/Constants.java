@@ -96,44 +96,64 @@ public class Constants {
     public static Boolean findBestImModel = false;
     public static Boolean foundBest = false;
     public static String KoinaURL = ""; //https://koina.proteomicsdb.org/v2/models/ or https://koina.wilhelmlab.org:443/v2/models/
+    //TODO ms2pip tmt and itraq phospho models need to be corrected on koina
     public static CaseInsensitiveHashSet KoinaModels = new CaseInsensitiveHashSet(
-            new String[] {"AlphaPept_rt_generic", "Prosit_2019_irt",
-                    "Prosit_2020_irt_TMT", "Deeplc_hela_hf",
-                    "ms2pip_2021_HCD", "AlphaPept_ms2_generic", "Prosit_2019_intensity",
-                    "Prosit_2020_intensity_CID", "Prosit_2020_intensity_TMT", "Prosit_2020_intensity_HCD",
-                    "Prosit_2023_intensity_timsTOF", "AlphaPept_ccs_generic", "UniSpec"});
+            new String[] {
+                    "AlphaPept_rt_generic",
+                    "Prosit_2019_irt", "Prosit_2020_irt_TMT",
+                    "Deeplc_hela_hf",
+                    "ms2pip_2021_HCD", "ms2pip_timsTOF2024", "ms2pip_CID_TMT", "ms2pip_TTOF5600", "ms2pip_Immuno_HCD",
+                    "ms2pip_iTRAQphospho",
+                    "AlphaPept_ms2_generic",
+                    "UniSpec",
+                    "Prosit_2019_intensity", "Prosit_2020_intensity_CID", "Prosit_2020_intensity_TMT",
+                    "Prosit_2020_intensity_HCD", "Prosit_2023_intensity_timsTOF",
+                    "AlphaPept_ccs_generic"});
     public static CaseInsensitiveHashSet KoinaRTmodels = new CaseInsensitiveHashSet(
-            new String[] {"AlphaPept_rt_generic", "Prosit_2019_irt",
-                    "Prosit_2020_irt_TMT", "Deeplc_hela_hf"});
+            new String[] {
+                    "AlphaPept_rt_generic",
+                    "Prosit_2019_irt", "Prosit_2020_irt_TMT",
+                    "Deeplc_hela_hf"});
     public static CaseInsensitiveHashSet KoinaMS2models = new CaseInsensitiveHashSet(
-            new String[] {"ms2pip_2021_HCD", "AlphaPept_ms2_generic", "Prosit_2019_intensity",
-                    "Prosit_2020_intensity_CID", "Prosit_2020_intensity_TMT", "Prosit_2020_intensity_HCD",
-                    "Prosit_2023_intensity_timsTOF", "UniSpec"});
+            new String[] {
+                    "ms2pip_2021_HCD", "ms2pip_timsTOF2024", "ms2pip_CID_TMT", "ms2pip_CID_TMT", "ms2pip_TTOF5600",
+                    "ms2pip_Immuno_HCD", "ms2pip_iTRAQphospho",
+                    "AlphaPept_ms2_generic",
+                    "Prosit_2019_intensity", "Prosit_2020_intensity_CID", "Prosit_2020_intensity_TMT",
+                    "Prosit_2020_intensity_HCD", "Prosit_2023_intensity_timsTOF",
+                    "UniSpec"});
     public static CaseInsensitiveHashSet KoinaIMmodels = new CaseInsensitiveHashSet(
             new String[] {"AlphaPept_ccs_generic"});
     public static CaseInsensitiveHashSet KoinaTMTmodels = new CaseInsensitiveHashSet(
-            new String[] {"Prosit_2020_irt_TMT", "Prosit_2020_intensity_TMT"});
+            new String[] {
+                    "Prosit_2020_irt_TMT",
+                    "Prosit_2020_intensity_TMT",
+                    "ms2pip_CID_TMT"});
     public static CaseInsensitiveHashSet KoinaCCSmodels = new CaseInsensitiveHashSet(
             new String[] {"AlphaPept_ccs_generic"});
     public static String rtSearchModelsString = "DIA-NN,AlphaPept_rt_generic,Prosit_2019_irt,Deeplc_hela_hf";
     public static final CaseInsensitiveHashSet rtSearchModelsTMT = new CaseInsensitiveHashSet(
             new String[] {"DIA-NN", "Prosit_2020_irt_TMT"});
-    public static String ms2SearchModelsString = "DIA-NN,ms2pip_2021_HCD,AlphaPept_ms2_generic," +
-            "Prosit_2020_intensity_CID,Prosit_2020_intensity_HCD,Prosit_2023_intensity_timsTOF,UniSpec";
+    public static String ms2SearchModelsString =
+            "DIA-NN," +
+            "ms2pip_2021_HCD,ms2pip_timsTOF2024,ms2pip_TTOF5600,ms2pip_Immuno_HCD," +
+            "AlphaPept_ms2_generic," +
+            "Prosit_2020_intensity_CID,Prosit_2020_intensity_HCD,Prosit_2023_intensity_timsTOF," +
+            "UniSpec";
     public static String imSearchModelsString = "DIA-NN,AlphaPept_ccs_generic";
     public static final CaseInsensitiveHashSet ms2SearchModelsTMT = new CaseInsensitiveHashSet(
             new String[] {"DIA-NN", "Prosit_2020_intensity_TMT"});
     public static CaseInsensitiveHashSet nceModels = new CaseInsensitiveHashSet(
-            new String[] {"PredFull", "Prosit", "PrositTMT", "alphapeptdeep",
-                    "AlphaPept_ms2_generic", "Prosit_2019_intensity", "Prosit_2023_intensity_timsTOF",
-                    "Prosit_2020_intensity_TMT", "Prosit_2020_intensity_HCD", "UniSpec"});
+            new String[] {
+                    "PredFull", "Prosit", "PrositTMT", "alphapeptdeep", //externally supported
+                    "AlphaPept_ms2_generic",
+                    "Prosit_2019_intensity", "Prosit_2023_intensity_timsTOF",
+                    "Prosit_2020_intensity_TMT", "Prosit_2020_intensity_HCD",
+                    "UniSpec"});
     public static LibraryPredictionMapper predictedLibrary;
-
     public static Integer numKoinaAttempts = 3;
     public static Integer initialKoinaMillisecondsToWaitRtIm = 30000;
     public static Integer initialKoinaMillisecondsToWaitMs2 = 60000;
-//    public static Integer KoinaThreadsRT = 30;
-//    public static Integer KoinaThreadsMS2 = 30;
     public static Float minIntensityToWriteToMgf = 0.01f;
     public static Boolean calibrateNCE = true;
     public static Integer numPSMsToCalibrate = 1000;

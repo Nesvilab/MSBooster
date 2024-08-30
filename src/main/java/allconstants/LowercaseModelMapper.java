@@ -14,6 +14,11 @@ public class LowercaseModelMapper {
         lowercaseToModel.put("deeplc_hela_hf", "Deeplc_hela_hf");
 
         lowercaseToModel.put("ms2pip_2021_hcd", "ms2pip_2021_HCD");
+        lowercaseToModel.put("ms2pip_timstof2024", "ms2pip_timsTOF2024");
+        lowercaseToModel.put("ms2pip_cid_tmt", "ms2pip_CID_TMT");
+        lowercaseToModel.put("ms2pip_ttof5600", "ms2pip_TTOF5600");
+        lowercaseToModel.put("ms2pip_immuno_hcd", "ms2pip_Immuno_HCD");
+        lowercaseToModel.put("ms2pip_itraqphospho", "ms2pip_iTRAQphospho");
         lowercaseToModel.put("alphapept_ms2_generic", "AlphaPept_ms2_generic");
         lowercaseToModel.put("prosit_2019_intensity", "Prosit_2019_intensity");
         lowercaseToModel.put("prosit_2020_intensity_cid", "Prosit_2020_intensity_CID");

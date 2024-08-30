@@ -165,6 +165,11 @@ public class PeptideFormatter {
 
         //special TMT formatting
         diann = diann.replaceAll("UniMod:" + PTMhandler.tmtUnimod, "TMT");
+
+        //nterm acetyl and TMT on AA1 not allowed
+        if (diann.startsWith("[UniMod") && diann.startsWith("TMT", 12)) {
+            diann = diann.substring(10);
+        }
     }
 
     private void baseTOunispec() {

@@ -302,7 +302,7 @@ public class PeptideFormatter {
         }
 
         //S are not labeled
-        prositTMT = prositTMT.replace("S[" + PTMhandler.tmtMass + "]", "S");
+        prositTMT = prositTMT.replace("S[UNIMOD:" + tmtUnimod + "]", "S");
     }
 
     private void strippedTOdlib() { dlib = stripped.replace("C", "C[" + PTMhandler.carbamidomethylationMass + "]") + "|" + charge;

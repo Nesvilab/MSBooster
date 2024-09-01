@@ -305,16 +305,17 @@ public class LoessUtilities {
         return new Object[] {massToDataMap, peptideMap};
     }
 
+    private static double getBandwidth(double bandwidth, int numDatapoints) {
+        if (numDatapoints < minLoessRegressionSize || bandwidth > 1) {
+            bandwidth = 1d; //linear regression
+        } else if (bandwidth < (double) 2 / numDatapoints) {
+            //the bandwidth must be larger than 2/n
+            //https://commons.apache.org/proper/commons-math/javadocs/api-3.6.1/org/apache/commons/math3/analysis/interpolation/LoessInterpolator.html
+            bandwidth = (double) 3 / numDatapoints;
+        }
+        return bandwidth;
+    }
     public static Function1<Double, Double> LOESS(double[][] bins, double bandwidth, int robustIters) {
-        if (bandwidth <= 0) {
-            printInfo("bandwidth is set to " + bandwidth + " but it must be greater than 0. Setting it to 0.05");
-            bandwidth = 0.05;
-        }
-        if (bandwidth > 1) {
-            printInfo("bandwidth is set to " + bandwidth + " but maximum allowed is 1. Setting it to 1");
-            bandwidth = 1;
-        }
-
         //need to sort arrays (DIA-U mzml not in order)
         int[] sortedIndices = IntStream.range(0, bins[0].length)
                 .boxed().sorted(Comparator.comparingDouble(k -> bins[0][k])).mapToInt(ele -> ele).toArray();
@@ -338,11 +339,10 @@ public class LoessUtilities {
             }
         }
 
-        //fit loess
-        if (newX.length < minLoessRegressionSize) {
-            bandwidth = 1d; //linear regression
-        }
+        //check bandwidth
+        bandwidth = getBandwidth(bandwidth, newX.length);
 
+        //fit loess
         LoessInterpolator loessInterpolator = new LoessInterpolator(bandwidth, robustIters);
         double[][] results = fittingRound(loessInterpolator, newX, newY, null, false);
         double[] fittedY = results[0];
@@ -519,7 +519,7 @@ public class LoessUtilities {
                     //choose best model
                     if (mse < bestMSE) {
                         bestMSE = mse;
-                        bestBandwidth = floatb;
+                        bestBandwidth = (float) getBandwidth(floatb, train[0].length);
                     }
                 } catch (Exception ignored) {} //bandwidth too small?
             }

@@ -272,7 +272,7 @@ public class Constants {
                 } else {
                     printError(fragmentIonType + " is not a supported fragment ion type to include. " +
                             "Please choose from " + MassCalculator.allowedFragmentIonTypes);
-                    System.exit(-1);
+                    System.exit(1);
                 }
             }
             for (String fragment : MassCalculator.allowedFragmentIonTypes) {
@@ -291,7 +291,7 @@ public class Constants {
                 } else {
                     printError(fragmentIonType + " is not a supported fragment ion type to exclude. " +
                             "Please choose from " + MassCalculator.allowedFragmentIonTypes);
-                    System.exit(-1);
+                    System.exit(1);
                 }
             }
         }

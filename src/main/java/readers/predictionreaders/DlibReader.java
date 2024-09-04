@@ -107,7 +107,7 @@ public class DlibReader implements LibraryPredictionMapper {
                 }
             } catch (SQLException | IOException | DataFormatException e) {
                 e.printStackTrace();
-                System.exit(-1);
+                System.exit(1);
             } finally {
                 statement.close();
                 connection.close();

@@ -1441,7 +1441,7 @@ public class MainClass {
                                 default:
                                     printError("spectraRTPredModel must be one of DIA-NN, Prosit, PrositTMT, " +
                                             "PredFull, pDeep2, pDeep3, or alphapeptdeep");
-                                    System.exit(-1);
+                                    System.exit(1);
                             }
                         }
                         modelsRan.add(currentModel);

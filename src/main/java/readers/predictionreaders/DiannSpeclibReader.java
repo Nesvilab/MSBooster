@@ -61,12 +61,12 @@ public class DiannSpeclibReader implements LibraryPredictionMapper {
             int splitDot = bFile.indexOf("predicted.bin");
             if (! new File(bFile).exists()) {
                 printError("Error: no prediction file available at: " + bFile);
-                System.exit(-1);
+                System.exit(1);
             }
             String textFile = bFile.substring(0, splitDot) + "tsv"; //enforces tsv naming convention
             if (! new File(textFile).exists()) {
                 printError("Error: no prediction file available at: " + textFile);
-                System.exit(-1);
+                System.exit(1);
             }
 
             try{
@@ -130,7 +130,7 @@ public class DiannSpeclibReader implements LibraryPredictionMapper {
 
                 if (TSVReader.readLine() != null) {
                     printError("Prediction file is missing some entries. Please rerun MSBooster");
-                    System.exit(-1);
+                    System.exit(1);
                 }
                 TSVReader.close();
 

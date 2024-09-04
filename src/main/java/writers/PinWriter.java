@@ -787,8 +787,10 @@ public class PinWriter {
         } catch (com.univocity.parsers.common.TextWritingException e) {
             e.printStackTrace();
             printInfo("Try increasing the parameter numPinColumns if you have many protein columns!");
+            System.exit(1);
         } catch (Exception e) {
             e.printStackTrace();
+            System.exit(1);
         }
     }
 }

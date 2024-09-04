@@ -277,7 +277,7 @@ public class MassCalculator {
                 return newY.calcMass(num2, "a", 1);
             default:
                 printError(flag + " is not supported. Choose ay or by");
-                System.exit(-1);
+                System.exit(1);
         }
         return 0;
     }
@@ -321,7 +321,7 @@ public class MassCalculator {
     private MassCalculator makeInternalPeptide(int y) {
         if (y >= this.peptide.length()) { //only make smaller peptides
             printError("internal fragment must be shorter than initial peptide");
-            System.exit(-1);
+            System.exit(1);
         }
         String peptide = this.peptide.substring(this.peptide.length() - y);
         //float mass = this.mass;

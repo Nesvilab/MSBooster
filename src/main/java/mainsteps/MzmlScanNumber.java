@@ -231,11 +231,11 @@ public class MzmlScanNumber {
 //                } else {
 //                    printError("Prediction missing in file for " + name.baseCharge);
 //                    e.printStackTrace();
-//                    System.exit(-1);
+//                    System.exit(1);
 //                }
                 printError("Prediction missing in file for " + name.getBaseCharge());
                 e.printStackTrace();
-                System.exit(-1);
+                System.exit(1);
             }
         }
         return newPepObj;

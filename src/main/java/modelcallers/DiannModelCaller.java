@@ -139,19 +139,19 @@ public class DiannModelCaller {
                 if (DIANNtermination == -1073741515) {
                     printError("Microsoft Visual C++ Redistributable is missing. Please download at " +
                             "https://learn.microsoft.com/en-us/cpp/windows/latest-supported-vc-redist");
-                    System.exit(-1);
+                    System.exit(1);
                 }
                 if (DIANNtermination == 137) {
                     printError("Out of memory during DIA-NN prediction. " +
                             "Please allocate more memory, or increase splitPredInputFile " +
                             "parameter until successfully predicted.");
-                    System.exit(-1);
+                    System.exit(1);
                 }
                 if (DIANNtermination != 0) {
                     printError("Abnormal DIANN termination: " + DIANNtermination + ", please run the " +
                             "following command from the command line for more information\n" +
                             String.join(" ", builder.command()));
-                    System.exit(-1);
+                    System.exit(1);
                 }
 
                 if (Constants.splitPredInputFile != 1) {
@@ -194,7 +194,7 @@ public class DiannModelCaller {
                 }
             } else {
                 printError("Cannot find DIA-NN's output. Please rerun MSBooster");
-                System.exit(-1);
+                System.exit(1);
             }
 
         } catch (IOException | InterruptedException e) {

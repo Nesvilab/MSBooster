@@ -52,6 +52,7 @@ import umich.ms.datatypes.scan.IScan;
 import umich.ms.datatypes.scan.StorageStrategy;
 import umich.ms.datatypes.scancollection.impl.ScanCollectionDefault;
 import umich.ms.fileio.exceptions.FileParsingException;
+import umich.ms.fileio.filetypes.agilent.cef.jaxb.P;
 import umich.ms.fileio.filetypes.mzml.MZMLFile;
 import umontreal.ssj.probdist.EmpiricalDist;
 import utils.InstrumentUtils;
@@ -183,10 +184,12 @@ public class MzmlReader {
     public void createScanNumObjects() throws FileParsingException {
         printInfo("Processing " + pathStr);
         scans.loadData(LCMSDataSubset.MS2_WITH_SPECTRA);
+        ProgressReporter pr = new ProgressReporter(scans.getMapNum2scan().values().size());
         for (IScan scan : scans.getMapNum2scan().values()) {
             if (scan.getMsLevel() != 1) {
                 scanNumberObjects.put(scan.getNum(), new MzmlScanNumber(scan));
             }
+            pr.progress();
         }
     }
 
@@ -308,6 +311,7 @@ public class MzmlReader {
         String currentScanNum = "-1";
         setScanNumPepObj task = null;
         int limit = pin.scanNumIdx + 2;
+        printInfo("Setting pin entries");
         while (pin.next(false)) {
             try {
                 //get scanNum as string

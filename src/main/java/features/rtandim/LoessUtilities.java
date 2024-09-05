@@ -21,6 +21,7 @@ import static utils.Print.printInfo;
 
 public class LoessUtilities {
     //getPSMs returns number of PSMs fitting all criteria except e value cutoff
+    //private function only used by getArrays
     private static int getPSMs(MzmlReader mzml,
                                ArrayList<Float> expValues, ArrayList<Float> predValues, ArrayList<Float> eScores,
                                ArrayList<String> peptides, HashMap<String, ArrayList<Integer>> pepIdx,
@@ -56,12 +57,19 @@ public class LoessUtilities {
                     continue;
                 }
 
-                expValues.add(value);
+                //add values once all criteria is met
                 if (mode.equals("RT")) {
+                    if (pep.RT == 0) {
+                        continue;
+                    }
                     predValues.add(pep.RT);
                 } else {
+                    if (pep.IM == 0) {
+                        continue;
+                    }
                     predValues.add(pep.IM);
                 }
+                expValues.add(value);
                 eScores.add(e);
                 peptides.add(pep.name);
                 if (pepIdx.containsKey(pep.name)) {

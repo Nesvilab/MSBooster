@@ -696,7 +696,11 @@ public class MainClass {
                     bw.write(sb.toString() + "\n");
                     for (int i = 0; i < datapointsRT.get(models.get(0)).length; i++) {
                         for (String model : models) {
-                            bw.write(datapointsRT.get(model)[i] + "\t");
+                            if (i < datapointsRT.get(model).length) {
+                                bw.write(datapointsRT.get(model)[i] + "\t");
+                            } else {
+                                bw.write("Inf\t");
+                            }
                         }
                         bw.write("\n");
                     }
@@ -867,6 +871,8 @@ public class MainClass {
                     printInfo("Choosing IM model based on top 10 consensus method");
                     printInfo("IM model chosen is " + Constants.imModel);
                 }
+
+                //TODO: write out file with IM differences
 
                 if (Constants.imModel.isEmpty()) {
                     Constants.imModel = "DIA-NN";

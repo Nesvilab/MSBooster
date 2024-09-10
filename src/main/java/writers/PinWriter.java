@@ -92,7 +92,7 @@ public class PinWriter {
 
     public void write() throws IOException {
         try {
-            PeptideObj pepObj = null;
+            PeptideObj pepObj;
             ProgressReporter pr = new ProgressReporter(pin.getLength());
             while (pin.next(true)) {
                 pr.progress();
@@ -313,7 +313,7 @@ public class PinWriter {
                             formattedWrite("predicted_RT", pepObj.RT);
                             break;
                         case "brayCurtis":
-                            if (pepObj.spectralSimObj.spectrumComparisons.size() == 0) {
+                            if (pepObj.spectralSimObj.spectrumComparisons.isEmpty()) {
                                 double score = pepObj.spectralSimObj.scores.get(feature);
                                 formattedWrite("bray_curtis", score);
                             } else {
@@ -325,7 +325,7 @@ public class PinWriter {
                             }
                             break;
                         case "cosineSimilarity":
-                            if (pepObj.spectralSimObj.spectrumComparisons.size() == 0) {
+                            if (pepObj.spectralSimObj.spectrumComparisons.isEmpty()) {
                                 double score = pepObj.spectralSimObj.scores.get(feature);
                                 formattedWrite("cosine_similarity", score);
                             } else {
@@ -337,7 +337,7 @@ public class PinWriter {
                             }
                             break;
                         case "spectralContrastAngle":
-                            if (pepObj.spectralSimObj.spectrumComparisons.size() == 0) {
+                            if (pepObj.spectralSimObj.spectrumComparisons.isEmpty()) {
                                 double score = pepObj.spectralSimObj.scores.get(feature);
                                 formattedWrite("spectra_contrast_angle", score);
                             } else {
@@ -349,7 +349,7 @@ public class PinWriter {
                             }
                             break;
                         case "euclideanDistance":
-                            if (pepObj.spectralSimObj.spectrumComparisons.size() == 0) {
+                            if (pepObj.spectralSimObj.spectrumComparisons.isEmpty()) {
                                 double score = pepObj.spectralSimObj.scores.get(feature);
                                 formattedWrite("euclidean_distance", score);
                             } else {
@@ -361,7 +361,7 @@ public class PinWriter {
                             }
                             break;
                         case "pearsonCorr":
-                            if (pepObj.spectralSimObj.spectrumComparisons.size() == 0) {
+                            if (pepObj.spectralSimObj.spectrumComparisons.isEmpty()) {
                                 double score = pepObj.spectralSimObj.scores.get(feature);
                                 formattedWrite("pearson_corr", score);
                             } else {
@@ -373,7 +373,7 @@ public class PinWriter {
                             }
                             break;
                         case "spearmanCorr":
-                            if (pepObj.spectralSimObj.spectrumComparisons.size() == 0) {
+                            if (pepObj.spectralSimObj.spectrumComparisons.isEmpty()) {
                                 double score = pepObj.spectralSimObj.scores.get(feature);
                                 if (Constants.normalizeScoresByPeptideLength) {
                                     score *= Math.log(pepObj.length);
@@ -388,7 +388,7 @@ public class PinWriter {
                             }
                             break;
                         case "hypergeometricProbability":
-                            if (pepObj.spectralSimObj.spectrumComparisons.size() == 0) {
+                            if (pepObj.spectralSimObj.spectrumComparisons.isEmpty()) {
                                 double score = pepObj.spectralSimObj.scores.get(feature);
                                 if (Constants.normalizeScoresByPeptideLength) {
                                     score = (score - featureStats.get(feature).get(pepObj.length).getMean())
@@ -404,7 +404,7 @@ public class PinWriter {
                             }
                             break;
                         case "intersection":
-                            if (pepObj.spectralSimObj.spectrumComparisons.size() == 0) {
+                            if (pepObj.spectralSimObj.spectrumComparisons.isEmpty()) {
                                 double score = pepObj.spectralSimObj.scores.get(feature);
                                 if (Constants.normalizeScoresByPeptideLength) {
                                     score -= featureStats.get(feature).get(pepObj.length).getMedian();
@@ -419,7 +419,7 @@ public class PinWriter {
                             }
                             break;
                         case "dotProduct":
-                            if (pepObj.spectralSimObj.spectrumComparisons.size() == 0) {
+                            if (pepObj.spectralSimObj.spectrumComparisons.isEmpty()) {
                                 double score = pepObj.spectralSimObj.scores.get(feature);
                                 formattedWrite("dot_product", score);
                             } else {
@@ -431,7 +431,7 @@ public class PinWriter {
                             }
                             break;
                         case "unweightedSpectralEntropy":
-                            if (pepObj.spectralSimObj.spectrumComparisons.size() == 0) {
+                            if (pepObj.spectralSimObj.spectrumComparisons.isEmpty()) {
                                 double score = pepObj.spectralSimObj.scores.get(feature);
                                 if (Constants.normalizeScoresByPeptideLength) {
                                     score -= featureStats.get(feature).get(pepObj.length).getMedian();

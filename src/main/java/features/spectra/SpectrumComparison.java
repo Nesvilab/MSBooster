@@ -54,28 +54,31 @@ public class SpectrumComparison {
     public static Well19937c rng = new Well19937c(123);
     public PeptideObj pepObj;
 
-    public SpectrumComparison(PeptideObj pepObj, float[] eMZs, float[] eIntensities,
+    public SpectrumComparison(PeptideObj peptideObj, float[] eMZs, float[] eIntensities,
                               float[] pMZs, float[] pIntensities, int length) {
         predMZs = pMZs;
         predIntensities = pIntensities;
+        pepObj = peptideObj;
         matchedIntensities = this.getMatchedIntensities(eMZs, eIntensities, predMZs, predIntensities);
+        this.getAllMatchedIntensities();
         this.length = length;
         predMZs = null;
 
-        this.pepObj = pepObj;
         if (Constants.features.contains("adjacent") || Constants.features.contains("bestScan")) {
             MassCalculator mc = new MassCalculator(pepObj.name.split("\\|")[0], pepObj.charge);
             pepObj.precursorMz = (mc.mass + pepObj.charge * mc.proton) / pepObj.charge;
         }
     }
 
-    public SpectrumComparison(PeptideObj pepObj, float[] eMZs, float[] eIntensities,
+    public SpectrumComparison(PeptideObj peptideObj, float[] eMZs, float[] eIntensities,
                               float[] pMZs, float[] pIntensities, int length, String[] fragmentIonTypes) {
         predMZs = pMZs;
         predIntensities = pIntensities;
+        pepObj = peptideObj;
 
         if (Constants.divideFragments.equals("0")) {
             matchedIntensities = this.getMatchedIntensities(eMZs, eIntensities, predMZs, predIntensities);
+            this.getAllMatchedIntensities();
         } else {
             String[] fragmentsSplit = Constants.divideFragments.split(";");
 
@@ -106,7 +109,6 @@ public class SpectrumComparison {
         this.length = length;
         predMZs = null;
 
-        this.pepObj = pepObj;
         if (Constants.features.contains("adjacent") || Constants.features.contains("bestScan")) {
             MassCalculator mc = new MassCalculator(pepObj.name.split("\\|")[0], pepObj.charge);
             pepObj.precursorMz = (mc.mass + pepObj.charge * mc.proton) / pepObj.charge;
@@ -120,6 +122,7 @@ public class SpectrumComparison {
         predIntensities = pIntensities;
 
         matchedIntensities = this.getMatchedIntensities(eMZs, eIntensities, predMZs, predIntensities);
+        this.getAllMatchedIntensities();
         this.length = length;
         if (! willReload) {
             predMZs = null;
@@ -272,7 +275,8 @@ public class SpectrumComparison {
             //sort
             Arrays.sort(mzs);
 
-            allMatchedIntensities = getMatchedIntensities(pepObj.scanNumObj.getExpMZs(), pepObj.scanNumObj.getExpIntensities(),
+            allMatchedIntensities = getMatchedIntensities(
+                    pepObj.scanNumObj.getSavedExpMZs(), pepObj.scanNumObj.getSavedExpIntensities(),
                     mzs, new float[mzs.length]);
         }
     }

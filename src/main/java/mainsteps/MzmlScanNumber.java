@@ -119,6 +119,7 @@ public class MzmlScanNumber {
     }
 
     //this version if creating from mgf file
+    //TODO need to update like the above constructor
     public MzmlScanNumber(int scanNum, float[] expMZs, float[] expInts, float RT, float IM) {
         this.scanNum = scanNum;
         this.expMZs = expMZs;
@@ -150,6 +151,8 @@ public class MzmlScanNumber {
 
     public float[] getExpMZs() { return expMZs; }
     public float[] getExpIntensities() { return expIntensities; }
+    public float[] getSavedExpMZs() { return savedExpMZs; }
+    public float[] getSavedExpIntensities() { return savedExpIntensities; }
 
     public PeptideObj setPeptideObject(PeptideFormatter name, int rank, int targetORdecoy, String escore,
                                        PredictionEntryHashMap allPreds, boolean set) {

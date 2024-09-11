@@ -55,7 +55,7 @@ public class IMFunctions {
 
                 int instances = Math.max(1, -1 * (int) Math.ceil(Math.log10(Double.parseDouble(pep.escore)))); //this version avoids empty bins
                 for (int j = 0; j < instances; j++) {
-                    predIMround[charge][round].add(pep.IM);
+                    predIMround[charge][round].add(pep.predictedIM);
                 }
             }
         }

@@ -1158,6 +1158,9 @@ public class MainClass {
 
             //check that features are allowed
             if (Constants.useMultipleCorrelatedFeatures) {
+                printInfo("useMultipleCorrelatedFeatures is horribly outdated. If this parameter is truly needed, please" +
+                        "provide a comma-separated list of all the features you want via --features, or contact us to " +
+                        "update this.");
                 Constants.features = "brayCurtis,pearsonCorr,dotProduct,unweightedSpectralEntropy," +
                         "deltaRTLOESS,deltaRTLOESSnormalized,RTprobabilityUnifPrior";
             }

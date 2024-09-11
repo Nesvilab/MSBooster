@@ -52,7 +52,6 @@ import umich.ms.datatypes.scan.IScan;
 import umich.ms.datatypes.scan.StorageStrategy;
 import umich.ms.datatypes.scancollection.impl.ScanCollectionDefault;
 import umich.ms.fileio.exceptions.FileParsingException;
-import umich.ms.fileio.filetypes.agilent.cef.jaxb.P;
 import umich.ms.fileio.filetypes.mzml.MZMLFile;
 import umontreal.ssj.probdist.EmpiricalDist;
 import utils.InstrumentUtils;
@@ -399,7 +398,7 @@ public class MzmlReader {
                         if (pep == null) {
                             break;
                         }
-                        pep.deltaRT = Math.abs(msn.normalizedRT - pep.RT);
+                        pep.deltaRTlinear = Math.abs(msn.normalizedRT - pep.predictedRT);
                     }
                 }
             }));
@@ -524,8 +523,8 @@ public class MzmlReader {
                         if (pep == null) {
                             break;
                         }
-                        pep.deltaRTbin = Math.abs(binMean - pep.RT);
-                        pep.RTzscore = Math.abs(zscore(pep.RT, binMean, binStd));
+                        pep.deltaRTbins = Math.abs(binMean - pep.predictedRT);
+                        pep.RTzscore = Math.abs(zscore(pep.predictedRT, binMean, binStd));
                     }
                 }
             }));
@@ -572,7 +571,7 @@ public class MzmlReader {
                         double finalDelta = Double.MAX_VALUE;
                         for (String mass : LOESSRT.keySet()) {
                             if (pep.name.contains(mass)) {
-                                double delta = Math.abs(LOESSRT.get(mass) - pep.RT);
+                                double delta = Math.abs(LOESSRT.get(mass) - pep.predictedRT);
                                 if (delta < finalDelta) {
                                     finalDelta = delta;
                                 }
@@ -690,7 +689,7 @@ public class MzmlReader {
                             if (pep == null) {
                                 break;
                             }
-                            pep.RTprob = probability(msn.RT * Constants.RTbinMultiplier, pep.RT, kernelDensities);
+                            pep.RTprobability = probability(msn.RT * Constants.RTbinMultiplier, pep.predictedRT, kernelDensities);
                         }
                     }
                 }));
@@ -731,7 +730,7 @@ public class MzmlReader {
                             if (pep == null) {
                                 break;
                             }
-                            pep.IMprob = probability(msn.IM * Constants.IMbinMultiplier, pep.IM, kernelDensities[pep.charge - 1]);
+                            pep.IMprob = probability(msn.IM * Constants.IMbinMultiplier, pep.predictedIM, kernelDensities[pep.charge - 1]);
                         }
                     }
                 }));
@@ -939,12 +938,12 @@ public class MzmlReader {
                                 if (pep.name.contains(minimass)) {
                                     isNone = false;
                                     double rt = LOESSRT.get(mass);
-                                    double delta = Math.abs(rt - pep.RT);
+                                    double delta = Math.abs(rt - pep.predictedRT);
                                     if (delta < finalDelta) {
                                         finalDelta = delta;
                                         pep.calibratedRT = rt;
-                                        pep.predRTrealUnits = RTLOESS_realUnits.get(mass).invoke((double) pep.RT);
-                                        pep.deltaRTLOESS_real = Math.abs(msn.RT - pep.predRTrealUnits);
+                                        pep.predRTrealUnits = RTLOESS_realUnits.get(mass).invoke((double) pep.predictedRT);
+                                        pep.deltaRTLOESSreal = Math.abs(msn.RT - pep.predRTrealUnits);
                                     }
                                 }
                             }
@@ -952,12 +951,12 @@ public class MzmlReader {
                         if (isNone) {
                             if (LOESSRT.isEmpty()) {
                                 finalDelta = 0;
-                                pep.deltaRTLOESS_real = 0;
+                                pep.deltaRTLOESSreal = 0;
                             } else {
                                 pep.calibratedRT = LOESSRT.get("others");
-                                finalDelta = Math.abs(pep.calibratedRT - pep.RT);
-                                pep.predRTrealUnits = RTLOESS_realUnits.get("others").invoke((double) pep.RT);
-                                pep.deltaRTLOESS_real = Math.abs(msn.RT - pep.predRTrealUnits);
+                                finalDelta = Math.abs(pep.calibratedRT - pep.predictedRT);
+                                pep.predRTrealUnits = RTLOESS_realUnits.get("others").invoke((double) pep.predictedRT);
+                                pep.deltaRTLOESSreal = Math.abs(msn.RT - pep.predRTrealUnits);
                             }
                         }
                         pep.deltaRTLOESS = finalDelta;
@@ -1012,7 +1011,7 @@ public class MzmlReader {
                                 if (pep.name.contains(minimass)) {
                                     isNone = false;
                                     double im = LOESSIM.get(mass);
-                                    double delta = Math.abs(im - pep.IM);
+                                    double delta = Math.abs(im - pep.predictedIM);
                                     if (delta < finalDelta) {
                                         finalDelta = delta;
                                     }
@@ -1021,7 +1020,7 @@ public class MzmlReader {
                         }
                         if (isNone) {
                             if (!LOESSIM.isEmpty()) {
-                                finalDelta = Math.abs(LOESSIM.get("others") - pep.IM);
+                                finalDelta = Math.abs(LOESSIM.get("others") - pep.predictedIM);
                             }
                         }
                         //if still max value, make something that won't result in infinity, or just make init value 1

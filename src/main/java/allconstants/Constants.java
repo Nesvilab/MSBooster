@@ -443,9 +443,14 @@ public class Constants {
         map.put("dotProduct", "dot_product");
         map.put("unweightedSpectralEntropy", "unweighted_spectral_entropy");
         map.put("numMatchedFragments", "num_matched_fragments");
+
+        map.put("deltaRTlinear", "delta_RT_linear");
+        map.put("deltaRTbins", "delta_RT_bins");
         map.put("deltaRTLOESS", "delta_RT_loess");
         map.put("deltaRTLOESSreal", "delta_RT_loess_real");
         map.put("deltaRTLOESSnormalized", "delta_RT_loess_normalized");
+        map.put("RTzscore", "RT_zscore");
+        map.put("RTprobability", "RT_probability");
         map.put("RTprobabilityUnifPrior", "RT_probability_unif_prior");
         map.put("calibratedRT", "calibrated_RT");
         map.put("predRTrealUnits", "pred_RT_real_units");

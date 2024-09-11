@@ -478,7 +478,7 @@ public class PercolatorFormatter {
                                     scores[scoreIdx] = score;
                                     predictionEntry.scores.put("entropy", scores);
 
-                                    score = (float) sc.hyperGeometricProbability();
+                                    score = (float) sc.hypergeometricProbability();
                                     scores = predictionEntry.scores.get("hypergeom");
                                     scores[scoreIdx] = score;
                                     predictionEntry.scores.put("hypergeom", scores);

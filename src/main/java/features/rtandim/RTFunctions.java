@@ -102,7 +102,7 @@ public class RTFunctions {
 
                 int instances = Math.max(1, -1 * (int) Math.ceil(Math.log10(Double.parseDouble(pep.escore)))); //this version avoids empty bins
                 for (int j = 0; j < instances; j++) {
-                    predRTround[round].add(pep.RT);
+                    predRTround[round].add(pep.predictedRT);
                 }
             }
         }

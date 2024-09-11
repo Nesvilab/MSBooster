@@ -59,15 +59,15 @@ public class LoessUtilities {
 
                 //add values once all criteria is met
                 if (mode.equals("RT")) {
-                    if (pep.RT == 0) {
+                    if (pep.predictedRT == 0) {
                         continue;
                     }
-                    predValues.add(pep.RT);
+                    predValues.add(pep.predictedRT);
                 } else {
-                    if (pep.IM == 0) {
+                    if (pep.predictedIM == 0) {
                         continue;
                     }
-                    predValues.add(pep.IM);
+                    predValues.add(pep.predictedIM);
                 }
                 expValues.add(value);
                 eScores.add(e);

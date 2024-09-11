@@ -21,6 +21,7 @@ import allconstants.Constants;
 import features.spectra.MassCalculator;
 import features.spectra.SpectrumComparison;
 
+import java.lang.reflect.Field;
 import java.util.*;
 
 public class PeptideObj {
@@ -35,13 +36,13 @@ public class PeptideObj {
     int targetORdecoy;
     public int length;
     public String escore;
-    public float RT;
-    public float deltaRT;
-    public float deltaRTbin;
+    public float predictedRT;
+    public float deltaRTlinear;
+    public float deltaRTbins;
     public float RTzscore;
-    public double RTprob;
+    public double RTprobability;
     public double deltaRTLOESS;
-    public double deltaRTLOESS_real;
+    public double deltaRTLOESSreal;
     public double deltaRTLOESSnormalized;
     public double calibratedRT;
     public double predRTrealUnits;
@@ -49,7 +50,7 @@ public class PeptideObj {
     public double deltaIMLOESSnormalized;
     public double IMprobabilityUnifPrior;
     public double RTprobabilityUnifPrior;
-    public Float IM;
+    public Float predictedIM;
     public double IMprob;
     String[] fragmentIonTypes;
     public int chromatogramWindowQuery;
@@ -93,8 +94,8 @@ public class PeptideObj {
         //this.predInts = predIntensities;
         this.spectralSimObj = new SpectrumComparison(this, scanNumObj.getExpMZs(), scanNumObj.getExpIntensities(),
                 predMZs, predIntensities, length); //calculate similarity with subset of fragments
-        this.RT = predRT;
-        this.IM = predIM;
+        this.predictedRT = predRT;
+        this.predictedIM = predIM;
         if (Constants.useMatchedIntensities || Constants.usePeakCounts || Constants.useIntensitiesDifference ||
                 Constants.usePredIntensities || Constants.useIndividualSpectralSimilarities ||
                 Constants.useIntensityDistributionSimilarity) {
@@ -123,8 +124,8 @@ public class PeptideObj {
         this.fragmentIonTypes = fragmentIonTypes;
         this.spectralSimObj = new SpectrumComparison(this, scanNumObj.getExpMZs(), scanNumObj.getExpIntensities(),
                 predMZs, predIntensities, length, fragmentIonTypes); //calculate similarity with subset of fragments
-        this.RT = predRT;
-        this.IM = predIM;
+        this.predictedRT = predRT;
+        this.predictedIM = predIM;
         if (Constants.useMatchedIntensities || Constants.usePeakCounts || Constants.useIntensitiesDifference ||
                 Constants.usePredIntensities || Constants.useIndividualSpectralSimilarities ||
                 Constants.useIntensityDistributionSimilarity) {
@@ -251,6 +252,23 @@ public class PeptideObj {
                         (float) new SpectrumComparison(this, expMZs, expIntensities,
                                 subsetPredMZsArray, subsetPredIntsArray, this.length).unweightedSpectralEntropy());
             }
+        }
+    }
+
+    // Method to get field value by name using reflection
+    public Object getFieldValueByName(String fieldName) {
+        try {
+            // Get the field from the current class
+            Field field = this.getClass().getDeclaredField(fieldName);
+
+            // Make the field accessible if it's private or protected
+            field.setAccessible(true);
+
+            // Return the value of the field for this instance
+            return field.get(this);
+        } catch (NoSuchFieldException | IllegalAccessException e) {
+            e.printStackTrace();
+            return null;
         }
     }
 

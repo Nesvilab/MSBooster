@@ -55,7 +55,7 @@ public class MainClass {
     public static ScheduledThreadPoolExecutor executorService;
     public static void main(String[] args) throws Exception {
         Locale.setDefault(Locale.US);
-        printInfo("MSBooster v1.2.52");
+        printInfo("MSBooster v1.2.53");
 
         try {
             //accept command line inputs
@@ -1599,6 +1599,7 @@ public class MainClass {
                 AtomicBoolean spectrafound = new AtomicBoolean(false);
                 AtomicBoolean rtfound = new AtomicBoolean(false);
                 AtomicBoolean imfound = new AtomicBoolean(false);
+                AtomicBoolean spectraPredFileFound = new AtomicBoolean(false);
 
                 // Stream the list, and if a line starts with the specified prefix,
                 // replace everything after the prefix with newSuffix
@@ -1614,6 +1615,8 @@ public class MainClass {
                             } else if (line.trim().startsWith("imModel")) {
                                 imfound.set(true);
                                 return "imModel=" + Constants.imModel;
+                            } else if (line.trim().startsWith("spectraPredFile")) {
+                                spectraPredFileFound.set(true);
                             }
                             return line;
                         })
@@ -1628,6 +1631,10 @@ public class MainClass {
                 }
                 if (!imfound.get()) {
                     modifiedLines.add("imModel=" + Constants.imModel);
+                }
+                //FragPipe PDV needs to know which file has spectral predictions
+                if (!spectraPredFileFound.get() && Constants.useSpectra) {
+                    modifiedLines.add("spectraPredFile=" + Constants.spectraPredFile);
                 }
 
                 // Write the modified lines back to the file

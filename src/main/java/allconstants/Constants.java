@@ -50,6 +50,7 @@ public class Constants {
     public static String spectraRTPrefix = null;
     public static String detectPredInput = null;
     public static String spectraPredFile = null;
+    public static String spectraPredFilePDV = null; //for PDV visualization
     public static String RTPredFile = null;
     public static String IMPredFile = null;
     public static String auxSpectraPredFile = null;

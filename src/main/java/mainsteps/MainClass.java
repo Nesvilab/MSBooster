@@ -55,7 +55,7 @@ public class MainClass {
     public static ScheduledThreadPoolExecutor executorService;
     public static void main(String[] args) throws Exception {
         Locale.setDefault(Locale.US);
-        printInfo("MSBooster v1.2.53");
+        printInfo("MSBooster v1.2.54");
 
         try {
             //accept command line inputs
@@ -1634,7 +1634,7 @@ public class MainClass {
                 }
                 //FragPipe PDV needs to know which file has spectral predictions
                 if (!spectraPredFileFound.get() && Constants.useSpectra) {
-                    modifiedLines.add("spectraPredFile=" + Constants.spectraPredFile);
+                    modifiedLines.add("spectraPredFilePDV=" + Constants.spectraPredFile);
                 }
 
                 // Write the modified lines back to the file

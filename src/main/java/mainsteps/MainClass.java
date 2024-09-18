@@ -509,7 +509,6 @@ public class MainClass {
                             PeptideFileCreator.createPartialFile(
                                     jsonOutFolder + File.separator + model + File.separator + "spectraRT_full.tsv",
                                     model, km.peptideArraylist);
-                            KoinaMethods.createPartialKoinaSet(model, km.peptideArraylist);
                             String inputFile = jsonOutFolder + File.separator + model + File.separator + "spectraRT.tsv";
                             FileWriter myWriter = new FileWriter(inputFile);
                             myWriter.write("peptide" + "\t" + "charge\n");
@@ -521,6 +520,9 @@ public class MainClass {
                                     peptides.add(line);
                                 }
                             }
+                            for (PeptideFormatter pf : km.peptideArraylist) {
+                                pf.foundUnimods.clear();
+                            }
                             myWriter.close();
 
                             String predFileString = DiannModelCaller.callModel(inputFile, false);
@@ -531,10 +533,15 @@ public class MainClass {
                                     jsonOutFolder + File.separator + model + "_full.tsv",
                                     model, km.peptideArraylist);
                             HashSet<String> allHits = KoinaMethods.createPartialKoinaSet(model, km.peptideArraylist);
+                            for (PeptideFormatter pf : km.peptideArraylist) {
+                                pf.foundUnimods.clear();
+                            }
                             rtPreds = km.getKoinaPredictions(allHits, model, 30,
                                     jsonOutFolder + File.separator + model,
                                     jsonOutFolder + File.separator + model + "_full.tsv");
                         }
+
+                        //
 
                         //collect the data for testing
                         ArrayList<Float> expRTs = new ArrayList<>();
@@ -779,6 +786,9 @@ public class MainClass {
                                     peptides.add(line);
                                 }
                             }
+                            for (PeptideFormatter pf : km.peptideArrayListIM) {
+                                pf.foundUnimods.clear();
+                            }
                             myWriter.close();
 
                             String predFileString = DiannModelCaller.callModel(inputFile, false);
@@ -789,6 +799,9 @@ public class MainClass {
                                     jsonOutFolder + File.separator + model + "_full.tsv",
                                     model, km.peptideArrayListIM);
                             HashSet<String> allHits = KoinaMethods.createPartialKoinaSet(model, km.peptideArrayListIM);
+                            for (PeptideFormatter pf : km.peptideArrayListIM) {
+                                pf.foundUnimods.clear();
+                            }
                             imPreds = km.getKoinaPredictions(allHits, model, 30,
                                     jsonOutFolder + File.separator + model,
                                     jsonOutFolder + File.separator + model + "_full.tsv");
@@ -933,6 +946,9 @@ public class MainClass {
                                     peptides.add(line);
                                 }
                             }
+                            for (PeptideFormatter pf : km.peptideArraylist) {
+                                pf.foundUnimods.clear();
+                            }
                             myWriter.close();
 
                             String predFileString = DiannModelCaller.callModel(inputFile, false);
@@ -991,6 +1007,9 @@ public class MainClass {
                                         Constants.outputDirectory + File.separator + "best_model" +
                                                 File.separator + model, km.peptideArraylist,
                                         km.scanNums, km.peptides);
+                                for (PeptideFormatter pf : km.peptideArraylist) {
+                                    pf.foundUnimods.clear();
+                                }
                                 medianSimilarities.put(model + "&" + results[2], (Double) results[1]);
                                 int bestNCE = (int) results[2];
                                 similarities.put(model + "&" + bestNCE,
@@ -1019,6 +1038,9 @@ public class MainClass {
                                         jsonOutFolder + File.separator + model + "_full.tsv",
                                         model, km.peptideArraylist);
                                 HashSet<String> allHits = KoinaMethods.createPartialKoinaSet(model, km.peptideArraylist);
+                                for (PeptideFormatter pf : km.peptideArraylist) {
+                                    pf.foundUnimods.clear();
+                                }
                                 PredictionEntryHashMap allPreds =
                                         km.getKoinaPredictions(allHits, model, 30,
                                                 jsonOutFolder + File.separator + model,

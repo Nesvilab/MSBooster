@@ -62,6 +62,33 @@ public class PTMhandler {
     }
     public static final HashMap<String, Double> unimodToModMass = makeUnimodToModMass();
 
+    //TODO: see if methods need AA or not
+    //TODO: what models are AA restrictive? Do we need to go check on github?
+    private static HashMap<String, Double> makeAAUnimodToModMass() {
+        HashMap<String, Double> map = new HashMap<>();
+        map.put("C" + carbamidomethylationUnimod, carbamidomethylationMass);
+        map.put("M" + oxidationUnimod, oxidationMass);
+        map.put("[" + acetylationUnimod, acetylationMass);
+        map.put("S" + phosphorylationUnimod, phosphorylationMass);
+        map.put("T" + phosphorylationUnimod, phosphorylationMass);
+        map.put("Y" + phosphorylationUnimod, phosphorylationMass);
+        map.put("[" + glyglyUnimod, glyglyMass);
+        map.put("K" + glyglyUnimod, glyglyMass);
+        map.put("T" + glyglyUnimod, glyglyMass);
+        map.put("C" + glyglyUnimod, glyglyMass);
+        map.put("S" + glyglyUnimod, glyglyMass);
+        map.put("K" + tmtUnimod, tmtMass);
+        map.put("S" + tmtUnimod, tmtMass);
+        map.put("T" + tmtUnimod, tmtMass);
+        map.put("H" + tmtUnimod, tmtMass);
+        map.put("[" + tmtUnimod, tmtMass);
+        map.put("Q" + pyrogluQUnimod, pyrogluQMass);
+        map.put("E" + pyrogluEUnimod, pyrogluEMass);
+        map.put("C" + pyroCarbamidomethylUnimod, pyroCarbamidomethylMass);
+        return map;
+    }
+    public static final HashMap<String, Double> AAunimodToModMass = makeAAUnimodToModMass();
+
     private static HashMap<String, Double> makeUnimodToModMassAlphaPeptDeep(boolean includeAA) throws IOException {
         ArrayList<String> modPaths = new ArrayList<>();
         modPaths.add("/ptm_resources/alphapept_koina.csv");
@@ -118,6 +145,7 @@ public class PTMhandler {
     //returns newly formatted peptide string in format of that model
     //if PTM would cause an error or result in the same fragment intensities (PTM not supported), just removes it from string
     //gives some leeway in PTM mass, precision, only needs to be 0.001 away
+    //foundUnimods are those PTMs to check first (those that have already been identified in the sample)
 
     //start is index of [
     public static String[] formatPeptideBaseToSpecific(String peptide, int start, int end, String model,
@@ -126,20 +154,20 @@ public class PTMhandler {
         HashSet<String> modelAllowedUnimods = new HashSet<>();
         switch(model) {
             case "diann":
-                modelAllowedUnimods = diannMods;
+                modelAllowedUnimods = diannAAMods;
                 break;
             case "unispec":
-                modelAllowedUnimods = unispecMods;
+                modelAllowedUnimods = unispecAAMods;
                 break;
             case "prosit":
             case "prosittmt":
-                modelAllowedUnimods = prositMods;
+                modelAllowedUnimods = prositAAMods;
                 break;
             case "ms2pip":
-                modelAllowedUnimods = ms2pipMods;
+                modelAllowedUnimods = ms2pipAAMods;
                 break;
             case "deeplc":
-                modelAllowedUnimods = deeplcMods;
+                modelAllowedUnimods = deeplcAAMods;
                 break;
             case "alphapept":
                 modelAllowedUnimods.addAll(AAunimodToModMassAlphaPeptDeep.keySet());
@@ -162,6 +190,7 @@ public class PTMhandler {
         switch(model) {
             case "diann":
             case "unispec":
+            case "deeplc":
                 break;
             default:
                 ntermSuffix = "-";
@@ -173,27 +202,24 @@ public class PTMhandler {
         if (model.equals("alphapept")) {
             modMap = AAunimodToModMassAlphaPeptDeep;
         } else {
-            modMap = unimodToModMass;
+            modMap = AAunimodToModMass;
         }
 
         double reportedMass = Double.parseDouble(peptide.substring(start + 1, end));
-        String unimod = PTMhandler.findUnimodForMass(foundUnimods, modMap, reportedMass, model, peptide,
-                Math.max(0, start - 1), true);
+        String unimod = PTMhandler.findUnimodForMass(foundUnimods, modMap, reportedMass, peptide,
+                start - 1, true);
         if (unimod.isEmpty()) {
-            unimod = PTMhandler.findUnimodForMass(modelAllowedUnimods, modMap, reportedMass, model, peptide,
-                    Math.max(0, start - 1), false);
+            unimod = PTMhandler.findUnimodForMass(modelAllowedUnimods, modMap, reportedMass, peptide,
+                    start - 1, false);
         }
+
+        //need to check if the AA is allowed to hold this PTM
         if (unimod.isEmpty()) {
             //model won't predict this anyway
             peptide = peptide.substring(0, start) + peptide.substring(end + 1);
         } else {
-            if (model.equals("alphapept")) {
-                peptide = peptide.substring(0, start + 1) + unimodFormat + ":" +
-                        unimod.substring(1) + peptide.substring(end);
-            } else {
-                peptide = peptide.substring(0, start + 1) + unimodFormat + ":" +
-                        unimod + peptide.substring(end);
-            }
+            peptide = peptide.substring(0, start + 1) + unimodFormat + ":" +
+                    unimod.substring(1) + peptide.substring(end);
         }
 
         if (peptide.startsWith("[") && start == 0) {
@@ -206,7 +232,7 @@ public class PTMhandler {
 
     //returns unimod for the reportedMass, or empty string if not found
     private static String findUnimodForMass(HashSet<String> allowedMods, HashMap<String, Double> modMap,
-                                            Double reportedMass, String model,
+                                            Double reportedMass,
                                             String peptide, int start, boolean removeMods) {
         //start is index of amino acid before, or 0 if nterm mod
 
@@ -226,14 +252,15 @@ public class PTMhandler {
         for (String unimod : allowedMods) {
             Double PTMmass = modMap.get(unimod);
             if (Math.abs(PTMmass - reportedMass) < 0.001) {
-                if (model.equals("alphapept")) { //requires right localization
-                    String AA = unimod.substring(0, 1);
-                    if ((AA.equals("[")) ||
-                            (AA.equals(peptide.substring(start, start + 1)))) {
+                String AA = unimod.substring(0, 1);
+                if (start == -1) { //nterm
+                    if (AA.equals("[")) {
                         return unimod;
                     }
                 } else {
-                    return unimod;
+                    if (AA.equals(peptide.substring(start, start + 1))) {
+                        return unimod;
+                    }
                 }
             }
         }
@@ -435,9 +462,26 @@ public class PTMhandler {
     }
 
     /////////////////////////////////////////////KOINA///////////////////////////////////////////////////////
-    public static final HashSet<String> prositMods = new HashSet<>(Arrays.asList("737", "4", "35"));
-    public static final HashSet<String> unispecMods = new HashSet<>(Arrays.asList("1", "4", "28", "27", "35", "21", "26"));
-    public static final HashSet<String> diannMods = new HashSet<>(Arrays.asList("4", "35", "1", "21", "121", "737"));
-    public static final HashSet<String> ms2pipMods = new HashSet<>(Arrays.asList("35", "4"));
-    public static final HashSet<String> deeplcMods = new HashSet<>(Arrays.asList("35", "4", "21"));
+    public static final HashSet<String> prositMods = new HashSet<>(
+            Arrays.asList("737", "4", "35"));
+    public static final HashSet<String> unispecMods = new HashSet<>(
+            Arrays.asList("1", "4", "28", "27", "35", "21", "26"));
+    public static final HashSet<String> diannMods = new HashSet<>(
+            Arrays.asList("4", "35", "1", "21", "121", "737"));
+    public static final HashSet<String> ms2pipMods = new HashSet<>(
+            Arrays.asList("35", "4"));
+    public static final HashSet<String> deeplcMods = new HashSet<>(
+            Arrays.asList("35", "4", "21", "1"));
+
+    public static final HashSet<String> prositAAMods = new HashSet<>(
+            Arrays.asList("[737", "K737", "C4", "M35"));
+    public static final HashSet<String> unispecAAMods = new HashSet<>(
+            Arrays.asList("[1", "C4", "Q28", "E27", "M35", "S21", "T21", "Y21", "C26"));
+    public static final HashSet<String> diannAAMods = new HashSet<>(
+            Arrays.asList("C4", "M35", "[1", "S21", "T21", "Y21", "K121", "T121", "C121", "S121", "[121",
+                    "[737", "K737", "S737"));
+    public static final HashSet<String> ms2pipAAMods = new HashSet<>(
+            Arrays.asList("M35", "C4"));
+    public static final HashSet<String> deeplcAAMods = new HashSet<>(
+            Arrays.asList("M35", "C4", "S21", "T21", "Y21", "[1"));
 }

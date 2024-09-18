@@ -358,7 +358,11 @@ public class PinReader {
         ArrayList<String> peps = new ArrayList<String>();
         while (next(true)) {
             PeptideFormatter pf = getPep();
-            peps.add(pf.getBase() + "\t" + pf.getCharge());
+            if (pf.cterm) {
+                peps.add(pf.getBase() + "cterm" + "\t" + pf.getCharge());
+            } else {
+                peps.add(pf.getBase() + "\t" + pf.getCharge());
+            }
 
             if (Constants.features.contains("peptideCounts")) {
                 if (Float.valueOf(getColumn("hyperscore")) > 10) {

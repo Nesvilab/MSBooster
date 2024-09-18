@@ -80,7 +80,6 @@ public class PercolatorFormatter {
         LibraryPredictionMapper predictedRT;
         LibraryPredictionMapper predictedIM;
         LibraryPredictionMapper predictedAuxSpectra;
-        //SpectralPredictionMapper predictedSpectra2 = null; //first is prosit/diann, second predfull
 
         if (Constants.predictedLibrary != null) { //library ready from koina predictions
             allPreds = Constants.predictedLibrary.getPreds();
@@ -90,7 +89,7 @@ public class PercolatorFormatter {
 
             //could use aux spectra if primary spectra missing
             if (Constants.spectraPredFile != null) {
-                printInfo("Loading predicted spectra");
+                printInfo("Loading predicted spectra: " + Constants.spectraPredFile);
                 if (Constants.spectraModel.equals("PredFull")) {
                     predictedSpectra = LibraryPredictionMapper.createLibraryPredictionMapper(
                             Constants.spectraPredFile, pinFiles, executorService);
@@ -103,8 +102,8 @@ public class PercolatorFormatter {
             }
 
             if (Constants.RTPredFile != null) {
+                printInfo("Loading predicted retention times: " + Constants.RTPredFile);
                 if (! allLibraries.containsKey(Constants.RTPredFile)) {
-                    printInfo("Loading predicted retention times");
                     predictedRT = LibraryPredictionMapper.createLibraryPredictionMapper(
                             Constants.RTPredFile, Constants.rtModel, executorService);
                     allLibraries.put(Constants.RTPredFile, predictedRT);
@@ -113,8 +112,8 @@ public class PercolatorFormatter {
             }
 
             if (Constants.IMPredFile != null) {
+                printInfo("Loading predicted ion mobilities: " + Constants.IMPredFile);
                 if (! allLibraries.containsKey(Constants.IMPredFile)) {
-                    printInfo("Loading predicted ion mobilities");
                     predictedIM = LibraryPredictionMapper.createLibraryPredictionMapper(
                             Constants.IMPredFile, Constants.imModel, executorService);
                     allLibraries.put(Constants.IMPredFile, predictedIM);
@@ -123,8 +122,8 @@ public class PercolatorFormatter {
             }
 
             if (Constants.auxSpectraPredFile != null) {
+                printInfo("Loading predicted auxiliary spectra: " + Constants.auxSpectraPredFile);
                 if (! allLibraries.containsKey(Constants.auxSpectraPredFile)) {
-                    printInfo("Loading predicted auxiliary spectra");
                     predictedAuxSpectra = LibraryPredictionMapper.createLibraryPredictionMapper(
                             Constants.auxSpectraPredFile, Constants.auxSpectraModel, executorService);
                     allLibraries.put(Constants.auxSpectraPredFile, predictedAuxSpectra);
@@ -133,19 +132,20 @@ public class PercolatorFormatter {
             }
 
             //merging libraries
-            printInfo("Merging libraries");
-            for (Map.Entry<String, LibraryPredictionMapper> entry : allLibraries.entrySet()) {
-                String libraryPath = entry.getKey();
-                LibraryPredictionMapper library = entry.getValue();
-                for (Map.Entry<String, String> prop : allProperties.entrySet()) {
-                    if (prop.getValue().equals(libraryPath)) {
-                        library.mergeLibraries(allPreds, prop.getKey());
+            if (allLibraries.size() > 1) {
+                printInfo("Merging libraries");
+                for (Map.Entry<String, LibraryPredictionMapper> entry : allLibraries.entrySet()) {
+                    String libraryPath = entry.getKey();
+                    LibraryPredictionMapper library = entry.getValue();
+                    for (Map.Entry<String, String> prop : allProperties.entrySet()) {
+                        if (prop.getValue().equals(libraryPath)) {
+                            library.mergeLibraries(allPreds, prop.getKey());
+                        }
                     }
-                }
 
+                }
             }
         }
-        //TODO test to make sure predicted spectra and allpreds are same
 
         //create detectMap to store detectabilities for base sequence peptides
         //store peptide detectabilities in PredictionEntry

@@ -454,23 +454,16 @@ public class KoinaModelCaller {
             PeptideFormatter pf = new PeptideFormatter(peptides[i], 1, model.toLowerCase());
             String peptide = pf.getBase() + "|";
 
-            int entries = 0; //in case RT prediction is available but not MS2
             for (int charge = Constants.minPrecursorCharge; charge < Constants.maxPrecursorCharge + 1; charge++) {
                 String peptideCharge = peptide + charge;
+                PredictionEntry pe;
                 if (preds.containsKey(peptideCharge)) {
-                    PredictionEntry pe = preds.get(peptideCharge);
-                    pe.setRT(RTs[i]);
-                    preds.put(peptideCharge, pe);
-                    entries++;
+                    pe = preds.get(peptideCharge);
+                } else {
+                    pe = new PredictionEntry();
                 }
-            }
-            if (entries == 0) { //RT was predicted but not MS2
-                for (int charge = Constants.minPrecursorCharge; charge < Constants.maxPrecursorCharge + 1; charge++) {
-                    String peptideCharge = peptide + charge;
-                    PredictionEntry pe = new PredictionEntry();
-                    pe.setRT(RTs[i]);
-                    preds.put(peptideCharge, pe);
-                }
+                pe.setRT(RTs[i]);
+                preds.put(peptideCharge, pe);
             }
         }
     }
@@ -563,6 +556,12 @@ public class KoinaModelCaller {
 
     public void assignMissingPeptidePredictions(KoinaLibReader klr, String fulltsv)
             throws IOException {
+        //need to see for each of ms2, rt, and im (whichever ones were run) if they need to transfer prediction onto final peptide
+        //take this method and turn into smaller method, then iterate through
+        //should also make new class to do this transferring task
+//        private static String ms2Model;
+//        private static String rtModel;
+//        private static String imModel;
         BufferedReader TSVReader = new BufferedReader(new FileReader(fulltsv));
         String l;
         String[] line;

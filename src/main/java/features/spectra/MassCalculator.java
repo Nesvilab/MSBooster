@@ -114,6 +114,9 @@ public class MassCalculator {
     public static HashMap<String, Integer> ionTOflag = makeIonToFlag();
 
     public MassCalculator(String pep, Object charge) {
+        if (pep.endsWith("cterm")) {
+            pep = pep.substring(0, pep.length() - 5);
+        }
         fullPeptide = pep + "|" + charge;
 
         while (true) {
@@ -129,7 +132,6 @@ public class MassCalculator {
                 modMasses.add(0d);
             }
             modMasses.add(Double.parseDouble(modNum));
-//            }
 
             //replace mod
             pep = pep.substring(0, ind) + pep.substring(ind2 + 1);

@@ -55,7 +55,7 @@ public class MainClass {
     public static ScheduledThreadPoolExecutor executorService;
     public static void main(String[] args) throws Exception {
         Locale.setDefault(Locale.US);
-        printInfo("MSBooster v1.2.54");
+        printInfo("MSBooster v1.2.55");
 
         try {
             //accept command line inputs
@@ -1522,6 +1522,7 @@ public class MainClass {
                     }
                 }
                 if (ranKoina) {
+                    //run this once, since once it is assigned by one model, it is "not missing anymore"
                     kmc.assignMissingPeptidePredictions(klr, Constants.spectraRTPrefix + "_full.tsv");
                 }
 

@@ -69,6 +69,10 @@ public interface LibraryPredictionMapper {
     }
 
     //merge the allPreds library into another one
+    //could move this to PredictionEntryHashMap
+    //need three methods
+    //1. merge libraries as is (merge libraries)
+    //2. for the final library with full peptide entries, get each property from model-specific peptide entry and transfer it to full peptide entry (assign missing peptide predictions)
     default void mergeLibraries(PredictionEntryHashMap library1, String mode) throws IOException {
         //switch case for spectra, RT, IM, aux
         PredictionEntryHashMap library2 = getPreds();
@@ -100,9 +104,9 @@ public interface LibraryPredictionMapper {
                         break;
                 }
 
-                library1.put(peptide, pe1);
+                library1.put(peptide, pe1); //entry in library1, but getting property for it from library2
             } else {
-                library1.put(peptide, pe2);
+                library1.put(peptide, pe2); //if entry missing in library1, add it from library2
             }
         }
 

@@ -21,6 +21,7 @@ import static peptideptmformatting.PTMhandler.*;
 import static utils.Print.printError;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashSet;
 
 //lots of different ways to format peptide string
@@ -48,6 +49,8 @@ public class PeptideFormatter {
 
     public HashSet<String> foundUnimods = new HashSet<>(); //collection of previously used unimod codes
 
+    public boolean cterm = false;
+
     private void findPTMlocations() {
         for (int i = 0; i < base.length(); i++) {
             if (base.charAt(i) == '[') {
@@ -71,9 +74,12 @@ public class PeptideFormatter {
 
         //n and c term mods
         if (peptide.charAt(0) == 'n') {
-            peptide = peptide.replace("n", "");
+            peptide = peptide.substring(1);
         }
-        peptide = peptide.replace("c","");
+        if (peptide.contains("c")) {
+            peptide = peptide.replace("c", "");
+            cterm = true;
+        }
 
         base = peptide;
     }
@@ -151,12 +157,14 @@ public class PeptideFormatter {
     private void baseTOdiann() {
         diann = base;
 
+        boolean attemptCterm = cterm;
         for (int i = starts.size() - 1; i > -1; i--) {
             int start = starts.get(i);
             int end = ends.get(i);
 
             String[] peptideUnimod = PTMhandler.formatPeptideBaseToSpecific(
-                    diann, start, end, "diann", foundUnimods);
+                    diann, start, end, "diann", foundUnimods, attemptCterm);
+            attemptCterm = false;
             diann = peptideUnimod[0];
             if (!peptideUnimod[1].isEmpty()) {
                 foundUnimods.add(peptideUnimod[1]);
@@ -175,12 +183,14 @@ public class PeptideFormatter {
     private void baseTOunispec() {
         unispec = base;
 
+        boolean attemptCterm = cterm;
         for (int i = starts.size() - 1; i > -1; i--) {
             int start = starts.get(i);
             int end = ends.get(i);
 
             String[] peptideUnimod = PTMhandler.formatPeptideBaseToSpecific(
-                    unispec, start, end, "unispec", foundUnimods);
+                    unispec, start, end, "unispec", foundUnimods, attemptCterm);
+            attemptCterm = false;
             unispec = peptideUnimod[0];
             if (!peptideUnimod[1].isEmpty()) {
                 foundUnimods.add(peptideUnimod[1]);
@@ -191,12 +201,14 @@ public class PeptideFormatter {
     private void baseTOms2pip() {
         ms2pip = base;
 
+        boolean attemptCterm = cterm;
         for (int i = starts.size() - 1; i > -1; i--) {
             int start = starts.get(i);
             int end = ends.get(i);
 
             String[] peptideUnimod = PTMhandler.formatPeptideBaseToSpecific(
-                    ms2pip, start, end, "ms2pip", foundUnimods);
+                    ms2pip, start, end, "ms2pip", foundUnimods, attemptCterm);
+            attemptCterm = false;
             ms2pip = peptideUnimod[0];
             if (!peptideUnimod[1].isEmpty()) {
                 foundUnimods.add(peptideUnimod[1]);
@@ -207,12 +219,14 @@ public class PeptideFormatter {
     private void baseTOdeeplc() {
         deeplc = base;
 
+        boolean attemptCterm = cterm;
         for (int i = starts.size() - 1; i > -1; i--) {
             int start = starts.get(i);
             int end = ends.get(i);
 
             String[] peptideUnimod = PTMhandler.formatPeptideBaseToSpecific(
-                    deeplc, start, end, "deeplc", foundUnimods);
+                    deeplc, start, end, "deeplc", foundUnimods, attemptCterm);
+            attemptCterm = false;
             deeplc = peptideUnimod[0];
             if (!peptideUnimod[1].isEmpty()) {
                 foundUnimods.add(peptideUnimod[1]);
@@ -223,13 +237,14 @@ public class PeptideFormatter {
     private void baseTOalphapept() {
         alphapept = base;
 
+        boolean attemptCterm = cterm;
         for (int i = starts.size() - 1; i > -1; i--) {
             int start = starts.get(i);
             int end = ends.get(i);
 
             String[] peptideUnimod = PTMhandler.formatPeptideBaseToSpecific(
-                    alphapept, start, end, "alphapept", foundUnimods);
-            //System.out.println(Arrays.toString(peptideUnimod));
+                    alphapept, start, end, "alphapept", foundUnimods, attemptCterm);
+            attemptCterm = false;
             alphapept = peptideUnimod[0];
             if (!peptideUnimod[1].isEmpty()) {
                 foundUnimods.add(peptideUnimod[1]);
@@ -259,12 +274,14 @@ public class PeptideFormatter {
     private void baseTOprosit() {
         prosit = base;
 
+        boolean attemptCterm = cterm;
         for (int i = starts.size() - 1; i > -1; i--) {
             int start = starts.get(i);
             int end = ends.get(i);
 
             String[] peptideUnimod = PTMhandler.formatPeptideBaseToSpecific(
-                    prosit, start, end, "prosit", foundUnimods);
+                    prosit, start, end, "prosit", foundUnimods, attemptCterm);
+            attemptCterm = false;
             prosit = peptideUnimod[0];
             if (!peptideUnimod[1].isEmpty()) {
                 foundUnimods.add(peptideUnimod[1]);
@@ -384,6 +401,10 @@ public class PeptideFormatter {
 
     //only sets base and basecharge
     public PeptideFormatter(String peptide, Object c, String format) {
+        if (peptide.endsWith("cterm")) {
+            peptide = peptide.substring(0, peptide.length() - 5);
+            cterm = true;
+        }
         charge = c.toString();
 
         switch(format) {

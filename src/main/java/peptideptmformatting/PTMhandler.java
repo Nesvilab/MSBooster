@@ -149,7 +149,7 @@ public class PTMhandler {
 
     //start is index of [
     public static String[] formatPeptideBaseToSpecific(String peptide, int start, int end, String model,
-            HashSet<String> foundUnimods) {
+            HashSet<String> foundUnimods, boolean cterm) {
         //set allowed unimods
         HashSet<String> modelAllowedUnimods = new HashSet<>();
         switch(model) {
@@ -207,10 +207,10 @@ public class PTMhandler {
 
         double reportedMass = Double.parseDouble(peptide.substring(start + 1, end));
         String unimod = PTMhandler.findUnimodForMass(foundUnimods, modMap, reportedMass, peptide,
-                start - 1, true);
+                start - 1, end, true, cterm);
         if (unimod.isEmpty()) {
             unimod = PTMhandler.findUnimodForMass(modelAllowedUnimods, modMap, reportedMass, peptide,
-                    start - 1, false);
+                    start - 1, end, false, cterm);
         }
 
         //need to check if the AA is allowed to hold this PTM
@@ -222,9 +222,16 @@ public class PTMhandler {
                     unimod.substring(1) + peptide.substring(end);
         }
 
+        //nterm
         if (peptide.startsWith("[") && start == 0) {
             int splitpoint = peptide.indexOf("]");
             peptide = peptide.substring(0, splitpoint + 1) + ntermSuffix + peptide.substring(splitpoint + 1);
+        }
+
+        //cterm
+        //currently only seen AlphaPeptDeep support cterm mods, may need to update this
+        if (cterm && unimod.startsWith("[")) {
+            peptide = peptide.substring(0, start) + "-" + peptide.substring(start);
         }
 
         return new String[]{peptide, unimod}; //unimod is accepted unimod, or ""
@@ -233,7 +240,8 @@ public class PTMhandler {
     //returns unimod for the reportedMass, or empty string if not found
     private static String findUnimodForMass(HashSet<String> allowedMods, HashMap<String, Double> modMap,
                                             Double reportedMass,
-                                            String peptide, int start, boolean removeMods) {
+                                            String peptide, int start, int end,
+                                            boolean removeMods, boolean cterm) {
         //start is index of amino acid before, or 0 if nterm mod
 
         //first, remove mods that are not supported
@@ -254,6 +262,10 @@ public class PTMhandler {
             if (Math.abs(PTMmass - reportedMass) < 0.001) {
                 String AA = unimod.substring(0, 1);
                 if (start == -1) { //nterm
+                    if (AA.equals("[")) {
+                        return unimod;
+                    }
+                } else if (cterm && end == peptide.length() - 1) { //cterm
                     if (AA.equals("[")) {
                         return unimod;
                     }

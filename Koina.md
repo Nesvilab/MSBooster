@@ -17,6 +17,10 @@ resulting in increased peptide identifications. The following models are current
 |                      | Prosit_2020_intensity_CID                               |   |
 |                      | Prosit_2020_intensity_TMT                               |   |
 |                      | Prosit_2020_intensity_HCD                               |   |
+|                      | ms2pip_timsTOF2024                                                        |   |
+|                      | ms2pip_TTOF5600                                                        |   |
+|                      | ms2pip_Immuno_HCD                                                        |   |
+|                      | UniSpec                                                                         |   |
 
 You can mix and match models, or even use `DIA-NN` for one of them and a Koina model for the other.
 

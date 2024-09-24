@@ -19,6 +19,7 @@ package allconstants;
 
 import features.detectability.FastaReader;
 import features.spectra.MassCalculator;
+import predictions.PredictionEntryHashMap;
 import readers.predictionreaders.LibraryPredictionMapper;
 import utils.CaseInsensitiveHashSet;
 
@@ -151,7 +152,6 @@ public class Constants {
                     "Prosit_2019_intensity", "Prosit_2023_intensity_timsTOF",
                     "Prosit_2020_intensity_TMT", "Prosit_2020_intensity_HCD",
                     "UniSpec"});
-    public static LibraryPredictionMapper predictedLibrary;
     public static Integer numKoinaAttempts = 3;
     public static Integer initialKoinaMillisecondsToWaitRtIm = 30000;
     public static Integer initialKoinaMillisecondsToWaitMs2 = 60000;

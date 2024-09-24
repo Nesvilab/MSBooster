@@ -103,6 +103,8 @@ public class KoinaModelCaller {
             printError(model + " not in Koina models");
             System.exit(1);
         }
+        klr.getPreds().modelType = modelType;
+        klr.getPreds().property = property;
 
         try {
             //pass json files to http request
@@ -551,78 +553,6 @@ public class KoinaModelCaller {
             }
             preds.put(peptide, pe);
 
-        }
-    }
-
-    public void assignMissingPeptidePredictions(KoinaLibReader klr, String fulltsv)
-            throws IOException {
-        //need to see for each of ms2, rt, and im (whichever ones were run) if they need to transfer prediction onto final peptide
-        //take this method and turn into smaller method, then iterate through
-        //should also make new class to do this transferring task
-//        private static String ms2Model;
-//        private static String rtModel;
-//        private static String imModel;
-        BufferedReader TSVReader = new BufferedReader(new FileReader(fulltsv));
-        String l;
-        String[] line;
-        PredictionEntryHashMap preds = klr.getPreds();
-
-        while ((l = TSVReader.readLine()) != null) {
-            line = l.split("\t");
-            if (!preds.containsKey(line[0] + "|" + line[1])) {
-                //get predictionEntry
-                PeptideFormatter pf;
-                PredictionEntry tmp = null;
-                String stripped = "";
-                String baseCharge = "";
-                //TODO: generic method
-                switch (modelType) {
-                    case "alphapept":
-                    case "ms2pip":
-                    case "deeplc":
-                    case "unispec":
-                    case "prosit":
-                    case "prosittmt":
-                        pf = new PeptideFormatter(
-                                new PeptideFormatter(line[0], line[1], "base").getModel(modelType), line[1], modelType);
-                        baseCharge = pf.getBaseCharge();
-                        tmp = preds.get(baseCharge);
-                        stripped = pf.getStripped();
-                        break;
-                    default:
-                        printError(modelType + " not supported by Koina");
-                        System.exit(1);
-                }
-                MassCalculator mc = new MassCalculator(line[0], line[1]);
-                try {
-                    float[] newMZs = new float[tmp.getMzs().length];
-                    for (int i = 0; i < newMZs.length; i++) {
-                        newMZs[i] = mc.calcMass(tmp.getFragNums()[i],
-                                MassCalculator.flagTOion.get(tmp.getFlags()[i]), tmp.getCharges()[i]);
-                    }
-
-                    //add to hashmap
-                    PredictionEntry newPred = new PredictionEntry(newMZs, tmp.getIntensities(),
-                            tmp.getFragNums(), tmp.getCharges(), tmp.getFragmentIonTypes(), tmp.getFlags());
-                    newPred.setRT(tmp.getRT());
-                    newPred.setIM(tmp.getIM());
-                    preds.put(mc.fullPeptide, newPred);
-                } catch (Exception e) {
-                    if (!Constants.foundBest && klr.failed) { //allow it to run without error
-                        new PredictionEntry();
-                        PredictionEntry newPred = new PredictionEntry(new float[]{0}, new float[]{0},
-                                new int[]{0}, new int[]{0}, new String[]{"y"}, new int[]{1});
-                        newPred.setRT(0);
-                        newPred.setIM(0);
-                        preds.put(mc.fullPeptide, newPred);
-                    } else if (! PeptideSkipper.skipPeptide(stripped, baseCharge.split("\\|")[1], modelType)) {
-                        e.printStackTrace();
-                        printError("Missing peptide to transfer prediction onto " + l + ": " + baseCharge);
-                        printError("Exiting now.");
-                        System.exit(1);
-                    }
-                }
-            }
         }
     }
 

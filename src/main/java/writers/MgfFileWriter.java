@@ -19,6 +19,7 @@ package writers;
 
 import allconstants.Constants;
 import predictions.PredictionEntry;
+import predictions.PredictionEntryHashMap;
 import readers.predictionreaders.LibraryPredictionMapper;
 
 import java.io.BufferedWriter;
@@ -27,14 +28,14 @@ import java.io.IOException;
 import java.util.Map;
 
 public class MgfFileWriter {
-    LibraryPredictionMapper spm;
-    public MgfFileWriter(LibraryPredictionMapper spm) {
-        this.spm = spm;
+    PredictionEntryHashMap allPreds;
+    public MgfFileWriter(PredictionEntryHashMap allPreds) {
+        this.allPreds = allPreds;
     }
 
     public void write(String outfile) throws IOException {
         BufferedWriter bw = new BufferedWriter(new FileWriter(outfile));
-        for (Map.Entry<String, PredictionEntry> entry : spm.getPreds().entrySet()) {
+        for (Map.Entry<String, PredictionEntry> entry : allPreds.entrySet()) {
             String[] peptide = entry.getKey().split("\\|");
             PredictionEntry pe = entry.getValue();
             if (pe.mzs == null) { //was not able to have its mzs predicted

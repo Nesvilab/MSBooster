@@ -68,51 +68,7 @@ public interface LibraryPredictionMapper {
         return new PredFullSpeclibReader(file, false, pinFiles, executorService);
     }
 
-    //merge the allPreds library into another one
-    //could move this to PredictionEntryHashMap
-    //need three methods
-    //1. merge libraries as is (merge libraries)
-    //2. for the final library with full peptide entries, get each property from model-specific peptide entry and transfer it to full peptide entry (assign missing peptide predictions)
-    default void mergeLibraries(PredictionEntryHashMap library1, String mode) throws IOException {
-        //switch case for spectra, RT, IM, aux
-        PredictionEntryHashMap library2 = getPreds();
-
-        for (Map.Entry<String, PredictionEntry> entry : library2.entrySet()) {
-            String peptide = entry.getKey();
-            PredictionEntry pe2 = entry.getValue();
-            if (library1.containsKey(peptide)) {
-                PredictionEntry pe1 = library1.get(peptide);
-                switch (mode) {
-                    //for RT and IM, just replace that
-                    case "RT":
-                        pe1.setRT(pe2.getRT());
-                        break;
-                    case "IM":
-                        pe1.setIM(pe2.getIM());
-                        break;
-                    //for spectra and aux, probably need two separate vectors to be saved
-                    case "spectra":
-                        pe1.mzs = pe2.mzs;
-                        pe1.intensities = pe2.intensities;
-                        pe1.fragNums = pe2.fragNums;
-                        pe1.charges = pe2.charges;
-                        pe1.fragmentIonTypes = pe2.fragmentIonTypes;
-                        pe1.flags = pe2.flags;
-                        pe1.filtered = pe2.filtered;
-                        break;
-                    case "auxSpectra": //TODO: look below for extra code to implement
-                        break;
-                }
-
-                library1.put(peptide, pe1); //entry in library1, but getting property for it from library2
-            } else {
-                library1.put(peptide, pe2); //if entry missing in library1, add it from library2
-            }
-        }
-
-        //delete old one at end and save library
-        clear();
-
+//old notes for merging predfull library
         //Special preparations dependent on features we require
         //get all possible keys from both preds1 and preds2
 //        Set<String> totalKeyset = new HashSet<String>();
@@ -205,5 +161,4 @@ public interface LibraryPredictionMapper {
 //                }
 //            }
 //        }
-    }
 }

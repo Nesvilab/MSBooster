@@ -143,7 +143,11 @@ public class KoinaMethods {
         kmc.callModel(model, klr, jsonFolder, executorService, false, false);
         executorService.shutdown();
         try {
-            kmc.assignMissingPeptidePredictions(klr, fulltsv);
+            PredictionEntryHashMap assignedPreds = new PredictionEntryHashMap();
+            ArrayList<PredictionEntryHashMap> predList = new ArrayList<>();
+            predList.add(klr.getPreds());
+            assignedPreds.transferKoinaPreds(predList, fulltsv);
+            klr.setPreds(assignedPreds);
         } catch (IOException e) {
             throw new RuntimeException(e);
         }

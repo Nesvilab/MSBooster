@@ -55,7 +55,7 @@ public class MainClass {
     public static ScheduledThreadPoolExecutor executorService;
     public static void main(String[] args) throws Exception {
         Locale.setDefault(Locale.US);
-        printInfo("MSBooster v1.2.55");
+        printInfo("MSBooster v1.2.56");
 
         try {
             //accept command line inputs
@@ -1495,77 +1495,70 @@ public class MainClass {
 
             //generate predictions
             //send input files to prediction models
-            KoinaLibReader klr = new KoinaLibReader();
-            KoinaModelCaller kmc = new KoinaModelCaller();
-            boolean onlyUsedKoina = true;
+            ArrayList<PredictionEntryHashMap> predMaps = new ArrayList<>();
+            String DiannPredFilePath = "";
             ArrayList<String> predFilePaths = new ArrayList<>(); //replace "koina" with final name later
-            HashMap<String, String> modelToPath = new HashMap<>();
             if (createSpectraRTPredFile) {
                 boolean ranKoina = false;
                 for (String currentModel : models) {
+                    KoinaModelCaller kmc = new KoinaModelCaller();
                     if (Constants.KoinaModels.contains(currentModel)) {
-                        if (! modelToPath.containsKey(currentModel)) {
-                            kmc.callModel(currentModel, klr, Constants.JsonDirectory, executorService,
-                                    true, true);
-                            modelToPath.put(currentModel, "koina");
-                            ranKoina = true;
-                        }
-                        predFilePaths.add("koina");
+                        KoinaLibReader klr = new KoinaLibReader();
+                        kmc.callModel(currentModel, klr, Constants.JsonDirectory, executorService,
+                                true, true);
+                        ranKoina = true;
+                        predFilePaths.add("koina" + currentModel);
+                        predMaps.add(klr.getPreds());
                     } else {
-                        if (! modelToPath.containsKey(currentModel)) {
-                            String predFilePath = DiannModelCaller.callModel(
+                        if (DiannPredFilePath.isEmpty()) {
+                            DiannPredFilePath = DiannModelCaller.callModel(
                                     Constants.spectraRTPrefix + ".tsv", true);
-                            modelToPath.put(currentModel, predFilePath);
-                            onlyUsedKoina = false;
                         }
-                        predFilePaths.add(modelToPath.get(currentModel));
+                        predFilePaths.add(DiannPredFilePath);
                     }
                 }
+                PredictionEntryHashMap koinaPreds = new PredictionEntryHashMap();
                 if (ranKoina) {
-                    //run this once, since once it is assigned by one model, it is "not missing anymore"
-                    kmc.assignMissingPeptidePredictions(klr, Constants.spectraRTPrefix + "_full.tsv");
+                    koinaPreds.transferKoinaPreds(predMaps,
+                            Constants.spectraRTPrefix + "_full.tsv");
                 }
 
                 String koinaPredFilePath = "koina.mgf";
                 for (int j = 0; j < models.size(); j++) {
                     switch (modelTypes.get(j)) {
                         case "spectra":
-                            if (predFilePaths.get(j).equals("koina")) {
-                                koinaPredFilePath = "spectra_" + koinaPredFilePath;
-                            } else {
-                                Constants.spectraPredFile = predFilePaths.get(j);
+                            if (predFilePaths.get(j).startsWith("koina")) {
+                                koinaPredFilePath = "spectra-" + predFilePaths.get(j).substring(5) + "." + koinaPredFilePath;
+                            } else { //DIANN
+                                Constants.spectraPredFile = DiannPredFilePath;
                             }
                             break;
                         case "RT":
-                            if (predFilePaths.get(j).equals("koina")) {
-                                koinaPredFilePath = "RT_" + koinaPredFilePath;
+                            if (predFilePaths.get(j).startsWith("koina")) {
+                                koinaPredFilePath = "RT-" + predFilePaths.get(j).substring(5) + "." + koinaPredFilePath;
                             } else {
-                                Constants.RTPredFile = predFilePaths.get(j);
+                                Constants.RTPredFile = DiannPredFilePath;
                             }
                             break;
                         case "IM":
-                            if (predFilePaths.get(j).equals("koina")) {
-                                koinaPredFilePath = "IM_" + koinaPredFilePath;
+                            if (predFilePaths.get(j).startsWith("koina")) {
+                                koinaPredFilePath = "IM-" + predFilePaths.get(j).substring(5) + "." + koinaPredFilePath;
                             } else {
-                                Constants.IMPredFile = predFilePaths.get(j);
+                                Constants.IMPredFile = DiannPredFilePath;
                             }
                             break;
-                        case "auxSpectra":
-                            if (predFilePaths.get(j).equals("koina")) {
-                                koinaPredFilePath = "auxSpectra_" + koinaPredFilePath;
-                            } else {
-                                Constants.auxSpectraPredFile = predFilePaths.get(j);
-                            }
+                        case "auxSpectra": //DIANN cannot predict this
+                            koinaPredFilePath = "auxSpectra-" + predFilePaths.get(j).substring(5) + "." + koinaPredFilePath;
                             break;
                     }
                 }
 
-                if (!koinaPredFilePath.equals("koina.mgf")) {
-                    MgfFileWriter mfw = new MgfFileWriter(klr);
+                if (!koinaPredFilePath.equals("koina.mgf")) { //koina was used
+                    MgfFileWriter mfw = new MgfFileWriter(koinaPreds);
                     koinaPredFilePath = Constants.outputDirectory + File.separator + koinaPredFilePath;
                     mfw.write(koinaPredFilePath);
                     for (int j = 0; j < models.size(); j++) {
-                        if (predFilePaths.get(j).equals("koina")) {
+                        if (predFilePaths.get(j).startsWith("koina")) {
                             switch (modelTypes.get(j)) {
                                 case "spectra":
                                     Constants.spectraPredFile = koinaPredFilePath;
@@ -1582,10 +1575,6 @@ public class MainClass {
                             }
                         }
                     }
-                }
-
-                if (onlyUsedKoina) {
-                    Constants.predictedLibrary = klr;
                 }
             }
 
@@ -1622,7 +1611,7 @@ public class MainClass {
                 AtomicBoolean spectrafound = new AtomicBoolean(false);
                 AtomicBoolean rtfound = new AtomicBoolean(false);
                 AtomicBoolean imfound = new AtomicBoolean(false);
-                AtomicBoolean spectraPredFileFound = new AtomicBoolean(false);
+                AtomicBoolean spectraPredFilePDVFound = new AtomicBoolean(false);
 
                 // Stream the list, and if a line starts with the specified prefix,
                 // replace everything after the prefix with newSuffix
@@ -1638,8 +1627,9 @@ public class MainClass {
                             } else if (line.trim().startsWith("imModel")) {
                                 imfound.set(true);
                                 return "imModel=" + Constants.imModel;
-                            } else if (line.trim().startsWith("spectraPredFile")) {
-                                spectraPredFileFound.set(true);
+                            } else if (line.trim().startsWith("spectraPredFilePDV")) {
+                                spectraPredFilePDVFound.set(true);
+                                return "spectraPredFilePDV=" + Constants.spectraPredFile;
                             }
                             return line;
                         })
@@ -1656,7 +1646,7 @@ public class MainClass {
                     modifiedLines.add("imModel=" + Constants.imModel);
                 }
                 //FragPipe PDV needs to know which file has spectral predictions
-                if (!spectraPredFileFound.get() && Constants.useSpectra) {
+                if (Constants.useSpectra && !spectraPredFilePDVFound.get()) {
                     modifiedLines.add("spectraPredFilePDV=" + Constants.spectraPredFile);
                 }
 

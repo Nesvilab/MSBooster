@@ -1,4 +1,5 @@
 # Using Koina with MSBooster
+Last updated: 9/24/2024
 
 ## Why use Koina?
 [Koina](https://koina.proteomicsdb.org/) (described in 
@@ -46,15 +47,15 @@ Important parameters when using Koina are explained below:
 <details>
 <summary>Koina required parameters</summary>
 <ul>
-    <li><code>KoinaURL</code>: It is by default kept blank, as an acknowledgement that using it may potentially send the 
+    <li><code>KoinaURL (String)</code>: It is by default kept blank, as an acknowledgement that using it may potentially send the 
     peptides you are predicting to an external public server. If you are OK with this, you may use
     <code>https://koina.wilhelmlab.org:443/v2/models/</code> or a different URL (e.g. for a 
     <a href="#notes">private Koina instance</a>)</li>
-    <li><code>rtModel</code>: If kept blank, it will default to <code>DIA-NN</code>. You may specify this or any of the 
+    <li><code>rtModel (String)</code>: If kept blank, it will default to <code>DIA-NN</code>. You may specify this or any of the 
     RT models listed above. This will be ignored if <code>useRT</code> is set to false</li>
-    <li><code>spectraModel</code>: If kept blank, it will default to <code>DIA-NN</code>. You may specify this or any of 
+    <li><code>spectraModel (String)</code>: If kept blank, it will default to <code>DIA-NN</code>. You may specify this or any of 
     the MS2 models listed above. This will be ignored if <code>useSpectra</code> is set to false</li>
-    <li><code>imModel</code>: If kept blank, it will default to <code>DIA-NN</code>. You may specify this or any of 
+    <li><code>imModel (String)</code>: If kept blank, it will default to <code>DIA-NN</code>. You may specify this or any of 
     the IM models listed above. This will be ignored if <code>useIM</code> is set to false</li>
 </ul>
 </details>
@@ -62,37 +63,43 @@ Important parameters when using Koina are explained below:
 <details>
 <summary>Koina optional parameters</summary>
 <ul>
-    <li><code>findBestRtModel</code>: Set to <code>true</code> if you would like to use the 
+    <li><code>findBestRtModel (boolean)</code>: Set to <code>true</code> if you would like to use the 
     <a href="#notes">heuristic best RT model</a> search to find which of the models offered works 
     best for your data. Otherwise, set as <code>false</code></li>
-    <li><code>findBestSpectraModel</code>: Set to <code>true</code> if you would like to use the heuristic best spectral 
+    <li><code>findBestSpectraModel (boolean)</code>: Set to <code>true</code> if you would like to use the heuristic best spectral 
     model search to find which of the models offered works best for your data. Otherwise, set as <code>false</code></li>
-    <li><code>findBestImModel</code>: Set to <code>true</code> if you would like to use the heuristic best IM model 
+    <li><code>findBestImModel (boolean)</code>: Set to <code>true</code> if you would like to use the heuristic best IM model 
     search to find which of the models offered works best for your data. Otherwise, set as <code>false</code></li>
-    <li><code>ms2SearchModelsString</code>: Controls which models are searched during the heuristic best spectral model 
-    search. By default, this is set to all models (<code>DIA-NN,ms2pip_2021_HCD,AlphaPept_ms2_generic,
-    Prosit_2020_intensity_CID,Prosit_2020_intensity_HCD,Prosit_2023_intensity_timsTOF</code>). If you would like to take
+    <li><code>ms2SearchModelsString (String)</code>: Controls which models are searched during the heuristic best spectral model 
+    search. It should be formatted with models separated by commas, and no spaces in between. If you would like to take
     out specific models, you can remove them from here. For example, if you are working with timsTOF data, you may want 
     to reduce the search to only those models that explicitly have timsTOF models (<code>AlphaPept_ms2_generic,
     Prosit_2023_intensity_timsTOF</code>). Models are case-insensitive (e.g. prosit_2020_Intensity_cid), but they must 
     be spelled correctly</li>
-    <li><code>rtSearchModelsString</code>: Same as <code>ms2SearchModelsString</code>, but for RT models. By default, it
+    <li><code>rtSearchModelsString (String)</code>: Same as <code>ms2SearchModelsString</code>, but for RT models. By default, it
     is set to <code>DIA-NN,AlphaPept_rt_generic,Prosit_2019_irt,Deeplc_hela_hf</code></li>
-    <li><code>imSearchModelsString</code>: Same as <code>ms2SearchModelsString</code>, but for IM models. By default, it
+    <li><code>imSearchModelsString (String)</code>: Same as <code>ms2SearchModelsString</code>, but for IM models. By default, it
     is set to <code>DIA-NN,AlphaPept_ccs_generic</code></li>
-    <li><code>calibrateNCE</code>: Set to <code>true</code> if you would like to find the optimal collision energy for 
+    <li><code>calibrateNCE (boolean)</code>: Set to <code>true</code> if you would like to find the optimal collision energy for 
     MS2 predictions across the mzML files. Otherwise, set to <code>false</code> (default is true). NCE is only used in 
     Prosit and AlphaPeptDeep predictions. If false, MSBooster will attempt to read in the NCE from the mzML file.
     If it cannot find the NCE, it will be set to 25</li>
-    <li><code>minNCE</code>: the minimum NCE to search when calibrating NCE (default is 20)</li>
-    <li><code>maxNCE</code>: the maximum NCE to search when calibrating NCE (default is 40)</li>
-    <li><code>numPSMsToCalibrate</code>: number of PSMS to use for NCE calibration and best model search (default is 
+    <li><code>NCE (int)</code> (int): if calibrateNCE is <code>false</code>, then NCE can be used to explicitly specify NCE used for prediction</li>
+    <li><code>instrument (String)</code>: instrument used for prediction. Only used by AlphaPeptDeep and Unispec. While MSBooster
+    attempts to automatically read this from the mzml metadata, it can be explicitly provided here.
+    <li><code>minNCE (int)</code>: the minimum NCE to search when calibrating NCE (default is 20)</li>
+    <li><code>maxNCE (int)</code>: the maximum NCE to search when calibrating NCE (default is 40)</li>
+    <li><code>numPSMsToCalibrate (int)</code>: number of PSMS to use for NCE calibration and best model search (default is 
     1000, the maximum numbers of peptides accepted in a single request to Koina)</li>
+    <li><code>minIntensityToWriteToMgf (float)</code>: fragments with intensity below this value relative to the base peak 
+    intensity will be filtered out. By default set to 0.01
+    <li><code>autoSwitchFragmentation (boolean)</code>: whether or not to switch a model from HCD to CID and vice versa, if the mzml
+    filter string metadata says so and an appropriate substitute model is available. This is set to <code>true</code> by default
 </ul>
 </details>
 
 ## Output files
-In addition to edited pin files, several other files are produced when running Koina:
+In addition to [edited pin files, score histograms, and RT/IM calibration curves](README.md#graphical-output-files), several other files are produced when running Koina:
 - `*_koina.mgf`: Contains the MS2/RT/IM predictions from the Koina models. RT/IM will be 0.0 if DIA-NN was used or no
 RT/IM prediction was performed. This file is used in FragPipe-PDV for mirror plot visualization of experimental vs predicted
 spectra, if MSBooster was most recently run with a Koina MS/MS model
@@ -262,6 +269,8 @@ To use this feature, either check the boxes "Find best <spectral/RT/IM> model" i
 - Add IM boxes to FragPipe GUI
 - Improve heuristic searches (MS2 performance ~98%, RT performance ~90%, IM untested)
 - Different optimal NCE for each mzML file
-- Adding your own models
-- Support for CPUs?
+- Add documentation for instruments
 </details>
+
+## How to cite
+Please cite the following when using Koina with MSBooster: https://www.biorxiv.org/content/10.1101/2024.06.01.596953v1

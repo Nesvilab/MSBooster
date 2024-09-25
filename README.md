@@ -1,4 +1,5 @@
 # MSBooster
+Last updated: 9/24/2024
 
 ## Overview
 MSBooster is a tool for incorporating spectral libary predictions into peptide-spectrum match (PSM) 
@@ -55,9 +56,9 @@ You can run MSBooster using a command similar to the following:
     
 The minimum parameters needing to be passed are:
 
-    - DiaNN: path to DIA-NN executable
-    - mzmlDirectory: path to mzML/mgf files. Accepts multiple space-separated folder and files
-    - pinPepXMLDirectory: path to pin files. Accepts multiple space-separated folder and files.
+    - DiaNN (String): path to DIA-NN executable (if using DIA-NN model, which is the MSBooster default)
+    - mzmlDirectory (String): path to mzML/mgf files. Accepts multiple space-separated folder and files
+    - pinPepXMLDirectory (String): path to pin files. Accepts multiple space-separated folder and files.
       If using in FragPipe, place the pin and pepXML files in the same folder
 
 While you can individually pass these parameters, it is easier to place one 
@@ -66,10 +67,90 @@ for a template.
 
 
 ## Optional parameters
+The parameters below are for general use. Koina-specific parameters are in [the Koina documentation](Koina.md#command-line)
+<details>
+<summary>General input/output and processing</summary>
+<ul>
+  <li><code>paramsList (String)</code>: location to text file containing parameters for this run
+  <li><code>fragger (String)</code>: file path of fragger.params file from the MSFragger run. MSBooster will read in multiple parameters
+and adjust internal parameters based on them, such as fragment mass error tolerance and mass offsets
+  <li><code>outputDirectory (String)</code>: where to output the new files
+  <li><code>editedPin (String)</code>: MSBooster will name the new file based on the ones provided. For example, A.pin will have a counterpart 
+called A_edited.pin. To change from the default of "edited", provide a new string here
+  <li><code>renamePin (int)</code>: whether to generate a new pin file or rewrite the old one. Default here is 1, which will not overwrite. 
+Setting this to 0 will overwrite the old pin file
+  <li><code>deletePreds (boolean)</code>: whether to delete the files storing model predictions after finishing a succesful run. By default, set
+to false. Set to true if you wish to delete these
+  <li><code>loadingPercent (int)</code>: how often to report progress on tasks using a progress reporter. By default, set to 10, meaning an 
+update will be printed every 10%. 
+  <li><code>numThreads (int)</code>: number of threads to use. By default set to 0, which uses all available threads minus 1
+  <li><code>splitPredInputFile (int)</code>: only used when DIA-NN predictions fail due to an out of memory error (137). By default, set
+to 1, but you can increase this to specify how many smaller files the DIA-NN input file should be broken up into. Each
+file will then be predicted sequentially, easy the memory burden
+  <li><code>plotExtension (String)</code>: what file format plots should be in. png by default, and pdf is also allowed
+  <li><code>features (String)</code>: list of features to be calculated. Case-sensitive, comm-separated without spaces in between.
+Default is "predRTrealUnits,unweightedSpectralEntropy,deltaRTLOESS"
+</ul>
+</details>
+
+<details>
+<summary>Enabling, specifying, and loading predictions</summary>
+<ul>
+  <li><code>spectraPredFile (String)</code>: if you are reusing old spectral predictions (e.g. from DIA-NN or Koina), you can specify the file
+location here
+  <li><code>RTPredFile (String)</code>: same as spectraPredFile, but for RT predictions
+  <li><code>IMPredFile (String)</code>: same as spectraPredFile, but for IM predictions
+  <li><code>spectraModel (String)</code>: which spectral prediction model to use
+  <li><code>rtModel (String)</code>: same as spectraModel, but for RT
+  <li><code>imModel (String)</code>: same as spectraModel, but for IM
+  <li><code>useSpectra (boolean)</code>: whether to use spectral prediction-based features. Set to true by default
+  <li><code>useRT (boolean)</code>: whether to use RT prediction-based features. Set to true by default
+  <li><code>useIM (boolean)</code>: whether to use IM prediction-based features. Set to false by default
+</ul>
+</details>
+
+<details>
+<summary>MS/MS spectral processing</summary>
+<ul>
+  <li><code>ppmTolerance (float)</code>: fragment error ppm tolerance (default 20ppm)
+  <li><code>matchWithDaltons (boolean)</code>: whether to match predicted and observed fragments in Daltons (default false)
+  <li><code>DaTolerance (float)</code>: how many daltons around the predicted peak to look for experimental peak (default 0.05)
+  <li><code>useTopFragments (boolean)</code>: whether to filter spectral prediction to the N highest intensity peaks (default true)
+  <li><code>topFragments (int)</code>: up to how many predicted fragments should be used for feature calculation (default 20). Only 
+applied if useTopFragments is true
+  <li><code>removeRankPeaks (boolean)</code>: Set to true by default, which filters out fragments from the experimental spectra once 
+matched. If false, experimental fragments can be matched by multiple PSMs from the same scan
+  <li><code>useBasePeak (boolean)</code>: whether a lower limit should be applied to MS2 predictions to only use fragments with higher
+intensity (default true)
+  <li><code>percentBasePeak (float)</code>: percent at which fragment with intensity of some percent of base peak intensity is included
+in similarity calculation. Only applied if useBasePeak is true (default 1)
+</ul>
+</details>
+
+<details>
+<summary>RT/IM prediction</summary>
+<ul>
+  <li><code>loessEscoreCutoff (float)</code>: expectation value cutoff used for first pass at collecting PSMs for RT/IM calibration.
+Default is 10^-3.5, or approximately 0.000316
+  <li><code>rtLoessRegressionSize (int)</code>: maximum number of PSMs used for RT LOESS calibration (default 5000)
+  <li><code>imLoessRegressionSize (int)</code>: same as rtLoessRegressionSize but for IM (default 1000)
+  <li><code>minLoessRegressionSize (int)</code>: minimum number of PSMs needed to attempt LOESS RT/IM calibration (default 100). If fewer than
+this number of PSMs are available, linear regression is used instead
+  <li><code>minLinearRegressionSize (int)</code>: minimum number of PSMs needed to attempt linear regression RT/IM calibration (default 10).
+If fewer than this number of PSMs are available, no calibration is attempted
+  <li><code>loessBandwidth (String)</code>: list of bandwidths to try for RT/IM LOESS calibration (default 0.01,0.05,0.1,0.2). This must
+be comma-separated with no spaces in between
+  <li><code>regressionSplits (int)</code>: number of cross validations used for RT/IM LOESS calibration (default 5)
+  <li><code>massesForLoessCalibration (String)</code>: masses for mass shifts that should be fit to their own calibration curves. List
+is comma-separated with no spaces in between. The masses should be written to the same number of digits as in the PIN file
+  <li><code>loessScatterOpacity (float)</code>: opacity of scatter plots in LOESS calibration figures, from 0 to 1 (default 0.35)
+</ul>
+</details>
 
 ## Output files
  - .pin file with new features. By default, new pin files will be produced ending in "_edited.pin". The
- default features used are "unweighted_spectral_entropy" and "delta_RT_loess"
+ default features used are "unweighted_spectral_entropy", "delta_RT_loess", and "pred_RT_real_units". If ion mobility
+ features are enabled, "delta_IM_loess" and "ion_mobility" will also be included
  - spectraRT.tsv and spectraRT_full.tsv: input files for DIA-NN prediction model
  - spectraRT.predicted.bin: a binary file with predictions from DIA-NN to be used by MSBooster for 
 feature calculation. If using FragPipe-PDV, these files are used to generate mirror plots of experimental
@@ -83,12 +164,20 @@ predictions.
     experimental and predicted RT scales. These top PSMs are presented in the graph, not all PSMs. 
     One graph will be produced per pin file
     ![Alt text](README_imgs/rt_calibration.png?raw=true)
+    - IM_calibration_curves: up to the top 1000 PSMs will be used for calibration between the
+      experimental and predicted IM scales. These top PSMs are presented in the graph, not all PSMs. A separate curve
+      will be learned for each charge state. The figure below is an example for charge 2 precursors
+    ![Alt text](README_imgs/im_calibration_charge2.png?raw=true)
     - score_histograms: overlayed histograms of all target and decoy PSMs for each pin file. Some 
     features are plotted here on a log scale for better visualization of the bimodal distribution of
     true and false positives, but the original value is what is used in the pin files, not the log-scaled
-    version.
+    version. Shown here are histograms for the unweighted spectral entropy and delta RT scores, but similar ones are
+    produced for all features
     ![Alt text](README_imgs/entropy_hist.png?raw=true)
     ![Alt text](README_imgs/delta_RT_loess_hist.png?raw=true)
+
+## TODO
+- Documentation on all allowed features and how to QC them with graphical output
     
 ## How to cite
-- Please cite the following when using MSBooster: https://www.nature.com/articles/s41467-023-40129-9 
+Please cite the following when using MSBooster: https://www.nature.com/articles/s41467-023-40129-9 

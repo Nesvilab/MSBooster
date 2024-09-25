@@ -54,7 +54,7 @@ public class Constants {
     public static String spectraPredFilePDV = null; //for PDV visualization
     public static String RTPredFile = null;
     public static String IMPredFile = null;
-    public static String auxSpectraPredFile = null;
+    public static String auxSpectraPredFile = null; //TODO support this
     public static String detectPredFile = null;
     public static Boolean deletePreds = false;
     public static Integer loadingPercent = 10;
@@ -62,7 +62,7 @@ public class Constants {
 
     //optional file locations and parameters
     //if calculating detectFractionGreater, these are used for FastaReader class
-    public static String fasta = "C:/Users/kevin/OneDriveUmich/proteomics/fasta/2020-12-07-decoys-reviewed-contam-UP000005640.fas";
+    public static String fasta = "";
     public static String decoyPrefix = ">rev_";
     public static String cutAfter = "KR";
     public static String butNotAfter = "P";
@@ -85,11 +85,10 @@ public class Constants {
     //locations of executables and other models
     public static Integer numThreads = 0;
     public static String DiaNN = null;
-    public static String spectraRTPredModel = "DIA-NN"; //can also include koina urls //TODO remove in favor of separate spectra and rt models
     public static String spectraModel = "";
     public static String rtModel = "";
     public static String imModel = "";
-    public static String auxSpectraModel = "";
+    public static String auxSpectraModel = ""; //TODO: support this
     public static Integer splitPredInputFile = 1;
     public static Boolean useKoina = false;
     public static Boolean usedKoina = false;
@@ -215,6 +214,7 @@ public class Constants {
     //these constants for RT features
     public static Boolean useRT = true;
 
+    //TODO review how this works
     public static Double uniformPriorPercentile = 10d;
     public static Integer RTbinMultiplier = 1;
     public static Float RTIQR = 50f;
@@ -341,12 +341,9 @@ public class Constants {
     ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
     //use single string sep by comma delimiter
-    //should include parameter to calculate correlation and then choose
-    //default auto, everything, or all? Or a combination I figure out empirically
     //public static String features = "predRTrealUnits,unweightedSpectralEntropy,deltaRTLOESS,peptideCounts";
     public static String features = "predRTrealUnits,unweightedSpectralEntropy,deltaRTLOESS";
     public static Boolean useMultipleCorrelatedFeatures = false;
-    //public static String features = "auto";
 
     //don't currently support weighted similarity features
     public static final CaseInsensitiveHashSet detectFeatures = new CaseInsensitiveHashSet(

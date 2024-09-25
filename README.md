@@ -176,6 +176,9 @@ predictions.
     ![Alt text](README_imgs/entropy_hist.png?raw=true)
     ![Alt text](README_imgs/delta_RT_loess_hist.png?raw=true)
 
+## Tutorials
+- Use peptide prediction models from Koina for MSBooster feature generation: https://fragpipe.nesvilab.org/docs/tutorial_koina.html
+
 ## TODO
 - Documentation on all allowed features and how to QC them with graphical output
     

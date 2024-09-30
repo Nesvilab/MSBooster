@@ -35,7 +35,6 @@ public class PredictionEntry {
     public String[] fragmentIonTypes = new String[0];
     public float RT;
     public float IM;
-    float detectability;
     int counter;
     public HashMap<String, Float[]> scores = new HashMap<>();
     public ArrayList<Integer> times = new ArrayList<>();
@@ -219,7 +218,6 @@ public class PredictionEntry {
     public float getRT() {return RT;}
     public void setIM(float IM) {this.IM = IM;}
     public float getIM() {return IM;}
-    public void setDetectability(float detectability) {this.detectability = detectability;}
     private void setFragmentIonTypes() {
         this.fragmentIonTypes = new String[flags.length];
         for (int i = 0; i < flags.length; i++) {

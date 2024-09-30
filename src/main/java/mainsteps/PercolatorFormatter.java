@@ -22,7 +22,6 @@ import static utils.Print.printInfo;
 
 import allconstants.Constants;
 import features.FeatureCalculator;
-import features.detectability.FastaReader;
 import features.rtandim.IMFunctions;
 import features.spectra.SpectrumComparison;
 import figures.CalibrationFigure;
@@ -41,7 +40,6 @@ import com.google.common.collect.Range;
 import com.google.common.collect.RangeMap;
 import com.google.common.collect.TreeRangeMap;
 import kotlin.jvm.functions.Function1;
-import org.apache.commons.lang3.ArrayUtils;
 import umich.ms.fileio.exceptions.FileParsingException;
 import utils.ProgressReporter;
 
@@ -65,11 +63,6 @@ public class PercolatorFormatter {
             throws IOException, InterruptedException, ExecutionException, FileParsingException, SQLException {
 
         ArrayList<String> featuresList = new ArrayList<>(Arrays.asList(features));
-        //remove features from array for multiple protein formatting
-        if (featuresList.contains("detectability")) {
-            int idx = ArrayUtils.indexOf(features, "detectability");
-            features = ArrayUtils.remove(features, idx);
-        }
 
         File[] pinFiles = pmMatcher.pinFiles;
         File[] mzmlFiles = pmMatcher.mzmlFiles;
@@ -144,110 +137,6 @@ public class PercolatorFormatter {
             for (LibraryPredictionMapper lpm : allLibraries.values()) {
                 allPreds = lpm.getPreds();
             }
-        }
-
-        //create detectMap to store detectabilities for base sequence peptides
-        //store peptide detectabilities in PredictionEntry
-//        DetectMap dm = null;
-//        ArrayList<String> dFeatures = new ArrayList<String>(Constants.detectFeatures);
-//        dFeatures.retainAll(featuresList);
-//        //long startTime = System.nanoTime();
-//        if (dFeatures.size() > 0) {
-//            dm = new DetectMap(detectFile);
-//            for (Map.Entry<String, PredictionEntry> e : allPreds.entrySet()) {
-//                e.getValue().setDetectability(dm.getDetectability(
-//                        new PeptideFormatter(e.getKey().split("\\|")[0], e.getKey().split("\\|")[1], "pin").stripped));
-//            }
-//        }
-
-        FastaReader fasta = null;
-
-        if (featuresList.contains("detectFractionGreater") || featuresList.contains("detectSubtractMissing")
-                || featuresList.contains("detectProtSpearmanDiff") || featuresList.contains("peptideCounts")) {
-            if (Constants.peptideCounter.isEmpty()) {
-                //get all peptides present in pin
-                for (File pinFile : pmMatcher.pinFiles) {
-                    PinReader pin = new PinReader(pinFile.getCanonicalPath());
-
-                    //add to counter
-                    while (pin.next(true)) {
-                        PeptideFormatter pf = pin.getPep();
-                        if (Float.valueOf(pin.getColumn("hyperscore")) > 10) {
-                            if (Constants.peptideCounter.containsKey(pf.getStripped())) {
-                                HashSet<String> peptideSet = Constants.peptideCounter.get(pf.getStripped());
-                                peptideSet.add(pin.name);
-                                Constants.peptideCounter.put(pf.getStripped(), peptideSet);
-                            } else {
-                                HashSet<String> peptideSet = new HashSet<>();
-                                peptideSet.add(pin.name);
-                                Constants.peptideCounter.put(pf.getStripped(), peptideSet);
-                            }
-                        } else {
-                            if (! Constants.peptideCounter.containsKey(pf.getStripped())) {
-                                HashSet<String> peptideSet = new HashSet<>();
-                                Constants.peptideCounter.put(pf.getStripped(), peptideSet);
-                            }
-                        }
-                    }
-                    pin.close();
-                }
-            }
-
-//            //load fasta
-//            if (Constants.getFastaReader() == null) {
-//                printInfo("Creating fasta object");
-//                fasta = new FastaReader(Constants.fasta);
-//            } else {
-//                printInfo("Loading fasta");
-//                fasta = Constants.getFastaReader();
-//            }
-//
-//            printInfo("Loading detectabilities for unique peptides from each protein");
-//            for (Map.Entry<String, ProteinEntry> e : fasta.protToPep.entrySet()) {
-//                ArrayList<String> pepList = e.getValue().peptides;
-//                float[] protDetects = new float[pepList.size()]; //for storing initial detect order
-//
-//                //store detect unsorted
-//                for (int pep = 0; pep < pepList.size(); pep++) {
-//                    protDetects[pep] = dm.getDetectability(pepList.get(pep));
-//                }
-//
-//                //dual pivot quicksort
-//                //sorted indices
-//                int[] sortedIndices = IntStream.range(0, protDetects.length)
-//                        .boxed().sorted((k, j) -> Float.compare(protDetects[k], protDetects[j]))
-//                        .mapToInt(ele -> ele).toArray();
-//
-//                float[] sortedDetect = new float[protDetects.length];
-//                for (int j = 0; j < protDetects.length; j++) {
-//                    sortedDetect[j] = protDetects[sortedIndices[j]];
-//                }
-//                e.getValue().detects = sortedDetect;
-//
-//                //check which peptides present, and get spectral counts
-//                float[] protPresence = new float[protDetects.length];
-//                float[] pepCounts = new float[protDetects.length];
-//                float numPresent = 1f;
-//                for (int j = protDetects.length - 1; j > -1; j--) {
-//                    String currentPep = pepList.get(sortedIndices[j]);
-//
-//                    if (Constants.peptideCounter.containsKey(currentPep)) {
-//                        protPresence[j] = numPresent;
-//                        numPresent += 1f;
-//                        pepCounts[j] = Constants.peptideCounter.get(currentPep);
-//                    }
-//                }
-//                fasta.protToPep.get(e.getKey()).presence = protPresence;
-//                fasta.protToPep.get(e.getKey()).spectralCounts = pepCounts;
-//            }
-//
-//            for (Map.Entry<String, PredictionEntry> e : allPreds.entrySet()) {
-//                try {
-//                    e.getValue().setCounter(Constants.peptideCounter.get(e.getKey().split("\\|")[0]));
-//                } catch (Exception ee) { //peptide was in a pin file from another run
-//                }
-//            }
-//            dm.clear();
         }
 
         try {

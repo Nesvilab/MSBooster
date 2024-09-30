@@ -7,3 +7,4 @@
 MSBooster.iml
 dependency-reduced-pom.xml
 src/main/java/utils/RandomThings.java
+src/main/java/features/detectability/DetectNotes

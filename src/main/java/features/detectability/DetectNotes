@@ -1,0 +1,504 @@
+/*
+ * This file is part of MSBooster.
+ *
+ * MSBooster is free software: you can redistribute it and/or modify it under
+ * the terms of the GNU Lesser General Public License as published by the Free
+ * Software Foundation, either version 3 of the License, or (at your
+ * option) any later version.
+ *
+ * MSBooster is distributed in the hope that it will be useful, but WITHOUT
+ * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+ * FITNESS FOR A PARTICULAR PURPOSE. See the GNU Lesser General Public License
+ * for more details.
+ *
+ * You should have received a copy of the GNU Lesser General Public License
+ * along with MSBooster. If not, see <https://www.gnu.org/licenses/>.
+ */
+
+#PercolatorFormatter
+if (featuresList.contains("detectability")) {
+            int idx = ArrayUtils.indexOf(features, "detectability");
+            features = ArrayUtils.remove(features, idx);
+        }
+
+        //create detectMap to store detectabilities for base sequence peptides
+        //store peptide detectabilities in PredictionEntry
+//        DetectMap dm = null;
+//        ArrayList<String> dFeatures = new ArrayList<String>(Constants.detectFeatures);
+//        dFeatures.retainAll(featuresList);
+//        //long startTime = System.nanoTime();
+//        if (dFeatures.size() > 0) {
+//            dm = new DetectMap(detectFile);
+//            for (Map.Entry<String, PredictionEntry> e : allPreds.entrySet()) {
+//                e.getValue().setDetectability(dm.getDetectability(
+//                        new PeptideFormatter(e.getKey().split("\\|")[0], e.getKey().split("\\|")[1], "pin").stripped));
+//            }
+//        }
+
+        FastaReader fasta = null;
+
+        if (featuresList.contains("detectFractionGreater") || featuresList.contains("detectSubtractMissing")
+                || featuresList.contains("detectProtSpearmanDiff") || featuresList.contains("peptideCounts")) {
+            if (Constants.peptideCounter.isEmpty()) {
+                //get all peptides present in pin
+                for (File pinFile : pmMatcher.pinFiles) {
+                    PinReader pin = new PinReader(pinFile.getCanonicalPath());
+
+                    //add to counter
+                    while (pin.next(true)) {
+                        PeptideFormatter pf = pin.getPep();
+                        if (Float.valueOf(pin.getColumn("hyperscore")) > 10) {
+                            if (Constants.peptideCounter.containsKey(pf.getStripped())) {
+                                HashSet<String> peptideSet = Constants.peptideCounter.get(pf.getStripped());
+                                peptideSet.add(pin.name);
+                                Constants.peptideCounter.put(pf.getStripped(), peptideSet);
+                            } else {
+                                HashSet<String> peptideSet = new HashSet<>();
+                                peptideSet.add(pin.name);
+                                Constants.peptideCounter.put(pf.getStripped(), peptideSet);
+                            }
+                        } else {
+                            if (! Constants.peptideCounter.containsKey(pf.getStripped())) {
+                                HashSet<String> peptideSet = new HashSet<>();
+                                Constants.peptideCounter.put(pf.getStripped(), peptideSet);
+                            }
+                        }
+                    }
+                    pin.close();
+                }
+            }
+
+//            //load fasta
+//            if (Constants.getFastaReader() == null) {
+//                printInfo("Creating fasta object");
+//                fasta = new FastaReader(Constants.fasta);
+//            } else {
+//                printInfo("Loading fasta");
+//                fasta = Constants.getFastaReader();
+//            }
+//
+//            printInfo("Loading detectabilities for unique peptides from each protein");
+//            for (Map.Entry<String, ProteinEntry> e : fasta.protToPep.entrySet()) {
+//                ArrayList<String> pepList = e.getValue().peptides;
+//                float[] protDetects = new float[pepList.size()]; //for storing initial detect order
+//
+//                //store detect unsorted
+//                for (int pep = 0; pep < pepList.size(); pep++) {
+//                    protDetects[pep] = dm.getDetectability(pepList.get(pep));
+//                }
+//
+//                //dual pivot quicksort
+//                //sorted indices
+//                int[] sortedIndices = IntStream.range(0, protDetects.length)
+//                        .boxed().sorted((k, j) -> Float.compare(protDetects[k], protDetects[j]))
+//                        .mapToInt(ele -> ele).toArray();
+//
+//                float[] sortedDetect = new float[protDetects.length];
+//                for (int j = 0; j < protDetects.length; j++) {
+//                    sortedDetect[j] = protDetects[sortedIndices[j]];
+//                }
+//                e.getValue().detects = sortedDetect;
+//
+//                //check which peptides present, and get spectral counts
+//                float[] protPresence = new float[protDetects.length];
+//                float[] pepCounts = new float[protDetects.length];
+//                float numPresent = 1f;
+//                for (int j = protDetects.length - 1; j > -1; j--) {
+//                    String currentPep = pepList.get(sortedIndices[j]);
+//
+//                    if (Constants.peptideCounter.containsKey(currentPep)) {
+//                        protPresence[j] = numPresent;
+//                        numPresent += 1f;
+//                        pepCounts[j] = Constants.peptideCounter.get(currentPep);
+//                    }
+//                }
+//                fasta.protToPep.get(e.getKey()).presence = protPresence;
+//                fasta.protToPep.get(e.getKey()).spectralCounts = pepCounts;
+//            }
+//
+//            for (Map.Entry<String, PredictionEntry> e : allPreds.entrySet()) {
+//                try {
+//                    e.getValue().setCounter(Constants.peptideCounter.get(e.getKey().split("\\|")[0]));
+//                } catch (Exception ee) { //peptide was in a pin file from another run
+//                }
+//            }
+//            dm.clear();
+        }
+
+#Main
+try {
+                if (Constants.useDetect) {
+                    printInfo("Detect features not fully tested");
+                    Set<String> intersection = new HashSet<>(featureLL);
+                    intersection.retainAll(Constants.detectFeatures);
+                    if (intersection.size() == 0) {
+                        featureLL.add("detectFractionGreater");
+                        featureLL.add("detectSubtractMissing");
+                    }
+                } else {
+                    featureLL.removeIf(Constants.detectFeatures::contains);
+                }
+            } catch (Exception ignored) {
+            }
+
+//if detectFractionGreater, need fasta
+            if (featureLL.contains("detectFractionGreater") || featureLL.contains("detectSubtractMissing") ||
+                    featureLL.contains("detectProtSpearmanDiff")) {
+                if (Constants.fasta == null) {
+                    throw new IllegalArgumentException("Using current combination of features, " +
+                            "detectFractionGreater is calculated and needs a fasta provided using " +
+                            "--fasta <fasta file location>");
+                }
+            }
+
+boolean createDetectPredFile = false;
+boolean createDetectPredFile2 = false;
+
+featureLL.retainAll(Constants.detectFeatures);
+            if (featureLL.size() > 0) {
+                createDetectPredFile = true;
+                createDetectPredFile2 = true;
+            }
+
+//            if (Constants.detectPredInput != null || Constants.detectPredFile != null) {
+//                createDetectPredFile = false;
+//            }
+
+//            if (createDetectAllPredFile) {
+//                printInfo("Generating input file for DeepMSPeptide");
+//                //long startTime = System.nanoTime();
+//                //Constants.setFastaReader(peptideFileCreator.createPeptideFile(pmMatcher.pinFiles, Constants.detectPredInput, "DeepMSPeptideAll", "pin"));
+//                //long endTime = System.nanoTime();
+//                //long duration = (endTime - startTime);
+//            } else if (createDetectPredFile) {
+//                printInfo("Generating input file for DeepMSPeptide");
+//                peptideFileCreator.createPeptideFile(pmMatcher.pinFiles, Constants.detectPredInput, "DeepMSPeptide", "pin");
+//            }
+
+#FeatureCalculator
+//                    case "detectFractionGreater":
+//                        float d = predictedSpectra.getPreds().get(pep).detectability;
+//                        //for each protein, get the position of pep's detect and see how many peptides with greater detect are present
+//                        //take max (proxy for protein that actually generated peptide)
+//                        String[] r = pin.getRow();
+//                        String[] prots = Arrays.copyOfRange(r, pin.pepIdx + 1, r.length);
+//                        float maxFraction = 0f;
+//                        for (String prot : prots) { //if more than one, this peptide is shared among proteins
+//                            String protAbr;
+//                            //skip protein if it is decoy and looking at target peptide
+//                            if (prot.startsWith(Constants.decoyPrefix.substring(1))) {
+//                                if (r[pin.labelIdx].equals("1")) {
+//                                    continue;
+//                                } else { //decoy peptide compared to target protein
+//                                    protAbr = prot.substring(Constants.decoyPrefix.length() - 1);
+//                                }
+//                            } else {
+//                                protAbr = prot;
+//                            }
+//
+//                            float[] arr;
+//                            try {
+//                                arr = fasta.protToPep.get(protAbr).detects;
+//                            } catch (Exception e) { //no peptides qualify from this protein
+//                                continue;
+//                            }
+//
+//                            int idx = Arrays.binarySearch(arr, d);
+//                            if (idx < 0) { //not found
+//                                idx = (-1 * idx) - 1;
+//                            } else {
+//                                idx += 1; //don't want to include itself in calculation
+//                            }
+//                            float[] presenceArr = Arrays.copyOfRange(fasta.protToPep.get(protAbr).presence, idx, arr.length);
+//                            float total = 0f;
+//                            for (float j : presenceArr) {
+//                                if (j != 0f) {
+//                                    total = j;
+//                                    break;
+//                                }
+//                            }
+//                            float fraction = (total + Constants.detectFractionGreaterNumerator) /
+//                                    (presenceArr.length + Constants.detectFractionGreaterDenominator); //customizable prior
+//                            if (fraction > maxFraction) {
+//                                maxFraction = fraction;
+//                            }
+//                        }
+//                        writer.addValue("detect_fraction_greater", maxFraction);
+//                        break;
+//                    case "detectSubtractMissing":
+//                        d = predictedSpectra.getPreds().get(pep).detectability;
+//                        //for each protein, get the position of pep's detect and see how many peptides with greater detect are present
+//                        //take max (proxy for protein that actually generated peptide)
+//                        r = pin.getRow();
+//                        prots = Arrays.copyOfRange(r, pin.pepIdx + 1, r.length);
+//                        float minDiff = 1f;
+//                        for (String prot : prots) { //if more than one, this peptide is shared among proteins
+//                            String protAbr;
+//                            //skip protein if it is decoy and looking at target peptide
+//                            if (prot.startsWith(Constants.decoyPrefix.substring(1))) {
+//                                if (r[pin.labelIdx].equals("1")) {
+//                                    continue;
+//                                } else { //decoy
+//                                    protAbr = prot.substring(Constants.decoyPrefix.length() - 1);
+//                                }
+//                            } else {
+//                                protAbr = prot;
+//                            }
+//
+//                            float[] arr;
+//                            try {
+//                                arr = fasta.protToPep.get(protAbr).detects;
+//                            } catch (Exception e) { //no peptides qualify from this protein
+//                                continue;
+//                            }
+//
+//                            int idx = Arrays.binarySearch(arr, d);
+//                            if (idx < 0) { //not found
+//                                idx = (-1 * idx) - 1;
+//                            } else {
+//                                idx += 1; //don't want to include itself in calculation
+//                            }
+//                            float[] presenceArr = Arrays.copyOfRange(fasta.protToPep.get(protAbr).presence, idx, arr.length);
+//                            float[] detectArr = Arrays.copyOfRange(arr, idx, arr.length);
+//                            float total = 0f;
+//                            for (int k = 0; k < presenceArr.length; k++) {
+//                                if (presenceArr[k] == 0) {
+//                                    total += detectArr[k] - d;
+//                                }
+//                            }
+//                            float diff = total / presenceArr.length;
+//                            if (diff < minDiff) {
+//                                minDiff = diff;
+//                            }
+//                            if (minDiff == 0) {
+//                                break;
+//                            }
+//                        }
+//                        writer.addValue("detect_subtract_missing", minDiff);
+//                        break;
+//                    case "detectProtSpearmanDiff":
+//                        SpearmansCorrelation sc = new SpearmansCorrelation();
+//                        r = pin.getRow();
+//                        prots = Arrays.copyOfRange(r, pin.pepIdx + 1, r.length);
+//                        double maxSpearmanDiff = -3;
+//                        float detect = predictedSpectra.getPreds().get(pep).detectability;;
+//                        for (String prot : prots) { //if more than one, this peptide is shared among proteins
+//                            //skip protein if it is decoy and looking at target peptide
+//                            String protAbr;
+//                            if (prot.startsWith(Constants.decoyPrefix.substring(1))) {
+//                                if (r[pin.labelIdx].equals("1")) {
+//                                    continue;
+//                                } else {
+//                                    protAbr = prot.substring(Constants.decoyPrefix.length() - 1);
+//                                }
+//                            } else {
+//                                protAbr = prot;
+//                            }
+//
+//                            float[] arr;
+//                            try {
+//                                arr = fasta.protToPep.get(protAbr).detects;
+//                            } catch (Exception e) { //no peptides qualify from this protein
+//                                continue;
+//                            }
+//
+//                            float[] counts = fasta.protToPep.get(protAbr).spectralCounts;
+//
+//                            //only add if not 0 spectral counts (lots of missing ones, need to be more lenient for targets)
+//                            ArrayList<Double> newDetects = new ArrayList<>();
+//                            ArrayList<Double> newCounts = new ArrayList<>();
+//                            for (int k = 0; k < arr.length; k++) {
+//                                if (counts[k] != 0) {
+//                                    if (! (arr[k] == detect)) { //will add later
+//                                        newDetects.add((double) arr[k]);
+//                                        newCounts.add((double) counts[k]);
+//                                    }
+//                                }
+//                            }
+//                            if (newDetects.size() < 2) {
+//                                continue;
+//                            }
+//                            double spear = sc.correlation(newDetects.stream().mapToDouble(dd -> dd).toArray(),
+//                                    newCounts.stream().mapToDouble(dd -> dd).toArray() );
+//
+//                            //add new pep to this calculation
+//                            newDetects.add((double) detect);
+//                            newCounts.add((double) predictedSpectra.getPreds().get(pep).counter);
+//                            double spearDiff = sc.correlation(newDetects.stream().mapToDouble(dd -> dd).toArray(),
+//                                    newCounts.stream().mapToDouble(dd -> dd).toArray() ) - spear;
+//                            if (spearDiff > maxSpearmanDiff) {
+//                                maxSpearmanDiff = spearDiff;
+//                            }
+//                        }
+//                        if (maxSpearmanDiff == -3) {
+//                            maxSpearmanDiff = 0;
+//                        }
+//                        writer.addValue("detect_prot_spearman_diff", maxSpearmanDiff);
+//                        break;
+
+#PinWriter
+header.remove("detectability");
+
+//                    case "detectFractionGreater":
+//                        float d = predictedSpectra.getPreds().get(pep).detectability;
+//                        //for each protein, get the position of pep's detect and see how many peptides with greater detect are present
+//                        //take max (proxy for protein that actually generated peptide)
+//                        String[] r = pin.getRow();
+//                        String[] prots = Arrays.copyOfRange(r, pin.pepIdx + 1, r.length);
+//                        float maxFraction = 0f;
+//                        for (String prot : prots) { //if more than one, this peptide is shared among proteins
+//                            String protAbr;
+//                            //skip protein if it is decoy and looking at target peptide
+//                            if (prot.startsWith(Constants.decoyPrefix.substring(1))) {
+//                                if (r[pin.labelIdx].equals("1")) {
+//                                    continue;
+//                                } else { //decoy peptide compared to target protein
+//                                    protAbr = prot.substring(Constants.decoyPrefix.length() - 1);
+//                                }
+//                            } else {
+//                                protAbr = prot;
+//                            }
+//
+//                            float[] arr;
+//                            try {
+//                                arr = fasta.protToPep.get(protAbr).detects;
+//                            } catch (Exception e) { //no peptides qualify from this protein
+//                                continue;
+//                            }
+//
+//                            int idx = Arrays.binarySearch(arr, d);
+//                            if (idx < 0) { //not found
+//                                idx = (-1 * idx) - 1;
+//                            } else {
+//                                idx += 1; //don't want to include itself in calculation
+//                            }
+//                            float[] presenceArr = Arrays.copyOfRange(fasta.protToPep.get(protAbr).presence, idx, arr.length);
+//                            float total = 0f;
+//                            for (float j : presenceArr) {
+//                                if (j != 0f) {
+//                                    total = j;
+//                                    break;
+//                                }
+//                            }
+//                            float fraction = (total + Constants.detectFractionGreaterNumerator) /
+//                                    (presenceArr.length + Constants.detectFractionGreaterDenominator); //customizable prior
+//                            if (fraction > maxFraction) {
+//                                maxFraction = fraction;
+//                            }
+//                        }
+//                        writer.addValue("detect_fraction_greater", maxFraction);
+//                        break;
+//                    case "detectSubtractMissing":
+//                        d = predictedSpectra.getPreds().get(pep).detectability;
+//                        //for each protein, get the position of pep's detect and see how many peptides with greater detect are present
+//                        //take max (proxy for protein that actually generated peptide)
+//                        r = pin.getRow();
+//                        prots = Arrays.copyOfRange(r, pin.pepIdx + 1, r.length);
+//                        float minDiff = 1f;
+//                        for (String prot : prots) { //if more than one, this peptide is shared among proteins
+//                            String protAbr;
+//                            //skip protein if it is decoy and looking at target peptide
+//                            if (prot.startsWith(Constants.decoyPrefix.substring(1))) {
+//                                if (r[pin.labelIdx].equals("1")) {
+//                                    continue;
+//                                } else { //decoy
+//                                    protAbr = prot.substring(Constants.decoyPrefix.length() - 1);
+//                                }
+//                            } else {
+//                                protAbr = prot;
+//                            }
+//
+//                            float[] arr;
+//                            try {
+//                                arr = fasta.protToPep.get(protAbr).detects;
+//                            } catch (Exception e) { //no peptides qualify from this protein
+//                                continue;
+//                            }
+//
+//                            int idx = Arrays.binarySearch(arr, d);
+//                            if (idx < 0) { //not found
+//                                idx = (-1 * idx) - 1;
+//                            } else {
+//                                idx += 1; //don't want to include itself in calculation
+//                            }
+//                            float[] presenceArr = Arrays.copyOfRange(fasta.protToPep.get(protAbr).presence, idx, arr.length);
+//                            float[] detectArr = Arrays.copyOfRange(arr, idx, arr.length);
+//                            float total = 0f;
+//                            for (int k = 0; k < presenceArr.length; k++) {
+//                                if (presenceArr[k] == 0) {
+//                                    total += detectArr[k] - d;
+//                                }
+//                            }
+//                            float diff = total / presenceArr.length;
+//                            if (diff < minDiff) {
+//                                minDiff = diff;
+//                            }
+//                            if (minDiff == 0) {
+//                                break;
+//                            }
+//                        }
+//                        writer.addValue("detect_subtract_missing", minDiff);
+//                        break;
+//                    case "detectProtSpearmanDiff":
+//                        SpearmansCorrelation sc = new SpearmansCorrelation();
+//                        r = pin.getRow();
+//                        prots = Arrays.copyOfRange(r, pin.pepIdx + 1, r.length);
+//                        double maxSpearmanDiff = -3;
+//                        float detect = predictedSpectra.getPreds().get(pep).detectability;;
+//                        for (String prot : prots) { //if more than one, this peptide is shared among proteins
+//                            //skip protein if it is decoy and looking at target peptide
+//                            String protAbr;
+//                            if (prot.startsWith(Constants.decoyPrefix.substring(1))) {
+//                                if (r[pin.labelIdx].equals("1")) {
+//                                    continue;
+//                                } else {
+//                                    protAbr = prot.substring(Constants.decoyPrefix.length() - 1);
+//                                }
+//                            } else {
+//                                protAbr = prot;
+//                            }
+//
+//                            float[] arr;
+//                            try {
+//                                arr = fasta.protToPep.get(protAbr).detects;
+//                            } catch (Exception e) { //no peptides qualify from this protein
+//                                continue;
+//                            }
+//
+//                            float[] counts = fasta.protToPep.get(protAbr).spectralCounts;
+//
+//                            //only add if not 0 spectral counts (lots of missing ones, need to be more lenient for targets)
+//                            ArrayList<Double> newDetects = new ArrayList<>();
+//                            ArrayList<Double> newCounts = new ArrayList<>();
+//                            for (int k = 0; k < arr.length; k++) {
+//                                if (counts[k] != 0) {
+//                                    if (! (arr[k] == detect)) { //will add later
+//                                        newDetects.add((double) arr[k]);
+//                                        newCounts.add((double) counts[k]);
+//                                    }
+//                                }
+//                            }
+//                            if (newDetects.size() < 2) {
+//                                continue;
+//                            }
+//                            double spear = sc.correlation(newDetects.stream().mapToDouble(dd -> dd).toArray(),
+//                                    newCounts.stream().mapToDouble(dd -> dd).toArray() );
+//
+//                            //add new pep to this calculation
+//                            newDetects.add((double) detect);
+//                            newCounts.add((double) predictedSpectra.getPreds().get(pep).counter);
+//                            double spearDiff = sc.correlation(newDetects.stream().mapToDouble(dd -> dd).toArray(),
+//                                    newCounts.stream().mapToDouble(dd -> dd).toArray() ) - spear;
+//                            if (spearDiff > maxSpearmanDiff) {
+//                                maxSpearmanDiff = spearDiff;
+//                            }
+//                        }
+//                        if (maxSpearmanDiff == -3) {
+//                            maxSpearmanDiff = 0;
+//                        }
+//                        writer.addValue("detect_prot_spearman_diff", maxSpearmanDiff);
+//                        break;
+
+#PredictionEntry
+float detectability;
+public void setDetectability(float detectability) {this.detectability = detectability;}

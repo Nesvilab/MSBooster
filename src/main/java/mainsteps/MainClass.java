@@ -1130,20 +1130,7 @@ public class MainClass {
                 }
             } catch (Exception ignored) {
             }
-            try {
-                if (Constants.useDetect) {
-                    printInfo("Detect features not fully tested");
-                    Set<String> intersection = new HashSet<>(featureLL);
-                    intersection.retainAll(Constants.detectFeatures);
-                    if (intersection.size() == 0) {
-                        featureLL.add("detectFractionGreater");
-                        featureLL.add("detectSubtractMissing");
-                    }
-                } else {
-                    featureLL.removeIf(Constants.detectFeatures::contains);
-                }
-            } catch (Exception ignored) {
-            }
+
             try {
                 if (Constants.useIM) {
                     Set<String> intersection = new HashSet<>(featureLL);
@@ -1248,43 +1235,20 @@ public class MainClass {
             }
             Constants.features = String.join(",", featuresArray);
 
-            //if detectFractionGreater, need fasta
-            if (featureLL.contains("detectFractionGreater") || featureLL.contains("detectSubtractMissing") ||
-                    featureLL.contains("detectProtSpearmanDiff")) {
-                if (Constants.fasta == null) {
-                    throw new IllegalArgumentException("Using current combination of features, " +
-                            "detectFractionGreater is calculated and needs a fasta provided using " +
-                            "--fasta <fasta file location>");
-                }
-            }
-
             //create file for spectral and RT prediction
             //ignore if files already created
             boolean createSpectraRTPredFile = false;
-            boolean createDetectPredFile = false;
-            boolean createSpectraRTPredFile2 = false;
-            boolean createDetectPredFile2 = false;
 
             //check which ones we need
-            if (featureLL.size() > 0) {
+            if (!featureLL.isEmpty()) {
                 createSpectraRTPredFile = true;
-                createSpectraRTPredFile2 = true;
-            }
-
-            featureLL = new LinkedList<>(Arrays.asList(featuresArray));
-            featureLL.retainAll(Constants.detectFeatures);
-            if (featureLL.size() > 0) {
-                createDetectPredFile = true;
-                createDetectPredFile2 = true;
             }
 
             //if pred file ready. Assumes that either all or none of pred files are ready
             if (Constants.spectraPredFile != null || Constants.RTPredFile != null || Constants.IMPredFile != null) {
                 createSpectraRTPredFile = false;
             }
-//            if (Constants.detectPredInput != null || Constants.detectPredFile != null) {
-//                createDetectPredFile = false;
-//            }
+
             c.updateInputPaths(); //setting null paths
 
             //set useKoina based on model
@@ -1385,17 +1349,6 @@ public class MainClass {
                     System.exit(0);
                 }
             }
-//            if (createDetectAllPredFile) {
-//                printInfo("Generating input file for DeepMSPeptide");
-//                //long startTime = System.nanoTime();
-//                //Constants.setFastaReader(peptideFileCreator.createPeptideFile(pmMatcher.pinFiles, Constants.detectPredInput, "DeepMSPeptideAll", "pin"));
-//                //long endTime = System.nanoTime();
-//                //long duration = (endTime - startTime);
-//            } else if (createDetectPredFile) {
-//                printInfo("Generating input file for DeepMSPeptide");
-//                peptideFileCreator.createPeptideFile(pmMatcher.pinFiles, Constants.detectPredInput, "DeepMSPeptide", "pin");
-//            }
-
 
             //generate predictions
             //send input files to prediction models

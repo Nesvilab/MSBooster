@@ -1,5 +1,5 @@
 # MSBooster
-Last updated: 9/24/2024
+Last updated: 9/30/2024
 
 ## Overview
 MSBooster is a tool for incorporating spectral libary predictions into peptide-spectrum match (PSM) 
@@ -178,6 +178,7 @@ predictions.
 
 ## Tutorials
 - Use peptide prediction models from Koina for MSBooster feature generation: https://fragpipe.nesvilab.org/docs/tutorial_koina.html
+- [Reading in predictions from any model via MGF files](ReadMgfPredictions.md) 
 
 ## TODO
 - Documentation on all allowed features and how to QC them with graphical output

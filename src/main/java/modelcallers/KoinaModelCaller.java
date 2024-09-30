@@ -17,6 +17,7 @@
 
 package modelcallers;
 
+import static figures.ExtensionPlotter.plot;
 import static utils.Print.printError;
 import static utils.Print.printInfo;
 
@@ -220,15 +221,7 @@ public class KoinaModelCaller {
                     new File(dir).mkdirs();
                 }
 
-                if (Constants.plotExtension.equalsIgnoreCase("png")) {
-                    BitmapEncoder.saveBitmap(chart,
-                            dir + File.separator + "Koina_timing_" + model + ".png",
-                            BitmapEncoder.BitmapFormat.PNG);
-                } else if (Constants.plotExtension.equalsIgnoreCase("pdf")) {
-                    VectorGraphicsEncoder.saveVectorGraphic(chart,
-                            dir + File.separator + "Koina_timing_" + model + ".pdf",
-                            VectorGraphicsEncoder.VectorGraphicsFormat.PDF);
-                }
+                plot(chart, dir + File.separator + "Koina_timing_" + model);
             }
         } catch (Exception e) {
             e.printStackTrace();

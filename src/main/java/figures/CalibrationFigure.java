@@ -30,6 +30,8 @@ import java.io.IOException;
 import java.util.List;
 import java.util.*;
 
+import static figures.ExtensionPlotter.plot;
+
 public class CalibrationFigure {
     public String folderString;
     String mode;
@@ -221,16 +223,8 @@ public class CalibrationFigure {
             j++;
         }
 
-        if (Constants.plotExtension.equalsIgnoreCase("png")) {
-            BitmapEncoder.saveBitmap(chart, dir + File.separator + folderString +
-                            File.separator + pinName.substring(0, pinName.length() - 4),
-                    BitmapEncoder.BitmapFormat.PNG);
-        } else if (Constants.plotExtension.equalsIgnoreCase("pdf")) {
-            VectorGraphicsEncoder.saveVectorGraphic(chart,
-                    dir + File.separator + folderString +
-                            File.separator + pinName.substring(0, pinName.length() - 4),
-                    VectorGraphicsEncoder.VectorGraphicsFormat.PDF);
-        }
+        plot(chart, dir + File.separator + folderString +
+                File.separator + pinName.substring(0, pinName.length() - 4));
     }
 
     //mixes series so that they appear evenly dispersed in plot

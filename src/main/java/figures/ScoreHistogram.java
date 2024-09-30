@@ -28,6 +28,8 @@ import java.io.IOException;
 import java.util.*;
 import java.util.List;
 
+import static figures.ExtensionPlotter.plot;
+
 public class ScoreHistogram {
 
     Set<String> logScaleFeatures = Set.of("delta_RT_loess", "delta_RT_loess_normalized", "RT_probability_unif_prior",
@@ -161,16 +163,9 @@ public class ScoreHistogram {
             if (!new File(dir + File.separator + "score_histograms").exists()) {
                 new File(dir + File.separator + "score_histograms").mkdirs();
             }
-            if (Constants.plotExtension.equalsIgnoreCase("png")) {
-                BitmapEncoder.saveBitmap(chart, dir + File.separator + "score_histograms" + File.separator +
-                                name.substring(0, name.length() - 4) + "_" + feature,
-                        BitmapEncoder.BitmapFormat.PNG);
-            } else if (Constants.plotExtension.equalsIgnoreCase("pdf")) {
-                VectorGraphicsEncoder.saveVectorGraphic(chart,
-                        dir + File.separator + "score_histograms" + File.separator +
-                                name.substring(0, name.length() - 4) + "_" + feature,
-                        VectorGraphicsEncoder.VectorGraphicsFormat.PDF);
-            }
+
+            plot(chart, dir + File.separator + "score_histograms" + File.separator +
+                    name.substring(0, name.length() - 4) + "_" + feature);
         }
         pinReader.close();
     }

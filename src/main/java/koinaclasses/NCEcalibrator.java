@@ -17,6 +17,7 @@
 
 package koinaclasses;
 
+import static figures.ExtensionPlotter.plot;
 import static utils.Print.printInfo;
 
 import allconstants.Constants;
@@ -150,15 +151,7 @@ public class NCEcalibrator {
                 }
                 int endNCE = currentNCE - 1;
                 added = 0;
-                if (Constants.plotExtension.equals("png")) {
-                    BitmapEncoder.saveBitmap(chart, dir + File.separator +
-                                    "NCE_calibration" + startNCE + "to" + endNCE + ".png",
-                            BitmapEncoder.BitmapFormat.PNG);
-                } else if (Constants.plotExtension.equals("pdf")) {
-                    VectorGraphicsEncoder.saveVectorGraphic(chart, dir + File.separator +
-                                    "NCE_calibration" + startNCE + "to" + endNCE + ".pdf",
-                            VectorGraphicsEncoder.VectorGraphicsFormat.PDF);
-                }
+                plot(chart, dir + File.separator + "NCE_calibration" + startNCE + "to" + endNCE);
             }
         } catch (IOException e) {
             e.printStackTrace();

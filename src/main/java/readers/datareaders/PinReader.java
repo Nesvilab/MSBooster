@@ -156,13 +156,14 @@ public class PinReader {
 
                 if (count <= 0) {
                     length = 1;
+                    printInfo(name + " has 0 PSMs");
                 } else {
                     length = count;
+                    printInfo(name + " has " + length + " PSMs");
                 }
             } finally {
                 is.close();
             }
-            printInfo(name + " has " + length + " PSMs");
         }
         return length;
     }

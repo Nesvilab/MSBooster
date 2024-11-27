@@ -140,39 +140,9 @@ public class PinMzmlMatcher {
                 PinReader pin = new PinReader(pinFiles[j].getCanonicalPath());
                 if (pin.next(true)) {
                     mzml.getScanNumObject(pin.getScanNum());
-                    mzmlReaders[j] = mzml;
-                } else { //if any empty pins, remove
-                    printInfo(pin.name + " is empty. Will not process this file.");
-                    needToRemove = true;
                 }
+                mzmlReaders[j] = mzml;
                 pin.close();
-            }
-        }
-
-        //if any empty pins, remove
-        if (needToRemove) {
-            ArrayList<File> mzmlFilesList = new ArrayList<>();
-            ArrayList<File> pinFilesList = new ArrayList<>();
-            ArrayList<MzmlReader> mzmlReadersList = new ArrayList<>();
-
-            for (int j = 0; j < mzmlReaders.length; j++) {
-                if (mzmlReaders[j] != null) {
-                    mzmlFilesList.add(mzmlFiles[j]);
-                    mzmlFiles[j] = null;
-                    pinFilesList.add(pinFiles[j]);
-                    pinFiles[j] = null;
-                    mzmlReadersList.add(mzmlReaders[j]);
-                    mzmlReaders[j] = null;
-                }
-            }
-
-            mzmlReaders = new MzmlReader[mzmlReadersList.size()];
-            pinFiles = new File[mzmlReadersList.size()];
-            mzmlFiles = new File[mzmlReadersList.size()];
-            for (int i = 0; i < mzmlReadersList.size(); i++) {
-                mzmlReaders[i] = mzmlReadersList.get(i);
-                pinFiles[i] = pinFilesList.get(i);
-                mzmlFiles[i] = mzmlFilesList.get(i);
             }
         }
     }

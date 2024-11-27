@@ -159,6 +159,15 @@ public class PercolatorFormatter {
 
                 //load pin file, which already includes all ranks
                 PinReader pin = new PinReader(pinFiles[i].getCanonicalPath());
+
+                //handling for empty pin files
+                if (pin.getLength() < 2) {
+                    printInfo(pinFiles[i].getCanonicalPath() + " is empty. Writing empty edited file");
+                    PinWriter pw = new PinWriter(newOutfile, pin, featuresList, mzml, null);
+                    pw.write();
+                    continue;
+                }
+
                 printInfo("Processing pin " + pin.name);
                 if (Constants.removeWashGradient) {
                     if (Constants.rtCutoff.isNaN()) {

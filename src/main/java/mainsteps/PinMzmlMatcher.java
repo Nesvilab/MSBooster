@@ -22,6 +22,8 @@ import static utils.Print.printInfo;
 import allconstants.Constants;
 import readers.datareaders.MzmlReader;
 import readers.datareaders.PinReader;
+import umich.ms.datatypes.LCMSDataSubset;
+import umich.ms.datatypes.scan.IScan;
 import umich.ms.fileio.exceptions.FileParsingException;
 
 import java.io.File;
@@ -132,7 +134,6 @@ public class PinMzmlMatcher {
     }
 
     private void loadMzmlReaders() throws IOException, FileParsingException, ExecutionException, InterruptedException {
-        boolean needToRemove = false;
         for (int j = 0; j < mzmlReaders.length; j++) {
             if (mzmlReaders[j] == null) {
                 MzmlReader mzml = new MzmlReader(mzmlFiles[j].getCanonicalPath());
@@ -140,6 +141,10 @@ public class PinMzmlMatcher {
                 PinReader pin = new PinReader(pinFiles[j].getCanonicalPath());
                 if (pin.next(true)) {
                     mzml.getScanNumObject(pin.getScanNum());
+                } else { //load at least 1 ms2 scan so instrument and nce are set
+                    mzml.scans.loadData(LCMSDataSubset.STRUCTURE_ONLY);
+                    IScan iscan = mzml.scans.getNextScanAtMsLevel(0, 2);
+                    mzml.getScanNumObject(iscan.getNum());
                 }
                 mzmlReaders[j] = mzml;
                 pin.close();
@@ -188,6 +193,7 @@ public class PinMzmlMatcher {
                     Constants.NCE = "25";
                 }
             } catch (Exception e) {
+                e.printStackTrace();
                 printInfo("No NCE detected. Setting NCE to 25. " +
                         "You can specify this with '--NCE' via the command line " +
                         "or 'NCE=' in the param file.");

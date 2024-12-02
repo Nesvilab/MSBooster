@@ -123,6 +123,10 @@ public class PredictionEntryHashMap extends ConcurrentHashMap<String, Prediction
     //use this when we need don't already have predictions for all final peptides
     //models may have different PTM restrictions, so need to transfer their predictions onto the ones we actually need
     //for when msbooster is calling models for the first time, not when it is reading in prepredicted libraries
+    //TODO: also need to consider model. Unispec and Predfull transfer differently
+    //TODO: need a method that takes mass calculator and full fragment annotation, decides if mass needs to be added
+    //TODO: can save aby fragments separately from other ones
+    //TODO: add isotope variable to all calc mass methods
     public void transferKoinaPreds(ArrayList<PredictionEntryHashMap> predMaps, String fulltsv) throws IOException {
         //iterate through entries of full tsv
         BufferedReader TSVReader = new BufferedReader(new FileReader(fulltsv));

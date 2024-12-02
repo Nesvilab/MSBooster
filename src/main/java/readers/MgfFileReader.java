@@ -303,11 +303,7 @@ public class MgfFileReader implements LibraryPredictionMapper {
                                         newPred.setIM(IM);
                                         //convert title to base format
                                         String basePep = sb.toString();
-                                        if (model.equals("PredFull")) {
-                                            String[] basePepSplit = basePep.split("\\|");
-                                            basePep = new PeptideFormatter(basePepSplit[0],
-                                                    basePepSplit[1], "predfull").getBaseCharge();
-                                        } else if (model.contains("pDeep")) {
+                                        if (model.contains("pDeep")) {
                                             basePep = new PeptideFormatter(basePep,
                                                     basePep.split("\\|")[2], "pdeep3").getBaseCharge();
                                         }
@@ -424,11 +420,7 @@ public class MgfFileReader implements LibraryPredictionMapper {
                             newPred.setIM(IM);
                             //convert title to base format
                             String basePep = sb.toString();
-                            if (model.equals("PredFull")) {
-                                String[] basePepSplit = basePep.split("\\|");
-                                basePep = new PeptideFormatter(basePepSplit[0],
-                                        basePepSplit[1], "predfull").getBaseCharge();
-                            } else if (model.contains("pDeep")) {
+                            if (model.contains("pDeep")) {
                                 basePep = new PeptideFormatter(basePep,
                                         basePep.split("\\|")[2], "pdeep3").getBaseCharge();
                             }

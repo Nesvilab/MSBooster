@@ -18,8 +18,9 @@
 package utils;
 
 import java.util.ArrayList;
+import java.util.List;
 
-public class FloatUtils {
+public class NumericUtils {
     //move to another class if used more often
     public static float[] doubleToFloat(double[] arr){
         float[] newArr = new float[arr.length];
@@ -43,5 +44,17 @@ public class FloatUtils {
             newArr[i] = (double) arr.get(i);
         }
         return newArr;
+    }
+
+    public static double sum(List<Double> arr) {
+        double sum = 0f;
+        for (double f : arr) {
+            sum += f;
+        }
+        return sum;
+    }
+
+    public static boolean isUppercaseOrDigit(char c) {
+        return Character.isUpperCase(c) || Character.isDigit(c);
     }
 }

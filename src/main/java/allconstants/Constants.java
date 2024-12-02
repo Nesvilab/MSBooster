@@ -29,6 +29,8 @@ import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import utils.CaseInsensitiveHashSet;
 
+import static utils.Print.printError;
+
 public class Constants {
     //file input
     public static String paramsList = null;
@@ -103,7 +105,7 @@ public class Constants {
                     "ms2pip_2021_HCD", "ms2pip_timsTOF2024", "ms2pip_CID_TMT", "ms2pip_TTOF5600", "ms2pip_Immuno_HCD",
                     "ms2pip_iTRAQphospho",
                     "AlphaPept_ms2_generic",
-                    "UniSpec",
+                    "UniSpec", "PredFull",
                     "Prosit_2019_intensity", "Prosit_2020_intensity_CID", "Prosit_2020_intensity_TMT",
                     "Prosit_2020_intensity_HCD", "Prosit_2023_intensity_timsTOF",
                     "AlphaPept_ccs_generic"});
@@ -114,12 +116,12 @@ public class Constants {
                     "Deeplc_hela_hf"});
     public static CaseInsensitiveHashSet KoinaMS2models = new CaseInsensitiveHashSet(
             new String[] {
-                    "ms2pip_2021_HCD", "ms2pip_timsTOF2024", "ms2pip_CID_TMT", "ms2pip_CID_TMT", "ms2pip_TTOF5600",
+                    "ms2pip_2021_HCD", "ms2pip_timsTOF2024", "ms2pip_CID_TMT", "ms2pip_TTOF5600",
                     "ms2pip_Immuno_HCD", "ms2pip_iTRAQphospho",
                     "AlphaPept_ms2_generic",
                     "Prosit_2019_intensity", "Prosit_2020_intensity_CID", "Prosit_2020_intensity_TMT",
                     "Prosit_2020_intensity_HCD", "Prosit_2023_intensity_timsTOF",
-                    "UniSpec"});
+                    "UniSpec", "PredFull"});
     public static CaseInsensitiveHashSet KoinaIMmodels = new CaseInsensitiveHashSet(
             new String[] {"AlphaPept_ccs_generic"});
     public static CaseInsensitiveHashSet KoinaTMTmodels = new CaseInsensitiveHashSet(
@@ -147,7 +149,7 @@ public class Constants {
                     "AlphaPept_ms2_generic",
                     "Prosit_2019_intensity", "Prosit_2023_intensity_timsTOF",
                     "Prosit_2020_intensity_TMT", "Prosit_2020_intensity_HCD",
-                    "UniSpec"});
+                    "UniSpec", "PredFull"});
     public static Integer numKoinaAttempts = 3;
     public static Integer initialKoinaMillisecondsToWaitRtIm = 30000;
     public static Integer initialKoinaMillisecondsToWaitMs2 = 60000;
@@ -300,16 +302,16 @@ public class Constants {
     public static String[] makeFragmentIonHierarchy() {
         switch (Constants.FragmentationType) {
             case "HCD":
-                return new String[]{"immonium", "y", "b", "a",
-                        "y-NL", "b-NL", "a-NL", "internal", "internal-NL", "unknown"};
+                return new String[]{"p", "imm", "y", "b", "a", "p-NL",
+                        "y-NL", "b-NL", "a-NL", "int", "int-NL", "unknown"};
             case "ETD":
                 return new String[]{"zdot", "c", "z", "y", "unknown"};
             case "ETHCD":
-                return new String[]{"immonium", "y", "b", "a", "zdot", "c", "z", "cdot",
-                        "y-NL", "b-NL", "a-NL", "internal", "internal-NL", "unknown"};
+                return new String[]{"imm", "y", "b", "a", "zdot", "c", "z", "cdot",
+                        "y-NL", "b-NL", "a-NL", "int", "int-NL", "unknown"};
             default:  //everything else, like CID
-                return new String[]{"immonium", "y", "b", "a",
-                        "y-NL", "b-NL", "a-NL", "internal", "internal-NL", "unknown"};
+                return new String[]{"imm", "y", "b", "a",
+                        "y-NL", "b-NL", "a-NL", "int", "int-NL", "unknown"};
         }
     }
     public static Set<String> lowestFragmentIonType = makeLowestFragmentIonType();

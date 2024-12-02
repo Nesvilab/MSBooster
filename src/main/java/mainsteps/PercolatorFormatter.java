@@ -17,9 +17,6 @@
 
 package mainsteps;
 
-import static utils.Print.printError;
-import static utils.Print.printInfo;
-
 import allconstants.Constants;
 import com.google.common.collect.Range;
 import com.google.common.collect.RangeMap;
@@ -31,20 +28,6 @@ import figures.CalibrationFigure;
 import figures.IMCalibrationFigure;
 import figures.RTCalibrationFigure;
 import figures.ScoreHistogram;
-import java.io.BufferedWriter;
-import java.io.File;
-import java.io.FileWriter;
-import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.SortedSet;
-import java.util.TreeSet;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Future;
 import kotlin.jvm.functions.Function1;
 import predictions.PredictionEntry;
 import predictions.PredictionEntryHashMap;
@@ -55,6 +38,17 @@ import readers.predictionreaders.LibraryPredictionMapper;
 import umich.ms.fileio.exceptions.FileParsingException;
 import utils.ProgressReporter;
 import writers.PinWriter;
+
+import java.io.BufferedWriter;
+import java.io.File;
+import java.io.FileWriter;
+import java.io.IOException;
+import java.util.*;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Future;
+
+import static utils.Print.printError;
+import static utils.Print.printInfo;
 
 public class PercolatorFormatter {
 
@@ -82,13 +76,8 @@ public class PercolatorFormatter {
         //could use aux spectra if primary spectra missing
         if (Constants.spectraPredFile != null) {
             printInfo("Loading predicted spectra: " + Constants.spectraPredFile);
-            if (Constants.spectraModel.equals("PredFull")) {
-                predictedSpectra = LibraryPredictionMapper.createLibraryPredictionMapper(
-                        Constants.spectraPredFile, pinFiles, executorService);
-            } else {
-                predictedSpectra = LibraryPredictionMapper.createLibraryPredictionMapper(
-                        Constants.spectraPredFile, Constants.spectraModel, executorService);
-            }
+            predictedSpectra = LibraryPredictionMapper.createLibraryPredictionMapper(
+                    Constants.spectraPredFile, Constants.spectraModel, executorService);
             allLibraries.put(Constants.spectraPredFile, predictedSpectra);
             allProperties.put("spectra", Constants.spectraPredFile);
         }

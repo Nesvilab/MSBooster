@@ -299,7 +299,7 @@ public class MzmlReader {
                 try {
                     getScanNumObject(scanNum).setPeptideObject(peps.get(i), ranks.get(i),
                             tds.get(i), escores.get(i), allPreds, true);
-                } catch (FileParsingException e) {
+                } catch (Exception e) {
                     throw new RuntimeException(e);
                 }
                 pr.progress();

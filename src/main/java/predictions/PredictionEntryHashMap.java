@@ -22,19 +22,16 @@ import features.spectra.MassCalculator;
 import peptideptmformatting.PeptideFormatter;
 import peptideptmformatting.PeptideSkipper;
 
-import static utils.Print.printError;
-
 import java.io.BufferedReader;
 import java.io.FileReader;
-import java.io.IOException;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
-import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Future;
+
+import static utils.Print.printError;
 
 public class PredictionEntryHashMap extends ConcurrentHashMap<String, PredictionEntry> {
     public String modelType;
@@ -123,7 +120,9 @@ public class PredictionEntryHashMap extends ConcurrentHashMap<String, Prediction
     //use this when we need don't already have predictions for all final peptides
     //models may have different PTM restrictions, so need to transfer their predictions onto the ones we actually need
     //for when msbooster is calling models for the first time, not when it is reading in prepredicted libraries
-    public void transferKoinaPreds(ArrayList<PredictionEntryHashMap> predMaps, String fulltsv) throws IOException {
+    //TODO: also need to consider model. Unispec and Predfull transfer differently
+    //TODO: can save aby fragments separately from other ones
+    public void transferKoinaPreds(ArrayList<PredictionEntryHashMap> predMaps, String fulltsv) throws Exception {
         //iterate through entries of full tsv
         BufferedReader TSVReader = new BufferedReader(new FileReader(fulltsv));
         String l;
@@ -154,6 +153,7 @@ public class PredictionEntryHashMap extends ConcurrentHashMap<String, Prediction
                         case "unispec":
                         case "prosit":
                         case "prosittmt":
+                        case "predfull":
                             pf = new PeptideFormatter(
                                     new PeptideFormatter(line[0], line[1], "base").getModel(predMap.modelType),
                                     line[1], predMap.modelType);
@@ -174,16 +174,20 @@ public class PredictionEntryHashMap extends ConcurrentHashMap<String, Prediction
                             printError("Exiting now.");
                             System.exit(1);
                         }
-                    } else {
-                        switch (predMap.property) {
-                            case "ms2":
-                                MassCalculator mc = new MassCalculator(line[0], line[1]);
-                                newMZs = new float[oldPred.getMzs().length];
-                                for (int i = 0; i < newMZs.length; i++) {
-                                    newMZs[i] = mc.calcMass(oldPred.getFragNums()[i],
-                                            MassCalculator.flagTOion.get(oldPred.getFlags()[i]), oldPred.getCharges()[i]);
-                                }
-                                break;
+                    } else { //don't want to worry about calculating all the different NLs
+                        if (predMap.property.equals("ms2")) {
+                            MassCalculator mc = new MassCalculator(line[0], line[1]);
+                            newMZs = new float[oldPred.getMzs().length];
+
+                            MassCalculator oldMc = new MassCalculator(pf.getBase(), pf.getCharge());
+
+                            //TODO: this is an issue since fragnums and charges were set as 0 for predfull prediction
+                            for (int i = 0; i < newMZs.length; i++) {
+                                newMZs[i] = oldPred.getMzs()[i] +
+                                        mc.compareModMasses(oldMc, oldPred.getFragNums()[i],
+                                                oldPred.getFragmentIonTypes()[i],
+                                                oldPred.getCharges()[i], oldPred.getFullAnnotations()[i]);
+                            }
                         }
                     }
                 }
@@ -198,16 +202,11 @@ public class PredictionEntryHashMap extends ConcurrentHashMap<String, Prediction
                             newPred.fragmentIonTypes = new String[]{"y"};
                             newPred.flags = new int[]{1};
                         } else {
-                            if (newMZs.length != 0) {
-                                newPred.mzs = newMZs;
-                            } else {
-                                newPred.mzs = oldPred.mzs;
+                            if (newMZs.length == 0) {
+                                newMZs = oldPred.mzs;
                             }
-                            newPred.intensities = oldPred.intensities;
-                            newPred.fragNums = oldPred.fragNums;
-                            newPred.charges = oldPred.charges;
-                            newPred.fragmentIonTypes = oldPred.fragmentIonTypes;
-                            newPred.flags = oldPred.flags;
+                            newPred = new PredictionEntry(newMZs, oldPred.intensities, oldPred.fragNums,
+                                    oldPred.charges, oldPred.fragmentIonTypes, oldPred.flags, oldPred.fullAnnotations);
                         }
                         break;
                     case "rt":

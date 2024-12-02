@@ -200,6 +200,9 @@ public class PTMhandler {
             case "alphapept":
                 modelAllowedUnimods.addAll(AAunimodToModMassAlphaPeptDeep.keySet());
                 break;
+            case "predfull":
+                modelAllowedUnimods = predfullAAMods;
+                break;
         }
 
         //set unimod string formatting
@@ -261,6 +264,9 @@ public class PTMhandler {
         if (cterm && unimod.startsWith("[")) {
             peptide = peptide.substring(0, start) + "-" + peptide.substring(start);
         }
+
+        //predfull assumes all Cs are carbamidomethylated
+        peptide = peptide.replace("[UNIMOD:4]", "");
 
         return new String[]{peptide, unimod}; //unimod is accepted unimod, or ""
     }
@@ -524,4 +530,6 @@ public class PTMhandler {
             Arrays.asList("M35", "C4"));
     public static final HashSet<String> deeplcAAMods = new HashSet<>(
             Arrays.asList("M35", "C4", "S21", "T21", "Y21", "[1"));
+    public static final HashSet<String> predfullAAMods = new HashSet<>(
+            Arrays.asList("M35", "C4"));
 }

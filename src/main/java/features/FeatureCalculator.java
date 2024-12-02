@@ -25,7 +25,7 @@ import readers.datareaders.MzmlReader;
 import readers.datareaders.PinReader;
 import org.apache.commons.math3.stat.correlation.PearsonsCorrelation;
 import umich.ms.fileio.exceptions.FileParsingException;
-import utils.FloatUtils;
+import utils.NumericUtils;
 import utils.ProgressReporter;
 import utils.StatMethods;
 
@@ -346,9 +346,9 @@ public class FeatureCalculator {
 //                        break;
 //                    case "z-NL_matched_intensity":
 //                        break;
-//                    case "precursor_matched_intensity":
+//                    case "p_matched_intensity":
 //                        break;
-//                    case "precursor-NL_matched_intensity":
+//                    case "p-NL_matched_intensity":
 //                        break;
 //                    case "internal_matched_intensity":
 //                        break;
@@ -386,9 +386,9 @@ public class FeatureCalculator {
 //                        break;
 //                    case "z-NL_intensities_difference":
 //                        break;
-//                    case "precursor_intensities_difference":
+//                    case "p_intensities_difference":
 //                        break;
-//                    case "precursor-NL_intensities_difference":
+//                    case "p-NL_intensities_difference":
 //                        break;
 //                    case "internal_intensities_difference":
 //                        break;
@@ -426,9 +426,9 @@ public class FeatureCalculator {
 //                        break;
 //                    case "z-NL_peak_counts":
 //                        break;
-//                    case "precursor_peak_counts":
+//                    case "p_peak_counts":
 //                        break;
-//                    case "precursor-NL_peak_counts":
+//                    case "p-NL_peak_counts":
 //                        break;
 //                    case "internal_peak_counts":
 //                        break;
@@ -466,9 +466,9 @@ public class FeatureCalculator {
 //                        break;
 //                    case "z-NL_spectral_similarity":
 //                        break;
-//                    case "precursor_spectral_similarity":
+//                    case "p_spectral_similarity":
 //                        break;
-//                    case "precursor-NL_spectral_similarity":
+//                    case "p-NL_spectral_similarity":
 //                        break;
 //                    case "internal_spectral_similarity":
 //                        break;
@@ -486,8 +486,8 @@ public class FeatureCalculator {
                                 predIntensities[j] = pepObj.predIntensities.get(Constants.fragmentIonHierarchy[j]);
                                 expIntensities[j] = pepObj.matchedIntensities.get(Constants.fragmentIonHierarchy[j]);
                             }
-                            double value = new PearsonsCorrelation().correlation(FloatUtils.floatToDouble(predIntensities),
-                                    FloatUtils.floatToDouble(expIntensities));
+                            double value = new PearsonsCorrelation().correlation(NumericUtils.floatToDouble(predIntensities),
+                                    NumericUtils.floatToDouble(expIntensities));
                             if (Double.isNaN(value)) {
                                 value = -1;
                             }

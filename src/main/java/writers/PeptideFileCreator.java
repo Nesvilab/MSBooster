@@ -17,18 +17,14 @@
 
 package writers;
 
-import static allconstants.Constants.KoinaModels;
-import static utils.Print.printError;
-import static utils.Print.printInfo;
-
 import allconstants.Constants;
+import jakarta.xml.bind.JAXBException;
 import mainsteps.MainClass;
 import mainsteps.PinMzmlMatcher;
 import peptideptmformatting.PeptideFormatter;
 import peptideptmformatting.PeptideSkipper;
 import readers.datareaders.MzmlReader;
 import readers.datareaders.PinReader;
-import jakarta.xml.bind.JAXBException;
 import umich.ms.fileio.exceptions.FileParsingException;
 
 import java.io.File;
@@ -41,6 +37,10 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Future;
+
+import static allconstants.Constants.KoinaModels;
+import static utils.Print.printError;
+import static utils.Print.printInfo;
 
 public class PeptideFileCreator {
 
@@ -102,9 +102,10 @@ public class PeptideFileCreator {
                         case "createFull":
                             hitsToAdd = pin.createFull();
                             break;
-                        case "PredFull":
-                            hitsToAdd = pin.createPredFullList(mzmlf, pmm);
-                            break;
+                            //PredFull now in Koina
+//                        case "PredFull":
+//                            hitsToAdd = pin.createPredFullList(mzmlf, pmm);
+//                            break;
                         case "alphapeptdeep":
                             hitsToAdd = pin.createAlphapeptdeepList(mzmlf, pmm);
                             break;

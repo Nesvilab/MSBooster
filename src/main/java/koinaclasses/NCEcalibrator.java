@@ -17,30 +17,30 @@
 
 package koinaclasses;
 
-import static figures.ExtensionPlotter.plot;
-import static utils.Print.printInfo;
-
 import allconstants.Constants;
+import com.google.common.util.concurrent.AtomicDouble;
 import mainsteps.MainClass;
 import mainsteps.PeptideObj;
+import org.knowm.xchart.BoxChart;
+import org.knowm.xchart.BoxChartBuilder;
+import org.knowm.xchart.style.BoxStyler;
 import peptideptmformatting.PeptideFormatter;
 import predictions.PredictionEntryHashMap;
+import utils.MyFileUtils;
+import utils.ProgressReporter;
 import utils.StatMethods;
 import writers.PeptideFileCreator;
-import com.google.common.util.concurrent.AtomicDouble;
+
 import java.io.File;
 import java.io.IOException;
 import java.util.*;
-import java.util.concurrent.*;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.Future;
 import java.util.concurrent.atomic.AtomicInteger;
-import org.knowm.xchart.BitmapEncoder;
-import org.knowm.xchart.BoxChart;
-import org.knowm.xchart.BoxChartBuilder;
-import org.knowm.xchart.VectorGraphicsEncoder;
-import org.knowm.xchart.style.BoxStyler;
-import umich.ms.fileio.exceptions.FileParsingException;
-import utils.MyFileUtils;
-import utils.ProgressReporter;
+
+import static figures.ExtensionPlotter.plot;
+import static utils.Print.printInfo;
 
 public class NCEcalibrator {
     public static Object[] calibrateNCE(String currentModel,
@@ -90,7 +90,7 @@ public class NCEcalibrator {
                         for (PeptideObj peptideObj : km.getPeptideObjects(allPreds, scanNums, peptides)) {
                             similarity.add(peptideObj.spectralSimObj.unweightedSpectralEntropy());
                         }
-                    } catch (FileParsingException | ExecutionException | InterruptedException e) {
+                    } catch (Exception e) {
                         throw new RuntimeException(e);
                     }
 

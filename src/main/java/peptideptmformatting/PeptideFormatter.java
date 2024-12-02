@@ -258,6 +258,24 @@ public class PeptideFormatter {
         }
     }
 
+    private void baseToPredfullKoina() {
+        predfull = base;
+
+        boolean attemptCterm = cterm;
+        for (int i = starts.size() - 1; i > -1; i--) {
+            int start = starts.get(i);
+            int end = ends.get(i);
+
+            String[] peptideUnimod = PTMhandler.formatPeptideBaseToSpecific(
+                    predfull, start, end, "predfull", foundUnimods, attemptCterm);
+            attemptCterm = false;
+            predfull = peptideUnimod[0];
+            if (!peptideUnimod[1].isEmpty()) {
+                foundUnimods.add(peptideUnimod[1]);
+            }
+        }
+    }
+
     private void baseTOpredfull() {
         predfull = base;
 
@@ -426,7 +444,8 @@ public class PeptideFormatter {
                 break;
             case "predfull":
                 predfull = peptide;
-                predfullTObase(peptide);
+                predfullTObase(peptide); //this version is for standalone
+                koinaTObase(peptide); //this version for koina
                 break;
             case "unispec":
                 unispec = peptide;
@@ -515,6 +534,14 @@ public class PeptideFormatter {
         return predfull;
     }
 
+    public String getPredfullKoina() {
+        if (predfull == null) {
+            baseToPredfullKoina();
+        }
+        return predfull;
+    }
+
+
     public String getUnispec() {
         if (unispec == null) {
             baseTOunispec();
@@ -562,6 +589,8 @@ public class PeptideFormatter {
                 return getDeeplc();
             case "alphapept":
                 return getAlphapept();
+            case "predfull":
+                return getPredfullKoina();
             default:
                 //TODO implement all
                 return "";

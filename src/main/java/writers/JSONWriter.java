@@ -63,10 +63,12 @@ public class JSONWriter {
         if (Constants.KoinaTMTmodels.contains(url)) {
             TMT = true;
         }
-        if (model.contains("unispec")) {
-            maxJsonLength = 100;
-        } else {
-            maxJsonLength = 1000;
+        switch (model) {
+            case "unispec":
+                maxJsonLength = 100;
+                break;
+            default:
+                maxJsonLength = 1000;
         }
 
         //set entries
@@ -185,6 +187,7 @@ public class JSONWriter {
                 case "ms2pip":
                 case "deeplc":
                 case "unispec":
+                case "predfull":
                     // Create the JSON data structure
                     JSONObject jsonData = new JSONObject();
                     jsonData.put("id", "0");
@@ -262,7 +265,7 @@ public class JSONWriter {
                             instrumentObject.put("data", instrumentData);
                             inputsArray.put(instrumentObject);
                         }
-                        if (TMT) {
+                        if (TMT || model.equals("predfull")) {
                             JSONObject fragmentationObject = new JSONObject();
                             fragmentationObject.put("name", "fragmentation_types");
                             fragmentationObject.put("shape", new JSONArray("[" + peptides.length + ",1]"));

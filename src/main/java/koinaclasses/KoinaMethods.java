@@ -17,10 +17,8 @@
 
 package koinaclasses;
 
-import static utils.InstrumentUtils.mapInstrumentToModelSpecific;
-import static utils.Print.printInfo;
-
 import allconstants.Constants;
+import com.google.common.collect.ImmutableMap;
 import mainsteps.MzmlScanNumber;
 import mainsteps.PeptideObj;
 import mainsteps.PinMzmlMatcher;
@@ -31,15 +29,18 @@ import predictions.PredictionEntryHashMap;
 import readers.datareaders.MzmlReader;
 import readers.datareaders.PinReader;
 import readers.predictionreaders.KoinaLibReader;
-import writers.JSONWriter;
-import com.google.common.collect.ImmutableMap;
 import umich.ms.fileio.exceptions.FileParsingException;
+import writers.JSONWriter;
 
 import java.io.File;
 import java.io.IOException;
+import java.net.URISyntaxException;
 import java.util.*;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ScheduledThreadPoolExecutor;
+
+import static utils.InstrumentUtils.mapInstrumentToModelSpecific;
+import static utils.Print.printInfo;
 
 public class KoinaMethods {
     //these fields are shared regardless of which model is called
@@ -148,8 +149,8 @@ public class KoinaMethods {
             predList.add(klr.getPreds());
             assignedPreds.transferKoinaPreds(predList, fulltsv);
             klr.setPreds(assignedPreds);
-        } catch (IOException e) {
-            throw new RuntimeException(e);
+        } catch (Exception e) {
+            e.printStackTrace();
         }
         return klr.allPreds;
     }
@@ -157,7 +158,7 @@ public class KoinaMethods {
     public PeptideObj[] getPeptideObjects(PredictionEntryHashMap allPreds,
                                           HashMap<String, LinkedList<Integer>> scanNums,
                                           HashMap<String, LinkedList<PeptideFormatter>> peptides)
-            throws FileParsingException, ExecutionException, InterruptedException {
+            throws FileParsingException, ExecutionException, InterruptedException, IOException, URISyntaxException {
         allPreds.filterTopFragments(new ScheduledThreadPoolExecutor(Constants.numThreads));
 
         int arrayLength = 0;

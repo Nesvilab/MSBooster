@@ -17,7 +17,7 @@
 
 package features.spectra;
 
-import static utils.FloatUtils.floatToDouble;
+import static utils.NumericUtils.floatToDouble;
 import static utils.Print.printError;
 
 import java.util.ArrayList;
@@ -264,7 +264,7 @@ public class SpectrumComparison {
             for (int num = 1; num < mc.peptide.length(); num++) {
                 for (int charge = 1; charge < 3; charge++) {
                     for (String flag : flags) {
-                        mzs[i] = mc.calcMass(num, flag, charge);
+                        mzs[i] = mc.calcMass(num, flag, charge, 0);
                         i += 1;
                     }
                 }

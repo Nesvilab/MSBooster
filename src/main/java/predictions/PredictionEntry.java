@@ -33,6 +33,8 @@ public class PredictionEntry {
     public int[] flags = new int[0];
     public int[] charges = new int[0];
     public String[] fragmentIonTypes = new String[0];
+    public String[] fullAnnotations = new String[0];
+    public int[] isotopes = new int[0];
     public float RT;
     public float IM;
     int counter;
@@ -78,6 +80,45 @@ public class PredictionEntry {
         } else if (flags.length != 0 && fragmentIonTypes.length == 0) {
             setFragmentIonTypes();
         }
+    }
+
+    public PredictionEntry(float[] mzs, float[] intensities, int[] fragNums, int[] charges,
+                           String[] fragmentIonTypes, int[] flags, String[] fullAnnotations) {
+
+        this.mzs = new float[mzs.length];
+        this.intensities = new float[intensities.length];
+        this.fragNums = new int[fragNums.length];
+        this.charges = new int[charges.length];
+        this.fragmentIonTypes = new String[fragmentIonTypes.length];
+        this.flags = new int[flags.length];
+
+        int[] sortedIndices = IntStream.range(0, mzs.length)
+                .boxed().sorted((k, j) -> Float.compare(mzs[k], mzs[j]))
+                .mapToInt(ele -> ele).toArray();
+
+        for (int i = 0; i < sortedIndices.length; i++) {
+            this.mzs[i] = mzs[sortedIndices[i]];
+            this.intensities[i] = intensities[sortedIndices[i]];
+            if (fragNums.length != 0) {
+                this.fragNums[i] = fragNums[sortedIndices[i]];
+            }
+            if (charges.length != 0) {
+                this.charges[i] = charges[sortedIndices[i]];
+            }
+            if (fragmentIonTypes.length != 0) {
+                this.fragmentIonTypes[i] = fragmentIonTypes[sortedIndices[i]];
+            }
+            if (flags.length != 0) {
+                this.flags[i] = flags[sortedIndices[i]];
+            }
+        }
+        if (fragmentIonTypes.length != 0 && flags.length == 0) {
+            setFlags();
+        } else if (flags.length != 0 && fragmentIonTypes.length == 0) {
+            setFragmentIonTypes();
+        }
+
+        setFullAnnotations(fullAnnotations, sortedIndices);
     }
 
     public void filterFragments() {
@@ -225,4 +266,35 @@ public class PredictionEntry {
         }
     }
     public String[] getFragmentIonTypes() {return fragmentIonTypes;}
+    public int[] getIsotopes() {return isotopes;}
+    public void setFullAnnotations(String[] fa, int[] sortedIndices) {
+        this.fullAnnotations = new String[fa.length];
+        this.isotopes = new int[fa.length];
+
+        for (int i = 0; i < sortedIndices.length; i++) {
+            this.fullAnnotations[i] = fa[sortedIndices[i]];
+        }
+
+        //set isotopes
+        int i = 0;
+        for (String annotation : this.fullAnnotations) {
+            if (annotation.startsWith("Int")) {
+                annotation = annotation.split("/")[1];
+                this.fullAnnotations[i] = annotation;
+            }
+
+            if (annotation.endsWith("i")) {
+                char num = annotation.charAt(annotation.length() - 2);
+                if (num == '+') {
+                    isotopes[i] = 1;
+                } else {
+                    isotopes[i] = Integer.parseInt(String.valueOf(num));
+                }
+            } else {
+                isotopes[i] = 0;
+            }
+            i++;
+        }
+    }
+    public String[] getFullAnnotations() {return fullAnnotations;}
 }

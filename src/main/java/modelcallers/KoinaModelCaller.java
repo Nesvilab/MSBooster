@@ -332,22 +332,22 @@ public class KoinaModelCaller {
             msInfo = msInfo.substring(0, msInfo.length() - 1);
             results = msInfo.split(",");
             String[][] allFragmentIonTypes = new String[numPeptides][];
+            String[][] allFullAnnotations = new String[numPeptides][];
             int[][] allFragNums = new int[numPeptides][];
             int[][] allCharges = new int[numPeptides][];
             for (int i = 0; i < numPeptides; i++) {
                 ArrayList<String> fragmentIonTypes = new ArrayList<>();
+                ArrayList<String> fullAnnotation = new ArrayList<>();
                 ArrayList<Integer> fragNums = new ArrayList<>();
                 ArrayList<Integer> charges = new ArrayList<>();
-                ArrayList<Float> mzs = new ArrayList<>();
                 for (int j = i * vectorLength; j < (i + 1) * vectorLength; j++) {
                     String result = results[j];
                     result = result.substring(1, result.length() - 1);
                     if (acceptedIdx[i].contains(j)) {
                         if (model.contains("UniSpec")) {
-                            //this version for unispec
-
+                            fullAnnotation.add(result);
                             //charge
-                            String[] info = result.split("^");
+                            String[] info = result.split("\\^");
                             if (info.length > 1) {
                                 charges.add(Integer.parseInt(info[1].substring(0, 1)));
                             } else {
@@ -360,27 +360,26 @@ public class KoinaModelCaller {
                             switch(first) {
                                 case 'y':
                                     if (NL) {
-                                        fragmentIonTypes.add("y");
-                                    } else {
                                         fragmentIonTypes.add("y-NL");
+                                    } else {
+                                        fragmentIonTypes.add("y");
                                     }
                                     break;
                                 case 'b':
                                     if (NL) {
-                                        fragmentIonTypes.add("b");
-                                    } else {
                                         fragmentIonTypes.add("b-NL");
+                                    } else {
+                                        fragmentIonTypes.add("b");
                                     }
                                     break;
                                 case 'a':
                                     if (NL) {
-                                        fragmentIonTypes.add("a");
-                                    } else {
                                         fragmentIonTypes.add("a-NL");
+                                    } else {
+                                        fragmentIonTypes.add("a");
                                     }
                                     break;
 
-                                //not regular frag num
                                 case 'p':
                                     fragmentIonTypes.add("p");
                                     break;
@@ -410,7 +409,7 @@ public class KoinaModelCaller {
                                     fragNums.add(Integer.parseInt(num));
                                     break;
                                 default:
-                                    fragNums.add(0);
+                                    fragNums.add(0); //set as 0 if it's a more complicated fragment. Will need some full annotation here
                                     break;
                             }
                         } else {
@@ -423,19 +422,23 @@ public class KoinaModelCaller {
                     }
                 }
                 String[] fragmentIonTypesArray = new String[fragmentIonTypes.size()];
+                String[] fullAnnotationArray = new String[fullAnnotation.size()];
                 int[] fragNumsArray = new int[fragNums.size()];
                 int[] chargesArray = new int[charges.size()];
                 for (int j = 0; j < fragmentIonTypes.size(); j++) {
                     fragmentIonTypesArray[j] = fragmentIonTypes.get(j);
                     fragNumsArray[j] = fragNums.get(j);
                     chargesArray[j] = charges.get(j);
+                    fullAnnotationArray[j] = fullAnnotation.get(j);
                 }
                 allFragmentIonTypes[i] = fragmentIonTypesArray;
                 allFragNums[i] = fragNumsArray;
                 allCharges[i] = chargesArray;
+                allFullAnnotations[i] = fullAnnotationArray;
             }
             if (model.contains("UniSpec")) {
-                assignMS2(fileName, allMZs, allIntensities, allFragmentIonTypes, allFragNums, allCharges, klr, modelType);
+                assignMS2(fileName, allMZs, allIntensities, allFragmentIonTypes, allFragNums, allCharges,
+                        allFullAnnotations, klr, modelType);
             } else {
                 assignMS2(fileName, allIntensities, allFragmentIonTypes, allFragNums, allCharges, klr, modelType);
             }
@@ -510,7 +513,7 @@ public class KoinaModelCaller {
             MassCalculator mc = new MassCalculator(pepSplit[0], pepSplit[1]);
             float[] mzs = new float[intensities[i].length];
             for (int j = 0; j < intensities[i].length; j++) {
-                mzs[j] = mc.calcMass(fragNums[i][j], fragmentIonTypes[i][j], charges[i][j]);
+                mzs[j] = mc.calcMass(fragNums[i][j], fragmentIonTypes[i][j], charges[i][j], 0);
             }
 
             PredictionEntry pe = new PredictionEntry(mzs, intensities[i], fragNums[i],
@@ -526,8 +529,8 @@ public class KoinaModelCaller {
     }
 
     private static void assignMS2(String fileName, float[][] mzs, float[][] intensities,
-                                  String[][] fragmentIonTypes, int[][] fragNums, int[][] charges, KoinaLibReader klr,
-                                  String model)
+                                  String[][] fragmentIonTypes, int[][] fragNums, int[][] charges, String[][] fullAnnotations,
+                                  KoinaLibReader klr, String model)
             throws IOException {
         String[] peptides = readJSON(fileName, intensities.length);
         PredictionEntryHashMap preds = klr.getPreds();
@@ -537,7 +540,7 @@ public class KoinaModelCaller {
             String peptide = pf.getBaseCharge();
 
             PredictionEntry pe = new PredictionEntry(mzs[i], intensities[i], fragNums[i],
-                    charges[i], fragmentIonTypes[i], new int[0]);
+                    charges[i], fragmentIonTypes[i], new int[0], fullAnnotations[i]);
 
             if (preds.containsKey(peptide)) {
                 PredictionEntry oldPe = preds.get(peptide);
@@ -545,7 +548,6 @@ public class KoinaModelCaller {
                 pe.setIM(oldPe.getIM());
             }
             preds.put(peptide, pe);
-
         }
     }
 

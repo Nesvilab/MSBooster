@@ -109,7 +109,7 @@ public class DiannSpeclibReader implements LibraryPredictionMapper {
 
                         //get fragment m/z
                         String ionType = MassCalculator.flagTOion.get(flag);
-                        float fragMZ = mc.calcMass(fragNum, ionType, charge);
+                        float fragMZ = mc.calcMass(fragNum, ionType, charge, 0);
 
                         //add to arrays
                         mzs[i] = fragMZ;
@@ -153,7 +153,8 @@ public class DiannSpeclibReader implements LibraryPredictionMapper {
                         MassCalculator mc = new MassCalculator(line[0], line[1]);
                         float[] newMZs = new float[tmp.mzs.length];
                         for (int i = 0; i < newMZs.length; i++) {
-                            newMZs[i] = mc.calcMass(tmp.fragNums[i], MassCalculator.flagTOion.get(tmp.flags[i]), tmp.charges[i]);
+                            newMZs[i] = mc.calcMass(tmp.fragNums[i], MassCalculator.flagTOion.get(tmp.flags[i]),
+                                    tmp.charges[i], tmp.isotopes[i]);
                         }
 
                         //add to hashmap

@@ -189,7 +189,8 @@ public class MspReader implements LibraryPredictionMapper {
                         MassCalculator mc = new MassCalculator(lineSplit2[0], lineSplit2[1]);
                         float[] newMZs = new float[tmp.mzs.length];
                         for (int i = 0; i < newMZs.length; i++) {
-                            newMZs[i] = mc.calcMass(tmp.fragNums[i], flagTOion.get(tmp.flags[i]), tmp.charges[i]);
+                            newMZs[i] = mc.calcMass(tmp.fragNums[i], flagTOion.get(tmp.flags[i]), tmp.charges[i],
+                                    tmp.isotopes[i]);
                         }
 
                         //add to hashmap

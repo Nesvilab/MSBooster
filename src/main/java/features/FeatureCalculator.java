@@ -25,7 +25,7 @@ import readers.datareaders.MzmlReader;
 import readers.datareaders.PinReader;
 import org.apache.commons.math3.stat.correlation.PearsonsCorrelation;
 import umich.ms.fileio.exceptions.FileParsingException;
-import utils.FloatUtils;
+import utils.NumericUtils;
 import utils.ProgressReporter;
 import utils.StatMethods;
 
@@ -486,8 +486,8 @@ public class FeatureCalculator {
                                 predIntensities[j] = pepObj.predIntensities.get(Constants.fragmentIonHierarchy[j]);
                                 expIntensities[j] = pepObj.matchedIntensities.get(Constants.fragmentIonHierarchy[j]);
                             }
-                            double value = new PearsonsCorrelation().correlation(FloatUtils.floatToDouble(predIntensities),
-                                    FloatUtils.floatToDouble(expIntensities));
+                            double value = new PearsonsCorrelation().correlation(NumericUtils.floatToDouble(predIntensities),
+                                    NumericUtils.floatToDouble(expIntensities));
                             if (Double.isNaN(value)) {
                                 value = -1;
                             }

@@ -145,7 +145,7 @@ public class PredFullSpeclibReader extends MgfFileReader {
                     String ionName = nlSplitSplit[0];
                     switch (ionName) {
                         case "MH":
-                            newMZ.add(shiftedMC.calcMass(shiftedMC.modMasses.size() - 2, "y", charge, nl));
+                            newMZ.add(shiftedMC.calcMass(shiftedMC.modMasses.size() - 2, "y", charge, nl, 0));
                             break;
                         case "immonium": //TODO: why is immonium showing up twice?
                             //need to check if mox of modified and unmodified, and exclude if so
@@ -167,7 +167,7 @@ public class PredFullSpeclibReader extends MgfFileReader {
                         default: //backbone and internal
                             if (ionName.contains("dot")) {
                                 newMZ.add(shiftedMC.calcMass(Integer.parseInt(ionName.substring(ionName.length() - 1)),
-                                        ionName.substring(0, ionName.length() - 1), charge));
+                                        ionName.substring(0, ionName.length() - 1), charge, 0));
                                 break;
                             }
                             StringBuilder sb = new StringBuilder();
@@ -187,9 +187,9 @@ public class PredFullSpeclibReader extends MgfFileReader {
                                 numbers.add(Integer.parseInt(ionName.substring(letterPositions.get(i) + 1, letterPositions.get(i - 1))));
                             }
                             if (numbers.size() == 1) {
-                                newMZ.add(shiftedMC.calcMass(numbers.get(0), sb.toString(), charge, nl));
+                                newMZ.add(shiftedMC.calcMass(numbers.get(0), sb.toString(), charge, nl, 0));
                             } else {
-                                newMZ.add(shiftedMC.calcMass(numbers.get(0), numbers.get(1), sb.toString(), nl));
+                                newMZ.add(shiftedMC.calcMass(numbers.get(0), numbers.get(1), sb.toString(), nl, 0));
                             }
                             break;
                     }

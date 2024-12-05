@@ -124,9 +124,7 @@ public class PredictionEntryHashMap extends ConcurrentHashMap<String, Prediction
     //models may have different PTM restrictions, so need to transfer their predictions onto the ones we actually need
     //for when msbooster is calling models for the first time, not when it is reading in prepredicted libraries
     //TODO: also need to consider model. Unispec and Predfull transfer differently
-    //TODO: need a method that takes mass calculator and full fragment annotation, decides if mass needs to be added
     //TODO: can save aby fragments separately from other ones
-    //TODO: add isotope variable to all calc mass methods
     public void transferKoinaPreds(ArrayList<PredictionEntryHashMap> predMaps, String fulltsv) throws IOException {
         //iterate through entries of full tsv
         BufferedReader TSVReader = new BufferedReader(new FileReader(fulltsv));
@@ -178,16 +176,19 @@ public class PredictionEntryHashMap extends ConcurrentHashMap<String, Prediction
                             printError("Exiting now.");
                             System.exit(1);
                         }
-                    } else {
-                        switch (predMap.property) {
-                            case "ms2":
-                                MassCalculator mc = new MassCalculator(line[0], line[1]);
-                                newMZs = new float[oldPred.getMzs().length];
-                                for (int i = 0; i < newMZs.length; i++) {
-                                    newMZs[i] = mc.calcMass(oldPred.getFragNums()[i],
-                                            MassCalculator.flagTOion.get(oldPred.getFlags()[i]), oldPred.getCharges()[i]);
-                                }
-                                break;
+                    } else { //don't want to worry about calculating all the different NLs
+                        if (predMap.property.equals("ms2")) {
+                            MassCalculator mc = new MassCalculator(line[0], line[1]);
+                            newMZs = new float[oldPred.getMzs().length];
+
+                            MassCalculator oldMc = new MassCalculator(pf.getBase(), pf.getCharge());
+
+                            for (int i = 0; i < newMZs.length; i++) {
+                                newMZs[i] = oldPred.getMzs()[i] +
+                                        mc.compareModMasses(oldMc, oldPred.getFragNums()[i],
+                                                oldPred.getFragmentIonTypes()[i],
+                                                oldPred.getCharges()[i], oldPred.getFullAnnotations()[i]);
+                            }
                         }
                     }
                 }
@@ -202,16 +203,11 @@ public class PredictionEntryHashMap extends ConcurrentHashMap<String, Prediction
                             newPred.fragmentIonTypes = new String[]{"y"};
                             newPred.flags = new int[]{1};
                         } else {
-                            if (newMZs.length != 0) {
-                                newPred.mzs = newMZs;
-                            } else {
-                                newPred.mzs = oldPred.mzs;
+                            if (newMZs.length == 0) {
+                                newMZs = oldPred.mzs;
                             }
-                            newPred.intensities = oldPred.intensities;
-                            newPred.fragNums = oldPred.fragNums;
-                            newPred.charges = oldPred.charges;
-                            newPred.fragmentIonTypes = oldPred.fragmentIonTypes;
-                            newPred.flags = oldPred.flags;
+                            newPred = new PredictionEntry(newMZs, oldPred.intensities, oldPred.fragNums,
+                                    oldPred.charges, oldPred.fragmentIonTypes, oldPred.flags, oldPred.fullAnnotations);
                         }
                         break;
                     case "rt":

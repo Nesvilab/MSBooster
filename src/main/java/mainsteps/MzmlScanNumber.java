@@ -17,7 +17,7 @@
 
 package mainsteps;
 
-import static utils.FloatUtils.doubleToFloat;
+import static utils.NumericUtils.doubleToFloat;
 import static utils.Print.printError;
 import static utils.Print.printInfo;
 

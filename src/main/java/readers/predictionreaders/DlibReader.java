@@ -164,7 +164,7 @@ public class DlibReader implements LibraryPredictionMapper {
                             String fragment = anno.split(";")[0];
                             String[] plusSplit = fragment.split("\\+");
                             float mz = mcDecoy.calcMass(Integer.parseInt(plusSplit[0].substring(1)),
-                                    plusSplit[0].substring(0, 1), Integer.parseInt(plusSplit[1]));
+                                    plusSplit[0].substring(0, 1), Integer.parseInt(plusSplit[1]), 0);
                             decoyMZs[i] = mz;
                         }
                         PredictionEntry newPred = new PredictionEntry(decoyMZs, pe.intensities,
@@ -201,7 +201,7 @@ public class DlibReader implements LibraryPredictionMapper {
 
                                 String[] plusSplit = anno.split("\\+");
                                 float mz = shiftedMC.calcMass(Integer.parseInt(plusSplit[0].substring(1)),
-                                        plusSplit[0].substring(0, 1), Integer.parseInt(plusSplit[1]));
+                                        plusSplit[0].substring(0, 1), Integer.parseInt(plusSplit[1]), 0);
 
                                 if (finalmz.size() == 0) {
                                     finalmz.add(mz);

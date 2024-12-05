@@ -27,7 +27,7 @@ import utils.StatMethods;
 import readers.datareaders.MzmlReader;
 import umich.ms.fileio.exceptions.FileParsingException;
 import umontreal.ssj.probdist.EmpiricalDist;
-import utils.FloatUtils;
+import utils.NumericUtils;
 
 import java.io.IOException;
 import java.util.*;
@@ -128,7 +128,7 @@ public class RTFunctions {
             if (needToSort) {
                 Collections.sort(bin);
             }
-            return new EmpiricalDist(FloatUtils.floatToDouble(bin));
+            return new EmpiricalDist(NumericUtils.floatToDouble(bin));
         } else if (binSize == 1) {
             return new EmpiricalDist(new double[]{(double) bin.get(0), (double) bin.get(0)});
         } else {

@@ -17,20 +17,17 @@
 
 package allconstants;
 
-import features.detectability.FastaReader;
-import features.spectra.MassCalculator;
-import predictions.PredictionEntryHashMap;
-import readers.predictionreaders.LibraryPredictionMapper;
-import utils.CaseInsensitiveHashSet;
-
 import static utils.Print.printError;
 
+import features.detectability.FastaReader;
+import features.spectra.MassCalculator;
 import java.io.File;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
+import utils.CaseInsensitiveHashSet;
 
 public class Constants {
     //file input
@@ -83,7 +80,7 @@ public class Constants {
     }
 
     //locations of executables and other models
-    public static Integer numThreads = 0;
+    public static Integer numThreads = Runtime.getRuntime().availableProcessors() - 1;
     public static String DiaNN = null;
     public static String spectraModel = "";
     public static String rtModel = "";

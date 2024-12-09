@@ -18,18 +18,14 @@
 package readers.predictionreaders;
 
 import static utils.Print.printError;
-import static utils.Print.printInfo;
 
 import java.io.File;
 import java.io.IOException;
-import java.sql.SQLException;
-import java.util.Map;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
-
-import readers.MgfFileReader;
-import predictions.PredictionEntry;
 import predictions.PredictionEntryHashMap;
+import readers.LibraryTsvReader;
+import readers.MgfFileReader;
 import umich.ms.fileio.exceptions.FileParsingException;
 
 public interface LibraryPredictionMapper {
@@ -41,7 +37,7 @@ public interface LibraryPredictionMapper {
     //TODO: multithread all of these
     static LibraryPredictionMapper createLibraryPredictionMapper(String file, String model,
                                                                  ExecutorService executorService)
-            throws IOException, InterruptedException, ExecutionException, FileParsingException, SQLException {
+            throws Exception {
         //detecting file extension
         String[] extensionSplit = file.split("\\.");
         String extension = extensionSplit[extensionSplit.length - 1];
@@ -56,6 +52,8 @@ public interface LibraryPredictionMapper {
                 return new MspReader(file);
             case "dlib":
                 return new DlibReader(file);
+            case "tsv":
+                return new LibraryTsvReader(file, "diann");
             default:
                 printError(extension + " is not a valid prediction file format");
                 return null;

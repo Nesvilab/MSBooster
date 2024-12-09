@@ -21,6 +21,9 @@ import static utils.Print.printError;
 import static utils.Print.printInfo;
 
 import allconstants.Constants;
+import com.google.common.collect.Range;
+import com.google.common.collect.RangeMap;
+import com.google.common.collect.TreeRangeMap;
 import features.FeatureCalculator;
 import features.rtandim.IMFunctions;
 import features.spectra.SpectrumComparison;
@@ -28,30 +31,30 @@ import figures.CalibrationFigure;
 import figures.IMCalibrationFigure;
 import figures.RTCalibrationFigure;
 import figures.ScoreHistogram;
-import peptideptmformatting.PeptideFormatter;
-import predictions.PredictionEntry;
-import predictions.PredictionEntryHashMap;
-import readers.datareaders.MzmlReader;
-import readers.datareaders.PinReader;
-import readers.MgfFileReader;
-import readers.predictionreaders.LibraryPredictionMapper;
-import writers.PinWriter;
-import com.google.common.collect.Range;
-import com.google.common.collect.RangeMap;
-import com.google.common.collect.TreeRangeMap;
-import kotlin.jvm.functions.Function1;
-import umich.ms.fileio.exceptions.FileParsingException;
-import utils.ProgressReporter;
-
 import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
-import java.sql.SQLException;
-import java.util.*;
-import java.util.concurrent.ExecutionException;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.SortedSet;
+import java.util.TreeSet;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Future;
+import kotlin.jvm.functions.Function1;
+import predictions.PredictionEntry;
+import predictions.PredictionEntryHashMap;
+import readers.MgfFileReader;
+import readers.datareaders.MzmlReader;
+import readers.datareaders.PinReader;
+import readers.predictionreaders.LibraryPredictionMapper;
+import umich.ms.fileio.exceptions.FileParsingException;
+import utils.ProgressReporter;
+import writers.PinWriter;
 
 public class PercolatorFormatter {
 
@@ -59,8 +62,7 @@ public class PercolatorFormatter {
     static RangeMap<Double, ArrayList<Integer>> allMatchedScans = TreeRangeMap.create();
 
     public static void editPin(PinMzmlMatcher pmMatcher, String[] features, String outfile,
-                               ExecutorService executorService)
-            throws IOException, InterruptedException, ExecutionException, FileParsingException, SQLException {
+                               ExecutorService executorService) throws Exception {
 
         ArrayList<String> featuresList = new ArrayList<>(Arrays.asList(features));
 

@@ -17,18 +17,17 @@
 
 package allconstants;
 
+import static utils.Print.printError;
+
 import features.detectability.FastaReader;
 import features.spectra.MassCalculator;
-import utils.CaseInsensitiveHashSet;
-
 import java.io.File;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
-
-import static utils.Print.printError;
+import utils.CaseInsensitiveHashSet;
 
 public class Constants {
     //file input

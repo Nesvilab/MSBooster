@@ -17,11 +17,14 @@
 
 package peptideptmformatting;
 
+import static peptideptmformatting.PTMhandler.tmtUnimod;
+import static peptideptmformatting.PTMhandler.unimodOboToModMass;
+import static peptideptmformatting.PTMhandler.unimodToModMass;
+import static peptideptmformatting.PTMhandler.unimodToModMassAlphaPeptDeep;
+import static utils.Print.printError;
+
 import java.util.ArrayList;
 import java.util.HashSet;
-
-import static peptideptmformatting.PTMhandler.*;
-import static utils.Print.printError;
 
 //lots of different ways to format peptide string
 public class PeptideFormatter {

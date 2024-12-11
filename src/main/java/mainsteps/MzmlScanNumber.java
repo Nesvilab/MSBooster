@@ -17,7 +17,15 @@
 
 package mainsteps;
 
+import static utils.FloatUtils.doubleToFloat;
+import static utils.Print.printError;
+import static utils.Print.printInfo;
+
 import allconstants.Constants;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.concurrent.atomic.AtomicInteger;
 import org.apache.commons.lang3.ArrayUtils;
 import peptideptmformatting.PeptideFormatter;
 import peptideptmformatting.PeptideSkipper;
@@ -27,15 +35,6 @@ import umich.ms.datatypes.scan.IScan;
 import umich.ms.datatypes.scan.props.PrecursorInfo;
 import umich.ms.datatypes.spectrum.ISpectrum;
 import umich.ms.fileio.exceptions.FileParsingException;
-
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.concurrent.atomic.AtomicInteger;
-
-import static utils.FloatUtils.doubleToFloat;
-import static utils.Print.printError;
-import static utils.Print.printInfo;
 
 public class MzmlScanNumber {
     final int scanNum;

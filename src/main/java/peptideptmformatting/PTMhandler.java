@@ -17,18 +17,22 @@
 
 package peptideptmformatting;
 
-import allconstants.Constants;
-import umich.ms.fileio.filetypes.unimod.UnimodOboReader;
+import static utils.Print.printError;
 
+import allconstants.Constants;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.nio.file.Files;
 import java.nio.file.Paths;
-import java.util.*;
-
-import static utils.Print.printError;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Map;
+import java.util.Objects;
+import umich.ms.fileio.filetypes.unimod.UnimodOboReader;
 
 public class PTMhandler {
     //handling of PTMs, all in one location.

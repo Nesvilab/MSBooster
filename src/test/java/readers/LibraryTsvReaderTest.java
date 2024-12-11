@@ -17,20 +17,19 @@
 
 package readers;
 
-import allconstants.Constants;
-import org.junit.jupiter.api.Test;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 
+import allconstants.Constants;
 import java.nio.file.Paths;
 import java.util.Objects;
-
-import static org.junit.jupiter.api.Assertions.assertNotNull;
+import org.junit.jupiter.api.Test;
 
 
 class LibraryTsvReaderTest {
 
       @Test
       void testLibraryReader() throws Exception {
-          Constants.unimodObo = "src/main/resources/ptm_resources/unimod.obo";
+          Constants.unimodObo = Paths.get(Objects.requireNonNull(LibraryTsvReaderTest.class.getResource("/unimod.obo")).toURI()).toString();
           LibraryTsvReader libraryTsvReader = new LibraryTsvReader(Paths.get(Objects.requireNonNull(
                   LibraryTsvReader.class.getResource("/library_1.tsv")).toURI()).toString(), "unimod.obo");
           assertNotNull(libraryTsvReader);

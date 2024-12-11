@@ -19,15 +19,17 @@ package readers;
 
 import allconstants.Constants;
 import com.google.common.collect.Multimap;
+import java.nio.file.Paths;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.List;
+import java.util.Set;
 import peptideptmformatting.PeptideFormatter;
 import predictions.PredictionEntry;
 import predictions.PredictionEntryHashMap;
 import readers.predictionreaders.LibraryPredictionMapper;
 import umich.ms.fileio.filetypes.library.LibraryTsv;
 import umich.ms.fileio.filetypes.library.Transition;
-
-import java.nio.file.Paths;
-import java.util.*;
 
 public class LibraryTsvReader implements LibraryPredictionMapper {
 
@@ -46,9 +48,7 @@ public class LibraryTsvReader implements LibraryPredictionMapper {
             for (String k : transitions.keySet()) {
                 Collection<Transition> tt = transitions.get(k);
                 for (Transition t : tt) {
-                    String peptide = t.peptide.getUnimodPeptide(false, libraryTsv.massSiteUnimodTable,
-                            null, null, null,
-                            '[', ']').replaceFirst("^n", "");
+                    String peptide = t.peptide.getUnimodPeptide(false, libraryTsv.massSiteUnimodTable, null, null, null, '[', ']').replaceFirst("^n", "");
                     String charge = t.peptideCharge + "";
                     String basePep = new PeptideFormatter(peptide, charge, format).getBaseCharge();
 

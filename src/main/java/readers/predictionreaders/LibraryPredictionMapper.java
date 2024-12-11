@@ -17,17 +17,16 @@
 
 package readers.predictionreaders;
 
-import predictions.PredictionEntryHashMap;
-import readers.LibraryTsvReader;
-import readers.MgfFileReader;
-import umich.ms.fileio.exceptions.FileParsingException;
+import static utils.Print.printError;
 
 import java.io.File;
 import java.io.IOException;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
-
-import static utils.Print.printError;
+import predictions.PredictionEntryHashMap;
+import readers.LibraryTsvReader;
+import readers.MgfFileReader;
+import umich.ms.fileio.exceptions.FileParsingException;
 
 public interface LibraryPredictionMapper {
     //TODO: how many more methods can be made default?

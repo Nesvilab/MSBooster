@@ -17,16 +17,17 @@
 
 package readers.predictionreaders;
 
-import static utils.Print.printError;
+import predictions.PredictionEntryHashMap;
+import readers.LibraryTsvReader;
+import readers.MgfFileReader;
+import umich.ms.fileio.exceptions.FileParsingException;
 
 import java.io.File;
 import java.io.IOException;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
-import predictions.PredictionEntryHashMap;
-import readers.LibraryTsvReader;
-import readers.MgfFileReader;
-import umich.ms.fileio.exceptions.FileParsingException;
+
+import static utils.Print.printError;
 
 public interface LibraryPredictionMapper {
     //TODO: how many more methods can be made default?
@@ -53,7 +54,7 @@ public interface LibraryPredictionMapper {
             case "dlib":
                 return new DlibReader(file);
             case "tsv":
-                return new LibraryTsvReader(file, "diann");
+                return new LibraryTsvReader(file, "unimod.obo");
             default:
                 printError(extension + " is not a valid prediction file format");
                 return null;

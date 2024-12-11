@@ -17,17 +17,18 @@
 
 package allconstants;
 
-import static utils.Print.printError;
-
 import features.detectability.FastaReader;
 import features.spectra.MassCalculator;
+import utils.CaseInsensitiveHashSet;
+
 import java.io.File;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
-import utils.CaseInsensitiveHashSet;
+
+import static utils.Print.printError;
 
 public class Constants {
     //file input
@@ -158,7 +159,8 @@ public class Constants {
     public static Integer maxNCE = 40;
     public static Boolean autoSwitchFragmentation = true;
 
-    //additional modifications for alphapeptdeep
+    //additional modifications
+    public static String unimodObo = null;
     public static String additionalMods = ""; //this used in python script for common/user_defined_modifications
     public static Boolean predict = true;
     public static Boolean transfer = false;

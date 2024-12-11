@@ -17,6 +17,8 @@
 
 package peptideptmformatting;
 
+import allconstants.Constants;
+
 public class PeptideSkipper {
     //provide peptide and see if it may be problematic
     public static boolean skipPeptide(String stripped, String charge, String model) {
@@ -44,6 +46,14 @@ public class PeptideSkipper {
             return true;
         }
         if ((model.contains("prosit") || model.contains("predfull")) && chargeInt > 6) {
+            return true;
+        }
+
+        //library tsv is more lenient, let anything be missing
+        if (Constants.spectraPredFile.endsWith(".tsv") ||
+                Constants.RTPredFile.endsWith(".tsv") ||
+                Constants.IMPredFile.endsWith(".tsv") ||
+                Constants.auxSpectraPredFile.endsWith(".tsv")) {
             return true;
         }
         return false;

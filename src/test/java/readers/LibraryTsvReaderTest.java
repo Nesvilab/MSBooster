@@ -17,18 +17,22 @@
 
 package readers;
 
-import static org.junit.jupiter.api.Assertions.assertNotNull;
+import allconstants.Constants;
+import org.junit.jupiter.api.Test;
 
 import java.nio.file.Paths;
 import java.util.Objects;
-import org.junit.jupiter.api.Test;
+
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 
 
 class LibraryTsvReaderTest {
 
       @Test
       void testLibraryReader() throws Exception {
-          LibraryTsvReader libraryTsvReader = new LibraryTsvReader(Paths.get(Objects.requireNonNull(LibraryTsvReader.class.getResource("/library_1.tsv")).toURI()).toString(), "DIA-NN");
+          Constants.unimodObo = "src/main/resources/ptm_resources/unimod.obo";
+          LibraryTsvReader libraryTsvReader = new LibraryTsvReader(Paths.get(Objects.requireNonNull(
+                  LibraryTsvReader.class.getResource("/library_1.tsv")).toURI()).toString(), "unimod.obo");
           assertNotNull(libraryTsvReader);
       }
 }

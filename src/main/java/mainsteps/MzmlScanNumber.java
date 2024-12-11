@@ -17,14 +17,6 @@
 
 package mainsteps;
 
-import static utils.FloatUtils.doubleToFloat;
-import static utils.Print.printError;
-import static utils.Print.printInfo;
-
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.HashMap;
-
 import allconstants.Constants;
 import org.apache.commons.lang3.ArrayUtils;
 import peptideptmformatting.PeptideFormatter;
@@ -35,6 +27,15 @@ import umich.ms.datatypes.scan.IScan;
 import umich.ms.datatypes.scan.props.PrecursorInfo;
 import umich.ms.datatypes.spectrum.ISpectrum;
 import umich.ms.fileio.exceptions.FileParsingException;
+
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.concurrent.atomic.AtomicInteger;
+
+import static utils.FloatUtils.doubleToFloat;
+import static utils.Print.printError;
+import static utils.Print.printInfo;
 
 public class MzmlScanNumber {
     final int scanNum;
@@ -55,6 +56,7 @@ public class MzmlScanNumber {
     public ArrayList<PeptideObj> peptideObjects = new ArrayList<>();
     //double[] mzFreqs;
     public static float[] zeroFloatArray = new float[]{0};
+    public AtomicInteger skippedPSMs = new AtomicInteger(0);
 
     //this version if creating from mzml scan number
     public MzmlScanNumber(IScan scan) throws FileParsingException {
@@ -221,6 +223,7 @@ public class MzmlScanNumber {
                 if (set) {
                     peptideObjects.add(newPepObj);
                 }
+                skippedPSMs.incrementAndGet();
             } else {
                 //TODO: if we start using dlib again
 //                String[] periodSplit = Constants.spectraRTPredFile.split("\\.");

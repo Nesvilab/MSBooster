@@ -18,8 +18,12 @@
 package peptideptmformatting;
 
 import allconstants.Constants;
+import umich.ms.fileio.filetypes.unimod.UnimodOboReader;
 
-import java.io.*;
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.*;
@@ -136,6 +140,25 @@ public class PTMhandler {
         try {
             AAunimodToModMassAlphaPeptDeep = makeUnimodToModMassAlphaPeptDeep(true);
         } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    private static HashMap<String, Double> makeUnimodOboToModMass() throws Exception {
+        HashMap<String, Double> modmap = new HashMap<>();
+        UnimodOboReader uobo = new UnimodOboReader(Paths.get(Constants.unimodObo));
+        for (Map.Entry<String, Float> entry : uobo.unimodMassMap.entrySet()) {
+           modmap.put(entry.getKey().split(":")[1], Double.valueOf(entry.getValue()));
+        }
+        return modmap;
+    }
+
+    public static final HashMap<String, Double> unimodOboToModMass;
+
+    static {
+        try {
+            unimodOboToModMass = makeUnimodOboToModMass();
+        } catch (Exception e) {
             throw new RuntimeException(e);
         }
     }

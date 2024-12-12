@@ -50,10 +50,10 @@ public class PeptideSkipper {
         }
 
         //library tsv is more lenient, let anything be missing
-        if (Constants.spectraPredFile.endsWith(".tsv") ||
-                Constants.RTPredFile.endsWith(".tsv") ||
-                Constants.IMPredFile.endsWith(".tsv") ||
-                Constants.auxSpectraPredFile.endsWith(".tsv")) {
+        if ((Constants.spectraPredFile != null && Constants.spectraPredFile.endsWith(".tsv")) ||
+            (Constants.RTPredFile != null && Constants.RTPredFile.endsWith(".tsv")) ||
+            (Constants.IMPredFile != null && Constants.IMPredFile.endsWith(".tsv")) ||
+            (Constants.auxSpectraPredFile != null && Constants.auxSpectraPredFile.endsWith(".tsv"))) {
             return true;
         }
         return false;

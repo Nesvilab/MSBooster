@@ -53,7 +53,7 @@ public interface LibraryPredictionMapper {
             case "dlib":
                 return new DlibReader(file);
             case "tsv":
-                return new LibraryTsvReader(file, "diann");
+                return new LibraryTsvReader(file, "unimod.obo");
             default:
                 printError(extension + " is not a valid prediction file format");
                 return null;

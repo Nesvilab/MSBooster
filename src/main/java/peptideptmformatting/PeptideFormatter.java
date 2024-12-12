@@ -17,11 +17,13 @@
 
 package peptideptmformatting;
 
-import static peptideptmformatting.PTMhandler.*;
+import static peptideptmformatting.PTMhandler.tmtUnimod;
+import static peptideptmformatting.PTMhandler.unimodOboToModMass;
+import static peptideptmformatting.PTMhandler.unimodToModMass;
+import static peptideptmformatting.PTMhandler.unimodToModMassAlphaPeptDeep;
 import static utils.Print.printError;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.HashSet;
 
 //lots of different ways to format peptide string
@@ -94,6 +96,10 @@ public class PeptideFormatter {
 
     private void alphapeptTObase(String peptide) {
         base = PTMhandler.formatPeptideSpecificToBase(peptide, unimodToModMassAlphaPeptDeep);
+    }
+
+    private void unimodoboTObase(String peptide) {
+        base = PTMhandler.formatPeptideSpecificToBase(peptide, unimodOboToModMass);
     }
 
     private void predfullTObase(String peptide) {
@@ -451,6 +457,9 @@ public class PeptideFormatter {
                 break;
             case "pdeep3":
                 pdeep3TObase(peptide);
+                break;
+            case "unimod.obo":
+                unimodoboTObase(peptide);
                 break;
         }
 

@@ -23,7 +23,6 @@ import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
-import java.util.Objects;
 import java.util.Set;
 import peptideptmformatting.PeptideFormatter;
 import predictions.PredictionEntry;
@@ -38,9 +37,9 @@ public class LibraryTsvReader implements LibraryPredictionMapper {
     private PredictionEntryHashMap allPreds = new PredictionEntryHashMap();
     protected PredictionEntryHashMap allPredsHashMap = new PredictionEntryHashMap();
 
-    public LibraryTsvReader(String file, String model) throws Exception {
+    public LibraryTsvReader(String file, String format) throws Exception {
         filenames.add(file);
-        LibraryTsv libraryTsv = new LibraryTsv(Constants.numThreads, Paths.get(Objects.requireNonNull(LibraryTsvReader.class.getClassLoader().getResource("unimod.obo")).toURI()).toString());
+        LibraryTsv libraryTsv = new LibraryTsv(Constants.numThreads, Constants.unimodObo);
         Multimap<String, Transition> transitions = libraryTsv.read(Paths.get(file));
 
         try {
@@ -51,12 +50,12 @@ public class LibraryTsvReader implements LibraryPredictionMapper {
                 for (Transition t : tt) {
                     String peptide = t.peptide.getUnimodPeptide(false, libraryTsv.massSiteUnimodTable, null, null, null, '[', ']').replaceFirst("^n", "");
                     String charge = t.peptideCharge + "";
-                    String basePep = new PeptideFormatter(peptide, charge, model).getBaseCharge();
+                    String basePep = new PeptideFormatter(peptide, charge, format).getBaseCharge();
 
                     float[] mzArray = new float[t.fragments.length];
                     float[] intArray = new float[t.fragments.length];
                     String[] fragmentIonTypes = new String[t.fragments.length];
-                    for (int i = 0; i < t.fragments.length; i++) {
+                    for (int i = 0; i < t.fragments.length; i++) { //might need to decrease array length if removing some fragments
                         if (!ignoredFragmentIonTypesSet.contains(t.fragments[i].type + "")) {
                             mzArray[i] = t.fragments[i].mz;
                             intArray[i] = t.fragments[i].intensity;

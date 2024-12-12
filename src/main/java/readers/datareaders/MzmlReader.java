@@ -20,39 +20,44 @@ package readers.datareaders;
 import static allconstants.Constants.minLinearRegressionSize;
 import static allconstants.Constants.minLoessRegressionSize;
 import static features.rtandim.LoessUtilities.LOESS;
+import static features.rtandim.LoessUtilities.gridSearchCV;
+import static utils.Print.printInfo;
 import static utils.StatMethods.characterizebins;
 import static utils.StatMethods.movingAverage;
 import static utils.StatMethods.probability;
 import static utils.StatMethods.zscore;
-import static features.rtandim.LoessUtilities.gridSearchCV;
-import static utils.Print.printInfo;
-
-import java.io.IOException;
-import java.nio.file.Path;
-import java.nio.file.Paths;
-import java.util.*;
-import java.util.concurrent.ConcurrentSkipListMap;
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Future;
 
 import allconstants.Constants;
 import features.rtandim.IMFunctions;
 import features.rtandim.LinearEquation;
 import features.rtandim.LoessUtilities;
 import features.rtandim.RTFunctions;
+import java.io.IOException;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.NavigableSet;
+import java.util.Objects;
+import java.util.concurrent.ConcurrentSkipListMap;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Future;
+import kotlin.jvm.functions.Function1;
 import mainsteps.MzmlScanNumber;
 import mainsteps.PeptideObj;
 import peptideptmformatting.PeptideFormatter;
 import predictions.PredictionEntryHashMap;
 import readers.MgfFileReader;
-import kotlin.jvm.functions.Function1;
 import umich.ms.datatypes.LCMSDataSubset;
 import umich.ms.datatypes.scan.IScan;
 import umich.ms.datatypes.scan.StorageStrategy;
 import umich.ms.datatypes.scancollection.impl.ScanCollectionDefault;
 import umich.ms.fileio.exceptions.FileParsingException;
-import umich.ms.fileio.filetypes.agilent.cef.jaxb.P;
 import umich.ms.fileio.filetypes.mzml.MZMLFile;
 import umontreal.ssj.probdist.EmpiricalDist;
 import utils.InstrumentUtils;
@@ -342,6 +347,15 @@ public class MzmlReader {
         }
         for (Future future : futureList) {
             future.get();
+        }
+
+        //check how many skipped entries
+        int skipped = 0;
+        for (MzmlScanNumber msn : scanNumberObjects.values()) {
+            skipped += msn.skippedPSMs.get();
+        }
+        if (skipped != 0) {
+            printInfo(pin.name + " had " + skipped + " PSMs with peptides not available in the predictions");
         }
 
         //set RT filter

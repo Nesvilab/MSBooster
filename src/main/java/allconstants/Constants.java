@@ -158,7 +158,8 @@ public class Constants {
     public static Integer maxNCE = 40;
     public static Boolean autoSwitchFragmentation = true;
 
-    //additional modifications for alphapeptdeep
+    //additional modifications
+    public static String unimodObo = null;
     public static String additionalMods = ""; //this used in python script for common/user_defined_modifications
     public static Boolean predict = true;
     public static Boolean transfer = false;

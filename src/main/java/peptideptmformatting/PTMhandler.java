@@ -32,6 +32,7 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Set;
 import umich.ms.fileio.filetypes.unimod.UnimodOboReader;
 
 public class PTMhandler {
@@ -45,30 +46,30 @@ public class PTMhandler {
     public static final Double pyrogluQMass = -17.0265;
     public static final Double pyrogluEMass = -18.01057;
     public static final Double pyroCarbamidomethylMass = 39.9950;
-    public static final String carbamidomethylationUnimod = "4";
-    public static final String oxidationUnimod = "35";
-    public static final String acetylationUnimod = "1";
-    public static final String phosphorylationUnimod = "21";
-    public static final String glyglyUnimod = "121";
-    public static final String tmtUnimod = "737";
-    public static final String pyrogluQUnimod = "28";
-    public static final String pyrogluEUnimod = "27";
-    public static final String pyroCarbamidomethylUnimod = "26";
+    public static final int carbamidomethylationUnimod = 4;
+    public static final int oxidationUnimod = 35;
+    public static final int acetylationUnimod = 1;
+    public static final int phosphorylationUnimod = 21;
+    public static final int glyglyUnimod = 121;
+    public static final int tmtUnimod = 737;
+    public static final int pyrogluQUnimod = 28;
+    public static final int pyrogluEUnimod = 27;
+    public static final int pyroCarbamidomethylUnimod = 26;
 
-    private static HashMap<String, Double> makeUnimodToModMass() {
-        HashMap<String, Double> map = new HashMap<>();
-        map.put(carbamidomethylationUnimod, carbamidomethylationMass);
-        map.put(oxidationUnimod, oxidationMass);
-        map.put(acetylationUnimod, acetylationMass);
-        map.put(phosphorylationUnimod, phosphorylationMass);
-        map.put(glyglyUnimod, glyglyMass);
-        map.put(tmtUnimod, tmtMass);
-        map.put(pyrogluQUnimod, pyrogluQMass);
-        map.put(pyrogluEUnimod, pyrogluEMass);
-        map.put(pyroCarbamidomethylUnimod, pyroCarbamidomethylMass);
-        return map;
+    public static final HashMap<Integer, Double> unimodToModMass;
+
+    static  {
+        unimodToModMass = new HashMap<>();
+        unimodToModMass.put(carbamidomethylationUnimod, carbamidomethylationMass);
+        unimodToModMass.put(oxidationUnimod, oxidationMass);
+        unimodToModMass.put(acetylationUnimod, acetylationMass);
+        unimodToModMass.put(phosphorylationUnimod, phosphorylationMass);
+        unimodToModMass.put(glyglyUnimod, glyglyMass);
+        unimodToModMass.put(tmtUnimod, tmtMass);
+        unimodToModMass.put(pyrogluQUnimod, pyrogluQMass);
+        unimodToModMass.put(pyrogluEUnimod, pyrogluEMass);
+        unimodToModMass.put(pyroCarbamidomethylUnimod, pyroCarbamidomethylMass);
     }
-    public static final HashMap<String, Double> unimodToModMass = makeUnimodToModMass();
 
     //TODO: see if methods need AA or not
     //TODO: what models are AA restrictive? Do we need to go check on github?
@@ -97,14 +98,15 @@ public class PTMhandler {
     }
     public static final HashMap<String, Double> AAunimodToModMass = makeAAUnimodToModMass();
 
-    private static HashMap<String, Double> makeUnimodToModMassAlphaPeptDeep(boolean includeAA) throws IOException {
+    @SuppressWarnings("unchecked")
+    private static <T> Map<T, Double> makeUnimodToModMassAlphaPeptDeep(boolean includeAA) throws IOException {
         ArrayList<String> modPaths = new ArrayList<>();
         modPaths.add("/ptm_resources/alphapept_koina.csv");
         if (!Constants.additionalMods.isEmpty()) {
             modPaths.add(Constants.additionalMods);
         }
 
-        HashMap<String, Double> map = new HashMap<>();
+        Map<T, Double> map = new HashMap<>();
         for (String modPath : modPaths) {
             //get unimod code and monoisotopic mass
             InputStream stream = PTMhandler.class.getResourceAsStream(modPath);
@@ -120,15 +122,15 @@ public class PTMhandler {
                 String unimod = lineSplit[7];
                 Double mass = Double.parseDouble(lineSplit[1]);
                 if (includeAA) {
-                    String AA = lineSplit[0].substring(0, 1);
-                    unimod = AA + unimod;
+                    map.put((T) (lineSplit[0].charAt(0) + unimod), mass);
+                } else {
+                    map.put((T) Integer.valueOf(unimod), mass);
                 }
-                map.put(unimod, mass);
             }
         }
         return map;
     }
-    public static final HashMap<String, Double> unimodToModMassAlphaPeptDeep;
+    public static final Map<Integer, Double> unimodToModMassAlphaPeptDeep;
 
     static {
         try {
@@ -138,7 +140,7 @@ public class PTMhandler {
         }
     }
 
-    public static final HashMap<String, Double> AAunimodToModMassAlphaPeptDeep;
+    public static final Map<String, Double> AAunimodToModMassAlphaPeptDeep;
 
     static {
         try {
@@ -148,20 +150,15 @@ public class PTMhandler {
         }
     }
 
-    private static HashMap<String, Double> makeUnimodOboToModMass() throws Exception {
-        HashMap<String, Double> modmap = new HashMap<>();
-        UnimodOboReader uobo = new UnimodOboReader(Paths.get(Constants.unimodObo));
-        for (Map.Entry<String, Float> entry : uobo.unimodMassMap.entrySet()) {
-           modmap.put(entry.getKey().split(":")[1], Double.valueOf(entry.getValue()));
-        }
-        return modmap;
-    }
-
-    public static final HashMap<String, Double> unimodOboToModMass;
+    public static final Map<Integer, Double> unimodOboToModMass;
 
     static {
         try {
-            unimodOboToModMass = makeUnimodOboToModMass();
+            unimodOboToModMass = new HashMap<>();
+            UnimodOboReader uobo = new UnimodOboReader(Paths.get(Constants.unimodObo));
+            for (Map.Entry<String, Float> entry : uobo.unimodMassMap.entrySet()) {
+                unimodOboToModMass.put(Integer.parseInt(entry.getKey().split(":")[1]), Double.valueOf(entry.getValue()));
+            }
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
@@ -225,7 +222,7 @@ public class PTMhandler {
         }
 
         //all unimod codes allowed
-        HashMap<String, Double> modMap;
+        Map<String, Double> modMap;
         if (model.equals("alphapept")) {
             modMap = AAunimodToModMassAlphaPeptDeep;
         } else {
@@ -265,7 +262,7 @@ public class PTMhandler {
     }
 
     //returns unimod for the reportedMass, or empty string if not found
-    private static String findUnimodForMass(HashSet<String> allowedMods, HashMap<String, Double> modMap,
+    private static String findUnimodForMass(Set<String> allowedMods, Map<String, Double> modMap,
                                             Double reportedMass,
                                             String peptide, int start, int end,
                                             boolean removeMods, boolean cterm) {
@@ -307,7 +304,7 @@ public class PTMhandler {
     }
 
     //works for diann
-    public static String formatPeptideSpecificToBase(String peptide, HashMap<String, Double> modmap) {
+    public static String formatPeptideSpecificToBase(String peptide, Map<Integer, Double> modmap) {
         String newpeptide = peptide.toUpperCase();
         newpeptide = newpeptide.replace("UNIMOD:","");
 
@@ -326,7 +323,7 @@ public class PTMhandler {
             }
         }
         for (int i = newStarts.size() - 1; i > -1; i--) {
-            String unimod = newpeptide.substring(newStarts.get(i) + 1, newEnds.get(i));
+            int unimod = Integer.parseInt(newpeptide.substring(newStarts.get(i) + 1, newEnds.get(i)));
             try {
                 String modMass = String.format("%.4f", modmap.get(unimod));
                 newpeptide = newpeptide.substring(0, newStarts.get(i) + 1) + modMass + newpeptide.substring(newEnds.get(i));

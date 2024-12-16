@@ -17,23 +17,18 @@
 
 package peptideptmformatting;
 
-import static utils.Print.printError;
-
 import allconstants.Constants;
+import umich.ms.fileio.filetypes.unimod.UnimodOboReader;
+
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.nio.file.Files;
 import java.nio.file.Paths;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Map;
-import java.util.Objects;
-import java.util.Set;
-import umich.ms.fileio.filetypes.unimod.UnimodOboReader;
+import java.util.*;
+
+import static utils.Print.printError;
 
 public class PTMhandler {
     //handling of PTMs, all in one location.
@@ -150,14 +145,23 @@ public class PTMhandler {
         }
     }
 
-    public static final Map<Integer, Double> unimodOboToModMass;
+    public static Map<Integer, Double> unimodOboToModMass;
 
     static {
-        try {
-            unimodOboToModMass = new HashMap<>();
-            UnimodOboReader uobo = new UnimodOboReader(Paths.get(Constants.unimodObo));
-            for (Map.Entry<String, Float> entry : uobo.unimodMassMap.entrySet()) {
-                unimodOboToModMass.put(Integer.parseInt(entry.getKey().split(":")[1]), Double.valueOf(entry.getValue()));
+        try { //only do this when library tsv predicted library is specified
+            if ((Constants.spectraPredFile != null && Constants.spectraPredFile.endsWith(".tsv")) ||
+                    (Constants.RTPredFile != null && Constants.RTPredFile.endsWith(".tsv")) ||
+                    (Constants.IMPredFile != null && Constants.IMPredFile.endsWith(".tsv")) ||
+                    (Constants.auxSpectraPredFile != null && Constants.auxSpectraPredFile.endsWith(".tsv"))) {
+                if (Constants.unimodObo == null) {
+                    printError("Parameter 'unimodObo' must be specified if loading a predicted library in library.tsv format. Exiting");
+                    System.exit(1);
+                }
+                unimodOboToModMass = new HashMap<>();
+                UnimodOboReader uobo = new UnimodOboReader(Paths.get(Constants.unimodObo));
+                for (Map.Entry<String, Float> entry : uobo.unimodMassMap.entrySet()) {
+                    unimodOboToModMass.put(Integer.parseInt(entry.getKey().split(":")[1]), Double.valueOf(entry.getValue()));
+                }
             }
         } catch (Exception e) {
             throw new RuntimeException(e);

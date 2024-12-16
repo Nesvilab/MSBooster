@@ -21,6 +21,8 @@ import allconstants.Constants;
 import features.spectra.MassCalculator;
 import features.spectra.SpectrumComparison;
 
+import java.io.IOException;
+import java.net.URISyntaxException;
 import java.util.*;
 
 public class PeptideObj {
@@ -74,7 +76,7 @@ public class PeptideObj {
     public double intensity_distribution_similarity;
 
     public PeptideObj(MzmlScanNumber scanNumObj, String name, int rank, int targetORdecoy, String escore,
-                      float[] predMZs, float[] predIntensities, float predRT, Float predIM) {
+                      float[] predMZs, float[] predIntensities, float predRT, Float predIM) throws IOException, URISyntaxException {
         this.name = name;
         this.charge = Integer.parseInt(name.split("\\|")[1]);
         this.rank = rank;
@@ -103,7 +105,7 @@ public class PeptideObj {
     }
 
     public PeptideObj(MzmlScanNumber scanNumObj, String name, int rank, int targetORdecoy, String escore,
-                      float[] predMZs, float[] predIntensities, float predRT, Float predIM, String[] fragmentIonTypes) {
+                      float[] predMZs, float[] predIntensities, float predRT, Float predIM, String[] fragmentIonTypes) throws IOException, URISyntaxException {
         this.name = name;
         this.charge = Integer.parseInt(name.split("\\|")[1]);
         this.rank = rank;
@@ -136,7 +138,7 @@ public class PeptideObj {
 
     //how to deal with this if ignored fragment ions types, so matchedIntensities and fragmentIonTypes not same length?
     //save masscalculator and annotateMZs
-    private void makeFragmentAnnotationFeatures(float[] predMZs, float[] predInts) {
+    private void makeFragmentAnnotationFeatures(float[] predMZs, float[] predInts) throws IOException, URISyntaxException { //TODO what if we want to use unispec?
         //filter for top fragments for all experimental and pred vectors
         ArrayList<Float> expIntensitiesList = new ArrayList<>();
         ArrayList<Float> expMZsList = new ArrayList<>();
@@ -197,7 +199,7 @@ public class PeptideObj {
         }
 
         MassCalculator mc = new MassCalculator(name.split("\\|")[0], charge);
-        String[] expFragmentIonTypes = mc.annotateMZs(expMZs)[1];
+        String[] expFragmentIonTypes = mc.annotateMZs(expMZs, "default", true)[1];
         String[] predFragmentIonTypes = predTypes1;
 
         List<String> fragmentIonHierarchyList = Arrays.asList(Constants.fragmentIonHierarchy);

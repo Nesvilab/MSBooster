@@ -53,4 +53,8 @@ public class NumericUtils {
         }
         return sum;
     }
+
+    public static boolean isUppercaseOrDigit(char c) {
+        return Character.isUpperCase(c) || Character.isDigit(c);
+    }
 }

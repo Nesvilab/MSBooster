@@ -389,20 +389,20 @@ public class PinWriter {
                         case "z-NL_matched_intensity":
                             formattedWrite("z-NL_matched_intensity", pepObj.matchedIntensities.get("z-NL"));
                             break;
-                        case "precursor_matched_intensity":
-                            formattedWrite("precursor_matched_intensity", pepObj.matchedIntensities.get("precursor"));
+                        case "p_matched_intensity":
+                            formattedWrite("p_matched_intensity", pepObj.matchedIntensities.get("p"));
                             break;
-                        case "precursor-NL_matched_intensity":
-                            formattedWrite("precursor-NL_matched_intensity", pepObj.matchedIntensities.get("precursor-NL"));
+                        case "p-NL_matched_intensity":
+                            formattedWrite("p-NL_matched_intensity", pepObj.matchedIntensities.get("p-NL"));
                             break;
                         case "internal_matched_intensity":
-                            formattedWrite("internal_matched_intensity", pepObj.matchedIntensities.get("internal"));
+                            formattedWrite("internal_matched_intensity", pepObj.matchedIntensities.get("int"));
                             break;
                         case "internal-NL_matched_intensity":
-                            formattedWrite("internal-NL_matched_intensity", pepObj.matchedIntensities.get("internal-NL"));
+                            formattedWrite("internal-NL_matched_intensity", pepObj.matchedIntensities.get("int-NL"));
                             break;
                         case "immonium_matched_intensity":
-                            formattedWrite("immonium_matched_intensity", pepObj.matchedIntensities.get("immonium"));
+                            formattedWrite("immonium_matched_intensity", pepObj.matchedIntensities.get("imm"));
                             break;
                         case "unknown_matched_intensity":
                             formattedWrite("unknown_matched_intensity", pepObj.matchedIntensities.get("unknown"));
@@ -463,25 +463,25 @@ public class PinWriter {
                             formattedWrite("z-NL_intensities_difference",
                                     Math.abs(pepObj.matchedIntensities.get("z-NL") - pepObj.predIntensities.get("z-NL")));
                             break;
-                        case "precursor_intensities_difference":
-                            formattedWrite("precursor_intensities_difference",
-                                    Math.abs(pepObj.matchedIntensities.get("precursor") - pepObj.predIntensities.get("precursor")));
+                        case "p_intensities_difference":
+                            formattedWrite("p_intensities_difference",
+                                    Math.abs(pepObj.matchedIntensities.get("p") - pepObj.predIntensities.get("p")));
                             break;
-                        case "precursor-NL_intensities_difference":
-                            formattedWrite("precursor-NL_intensities_difference",
-                                    Math.abs(pepObj.matchedIntensities.get("precursor-NL") - pepObj.predIntensities.get("precursor-NL")));
+                        case "p-NL_intensities_difference":
+                            formattedWrite("p-NL_intensities_difference",
+                                    Math.abs(pepObj.matchedIntensities.get("p-NL") - pepObj.predIntensities.get("p-NL")));
                             break;
                         case "internal_intensities_difference":
                             formattedWrite("internal_intensities_difference",
-                                    Math.abs(pepObj.matchedIntensities.get("internal") - pepObj.predIntensities.get("internal")));
+                                    Math.abs(pepObj.matchedIntensities.get("int") - pepObj.predIntensities.get("int")));
                             break;
                         case "internal-NL_intensities_difference":
                             formattedWrite("internal-NL_intensities_difference",
-                                    Math.abs(pepObj.matchedIntensities.get("internal-NL") - pepObj.predIntensities.get("internal-NL")));
+                                    Math.abs(pepObj.matchedIntensities.get("int-NL") - pepObj.predIntensities.get("int-NL")));
                             break;
                         case "immonium_intensities_difference":
                             formattedWrite("immonium_intensities_difference",
-                                    Math.abs(pepObj.matchedIntensities.get("immonium") - pepObj.predIntensities.get("immonium")));
+                                    Math.abs(pepObj.matchedIntensities.get("imm") - pepObj.predIntensities.get("imm")));
                             break;
                         case "unknown_intensities_difference":
                             formattedWrite("unknown_intensities_difference",
@@ -529,20 +529,20 @@ public class PinWriter {
                         case "z-NL_peak_counts":
                             formattedWrite("z-NL_peak_counts", pepObj.peakCounts.get("z-NL"));
                             break;
-                        case "precursor_peak_counts":
-                            formattedWrite("precursor_peak_counts", pepObj.peakCounts.get("precursor"));
+                        case "p_peak_counts":
+                            formattedWrite("p_peak_counts", pepObj.peakCounts.get("p"));
                             break;
-                        case "precursor-NL_peak_counts":
-                            formattedWrite("precursor-NL_peak_counts", pepObj.peakCounts.get("precursor-NL"));
+                        case "p-NL_peak_counts":
+                            formattedWrite("p-NL_peak_counts", pepObj.peakCounts.get("p-NL"));
                             break;
                         case "internal_peak_counts":
-                            formattedWrite("internal_peak_counts", pepObj.peakCounts.get("internal"));
+                            formattedWrite("internal_peak_counts", pepObj.peakCounts.get("int"));
                             break;
                         case "internal-NL_peak_counts":
-                            formattedWrite("internal-NL_peak_counts", pepObj.peakCounts.get("internal-NL"));
+                            formattedWrite("internal-NL_peak_counts", pepObj.peakCounts.get("int-NL"));
                             break;
                         case "immonium_peak_counts":
-                            formattedWrite("immonium_peak_counts", pepObj.peakCounts.get("immonium"));
+                            formattedWrite("immonium_peak_counts", pepObj.peakCounts.get("imm"));
                             break;
                         case "unknown_peak_counts":
                             formattedWrite("unknown_peak_counts", pepObj.peakCounts.get("unknown"));
@@ -589,20 +589,20 @@ public class PinWriter {
                         case "z-NL_spectral_similarity":
                             formattedWrite("z-NL_spectral_similarity", pepObj.individualSpectralSimilarities.get("z-NL"));
                             break;
-                        case "precursor_spectral_similarity":
-                            formattedWrite("precursor_spectral_similarity", pepObj.individualSpectralSimilarities.get("precursor"));
+                        case "p_spectral_similarity":
+                            formattedWrite("p_spectral_similarity", pepObj.individualSpectralSimilarities.get("p"));
                             break;
-                        case "precursor-NL_spectral_similarity":
-                            formattedWrite("precursor-NL_spectral_similarity", pepObj.individualSpectralSimilarities.get("precursor-NL"));
+                        case "p-NL_spectral_similarity":
+                            formattedWrite("p-NL_spectral_similarity", pepObj.individualSpectralSimilarities.get("p-NL"));
                             break;
                         case "internal_spectral_similarity":
-                            formattedWrite("internal_spectral_similarity", pepObj.individualSpectralSimilarities.get("internal"));
+                            formattedWrite("internal_spectral_similarity", pepObj.individualSpectralSimilarities.get("int"));
                             break;
                         case "internal-NL_spectral_similarity":
-                            formattedWrite("internal-NL_spectral_similarity", pepObj.individualSpectralSimilarities.get("internal-NL"));
+                            formattedWrite("internal-NL_spectral_similarity", pepObj.individualSpectralSimilarities.get("int-NL"));
                             break;
                         case "immonium_spectral_similarity":
-                            formattedWrite("immonium_spectral_similarity", pepObj.individualSpectralSimilarities.get("immonium"));
+                            formattedWrite("immonium_spectral_similarity", pepObj.individualSpectralSimilarities.get("imm"));
                             break;
                         case "unknown_spectral_similarity":
                             formattedWrite("unknown_spectral_similarity", pepObj.individualSpectralSimilarities.get("unknown"));

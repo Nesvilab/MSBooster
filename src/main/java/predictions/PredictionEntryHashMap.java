@@ -156,6 +156,7 @@ public class PredictionEntryHashMap extends ConcurrentHashMap<String, Prediction
                         case "unispec":
                         case "prosit":
                         case "prosittmt":
+                        case "predfull":
                             pf = new PeptideFormatter(
                                     new PeptideFormatter(line[0], line[1], "base").getModel(predMap.modelType),
                                     line[1], predMap.modelType);

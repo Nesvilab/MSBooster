@@ -17,33 +17,35 @@
 
 package readers.predictionreaders;
 
-import static utils.Print.printInfo;
-
 import allconstants.Constants;
 import features.spectra.MassCalculator;
 import peptideptmformatting.PeptideFormatter;
 import peptideptmformatting.PeptideSkipper;
 import predictions.PredictionEntry;
-import readers.datareaders.PinReader;
 import readers.MgfFileReader;
+import readers.datareaders.PinReader;
 import umich.ms.fileio.exceptions.FileParsingException;
 
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileReader;
 import java.io.IOException;
+import java.net.URISyntaxException;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.Set;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 
+import static features.spectra.MassCalculator.allNeutralLossMasses;
+import static utils.Print.printInfo;
+
 public class PredFullSpeclibReader extends MgfFileReader {
     HashSet<String> peptides = new HashSet<>();
 
     public PredFullSpeclibReader(String file, boolean createScanNumObjects, File[] pinFiles,
                                  ExecutorService executorService)
-            throws InterruptedException, ExecutionException, FileParsingException, IOException {
+            throws InterruptedException, ExecutionException, FileParsingException, IOException, URISyntaxException {
         //initially start with mgf reading
         super(file, createScanNumObjects, executorService, "PredFull");
 
@@ -98,7 +100,7 @@ public class PredFullSpeclibReader extends MgfFileReader {
             MassCalculator mc = new MassCalculator(peptideToSearch.getBase(), peptideToSearch.getCharge());
             //annotate ion
             //any calculated annotated fragment is considered
-            String[][] info = mc.annotateMZs(pe.mzs);
+            String[][] info = mc.annotateMZs(pe.mzs, "default", true);
             String[] annotations = info[0];
             String[] fragmentIonTypes = info[1];
 
@@ -145,9 +147,9 @@ public class PredFullSpeclibReader extends MgfFileReader {
                     String ionName = nlSplitSplit[0];
                     switch (ionName) {
                         case "MH":
-                            newMZ.add(shiftedMC.calcMass(shiftedMC.modMasses.size() - 2, "y", charge, nl, 0));
+                            newMZ.add(shiftedMC.calcMass(shiftedMC.modMasses.size() - 2, "y", charge, allNeutralLossMasses.get(nl), 0));
                             break;
-                        case "immonium": //TODO: why is immonium showing up twice?
+                        case "imm": //TODO: why is immonium showing up twice?
                             //need to check if mox of modified and unmodified, and exclude if so
                             //don't know if both mod and unmod m/z will be that intensity, safer to exclude
                             Set<Double> mods = new HashSet<>();
@@ -187,9 +189,9 @@ public class PredFullSpeclibReader extends MgfFileReader {
                                 numbers.add(Integer.parseInt(ionName.substring(letterPositions.get(i) + 1, letterPositions.get(i - 1))));
                             }
                             if (numbers.size() == 1) {
-                                newMZ.add(shiftedMC.calcMass(numbers.get(0), sb.toString(), charge, nl, 0));
+                                newMZ.add(shiftedMC.calcMass(numbers.get(0), sb.toString(), charge, allNeutralLossMasses.get(nl), 0));
                             } else {
-                                newMZ.add(shiftedMC.calcMass(numbers.get(0), numbers.get(1), sb.toString(), nl, 0));
+                                newMZ.add(shiftedMC.calcMass(numbers.get(0), numbers.get(1), sb.toString(), allNeutralLossMasses.get(nl), 0));
                             }
                             break;
                     }

@@ -31,6 +31,7 @@ import umich.ms.fileio.exceptions.FileParsingException;
 
 import java.io.File;
 import java.io.IOException;
+import java.net.URISyntaxException;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.nio.DoubleBuffer;
@@ -47,7 +48,7 @@ public class DlibReader implements LibraryPredictionMapper {
     ArrayList<String> filenames = new ArrayList<>();
     PredictionEntryHashMap allPreds = new PredictionEntryHashMap();
 
-    public DlibReader(String dlib) throws SQLException, IOException, FileParsingException, ExecutionException, InterruptedException {
+    public DlibReader(String dlib) throws SQLException, IOException, FileParsingException, ExecutionException, InterruptedException, URISyntaxException {
         File predsDirectory = new File(dlib);
         String[] predsFiles = predsDirectory.list();
         filenames = new ArrayList<String>();
@@ -156,7 +157,7 @@ public class DlibReader implements LibraryPredictionMapper {
                                 pfDecoy.getCharge());
                         PredictionEntry pe = allPreds.get(targetPeptide);
 
-                        String[] annotations = mcTarget.annotateMZs(pe.mzs)[0];
+                        String[] annotations = mcTarget.annotateMZs(pe.mzs, "default", false)[0];
                         float[] decoyMZs = new float[annotations.length];
                         for (int i = 0; i < annotations.length; i++) {
                             String anno = annotations[i];
@@ -179,7 +180,7 @@ public class DlibReader implements LibraryPredictionMapper {
                         //get predictionEntry
                         PredictionEntry tmp = allPreds.get(pf.getDlib());
                         MassCalculator mc = new MassCalculator(pf.getDlib().split("\\|")[0], pf.getCharge());
-                        String[][] info = mc.annotateMZs(tmp.mzs);
+                        String[][] info = mc.annotateMZs(tmp.mzs, "default", false);
                         String[] annotations = info[0];
 
                         MassCalculator shiftedMC = new MassCalculator(pf.getBase(), pf.getCharge());

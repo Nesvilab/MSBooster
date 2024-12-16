@@ -200,6 +200,9 @@ public class PTMhandler {
             case "alphapept":
                 modelAllowedUnimods.addAll(AAunimodToModMassAlphaPeptDeep.keySet());
                 break;
+            case "predfull":
+                modelAllowedUnimods = predfullAAMods;
+                break;
         }
 
         //set unimod string formatting
@@ -524,4 +527,6 @@ public class PTMhandler {
             Arrays.asList("M35", "C4"));
     public static final HashSet<String> deeplcAAMods = new HashSet<>(
             Arrays.asList("M35", "C4", "S21", "T21", "Y21", "[1"));
+    public static final HashSet<String> predfullAAMods = new HashSet<>(
+            Arrays.asList("M35", "C4"));
 }

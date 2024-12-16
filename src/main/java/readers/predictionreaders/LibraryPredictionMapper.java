@@ -62,7 +62,7 @@ public interface LibraryPredictionMapper {
 
     static LibraryPredictionMapper createLibraryPredictionMapper(String file, File[] pinFiles,
                                                                  ExecutorService executorService)
-            throws IOException, InterruptedException, ExecutionException, FileParsingException {
+            throws IOException, InterruptedException, ExecutionException, FileParsingException, URISyntaxException {
         return new PredFullSpeclibReader(file, false, pinFiles, executorService);
     }
 

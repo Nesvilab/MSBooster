@@ -353,7 +353,7 @@ public class MainClass {
             Constants.intensitiesDifferenceFeatures = Constants.makeintensitiesDifference();
 
             //make models properly uppercased, or throw error if not right
-            HashMap<String, String> modelMapper = LowercaseModelMapper.lowercaseToModel; //TODO will be a pain to keep updating for every new model
+            HashMap<String, String> modelMapper = LowercaseModelMapper.lowercaseToModel;
             if (modelMapper.containsKey(Constants.spectraModel.toLowerCase())) {
                 Constants.spectraModel = modelMapper.get(Constants.spectraModel.toLowerCase());
             } else {

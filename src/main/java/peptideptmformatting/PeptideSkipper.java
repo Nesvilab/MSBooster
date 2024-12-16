@@ -40,6 +40,9 @@ public class PeptideSkipper {
         if (model.contains("unispec") && stripped.length() > 40) {
             return true;
         }
+        if (model.contains("deeplc") && stripped.length() > 60) {
+            return true;
+        }
         //charge
         int chargeInt = Integer.parseInt(charge);
         if (model.contains("unispec") && chargeInt > 5) {

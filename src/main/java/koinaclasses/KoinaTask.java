@@ -17,22 +17,21 @@
 
 package koinaclasses;
 
-import static utils.Print.printError;
-
-import modelcallers.KoinaModelCaller;
 import allconstants.Constants;
+import modelcallers.KoinaModelCaller;
 import readers.predictionreaders.KoinaLibReader;
 
 import javax.net.ssl.HttpsURLConnection;
-import java.net.HttpURLConnection;
 import java.io.*;
+import java.net.HttpURLConnection;
+import java.net.URL;
 import java.nio.charset.StandardCharsets;
 import java.util.Timer;
 import java.util.TimerTask;
 import java.util.concurrent.Callable;
 import java.util.concurrent.atomic.AtomicLong;
 
-import java.net.URL;
+import static utils.Print.printError;
 
 public class KoinaTask implements Callable<Boolean> {
     private final String jsonFilePath;

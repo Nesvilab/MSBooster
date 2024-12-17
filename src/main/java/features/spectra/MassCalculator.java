@@ -164,6 +164,7 @@ public class MassCalculator {
         map.put(14, "int-NL");
         map.put(15, "p"); //precursor
         map.put(16, "p-NL");
+        map.put(17, "unknown");
         return map;
     }
     public static HashMap<Integer, String> flagTOion = makeFlagTOion();
@@ -418,7 +419,7 @@ public class MassCalculator {
         for (int iCharge = 1; iCharge < charge + 1; iCharge++) {
             //regular
             if (Constants.lowestFragmentIonType.contains("p")) {
-                String ionName = "MH" + "+" + iCharge;
+                String ionName = "p^" + iCharge;
                 addToFragmentIons(calcMassPrecursor(0, 0, iCharge),
                         new String[]{ionName, "p"}, fragmentIons, annotationMasses);
             }
@@ -426,7 +427,7 @@ public class MassCalculator {
             //neutral loss
             if (Constants.lowestFragmentIonType.contains("p-NL")) {
                 for (String nl : selectNeutralLosses) {
-                    String ionName = "MH-" + nl + "+" + iCharge;
+                    String ionName = "p-" + nl + "^" + iCharge;
                     addToFragmentIons(calcMassPrecursor(0, allNeutralLossMasses.get(nl), iCharge),
                             new String[]{ionName, "p-NL"}, fragmentIons, annotationMasses);
                 }
@@ -442,7 +443,7 @@ public class MassCalculator {
                 for (int iCharge = 1; iCharge < maxCharge + 1; iCharge++) {
                     //regular fragment
                     if (Constants.lowestFragmentIonType.contains(ionType)) {
-                        String ionName = ionType + num + "+" + iCharge;
+                        String ionName = ionType + num + "^" + iCharge;
                         addToFragmentIons(calcMass(num, ionType, iCharge, 0), new String[]{ionName, ionType},
                                 fragmentIons, annotationMasses);
                     }
@@ -451,13 +452,13 @@ public class MassCalculator {
                     if (Constants.lowestFragmentIonType.contains(ionType + "-NL")) {
                         if (!ionType.equals("c")) {
                             for (String nl : selectNeutralLosses) {
-                                String ionName = ionType + num + "-" + nl + "+" + iCharge;
+                                String ionName = ionType + num + "-" + nl + "^" + iCharge;
                                 addToFragmentIons(calcMass(num, ionType, iCharge, allNeutralLossMasses.get(nl), 0),
                                         new String[]{ionName, ionType + "-NL"},
                                         fragmentIons, annotationMasses);
                             }
                         } else { //c-NH3 is same as b
-                            String ionName = ionType + num + "-H2O" + "+" + iCharge;
+                            String ionName = ionType + num + "-H2O^" + iCharge;
                             addToFragmentIons(calcMass(num, ionType, iCharge, allNeutralLossMasses.get("H2O"), 0),
                                     new String[]{ionName, "c-NL"},
                                     fragmentIons, annotationMasses);
@@ -476,14 +477,19 @@ public class MassCalculator {
                         break;
                     }
 
+                    //getting subsequence
+                    //start position should be peptide.length - num1
+                    int start = peptide.length() - num1;
+                    String subsequence = peptide.substring(start, start + num2);
+
                     if (Constants.lowestFragmentIonType.contains("int")) {
-                        String ionName = "y" + num1 + ionType.charAt(0) + num2;
+                        String ionName = "Int:y" + num1 + ionType.charAt(0) + num2 + "/" + subsequence;
                         addToFragmentIons(calcMass(num1, num2, ionType, 0), new String[]{ionName, "int"},
                                 fragmentIons, annotationMasses);
                     }
                     if (Constants.lowestFragmentIonType.contains("int-NL")) {
                         for (String nl : selectNeutralLosses) {
-                            String ionName = "y" + num1 + ionType.charAt(0) + num2 + "-" + nl;
+                            String ionName = "Int:y" + num1 + ionType.charAt(0) + num2 + "-" + nl + "/" + subsequence;
                             addToFragmentIons(calcMass(num1, num2, ionType,
                                     allNeutralLossMasses.get(nl), 0), new String[]{ionName, "int-NL"},
                                     fragmentIons, annotationMasses);
@@ -502,9 +508,9 @@ public class MassCalculator {
 
                     //get attached mod
                     if (modMasses.get(i + 1) != 0) {
-                        ionName = "immonium:" + peptide.charAt(i) + "[" + modMasses.get(i + 1) + "]";
+                        ionName = "Imm:" + peptide.charAt(i) + "[" + modMasses.get(i + 1) + "]";
                     } else {
-                        ionName = "immonium:" + peptide.charAt(i);
+                        ionName = "Imm:" + peptide.charAt(i);
                     }
 
                     addToFragmentIons((float) (modMasses.get(i + 1) + AAmap.get(peptide.charAt(i)) - 26.99),
@@ -517,8 +523,6 @@ public class MassCalculator {
     }
 
     private void possibleUnispecMzs() throws IOException, URISyntaxException {
-        HashMap<String, Float> unispecMzs = new HashMap<>();
-
         final InputStream stream = getClass().getClassLoader().getResourceAsStream(
                 "fragment_annotation/unispec_fragments.txt");
         final InputStreamReader reader = new InputStreamReader(stream);
@@ -727,6 +731,7 @@ public class MassCalculator {
         double oldSum;
         switch (ionType) {
             case "p":
+            case "p-NL":
                 newSum = sum(modMasses);
                 oldSum = sum(oldMc.modMasses);
                 return (float) ((newSum - oldSum) / charge);
@@ -735,7 +740,10 @@ public class MassCalculator {
                 //will need to have text file specifying immonium abbreviations and localized AA
                 //this can be future TODO
                 return 0;
+            case "unknown":
+                return 0;
             case "int":
+            case "int-NL":
                 //get position within sequence
                 //get rid of NL and isotope info
                 String annot = "";

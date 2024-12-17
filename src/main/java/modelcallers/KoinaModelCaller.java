@@ -26,6 +26,7 @@ import org.knowm.xchart.XYChart;
 import org.knowm.xchart.XYChartBuilder;
 import org.knowm.xchart.style.Styler;
 import peptideptmformatting.PeptideFormatter;
+import predictions.FragmentAnnotationParser;
 import predictions.PredictionEntry;
 import predictions.PredictionEntryHashMap;
 import readers.predictionreaders.KoinaLibReader;
@@ -36,7 +37,6 @@ import java.awt.*;
 import java.io.File;
 import java.io.FileReader;
 import java.io.IOException;
-import java.net.URISyntaxException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashSet;
@@ -231,7 +231,7 @@ public class KoinaModelCaller {
     }
 
     public static void parseKoinaOutput(String fileName, String koinaString, String property, String model,
-                                        KoinaLibReader klr) throws IOException, URISyntaxException {
+                                        KoinaLibReader klr) throws Exception {
         if (property.equalsIgnoreCase("rt")) {
             String rts = koinaString.split("data")[2];
             String[] results = rts.substring(3, rts.length() - 4).split(",");
@@ -340,7 +340,7 @@ public class KoinaModelCaller {
             int[][] allFragNums = new int[numPeptides][];
             int[][] allCharges = new int[numPeptides][];
 
-            if (!model.contains("PredFull")) {
+            if (!model.contains("PredFull")) { //fragidx does not currently exist for predfull
                 msInfo = dataResults[fragIdx].split("data\":\\[")[1];
                 msInfo = msInfo.substring(0, msInfo.length() - 1);
                 results = msInfo.split(",");
@@ -354,6 +354,7 @@ public class KoinaModelCaller {
                         String result = results[j];
                         result = result.substring(1, result.length() - 1);
                         if (acceptedIdx[i].contains(j)) {
+                            //TODO: this part can be turned into method
                             if (model.contains("UniSpec")) {
                                 fullAnnotation.add(result);
                                 //charge
@@ -424,6 +425,7 @@ public class KoinaModelCaller {
                                 }
                             } else {
                                 //this version for other models
+                                //calculate mzs ourselves later, in case we do not trust those from model
                                 String[] info = result.split("\\+");
                                 charges.add(Integer.parseInt(info[1]));
                                 fragmentIonTypes.add(info[0].substring(0, 1));
@@ -456,10 +458,27 @@ public class KoinaModelCaller {
                         String[] pepSplit = peptide.split("\\|");
                         MassCalculator mc = new MassCalculator(pepSplit[0], pepSplit[1]);
                         String[][] annot_frag = mc.annotateMZs(allMZs[i], "default", true);
+
+                        //assign values
+                        //use fragment annotation parser here to get fragnums and charge
+                        String[] fragmentIonTypesArray = new String[allMZs[i].length];
+                        String[] fullAnnotationArray = new String[allMZs[i].length];
+                        int[] fragNumsArray = new int[allMZs[i].length];
+                        int[] chargesArray = new int[allMZs[i].length];
+                        for (int j = 0; j < allMZs[i].length; j++) {
+                            FragmentAnnotationParser fap = new FragmentAnnotationParser((annot_frag[0][j]));
+                            fullAnnotationArray[j] = annot_frag[0][j];
+                            fragmentIonTypesArray[j] = annot_frag[1][j];
+                            fragNumsArray[j] = fap.fragnum;
+                            chargesArray[j] = fap.charge;
+                        }
+                        allFragmentIonTypes[i] = fragmentIonTypesArray;
+                        allFragNums[i] = fragNumsArray;
+                        allCharges[i] = chargesArray;
+                        allFullAnnotations[i] = fullAnnotationArray;
                     }
                 }
-            //TODO: what to do with predfull?
-            if (model.contains("UniSpec")) { //TODO: can merge these assign ms2 methods
+            if (model.contains("UniSpec") || model.contains("PredFull")) { //TODO: can merge these assign ms2 methods
                 assignMS2(fileName, allMZs, allIntensities, allFragmentIonTypes, allFragNums, allCharges,
                         allFullAnnotations, klr, modelType);
             } else {

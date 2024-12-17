@@ -24,8 +24,6 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.stream.IntStream;
 
-import static utils.Print.printError;
-
 public class PredictionEntry {
     public float[] mzs = new float[0];
     public float[] intensities = new float[0];
@@ -54,6 +52,7 @@ public class PredictionEntry {
         this.charges = new int[charges.length];
         this.fragmentIonTypes = new String[fragmentIonTypes.length];
         this.flags = new int[flags.length];
+        this.isotopes = new int[mzs.length];
 
         int[] sortedIndices = IntStream.range(0, mzs.length)
                 .boxed().sorted((k, j) -> Float.compare(mzs[k], mzs[j]))

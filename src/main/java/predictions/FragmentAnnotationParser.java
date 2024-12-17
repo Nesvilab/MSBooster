@@ -24,6 +24,7 @@ public class FragmentAnnotationParser {
     public float neutralLoss = 0f;
 
     public FragmentAnnotationParser(String annotation) throws IOException, URISyntaxException {
+        annotation = annotation.split(";")[0]; //if multiple possible annotations (from default fragment assignment), use first
         fullAnnotation = annotation;
 
         //charge
@@ -78,6 +79,9 @@ public class FragmentAnnotationParser {
                     fragmentIonType = "imm";
                 }
                 break;
+            case 'u': //unknown
+                fragmentIonType = "unknown";
+                break;
             default:
                 utils.Print.printError(annotation + " not supported for parsing. Exiting");
                 System.exit(1);
@@ -105,7 +109,9 @@ public class FragmentAnnotationParser {
             //in MassCalculator
             //num1 is peptide length - start
             //num2 should be extent
-            if (annotation.contains("/")) { //koina output
+            if (annotation.contains(":")) {
+                //formatting from default possible fragments method
+            } else if (annotation.contains("/")) { //koina output
                 String[] annotationSplit = annotation.split("/");
                 internalSequence = annotationSplit[1];
                 internalStartPosition = Integer.parseInt(annotationSplit[2]);

@@ -17,38 +17,9 @@
 
 package mainsteps;
 
-import static features.rtandim.LoessUtilities.gridSearchCV;
-import static utils.Print.printError;
-import static utils.Print.printInfo;
-
 import allconstants.Constants;
 import allconstants.LowercaseModelMapper;
 import features.spectra.MassCalculator;
-import java.io.BufferedReader;
-import java.io.BufferedWriter;
-import java.io.File;
-import java.io.FileReader;
-import java.io.FileWriter;
-import java.io.IOException;
-import java.lang.reflect.Field;
-import java.lang.reflect.Modifier;
-import java.nio.file.Files;
-import java.nio.file.Paths;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Comparator;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Locale;
-import java.util.Map;
-import java.util.Objects;
-import java.util.Set;
-import java.util.TreeMap;
-import java.util.concurrent.ScheduledThreadPoolExecutor;
-import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.stream.Collectors;
 import koinaclasses.KoinaMethods;
 import koinaclasses.NCEcalibrator;
 import kotlin.jvm.functions.Function1;
@@ -64,6 +35,20 @@ import utils.MyFileUtils;
 import utils.StatMethods;
 import writers.MgfFileWriter;
 import writers.PeptideFileCreator;
+
+import java.io.*;
+import java.lang.reflect.Field;
+import java.lang.reflect.Modifier;
+import java.nio.file.Files;
+import java.nio.file.Paths;
+import java.util.*;
+import java.util.concurrent.ScheduledThreadPoolExecutor;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.stream.Collectors;
+
+import static features.rtandim.LoessUtilities.gridSearchCV;
+import static utils.Print.printError;
+import static utils.Print.printInfo;
 
 //this is what I use in the java jar file
 public class MainClass {
@@ -371,6 +356,10 @@ public class MainClass {
             } else {
                 printError("No IM model called " + Constants.imModel + ". Exiting.");
                 System.exit(0);
+            }
+
+            if (Constants.spectraModel.equals("PredFull")) { //TODO: is this still needed? Not sure if mz is corrected
+                Constants.matchWithDaltons = true; //they report predictions in bins
             }
 
             //needed for nce calibration and best model search
@@ -1453,9 +1442,6 @@ public class MainClass {
             //create new pin file with features
             printInfo("Generating edited pin with following features: " + Arrays.toString(featuresArray));
             long start = System.nanoTime();
-            if (Constants.spectraModel.equals("PredFull")) { //TODO: is this still needed?
-                Constants.matchWithDaltons = true; //they report predictions in bins
-            }
             PercolatorFormatter.editPin(pmMatcher, featuresArray, Constants.editedPin, executorService);
             executorService.shutdown();
 

@@ -149,8 +149,8 @@ public class KoinaMethods {
             predList.add(klr.getPreds());
             assignedPreds.transferKoinaPreds(predList, fulltsv);
             klr.setPreds(assignedPreds);
-        } catch (IOException e) {
-            throw new RuntimeException(e);
+        } catch (Exception e) {
+            e.printStackTrace();
         }
         return klr.allPreds;
     }

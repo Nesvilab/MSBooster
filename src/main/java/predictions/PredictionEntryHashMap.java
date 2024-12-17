@@ -22,19 +22,16 @@ import features.spectra.MassCalculator;
 import peptideptmformatting.PeptideFormatter;
 import peptideptmformatting.PeptideSkipper;
 
-import static utils.Print.printError;
-
 import java.io.BufferedReader;
 import java.io.FileReader;
-import java.io.IOException;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
-import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Future;
+
+import static utils.Print.printError;
 
 public class PredictionEntryHashMap extends ConcurrentHashMap<String, PredictionEntry> {
     public String modelType;
@@ -125,7 +122,7 @@ public class PredictionEntryHashMap extends ConcurrentHashMap<String, Prediction
     //for when msbooster is calling models for the first time, not when it is reading in prepredicted libraries
     //TODO: also need to consider model. Unispec and Predfull transfer differently
     //TODO: can save aby fragments separately from other ones
-    public void transferKoinaPreds(ArrayList<PredictionEntryHashMap> predMaps, String fulltsv) throws IOException {
+    public void transferKoinaPreds(ArrayList<PredictionEntryHashMap> predMaps, String fulltsv) throws Exception {
         //iterate through entries of full tsv
         BufferedReader TSVReader = new BufferedReader(new FileReader(fulltsv));
         String l;
@@ -184,6 +181,7 @@ public class PredictionEntryHashMap extends ConcurrentHashMap<String, Prediction
 
                             MassCalculator oldMc = new MassCalculator(pf.getBase(), pf.getCharge());
 
+                            //TODO: this is an issue since fragnums and charges were set as 0 for predfull prediction
                             for (int i = 0; i < newMZs.length; i++) {
                                 newMZs[i] = oldPred.getMzs()[i] +
                                         mc.compareModMasses(oldMc, oldPred.getFragNums()[i],

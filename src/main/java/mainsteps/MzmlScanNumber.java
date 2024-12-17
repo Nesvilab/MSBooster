@@ -17,15 +17,7 @@
 
 package mainsteps;
 
-import static utils.NumericUtils.doubleToFloat;
-import static utils.Print.printError;
-import static utils.Print.printInfo;
-
 import allconstants.Constants;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.concurrent.atomic.AtomicInteger;
 import org.apache.commons.lang3.ArrayUtils;
 import peptideptmformatting.PeptideFormatter;
 import peptideptmformatting.PeptideSkipper;
@@ -41,6 +33,7 @@ import java.net.URISyntaxException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import static utils.NumericUtils.doubleToFloat;
 import static utils.Print.printError;

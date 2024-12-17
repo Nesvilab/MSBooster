@@ -17,16 +17,15 @@
 
 package readers.predictionreaders;
 
-import static utils.Print.printError;
-
-import java.io.File;
-import java.io.IOException;
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.ExecutorService;
 import predictions.PredictionEntryHashMap;
 import readers.LibraryTsvReader;
 import readers.MgfFileReader;
-import umich.ms.fileio.exceptions.FileParsingException;
+
+import java.io.File;
+import java.io.IOException;
+import java.util.concurrent.ExecutorService;
+
+import static utils.Print.printError;
 
 public interface LibraryPredictionMapper {
     //TODO: how many more methods can be made default?
@@ -62,7 +61,7 @@ public interface LibraryPredictionMapper {
 
     static LibraryPredictionMapper createLibraryPredictionMapper(String file, File[] pinFiles,
                                                                  ExecutorService executorService)
-            throws IOException, InterruptedException, ExecutionException, FileParsingException, URISyntaxException {
+            throws Exception {
         return new PredFullSpeclibReader(file, false, pinFiles, executorService);
     }
 

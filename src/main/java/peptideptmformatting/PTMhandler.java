@@ -265,6 +265,9 @@ public class PTMhandler {
             peptide = peptide.substring(0, start) + "-" + peptide.substring(start);
         }
 
+        //predfull assumes all Cs are carbamidomethylated
+        peptide = peptide.replace("[UNIMOD:4]", "");
+
         return new String[]{peptide, unimod}; //unimod is accepted unimod, or ""
     }
 

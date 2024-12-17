@@ -146,10 +146,10 @@ public class PredFullSpeclibReader extends MgfFileReader {
                     String[] nlSplitSplit = nlSplit[0].split(":");
                     String ionName = nlSplitSplit[0];
                     switch (ionName) {
-                        case "MH":
+                        case "p":
                             newMZ.add(shiftedMC.calcMass(shiftedMC.modMasses.size() - 2, "y", charge, allNeutralLossMasses.get(nl), 0));
                             break;
-                        case "imm": //TODO: why is immonium showing up twice?
+                        case "imm":
                             //need to check if mox of modified and unmodified, and exclude if so
                             //don't know if both mod and unmod m/z will be that intensity, safer to exclude
                             Set<Double> mods = new HashSet<>();

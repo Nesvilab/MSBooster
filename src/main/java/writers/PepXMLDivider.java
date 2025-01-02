@@ -17,26 +17,35 @@
 
 package writers;
 
-import static utils.Print.printError;
-import static utils.Print.printInfo;
-
-import peptideptmformatting.PeptideFormatter;
-import readers.datareaders.PinReader;
 import jakarta.xml.bind.JAXBContext;
 import jakarta.xml.bind.JAXBException;
 import jakarta.xml.bind.Marshaller;
 import org.apache.commons.lang3.ArrayUtils;
+import peptideptmformatting.PeptideFormatter;
+import readers.datareaders.PinReader;
 import umich.ms.fileio.exceptions.FileParsingException;
 import umich.ms.fileio.filetypes.pepxml.PepXmlParser;
-import umich.ms.fileio.filetypes.pepxml.jaxb.standard.*;
+import umich.ms.fileio.filetypes.pepxml.jaxb.standard.ModificationInfo;
+import umich.ms.fileio.filetypes.pepxml.jaxb.standard.MsmsPipelineAnalysis;
+import umich.ms.fileio.filetypes.pepxml.jaxb.standard.MsmsRunSummary;
+import umich.ms.fileio.filetypes.pepxml.jaxb.standard.SearchHit;
+import umich.ms.fileio.filetypes.pepxml.jaxb.standard.SpectrumQuery;
 
-import java.io.*;
+import java.io.BufferedReader;
+import java.io.BufferedWriter;
+import java.io.File;
+import java.io.FileReader;
+import java.io.FileWriter;
+import java.io.IOException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
+
+import static utils.Print.printError;
+import static utils.Print.printInfo;
 
 public class PepXMLDivider {
     int divisions;

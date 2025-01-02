@@ -22,7 +22,12 @@ import umontreal.ssj.probdist.EmpiricalDist;
 import umontreal.ssj.probdist.NormalDist;
 import umontreal.ssj.randvar.KernelDensityGen;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.Map;
+import java.util.TreeMap;
+
 
 public class StatMethods {
 

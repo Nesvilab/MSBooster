@@ -18,15 +18,20 @@
 package figures;
 
 import allconstants.Constants;
-import readers.datareaders.PinReader;
-import org.knowm.xchart.*;
+import org.knowm.xchart.CategoryChart;
+import org.knowm.xchart.CategoryChartBuilder;
+import org.knowm.xchart.Histogram;
 import org.knowm.xchart.style.Styler;
+import readers.datareaders.PinReader;
 
-import java.awt.*;
+import java.awt.Color;
+import java.awt.Font;
 import java.io.File;
 import java.io.IOException;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Set;
 
 import static figures.ExtensionPlotter.plot;
 

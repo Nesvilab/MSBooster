@@ -20,21 +20,30 @@ package features.rtandim;
 import allconstants.Constants;
 import com.github.sanity.pav.PairAdjacentViolators;
 import com.github.sanity.pav.Point;
+import kotlin.jvm.functions.Function1;
 import mainsteps.MzmlScanNumber;
 import mainsteps.PeptideObj;
-import kotlin.jvm.functions.Function1;
 import org.apache.commons.math3.analysis.interpolation.LoessInterpolator;
 import readers.datareaders.MzmlReader;
 import umich.ms.fileio.exceptions.FileParsingException;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.Comparator;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
 import java.util.stream.IntStream;
 
 import static allconstants.Constants.minLinearRegressionSize;
 import static allconstants.Constants.minLoessRegressionSize;
-import static utils.StatMethods.*;
 import static utils.Print.printError;
 import static utils.Print.printInfo;
+import static utils.StatMethods.*;
 
 public class LoessUtilities {
     //getPSMs returns number of PSMs fitting all criteria except e value cutoff

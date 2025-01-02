@@ -17,8 +17,6 @@
 
 package readers.predictionreaders;
 
-import static utils.Print.printInfo;
-
 import allconstants.Constants;
 import features.spectra.MassCalculator;
 import mainsteps.PinMzmlMatcher;
@@ -36,12 +34,18 @@ import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.nio.DoubleBuffer;
 import java.nio.FloatBuffer;
-import java.sql.*;
+import java.sql.Connection;
+import java.sql.DriverManager;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.sql.Statement;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.concurrent.ExecutionException;
 import java.util.zip.DataFormatException;
 import java.util.zip.Inflater;
+
+import static utils.Print.printInfo;
 
 //refer to https://bitbucket.org/searleb/encyclopedia/wiki/EncyclopeDIA%20File%20Formats
 public class DlibReader implements LibraryPredictionMapper {

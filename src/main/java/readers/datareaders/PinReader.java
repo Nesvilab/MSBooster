@@ -17,19 +17,30 @@
 
 package readers.datareaders;
 
-import static utils.InstrumentUtils.mapInstrumentToModelSpecific;
-import static utils.Print.printInfo;
-
 import allconstants.Constants;
-import peptideptmformatting.PeptideFormatter;
-import peptideptmformatting.PeptideSkipper;
 import mainsteps.PinMzmlMatcher;
 import org.apache.commons.lang3.ArrayUtils;
+import peptideptmformatting.PeptideFormatter;
+import peptideptmformatting.PeptideSkipper;
 import umich.ms.fileio.exceptions.FileParsingException;
 
-import java.io.*;
-import java.util.*;
+import java.io.BufferedInputStream;
+import java.io.BufferedReader;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileReader;
+import java.io.IOException;
+import java.io.InputStream;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.LinkedList;
+import java.util.PriorityQueue;
 import java.util.concurrent.ExecutionException;
+
+import static utils.InstrumentUtils.mapInstrumentToModelSpecific;
+import static utils.Print.printInfo;
 
 //TODO: which of these tools allows O abd U amino acids?
 public class PinReader {

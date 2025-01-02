@@ -20,7 +20,14 @@ package readers.datareaders;
 import peptideptmformatting.ModFormatter;
 import umich.ms.fileio.exceptions.FileParsingException;
 import umich.ms.fileio.filetypes.pepxml.PepXmlParser;
-import umich.ms.fileio.filetypes.pepxml.jaxb.standard.*;
+import umich.ms.fileio.filetypes.pepxml.jaxb.standard.ModAminoacidMass;
+import umich.ms.fileio.filetypes.pepxml.jaxb.standard.ModificationInfo;
+import umich.ms.fileio.filetypes.pepxml.jaxb.standard.MsmsPipelineAnalysis;
+import umich.ms.fileio.filetypes.pepxml.jaxb.standard.MsmsRunSummary;
+import umich.ms.fileio.filetypes.pepxml.jaxb.standard.SearchHit;
+import umich.ms.fileio.filetypes.pepxml.jaxb.standard.SearchResult;
+import umich.ms.fileio.filetypes.pepxml.jaxb.standard.SearchSummary;
+import umich.ms.fileio.filetypes.pepxml.jaxb.standard.SpectrumQuery;
 
 import java.nio.file.Path;
 import java.nio.file.Paths;

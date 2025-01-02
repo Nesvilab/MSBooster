@@ -17,18 +17,23 @@
 
 package figures;
 
-import allconstants.Constants;
-import readers.datareaders.MzmlReader;
 import kotlin.jvm.functions.Function1;
-import org.knowm.xchart.*;
+import org.knowm.xchart.XYChart;
+import org.knowm.xchart.XYChartBuilder;
+import org.knowm.xchart.XYSeries;
 import org.knowm.xchart.style.Styler;
 import org.knowm.xchart.style.markers.SeriesMarkers;
+import readers.datareaders.MzmlReader;
 
-import java.awt.*;
+import java.awt.Color;
 import java.io.File;
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
-import java.util.*;
+import java.util.Map;
 
 import static figures.ExtensionPlotter.plot;
 

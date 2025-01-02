@@ -33,7 +33,7 @@ import readers.predictionreaders.KoinaLibReader;
 import utils.ProgressReporter;
 import writers.JSONWriter;
 
-import java.awt.*;
+import java.awt.Font;
 import java.io.File;
 import java.io.FileReader;
 import java.io.IOException;

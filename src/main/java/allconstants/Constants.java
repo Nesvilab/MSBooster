@@ -259,8 +259,7 @@ public class Constants {
     public static Integer minPredictedFragmentNum = 0;
     public static Boolean createPredFileOnly = false;
 
-    //PredFull fragment ion annotation
-    //TODO: can only use for PredFull
+    //fragment ion annotation
     public static Boolean useMatchedIntensities = false;
     public static Boolean usePredIntensities = false;
     public static Boolean usePeakCounts = false;

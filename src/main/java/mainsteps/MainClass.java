@@ -339,7 +339,6 @@ public class MainClass {
             PinMzmlMatcher pmMatcher = new PinMzmlMatcher(Constants.mzmlDirectory, Constants.pinPepXMLDirectory);
 
             //update fragment ion types based on fragmentation type
-            //update Constants to be null initially
             FragmentIonConstants.makeFragmentIonHierarchy();
             Constants.matchedIntensitiesFeatures = Constants.makeMatchedIntensitiesFeatures();
             Constants.peakCountsFeatures = Constants.makePeakCountsFeatures();

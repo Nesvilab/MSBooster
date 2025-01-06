@@ -11,7 +11,28 @@ import static utils.Print.printError;
 public class FragmentIonConstants {
     public static String ignoredFragmentIonTypes = ""; //split with commas
     public static String onlyFragmentIonTypes = ""; //split with commas
-    public static Set<String> makeIgnoredFragmentIonTypes() {
+    public static String[] fragmentIonHierarchy;
+    public static Set<String> fragmentIonHierarchySet;
+    public static String divideFragments = "0";
+
+    public static void makeFragmentIonHierarchy() {
+        switch (Constants.FragmentationType) {
+            case "HCD":
+                fragmentIonHierarchy = new String[]{"p", "imm", "y", "b", "a", "p-NL",
+                        "y-NL", "b-NL", "a-NL", "int", "int-NL", "unknown"};
+            case "ETD":
+                fragmentIonHierarchy = new String[]{"zdot", "c", "z", "y", "unknown"};
+            case "ETHCD":
+                fragmentIonHierarchy = new String[]{"imm", "y", "b", "a", "zdot", "c", "z", "cdot",
+                        "y-NL", "b-NL", "a-NL", "int", "int-NL", "unknown"};
+            default:  //everything else, like CID
+                fragmentIonHierarchy = new String[]{"imm", "y", "b", "a",
+                        "y-NL", "b-NL", "a-NL", "int", "int-NL", "unknown"};
+        }
+        makeLowestFragmentIonType();
+        fragmentIonHierarchySet = new HashSet<>(Arrays.asList(fragmentIonHierarchy));
+    }
+    public static Set<String> makeIgnoredFragmentIonTypes() { //used here and also for experimental peaks in mgf format annotated with ion types
         Set<String> ignoredFragmentIonTypesSet = new HashSet<>();
         Set<String> onlyFragmentIonTypesSet = new HashSet<>();
         if (!onlyFragmentIonTypes.isEmpty()) {
@@ -48,25 +69,6 @@ public class FragmentIonConstants {
         }
         return ignoredFragmentIonTypesSet;
     }
-    public static String[] fragmentIonHierarchy;
-    public static Set<String> fragmentIonHierarchySet;
-    public static void makeFragmentIonHierarchy() {
-        switch (Constants.FragmentationType) {
-            case "HCD":
-                fragmentIonHierarchy = new String[]{"p", "imm", "y", "b", "a", "p-NL",
-                        "y-NL", "b-NL", "a-NL", "int", "int-NL", "unknown"};
-            case "ETD":
-                fragmentIonHierarchy = new String[]{"zdot", "c", "z", "y", "unknown"};
-            case "ETHCD":
-                fragmentIonHierarchy = new String[]{"imm", "y", "b", "a", "zdot", "c", "z", "cdot",
-                        "y-NL", "b-NL", "a-NL", "int", "int-NL", "unknown"};
-            default:  //everything else, like CID
-                fragmentIonHierarchy = new String[]{"imm", "y", "b", "a",
-                        "y-NL", "b-NL", "a-NL", "int", "int-NL", "unknown"};
-        }
-        makeLowestFragmentIonType();
-        fragmentIonHierarchySet = new HashSet<>(Arrays.asList(fragmentIonHierarchy));
-    }
     private static void makeLowestFragmentIonType() { //use this to make sure fragment type is above priority threshold
         Set<String> ignoredFragmentIonTypesSet = makeIgnoredFragmentIonTypes();
         int index = 0;
@@ -79,5 +81,4 @@ public class FragmentIonConstants {
         }
         fragmentIonHierarchy = Arrays.copyOfRange(fragmentIonHierarchy, 0, index + 1);
     }
-    public static String divideFragments = "0";
 }

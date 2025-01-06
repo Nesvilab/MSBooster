@@ -18,6 +18,7 @@
 package features.spectra;
 
 import allconstants.Constants;
+import allconstants.FragmentIonConstants;
 import predictions.FragmentAnnotationParser;
 
 import java.io.BufferedReader;
@@ -425,14 +426,14 @@ public class MassCalculator {
         //calculate precursor isotopic peaks. Will calculate with lower values of charge
         for (int iCharge = 1; iCharge < charge + 1; iCharge++) {
             //regular
-            if (Constants.lowestFragmentIonType.contains("p")) {
+            if (FragmentIonConstants.fragmentIonHierarchySet.contains("p")) {
                 String ionName = "p^" + iCharge;
                 addToFragmentIons(calcMassPrecursor(0, 0, iCharge),
                         new String[]{ionName, "p"}, fragmentIons, annotationMasses);
             }
 
             //neutral loss
-            if (Constants.lowestFragmentIonType.contains("p-NL")) {
+            if (FragmentIonConstants.fragmentIonHierarchySet.contains("p-NL")) {
                 for (String nl : selectNeutralLosses) {
                     String ionName = "p-" + nl + "^" + iCharge;
                     addToFragmentIons(calcMassPrecursor(0, allNeutralLossMasses.get(nl), iCharge),
@@ -449,14 +450,14 @@ public class MassCalculator {
             for (int num = 1; num < this.peptide.length(); num++) {
                 for (int iCharge = 1; iCharge < maxCharge + 1; iCharge++) {
                     //regular fragment
-                    if (Constants.lowestFragmentIonType.contains(ionType)) {
+                    if (FragmentIonConstants.fragmentIonHierarchySet.contains(ionType)) {
                         String ionName = ionType + num + "^" + iCharge;
                         addToFragmentIons(calcMass(num, ionType, iCharge, 0), new String[]{ionName, ionType},
                                 fragmentIons, annotationMasses);
                     }
 
                     //neutral loss fragments
-                    if (Constants.lowestFragmentIonType.contains(ionType + "-NL")) {
+                    if (FragmentIonConstants.fragmentIonHierarchySet.contains(ionType + "-NL")) {
                         if (!ionType.equals("c")) {
                             for (String nl : selectNeutralLosses) {
                                 String ionName = ionType + num + "-" + nl + "^" + iCharge;
@@ -489,12 +490,12 @@ public class MassCalculator {
                     int start = peptide.length() - num1;
                     String subsequence = peptide.substring(start, start + num2);
 
-                    if (Constants.lowestFragmentIonType.contains("int")) {
+                    if (FragmentIonConstants.fragmentIonHierarchySet.contains("int")) {
                         String ionName = "Int:y" + num1 + ionType.charAt(0) + num2 + "/" + subsequence;
                         addToFragmentIons(calcMass(num1, num2, ionType, 0), new String[]{ionName, "int"},
                                 fragmentIons, annotationMasses);
                     }
-                    if (Constants.lowestFragmentIonType.contains("int-NL")) {
+                    if (FragmentIonConstants.fragmentIonHierarchySet.contains("int-NL")) {
                         for (String nl : selectNeutralLosses) {
                             String ionName = "Int:y" + num1 + ionType.charAt(0) + num2 + "-" + nl + "/" + subsequence;
                             addToFragmentIons(calcMass(num1, num2, ionType,
@@ -507,7 +508,7 @@ public class MassCalculator {
         }
 
         //calculate immonium ions
-        if (Constants.lowestFragmentIonType.contains("imm")) {
+        if (FragmentIonConstants.fragmentIonHierarchySet.contains("imm")) {
             HashSet<Character> checkedImmoniumIons = new HashSet<>();
             for (int i = 0; i < peptide.length(); i++) {
                 if (! checkedImmoniumIons.contains(peptide.charAt(i))) {
@@ -710,7 +711,7 @@ public class MassCalculator {
 
             //annotate with highest priority fragment ion type
             StringBuilder sb = new StringBuilder();
-            for (String ionType : Constants.fragmentIonHierarchy) {
+            for (String ionType : FragmentIonConstants.fragmentIonHierarchy) {
                 for (String[] candidates : consideredFragmentIons) {
                     if (candidates[1].equals(ionType)) {
                         if (!sb.toString().isEmpty()) { //multiple matches

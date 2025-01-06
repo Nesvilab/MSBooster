@@ -18,6 +18,7 @@
 package features.spectra;
 
 import allconstants.Constants;
+import allconstants.FragmentIonConstants;
 import mainsteps.PeptideObj;
 import org.apache.commons.math3.distribution.HypergeometricDistribution;
 import org.apache.commons.math3.random.Well19937c;
@@ -76,10 +77,10 @@ public class SpectrumComparison {
         predMZs = pMZs;
         predIntensities = pIntensities;
 
-        if (Constants.divideFragments.equals("0")) {
+        if (FragmentIonConstants.divideFragments.equals("0")) {
             matchedIntensities = this.getMatchedIntensities(eMZs, eIntensities, predMZs, predIntensities);
         } else {
-            String[] fragmentsSplit = Constants.divideFragments.split(";");
+            String[] fragmentsSplit = FragmentIonConstants.divideFragments.split(";");
 
             //get fragments that match the allowed
             for (String fragments : fragmentsSplit) {
@@ -790,16 +791,5 @@ public class SpectrumComparison {
 
         //return intersection / (matchedI.length + iters - intersection); //this would be jaccard
         return intersection;
-    }
-
-    public void clearArrays() {
-        predMZs = null;
-        predIntensities = null;
-        matchedIntensities = null;
-        unitNormMatchedIntensities = null;
-        unitNormPredIntensities = null;
-        sum1MatchedIntensities = null;
-        sum1PredIntensities = null;
-        allMatchedIntensities = null;
     }
 }

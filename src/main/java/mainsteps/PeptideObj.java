@@ -18,15 +18,14 @@
 package mainsteps;
 
 import allconstants.Constants;
+import allconstants.FragmentIonConstants;
 import features.spectra.MassCalculator;
 import features.spectra.SpectrumComparison;
 
 import java.io.IOException;
 import java.net.URISyntaxException;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 
 
@@ -65,7 +64,7 @@ public class PeptideObj {
     static final HashMap<String, Float> baseMap = makeBaseMap();
     static private HashMap<String, Float> makeBaseMap() {
         HashMap<String, Float> map = new HashMap<>();
-        for (String s : Constants.fragmentIonHierarchy) {
+        for (String s : FragmentIonConstants.fragmentIonHierarchy) {
             map.put(s, 0f);
         }
         return map;
@@ -110,7 +109,8 @@ public class PeptideObj {
     }
 
     public PeptideObj(MzmlScanNumber scanNumObj, String name, int rank, int targetORdecoy, String escore,
-                      float[] predMZs, float[] predIntensities, float predRT, Float predIM, String[] fragmentIonTypes) throws IOException, URISyntaxException {
+                      float[] predMZs, float[] predIntensities, float predRT, Float predIM, String[] fragmentIonTypes)
+            throws IOException, URISyntaxException {
         this.name = name;
         this.charge = Integer.parseInt(name.split("\\|")[1]);
         this.rank = rank;
@@ -207,10 +207,9 @@ public class PeptideObj {
         String[] expFragmentIonTypes = mc.annotateMZs(expMZs, "default", true)[1];
         String[] predFragmentIonTypes = predTypes1;
 
-        List<String> fragmentIonHierarchyList = Arrays.asList(Constants.fragmentIonHierarchy);
         for (int i = 0; i < expFragmentIonTypes.length; i++) {
             String presentType = expFragmentIonTypes[i];
-            if (fragmentIonHierarchyList.contains(presentType)) {
+            if (FragmentIonConstants.fragmentIonHierarchySet.contains(presentType)) {
                 if (Constants.useMatchedIntensities || Constants.useIntensityDistributionSimilarity
                         || Constants.useIntensitiesDifference) {
                     matchedIntensities.put(presentType,
@@ -226,7 +225,7 @@ public class PeptideObj {
 
         for (int i = 0; i < predFragmentIonTypes.length; i++) {
             String presentType = predFragmentIonTypes[i];
-            if (fragmentIonHierarchyList.contains(presentType)) {
+            if (FragmentIonConstants.fragmentIonHierarchySet.contains(presentType)) {
                 if (Constants.useIntensityDistributionSimilarity || Constants.useIntensitiesDifference) {
                     predIntensities.put(presentType,
                             predIntensities.get(presentType) + predIntensities1[i]);
@@ -257,17 +256,6 @@ public class PeptideObj {
                 individualSpectralSimilarities.put(entry.getKey(),
                         (float) new SpectrumComparison(this, expMZs, expIntensities,
                                 subsetPredMZsArray, subsetPredIntsArray, this.length).unweightedSpectralEntropy());
-            }
-        }
-    }
-
-    public void clearArrays() {
-        if (spectralSimObj.spectrumComparisons.isEmpty()) {
-            spectralSimObj.clearArrays();
-        } else {
-            String[] dividedFragments = Constants.divideFragments.split(";");
-            for (int j = 0; j < dividedFragments.length; j++) {
-                spectralSimObj.spectrumComparisons.get(j).clearArrays();
             }
         }
     }

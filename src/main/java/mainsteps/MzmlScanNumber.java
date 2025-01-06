@@ -18,6 +18,7 @@
 package mainsteps;
 
 import allconstants.Constants;
+import allconstants.FragmentIonConstants;
 import org.apache.commons.lang3.ArrayUtils;
 import peptideptmformatting.PeptideFormatter;
 import peptideptmformatting.PeptideSkipper;
@@ -183,7 +184,7 @@ public class MzmlScanNumber {
             }
 
             if (predMZs.length > 1) {
-                if (Constants.divideFragments.equals("0")) {
+                if (FragmentIonConstants.divideFragments.equals("0")) {
                     newPepObj = new PeptideObj(this, name.getBaseCharge(), rank, targetORdecoy, escore, predMZs,
                             predIntensities, predRT, predIM);
                 } else {

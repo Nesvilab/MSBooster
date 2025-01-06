@@ -17,8 +17,12 @@
 
 package features.spectra;
 
-import static utils.NumericUtils.floatToDouble;
-import static utils.Print.printError;
+import allconstants.Constants;
+import mainsteps.PeptideObj;
+import org.apache.commons.math3.distribution.HypergeometricDistribution;
+import org.apache.commons.math3.random.Well19937c;
+import org.apache.commons.math3.stat.correlation.PearsonsCorrelation;
+import org.apache.commons.math3.stat.correlation.SpearmansCorrelation;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -27,12 +31,8 @@ import java.util.HashSet;
 import java.util.LinkedHashSet;
 import java.util.Random;
 
-import allconstants.Constants;
-import mainsteps.PeptideObj;
-import org.apache.commons.math3.distribution.HypergeometricDistribution;
-import org.apache.commons.math3.random.Well19937c;
-import org.apache.commons.math3.stat.correlation.PearsonsCorrelation;
-import org.apache.commons.math3.stat.correlation.SpearmansCorrelation;
+import static utils.NumericUtils.floatToDouble;
+import static utils.Print.printError;
 
 //TODO: also square root intensities? Squaring intensities may help for single cell data
 public class SpectrumComparison {
@@ -69,8 +69,10 @@ public class SpectrumComparison {
         }
     }
 
+    //TODO: this could be replaced with just also passing pred aux spectra arrays
     public SpectrumComparison(PeptideObj pepObj, float[] eMZs, float[] eIntensities,
-                              float[] pMZs, float[] pIntensities, int length, String[] fragmentIonTypes) {
+                              float[] pMZs, float[] pIntensities, int length,
+                              String[] fragmentIonTypes) {
         predMZs = pMZs;
         predIntensities = pIntensities;
 
@@ -113,6 +115,7 @@ public class SpectrumComparison {
         }
     }
 
+    //TODO: if ever reimplement adjacent similarity, think of solution that does not require another constructor
     public SpectrumComparison(PeptideObj peptideObj, float[] eMZs, float[] eIntensities,
                               float[] pMZs, float[] pIntensities, int length, boolean willReload) {
         pepObj = peptideObj;

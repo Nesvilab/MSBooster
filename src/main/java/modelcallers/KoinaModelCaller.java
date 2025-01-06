@@ -67,7 +67,7 @@ public class KoinaModelCaller {
     private static final int unispecFragIdx = 2;
     private static final int predfullMzIdx = 1;
     private static final int predfullIntIdx = 0;
-    private static final int predfullFragIdx = 2; //TODO
+    private static final int predfullFragIdx = 2;
     private static String finalModel;
     static boolean useFullAnnotation = false;
     private static AtomicBoolean emptyUrl = new AtomicBoolean(false);

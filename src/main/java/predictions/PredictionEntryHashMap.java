@@ -181,7 +181,6 @@ public class PredictionEntryHashMap extends ConcurrentHashMap<String, Prediction
 
                             MassCalculator oldMc = new MassCalculator(pf.getBase(), pf.getCharge());
 
-                            //TODO: this is an issue since fragnums and charges were set as 0 for predfull prediction
                             for (int i = 0; i < newMZs.length; i++) {
                                 newMZs[i] = oldPred.getMzs()[i] +
                                         mc.compareModMasses(oldMc, oldPred.getFragNums()[i],
@@ -205,8 +204,13 @@ public class PredictionEntryHashMap extends ConcurrentHashMap<String, Prediction
                             if (newMZs.length == 0) {
                                 newMZs = oldPred.mzs;
                             }
-                            newPred = new PredictionEntry(newMZs, oldPred.intensities, oldPred.fragNums,
-                                    oldPred.charges, oldPred.fragmentIonTypes, oldPred.flags, oldPred.fullAnnotations);
+                            if (predMap.modelType.contains("unispec") || predMap.modelType.contains("predfull")) {
+                                newPred = new PredictionEntry(newMZs, oldPred.intensities, oldPred.fragNums,
+                                        oldPred.charges, oldPred.fragmentIonTypes, oldPred.flags, oldPred.fullAnnotations);
+                            } else {
+                                newPred = new PredictionEntry(newMZs, oldPred.intensities, oldPred.fragNums,
+                                        oldPred.charges, oldPred.fragmentIonTypes, oldPred.flags);
+                            }
                         }
                         break;
                     case "rt":

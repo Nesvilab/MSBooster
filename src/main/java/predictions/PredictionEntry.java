@@ -53,6 +53,7 @@ public class PredictionEntry {
         this.fragmentIonTypes = new String[fragmentIonTypes.length];
         this.flags = new int[flags.length];
         this.isotopes = new int[mzs.length];
+        this.fullAnnotations = new String[mzs.length];
 
         int[] sortedIndices = IntStream.range(0, mzs.length)
                 .boxed().sorted((k, j) -> Float.compare(mzs[k], mzs[j]))

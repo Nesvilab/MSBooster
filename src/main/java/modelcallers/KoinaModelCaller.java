@@ -67,9 +67,10 @@ public class KoinaModelCaller {
     private static final int unispecFragIdx = 2;
     private static final int predfullMzIdx = 1;
     private static final int predfullIntIdx = 0;
-    private static final int predfullFragIdx = 2; //TODO
+    private static final int predfullFragIdx = 2;
     private static String modelType;
     private static String finalModel;
+    static boolean useFullAnnotation = false;
     private static AtomicBoolean emptyUrl = new AtomicBoolean(false);
 
     public KoinaModelCaller(){}
@@ -88,6 +89,9 @@ public class KoinaModelCaller {
             modelType = "prosittmt";
         }
         finalModel = model;
+        if (model.contains("UniSpec") || model.contains("PredFull")) {
+            useFullAnnotation = true;
+        }
 
         if (verbose) {
             printInfo("Calling " + model + " model");
@@ -312,9 +316,7 @@ public class KoinaModelCaller {
 
             //mz
             float[][] allMZs = new float[numPeptides][];
-            if (model.contains("UniSpec") //mzs are calculated correctly, even with PTMs
-                    || model.contains("PredFull") //don't have fragment information to calcualte mzs
-            ) {
+            if (useFullAnnotation) {
                 msInfo = dataResults[mzIdx].split("data\":\\[")[1];
                 msInfo = msInfo.substring(0, msInfo.length() - 1);
                 results = msInfo.split(",");
@@ -441,12 +443,16 @@ public class KoinaModelCaller {
                         fragmentIonTypesArray[j] = fragmentIonTypes.get(j);
                         fragNumsArray[j] = fragNums.get(j);
                         chargesArray[j] = charges.get(j);
-                        fullAnnotationArray[j] = fullAnnotation.get(j);
+                        if (useFullAnnotation) {
+                            fullAnnotationArray[j] = fullAnnotation.get(j);
+                        }
                     }
                     allFragmentIonTypes[i] = fragmentIonTypesArray;
                     allFragNums[i] = fragNumsArray;
                     allCharges[i] = chargesArray;
-                    allFullAnnotations[i] = fullAnnotationArray;
+                    if (useFullAnnotation) {
+                        allFullAnnotations[i] = fullAnnotationArray;
+                    }
                 }
             } else { //for predfull, calculate what fragments these are
                 String[] peptides = readJSON(fileName, numPeptides);
@@ -478,7 +484,7 @@ public class KoinaModelCaller {
                         allFullAnnotations[i] = fullAnnotationArray;
                     }
                 }
-            if (model.contains("UniSpec") || model.contains("PredFull")) { //TODO: can merge these assign ms2 methods
+            if (useFullAnnotation) {
                 assignMS2(fileName, allMZs, allIntensities, allFragmentIonTypes, allFragNums, allCharges,
                         allFullAnnotations, klr, modelType);
             } else {

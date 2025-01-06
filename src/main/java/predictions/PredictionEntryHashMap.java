@@ -21,6 +21,7 @@ import allconstants.Constants;
 import features.spectra.MassCalculator;
 import peptideptmformatting.PeptideFormatter;
 import peptideptmformatting.PeptideSkipper;
+import readers.predictionreaders.KoinaLibReader;
 
 import java.io.BufferedReader;
 import java.io.FileReader;
@@ -34,8 +35,6 @@ import java.util.concurrent.Future;
 import static utils.Print.printError;
 
 public class PredictionEntryHashMap extends ConcurrentHashMap<String, PredictionEntry> {
-    public String modelType;
-    public String property;
     public void filterTopFragments(ExecutorService executorService)
             throws ExecutionException, InterruptedException {
         String[] peptides = new String[this.size()];
@@ -122,7 +121,7 @@ public class PredictionEntryHashMap extends ConcurrentHashMap<String, Prediction
     //for when msbooster is calling models for the first time, not when it is reading in prepredicted libraries
     //TODO: also need to consider model. Unispec and Predfull transfer differently
     //TODO: can save aby fragments separately from other ones
-    public void transferKoinaPreds(ArrayList<PredictionEntryHashMap> predMaps, String fulltsv) throws Exception {
+    public void transferKoinaPreds(ArrayList<KoinaLibReader> klrs, String fulltsv) throws Exception {
         //iterate through entries of full tsv
         BufferedReader TSVReader = new BufferedReader(new FileReader(fulltsv));
         String l;
@@ -135,7 +134,8 @@ public class PredictionEntryHashMap extends ConcurrentHashMap<String, Prediction
             PredictionEntry newPred = new PredictionEntry();
 
             //for each peptide, get the translation from each pred model
-            for (PredictionEntryHashMap predMap : predMaps) {
+            for (KoinaLibReader klr : klrs) {
+                PredictionEntryHashMap predMap = klr.getPreds();
                 PredictionEntry oldPred;
                 float[] newMZs = new float[0];
                 boolean skipPeptide = false;
@@ -146,7 +146,7 @@ public class PredictionEntryHashMap extends ConcurrentHashMap<String, Prediction
                 } else { //need to translate
                     PeptideFormatter pf = null;
                     oldPred = null;
-                    switch (predMap.modelType) {
+                    switch (klr.modelType) {
                         case "alphapept":
                         case "ms2pip":
                         case "deeplc":
@@ -155,19 +155,19 @@ public class PredictionEntryHashMap extends ConcurrentHashMap<String, Prediction
                         case "prosittmt":
                         case "predfull":
                             pf = new PeptideFormatter(
-                                    new PeptideFormatter(line[0], line[1], "base").getModel(predMap.modelType),
-                                    line[1], predMap.modelType);
+                                    new PeptideFormatter(line[0], line[1], "base").getModel(klr.modelType),
+                                    line[1], klr.modelType);
                             modelSpecificBaseCharge = pf.getBaseCharge();
                             oldPred = predMap.get(modelSpecificBaseCharge);
                             break;
                         default:
-                            printError(predMap.modelType + " not supported by Koina");
+                            printError(klr.modelType + " not supported by Koina");
                             System.exit(1);
                     }
 
                     if (oldPred == null) {
                         //check if missing
-                        if (PeptideSkipper.skipPeptide(pf.getStripped(), pf.getCharge(), predMap.modelType)) {
+                        if (PeptideSkipper.skipPeptide(pf.getStripped(), pf.getCharge(), klr.modelType)) {
                             skipPeptide = true;
                         } else {
                             printError("Missing peptide to transfer prediction onto " + l + ": " + modelSpecificBaseCharge);
@@ -175,7 +175,7 @@ public class PredictionEntryHashMap extends ConcurrentHashMap<String, Prediction
                             System.exit(1);
                         }
                     } else { //don't want to worry about calculating all the different NLs
-                        if (predMap.property.equals("ms2")) {
+                        if (klr.property.equals("ms2")) {
                             MassCalculator mc = new MassCalculator(line[0], line[1]);
                             newMZs = new float[oldPred.getMzs().length];
 
@@ -191,7 +191,7 @@ public class PredictionEntryHashMap extends ConcurrentHashMap<String, Prediction
                     }
                 }
 
-                switch (predMap.property) {
+                switch (klr.property) {
                     case "ms2":
                         if (skipPeptide) {
                             newPred.mzs = new float[]{0};
@@ -204,7 +204,7 @@ public class PredictionEntryHashMap extends ConcurrentHashMap<String, Prediction
                             if (newMZs.length == 0) {
                                 newMZs = oldPred.mzs;
                             }
-                            if (predMap.modelType.contains("unispec") || predMap.modelType.contains("predfull")) {
+                            if (klr.modelType.contains("unispec") || klr.modelType.contains("predfull")) {
                                 newPred = new PredictionEntry(newMZs, oldPred.intensities, oldPred.fragNums,
                                         oldPred.charges, oldPred.fragmentIonTypes, oldPred.flags, oldPred.fullAnnotations);
                             } else {
@@ -230,7 +230,7 @@ public class PredictionEntryHashMap extends ConcurrentHashMap<String, Prediction
                     case "auxms2":
                         break;
                     default:
-                        printError(predMap.property + " is not supported. Exiting");
+                        printError(klr.property + " is not supported. Exiting");
                         System.exit(1);
                 }
             }

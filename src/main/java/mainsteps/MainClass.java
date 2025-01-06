@@ -70,7 +70,7 @@ public class MainClass {
     public static ScheduledThreadPoolExecutor executorService;
     public static void main(String[] args) throws Exception {
         Locale.setDefault(Locale.US);
-        printInfo("MSBooster v1.2.65");
+        printInfo("MSBooster v1.2.66");
 
         try {
             //accept command line inputs
@@ -1371,7 +1371,7 @@ public class MainClass {
 
             //generate predictions
             //send input files to prediction models
-            ArrayList<PredictionEntryHashMap> predMaps = new ArrayList<>();
+            ArrayList<KoinaLibReader> klrs = new ArrayList<>();
             String DiannPredFilePath = "";
             ArrayList<String> predFilePaths = new ArrayList<>(); //replace "koina" with final name later
             if (createSpectraRTPredFile) {
@@ -1379,12 +1379,12 @@ public class MainClass {
                 for (String currentModel : models) {
                     KoinaModelCaller kmc = new KoinaModelCaller();
                     if (Constants.KoinaModels.contains(currentModel)) {
-                        KoinaLibReader klr = new KoinaLibReader();
+                        KoinaLibReader klr = new KoinaLibReader(currentModel);
                         kmc.callModel(currentModel, klr, Constants.JsonDirectory, executorService,
                                 true, true);
                         ranKoina = true;
                         predFilePaths.add("koina" + currentModel);
-                        predMaps.add(klr.getPreds());
+                        klrs.add(klr);
                     } else {
                         if (DiannPredFilePath.isEmpty()) {
                             DiannPredFilePath = DiannModelCaller.callModel(
@@ -1395,8 +1395,7 @@ public class MainClass {
                 }
                 PredictionEntryHashMap koinaPreds = new PredictionEntryHashMap();
                 if (ranKoina) {
-                    koinaPreds.transferKoinaPreds(predMaps,
-                            Constants.spectraRTPrefix + "_full.tsv");
+                    koinaPreds.transferKoinaPreds(klrs, Constants.spectraRTPrefix + "_full.tsv");
                 }
 
                 String koinaPredFilePath = "koina.mgf";

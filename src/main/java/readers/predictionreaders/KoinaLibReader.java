@@ -17,13 +17,42 @@
 
 package readers.predictionreaders;
 
+import allconstants.Constants;
 import predictions.PredictionEntryHashMap;
+
+import static utils.Print.printError;
 
 public class KoinaLibReader implements LibraryPredictionMapper {
     public boolean failed = false;
     public PredictionEntryHashMap allPreds = new PredictionEntryHashMap();
+    public String finalModel;
+    public String modelType;
+    public String property;
+    public boolean useFullAnnotation = false;
 
-    public KoinaLibReader() {}
+    public KoinaLibReader(String model) {
+        finalModel = model;
+        modelType = model.toLowerCase().split("_")[0];
+        if (modelType.equals("prosit") && model.contains("TMT")) {
+            modelType = "prosittmt";
+        }
+
+        if (modelType.contains("unispec") || modelType.contains("predfull")) {
+            useFullAnnotation = true;
+        }
+
+        //decide if this is RT or MS2 model
+        if (Constants.KoinaRTmodels.contains(model)) {
+            property = "rt";
+        } else if (Constants.KoinaMS2models.contains(model)) {
+            property = "ms2";
+        } else if (Constants.KoinaIMmodels.contains(model)) {
+            property = "im";
+        } else {
+            printError(model + " not in Koina models");
+            System.exit(1);
+        }
+    }
 
     public PredictionEntryHashMap getPreds() {return allPreds;}
     public void setPreds(PredictionEntryHashMap preds) {

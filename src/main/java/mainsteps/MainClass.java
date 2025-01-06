@@ -258,6 +258,7 @@ public class MainClass {
                     float tol = Float.parseFloat(params.get("ppmTolerance"));
                     if (ppmToDa) {
                         Constants.matchWithDaltons = true;
+                        Constants.matchWithDaltonsAux = true;
                         Constants.DaTolerance = tol;
                         printInfo("Using Dalton tolerance of " + Constants.DaTolerance + " Da");
                     } else {
@@ -367,8 +368,11 @@ public class MainClass {
                 System.exit(0);
             }
 
-            if (Constants.spectraModel.equals("PredFull")) { //TODO: is this still needed? Not sure if mz is corrected
+            if (Constants.spectraModel.equals("PredFull")) {
                 Constants.matchWithDaltons = true; //they report predictions in bins
+            }
+            if (Constants.auxSpectraModel.equals("PredFull")) {
+                Constants.matchWithDaltonsAux = true;
             }
 
             //needed for nce calibration and best model search

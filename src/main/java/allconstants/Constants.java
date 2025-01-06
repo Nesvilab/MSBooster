@@ -192,6 +192,7 @@ public class Constants {
     public static Float lowResppmTolerance = 300f;
     public static Float highResppmTolerance = 20f;
     public static Boolean matchWithDaltons = false;
+    public static Boolean matchWithDaltonsAux = false;
     public static Float DaTolerance = 0.05f;
     public static Boolean hasITMS = false;
 

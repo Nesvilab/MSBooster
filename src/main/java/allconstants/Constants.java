@@ -354,18 +354,20 @@ public class Constants {
                     "detectSubtractMissing", "detectProtSpearmanDiff"});
     public static final CaseInsensitiveHashSet spectraRTFeatures = new CaseInsensitiveHashSet(
             new String[] {
-            "cosineSimilarity", "weightedCosineSimilarity", "spectralContrastAngle", "weightedSpectralContrastAngle",
-            "euclideanDistance", "weightedEuclideanDistance", "brayCurtis", "weightedBrayCurtis",
-            "pearsonCorr", "weightedPearsonCorr", "spearmanCorr", "dotProduct", "weightedDotProduct", "unweightedSpectralEntropy",
-            "deltaRTlinear", "deltaRTbins", "deltaRTLOESS", "RTzscore", "RTprobability", "RTprobabilityUnifPrior",
-            "deltaRTLOESSnormalized", "calibratedRT", "predictedRT", "numMatchedFragments", "hypergeometricProbability",
-            "intersection", "adjacentSimilarity", "bestScan", "bootstrapSimilarity", "deltaRTLOESSreal", "predRTrealUnits"});
+                    "cosineSimilarity", "weightedCosineSimilarity", "spectralContrastAngle", "weightedSpectralContrastAngle",
+                    "euclideanDistance", "weightedEuclideanDistance", "brayCurtis", "weightedBrayCurtis",
+                    "pearsonCorr", "weightedPearsonCorr", "spearmanCorr", "dotProduct", "weightedDotProduct",
+                    "unweightedSpectralEntropy", "deltaRTlinear", "deltaRTbins", "deltaRTLOESS", "RTzscore", "RTprobability",
+                    "RTprobabilityUnifPrior", "deltaRTLOESSnormalized", "calibratedRT", "predictedRT", "numMatchedFragments",
+                    "hypergeometricProbability", "intersection", "adjacentSimilarity", "bestScan", "bootstrapSimilarity",
+                    "deltaRTLOESSreal", "predRTrealUnits", "weightedSpectralEntropy", "heuristicSpectralEntropy"});
     public static final CaseInsensitiveHashSet spectraFeatures = new CaseInsensitiveHashSet(
             new String[] {
-            "cosineSimilarity", "weightedCosineSimilarity", "spectralContrastAngle", "weightedSpectralContrastAngle",
-            "euclideanDistance", "weightedEuclideanDistance", "brayCurtis", "weightedBrayCurtis", "unweightedSpectralEntropy",
-            "pearsonCorr", "weightedPearsonCorr", "spearmanCorr", "dotProduct", "weightedDotProduct", "numMatchedFragments",
-            "hypergeometricProbability", "intersection", "adjacentSimilarity", "bestScan", "bootstrapSimilarity"});
+                    "cosineSimilarity", "weightedCosineSimilarity", "spectralContrastAngle", "weightedSpectralContrastAngle",
+                    "euclideanDistance", "weightedEuclideanDistance", "brayCurtis", "weightedBrayCurtis",
+                    "unweightedSpectralEntropy", "pearsonCorr", "weightedPearsonCorr", "spearmanCorr", "dotProduct",
+                    "weightedDotProduct", "numMatchedFragments", "hypergeometricProbability", "intersection",
+                    "adjacentSimilarity", "bestScan", "bootstrapSimilarity", "weightedSpectralEntropy", "heuristicSpectralEntropy"});
     public static final CaseInsensitiveHashSet rtFeatures = new CaseInsensitiveHashSet(
             new String[] {
             "deltaRTlinear", "deltaRTbins", "deltaRTLOESS", "RTzscore", "RTprobability", "RTprobabilityUnifPrior",
@@ -443,6 +445,8 @@ public class Constants {
         map.put("spearmanCorr", "spearman_corr");
         map.put("dotProduct", "dot_product");
         map.put("unweightedSpectralEntropy", "unweighted_spectral_entropy");
+        map.put("weightedSpectralEntropy", "weighted_spectral_entropy");
+        map.put("heuristicSpectralEntropy", "heuristic_spectral_entropy");
         map.put("numMatchedFragments", "num_matched_fragments");
         map.put("deltaRTLOESS", "delta_RT_loess");
         map.put("deltaRTLOESSreal", "delta_RT_loess_real");

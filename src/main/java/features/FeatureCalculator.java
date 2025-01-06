@@ -128,7 +128,7 @@ public class FeatureCalculator {
                         case "predictedRT":
                             break;
                         case "brayCurtis":
-                            if (pepObj.spectralSimObj.spectrumComparisons.size() == 0) {
+                            if (pepObj.spectralSimObj.spectrumComparisons.isEmpty()) {
                                 pepObj.spectralSimObj.scores.put(feature, pepObj.spectralSimObj.brayCurtis());
                             } else {
                                 String[] dividedFragments = Constants.divideFragments.split(";");
@@ -140,7 +140,7 @@ public class FeatureCalculator {
                             }
                             break;
                         case "cosineSimilarity":
-                            if (pepObj.spectralSimObj.spectrumComparisons.size() == 0) {
+                            if (pepObj.spectralSimObj.spectrumComparisons.isEmpty()) {
                                 pepObj.spectralSimObj.scores.put(feature, pepObj.spectralSimObj.cosineSimilarity());
                             } else {
                                 String[] dividedFragments = Constants.divideFragments.split(";");
@@ -152,7 +152,7 @@ public class FeatureCalculator {
                             }
                             break;
                         case "spectralContrastAngle":
-                            if (pepObj.spectralSimObj.spectrumComparisons.size() == 0) {
+                            if (pepObj.spectralSimObj.spectrumComparisons.isEmpty()) {
                                 pepObj.spectralSimObj.scores.put(feature, pepObj.spectralSimObj.spectralContrastAngle());
                             } else {
                                 String[] dividedFragments = Constants.divideFragments.split(";");
@@ -164,7 +164,7 @@ public class FeatureCalculator {
                             }
                             break;
                         case "euclideanDistance":
-                            if (pepObj.spectralSimObj.spectrumComparisons.size() == 0) {
+                            if (pepObj.spectralSimObj.spectrumComparisons.isEmpty()) {
                                 pepObj.spectralSimObj.scores.put(feature, pepObj.spectralSimObj.euclideanDistance());
                             } else {
                                 String[] dividedFragments = Constants.divideFragments.split(";");
@@ -176,7 +176,7 @@ public class FeatureCalculator {
                             }
                             break;
                         case "pearsonCorr":
-                            if (pepObj.spectralSimObj.spectrumComparisons.size() == 0) {
+                            if (pepObj.spectralSimObj.spectrumComparisons.isEmpty()) {
                                 pepObj.spectralSimObj.scores.put(feature, pepObj.spectralSimObj.pearsonCorr());
                             } else {
                                 String[] dividedFragments = Constants.divideFragments.split(";");
@@ -188,7 +188,7 @@ public class FeatureCalculator {
                             }
                             break;
                         case "spearmanCorr":
-                            if (pepObj.spectralSimObj.spectrumComparisons.size() == 0) {
+                            if (pepObj.spectralSimObj.spectrumComparisons.isEmpty()) {
                                 pepObj.spectralSimObj.scores.put(feature, pepObj.spectralSimObj.spearmanCorr());
                             } else {
                                 String[] dividedFragments = Constants.divideFragments.split(";");
@@ -200,7 +200,7 @@ public class FeatureCalculator {
                             }
                             break;
                         case "hypergeometricProbability":
-                            if (pepObj.spectralSimObj.spectrumComparisons.size() == 0) {
+                            if (pepObj.spectralSimObj.spectrumComparisons.isEmpty()) {
                                 pepObj.spectralSimObj.scores.put(feature, pepObj.spectralSimObj.hyperGeometricProbability());
                             } else {
                                 String[] dividedFragments = Constants.divideFragments.split(";");
@@ -212,7 +212,7 @@ public class FeatureCalculator {
                             }
                             break;
                         case "intersection":
-                            if (pepObj.spectralSimObj.spectrumComparisons.size() == 0) {
+                            if (pepObj.spectralSimObj.spectrumComparisons.isEmpty()) {
                                 pepObj.spectralSimObj.scores.put(feature, pepObj.spectralSimObj.intersection());
                             } else {
                                 String[] dividedFragments = Constants.divideFragments.split(";");
@@ -224,7 +224,7 @@ public class FeatureCalculator {
                             }
                             break;
                         case "dotProduct":
-                            if (pepObj.spectralSimObj.spectrumComparisons.size() == 0) {
+                            if (pepObj.spectralSimObj.spectrumComparisons.isEmpty()) {
                                 pepObj.spectralSimObj.scores.put(feature, pepObj.spectralSimObj.dotProduct());
                             } else {
                                 String[] dividedFragments = Constants.divideFragments.split(";");
@@ -236,7 +236,7 @@ public class FeatureCalculator {
                             }
                             break;
                         case "unweightedSpectralEntropy":
-                            if (pepObj.spectralSimObj.spectrumComparisons.size() == 0) {
+                            if (pepObj.spectralSimObj.spectrumComparisons.isEmpty()) {
                                 pepObj.spectralSimObj.scores.put(feature, pepObj.spectralSimObj.unweightedSpectralEntropy());
                             } else {
                                 String[] dividedFragments = Constants.divideFragments.split(";");
@@ -247,8 +247,32 @@ public class FeatureCalculator {
                                 }
                             }
                             break;
+                        case "weightedSpectralEntropy":
+                            if (pepObj.spectralSimObj.spectrumComparisons.isEmpty()) {
+                                pepObj.spectralSimObj.scores.put(feature, pepObj.spectralSimObj.weightedSpectralEntropy());
+                            } else {
+                                String[] dividedFragments = Constants.divideFragments.split(";");
+                                for (int j = 0; j < dividedFragments.length; j++) {
+                                    pepObj.spectralSimObj.spectrumComparisons.get(j).scores.put(
+                                            feature, pepObj.spectralSimObj.spectrumComparisons.get(j).weightedSpectralEntropy()
+                                    );
+                                }
+                            }
+                            break;
+                        case "heuristicSpectralEntropy":
+                            if (pepObj.spectralSimObj.spectrumComparisons.isEmpty()) {
+                                pepObj.spectralSimObj.scores.put(feature, pepObj.spectralSimObj.heuristicSpectralEntropy());
+                            } else {
+                                String[] dividedFragments = Constants.divideFragments.split(";");
+                                for (int j = 0; j < dividedFragments.length; j++) {
+                                    pepObj.spectralSimObj.spectrumComparisons.get(j).scores.put(
+                                            feature, pepObj.spectralSimObj.spectrumComparisons.get(j).heuristicSpectralEntropy()
+                                    );
+                                }
+                            }
+                            break;
                         case "bootstrapSimilarity":
-                            if (pepObj.spectralSimObj.spectrumComparisons.size() == 0) {
+                            if (pepObj.spectralSimObj.spectrumComparisons.isEmpty()) {
                                 mzml.futureList.clear();
                                 Multithreader mt = new Multithreader(Constants.bootstraps, Constants.numThreads);
                                 for (int j = 0; j < Constants.numThreads; j++) {

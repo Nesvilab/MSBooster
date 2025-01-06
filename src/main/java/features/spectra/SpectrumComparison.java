@@ -717,6 +717,31 @@ public class SpectrumComparison {
         return 1 - ( ((2 * spectralEntropy(SabVector)) - spectralEntropy(sum1MatchedIntensities) - spectralEntropy(sum1PredIntensities)) / Math.log(4));
     }
 
+    public double weightedSpectralEntropy() {
+        double unweighted = unweightedSpectralEntropy();
+        return unweighted * Math.pow(spectralEntropy(sum1PredIntensities), 0.5);
+    }
+
+    public double heuristicSpectralEntropy() {
+        double unweighted = unweightedSpectralEntropy();
+        double predEntropy = spectralEntropy(sum1PredIntensities);
+        if (predEntropy < 1.75) {
+            //reweighting
+            double power = predEntropy / 2.75;
+            for (int i = 0; i < predIntensities.length; i++) {
+                predIntensities[i] = (float) Math.pow(predIntensities[i], power);
+                matchedIntensities[i] = (float) Math.pow(matchedIntensities[i], power);
+            }
+
+            sum1PredIntensities = null;
+            sum1MatchedIntensities = null;
+
+            return unweightedSpectralEntropy();
+        } else {
+            return unweighted;
+        }
+    }
+
     //top 24
     public double hyperGeometricProbability() {
         this.getAllMatchedIntensities();

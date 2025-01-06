@@ -18,7 +18,6 @@
 package allconstants;
 
 import features.detectability.FastaReader;
-import features.spectra.MassCalculator;
 import utils.CaseInsensitiveHashSet;
 import utils.MyFileUtils;
 
@@ -27,10 +26,7 @@ import java.io.IOException;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
-
-import static utils.Print.printError;
 
 public class Constants {
     //file input
@@ -200,7 +196,7 @@ public class Constants {
     public static Boolean useSpectra = true;
     public static Boolean useTopFragments = true;
     public static Integer topFragments = 20;
-    public static Boolean adaptiveFragmentNum = false;
+    public static Boolean adaptiveFragmentNum = false; //TODO: automatically find best number of fragments to use
     public static Boolean removeRankPeaks = true; //whether to remove peaks from higher ranks
     public static Boolean useBasePeak = true;
     public static Float percentBasePeak = 1f;
@@ -262,75 +258,6 @@ public class Constants {
     public static Integer maxPredictedFragmentCharge = 100;
     public static Integer minPredictedFragmentNum = 0;
     public static Boolean createPredFileOnly = false;
-    public static String ignoredFragmentIonTypes = ""; //split with commas
-    public static String onlyFragmentIonTypes = ""; //split with commas
-    public static Set<String> makeIgnoredFragmentIonTypes() {
-        Set<String> ignoredFragmentIonTypes = new HashSet<>();
-        Set<String> onlyFragmentIonTypes = new HashSet<>();
-        if (! Constants.onlyFragmentIonTypes.equals("")) {
-            String[] commaSplit = Constants.onlyFragmentIonTypes.split(",");
-            for (int i = 0; i < commaSplit.length; i++) {
-                String fragmentIonType = commaSplit[i].trim();
-                if (MassCalculator.allowedFragmentIonTypes.contains(fragmentIonType)) {
-                    onlyFragmentIonTypes.add(fragmentIonType);
-                } else {
-                    printError(fragmentIonType + " is not a supported fragment ion type to include. " +
-                            "Please choose from " + MassCalculator.allowedFragmentIonTypes);
-                    System.exit(1);
-                }
-            }
-            for (String fragment : MassCalculator.allowedFragmentIonTypes) {
-                if (! onlyFragmentIonTypes.contains(fragment)) {
-                    ignoredFragmentIonTypes.add(fragment);
-                }
-            }
-        } else if (! Constants.ignoredFragmentIonTypes.equals("")) {
-            //only filter if not excluding certain fragment ion types
-            //check that this is allowed
-            String[] commaSplit = Constants.ignoredFragmentIonTypes.split(",");
-            for (int i = 0; i < commaSplit.length; i++) {
-                String fragmentIonType = commaSplit[i].trim();
-                if (MassCalculator.allowedFragmentIonTypes.contains(fragmentIonType)) {
-                    ignoredFragmentIonTypes.add(fragmentIonType);
-                } else {
-                    printError(fragmentIonType + " is not a supported fragment ion type to exclude. " +
-                            "Please choose from " + MassCalculator.allowedFragmentIonTypes);
-                    System.exit(1);
-                }
-            }
-        }
-        return ignoredFragmentIonTypes;
-    }
-    public static String[] fragmentIonHierarchy = makeFragmentIonHierarchy();
-    public static String[] makeFragmentIonHierarchy() {
-        switch (Constants.FragmentationType) {
-            case "HCD":
-                return new String[]{"p", "imm", "y", "b", "a", "p-NL",
-                        "y-NL", "b-NL", "a-NL", "int", "int-NL", "unknown"};
-            case "ETD":
-                return new String[]{"zdot", "c", "z", "y", "unknown"};
-            case "ETHCD":
-                return new String[]{"imm", "y", "b", "a", "zdot", "c", "z", "cdot",
-                        "y-NL", "b-NL", "a-NL", "int", "int-NL", "unknown"};
-            default:  //everything else, like CID
-                return new String[]{"imm", "y", "b", "a",
-                        "y-NL", "b-NL", "a-NL", "int", "int-NL", "unknown"};
-        }
-    }
-    public static Set<String> lowestFragmentIonType = makeLowestFragmentIonType();
-    public static Set<String> makeLowestFragmentIonType() {
-        Set<String> ignoredFragmentIonTypesSet = makeIgnoredFragmentIonTypes();
-        int index = 0;
-        for (int i = fragmentIonHierarchy.length - 1; i > -1; i--) {
-            String ion = fragmentIonHierarchy[i];
-            if (! ignoredFragmentIonTypesSet.contains(ion)) {
-                index = i;
-                break;
-            }
-        }
-        return new HashSet<>(Arrays.asList(fragmentIonHierarchy).subList(0, index + 1));
-    }
-    public static String divideFragments = "0";
 
     //PredFull fragment ion annotation
     //TODO: can only use for PredFull
@@ -346,7 +273,6 @@ public class Constants {
     //use single string sep by comma delimiter
     //public static String features = "predRTrealUnits,unweightedSpectralEntropy,deltaRTLOESS,peptideCounts";
     public static String features = "predRTrealUnits,unweightedSpectralEntropy,deltaRTLOESS";
-    public static Boolean useMultipleCorrelatedFeatures = false;
 
     //don't currently support weighted similarity features
     public static final CaseInsensitiveHashSet detectFeatures = new CaseInsensitiveHashSet(
@@ -379,7 +305,7 @@ public class Constants {
     public static HashSet<String> matchedIntensitiesFeatures = null;
     public static HashSet<String> makeMatchedIntensitiesFeatures() {
         HashSet<String> set = new HashSet<>();
-        for (String s : Constants.fragmentIonHierarchy) {
+        for (String s : FragmentIonConstants.fragmentIonHierarchy) {
             set.add(s + "_matched_intensity");
         }
         return set;
@@ -387,7 +313,7 @@ public class Constants {
     public static HashSet<String> peakCountsFeatures = null;
     public static HashSet<String> makePeakCountsFeatures() {
         HashSet<String> set = new HashSet<>();
-        for (String s : Constants.fragmentIonHierarchy) {
+        for (String s : FragmentIonConstants.fragmentIonHierarchy) {
             set.add(s + "_peak_counts");
         }
         return set;
@@ -395,7 +321,7 @@ public class Constants {
     public static HashSet<String> predIntensitiesFeatures = null;
     public static HashSet<String> makePredIntensitiesFeatures() {
         HashSet<String> set = new HashSet<>();
-        for (String s : Constants.fragmentIonHierarchy) {
+        for (String s : FragmentIonConstants.fragmentIonHierarchy) {
             set.add(s + "_pred_intensity");
         }
         return set;
@@ -403,7 +329,7 @@ public class Constants {
     public static HashSet<String> individualSpectralSimilaritiesFeatures = null;
     public static HashSet<String> makeIndividualSpectralSimilarities() {
         HashSet<String> set = new HashSet<>();
-        for (String s : Constants.fragmentIonHierarchy) {
+        for (String s : FragmentIonConstants.fragmentIonHierarchy) {
             set.add(s + "_spectral_similarity");
         }
         return set;
@@ -411,7 +337,7 @@ public class Constants {
     public static HashSet<String> intensitiesDifferenceFeatures = null;
     public static HashSet<String> makeintensitiesDifference() {
         HashSet<String> set = new HashSet<>();
-        for (String s : Constants.fragmentIonHierarchy) {
+        for (String s : FragmentIonConstants.fragmentIonHierarchy) {
             set.add(s + "_intensities_difference");
         }
         return set;

@@ -18,6 +18,7 @@
 package writers;
 
 import allconstants.Constants;
+import allconstants.FragmentIonConstants;
 import com.univocity.parsers.tsv.TsvWriter;
 import com.univocity.parsers.tsv.TsvWriterSettings;
 import mainsteps.PeptideObj;
@@ -69,8 +70,8 @@ public class PinWriter {
             }
             //add columns for spectral features divided by fragment ion type
             if (Constants.spectraFeatures.contains(s)) {
-                if (! Constants.divideFragments.equals("0")) {
-                    String[] divisions = Constants.divideFragments.split(";");
+                if (! FragmentIonConstants.divideFragments.equals("0")) {
+                    String[] divisions = FragmentIonConstants.divideFragments.split(";");
                     for (String div : divisions) {
                         newNames.add(newName + "_" + div);
                     }
@@ -157,7 +158,7 @@ public class PinWriter {
                                 double score = pepObj.spectralSimObj.scores.get(feature);
                                 formattedWrite("bray_curtis", score);
                             } else {
-                                String[] dividedFragments = Constants.divideFragments.split(";");
+                                String[] dividedFragments = FragmentIonConstants.divideFragments.split(";");
                                 for (int j = 0; j < dividedFragments.length; j++) {
                                     double score = pepObj.spectralSimObj.spectrumComparisons.get(j).scores.get(feature);
                                     formattedWrite("bray_curtis_" + dividedFragments[j], score);
@@ -169,7 +170,7 @@ public class PinWriter {
                                 double score = pepObj.spectralSimObj.scores.get(feature);
                                 formattedWrite("cosine_similarity", score);
                             } else {
-                                String[] dividedFragments = Constants.divideFragments.split(";");
+                                String[] dividedFragments = FragmentIonConstants.divideFragments.split(";");
                                 for (int j = 0; j < dividedFragments.length; j++) {
                                     double score = pepObj.spectralSimObj.spectrumComparisons.get(j).scores.get(feature);
                                     formattedWrite("cosine_similarity_" + dividedFragments[j], score);
@@ -181,7 +182,7 @@ public class PinWriter {
                                 double score = pepObj.spectralSimObj.scores.get(feature);
                                 formattedWrite("spectra_contrast_angle", score);
                             } else {
-                                String[] dividedFragments = Constants.divideFragments.split(";");
+                                String[] dividedFragments = FragmentIonConstants.divideFragments.split(";");
                                 for (int j = 0; j < dividedFragments.length; j++) {
                                     double score = pepObj.spectralSimObj.spectrumComparisons.get(j).scores.get(feature);
                                     formattedWrite("spectra_contrast_angle_" + dividedFragments[j], score);
@@ -193,7 +194,7 @@ public class PinWriter {
                                 double score = pepObj.spectralSimObj.scores.get(feature);
                                 formattedWrite("euclidean_distance", score);
                             } else {
-                                String[] dividedFragments = Constants.divideFragments.split(";");
+                                String[] dividedFragments = FragmentIonConstants.divideFragments.split(";");
                                 for (int j = 0; j < dividedFragments.length; j++) {
                                     double score = pepObj.spectralSimObj.spectrumComparisons.get(j).scores.get(feature);
                                     formattedWrite("euclidean_distance_" + dividedFragments[j], score);
@@ -205,7 +206,7 @@ public class PinWriter {
                                 double score = pepObj.spectralSimObj.scores.get(feature);
                                 formattedWrite("pearson_corr", score);
                             } else {
-                                String[] dividedFragments = Constants.divideFragments.split(";");
+                                String[] dividedFragments = FragmentIonConstants.divideFragments.split(";");
                                 for (int j = 0; j < dividedFragments.length; j++) {
                                     double score = pepObj.spectralSimObj.spectrumComparisons.get(j).scores.get(feature);
                                     formattedWrite("pearson_corr_" + dividedFragments[j], score);
@@ -220,7 +221,7 @@ public class PinWriter {
                                 }
                                 formattedWrite("spearman_corr", score);
                             } else {
-                                String[] dividedFragments = Constants.divideFragments.split(";");
+                                String[] dividedFragments = FragmentIonConstants.divideFragments.split(";");
                                 for (int j = 0; j < dividedFragments.length; j++) {
                                     double score = pepObj.spectralSimObj.spectrumComparisons.get(j).scores.get(feature);
                                     formattedWrite("spearman_corr_" + dividedFragments[j], score);
@@ -236,7 +237,7 @@ public class PinWriter {
                                 }
                                 formattedWrite("hypergeometric_probability", score);
                             } else {
-                                String[] dividedFragments = Constants.divideFragments.split(";");
+                                String[] dividedFragments = FragmentIonConstants.divideFragments.split(";");
                                 for (int j = 0; j < dividedFragments.length; j++) {
                                     double score = pepObj.spectralSimObj.spectrumComparisons.get(j).scores.get(feature);
                                     formattedWrite("hypergeometric_probability_" + dividedFragments[j], score);
@@ -251,7 +252,7 @@ public class PinWriter {
                                 }
                                 formattedWrite("intersection", score);
                             } else {
-                                String[] dividedFragments = Constants.divideFragments.split(";");
+                                String[] dividedFragments = FragmentIonConstants.divideFragments.split(";");
                                 for (int j = 0; j < dividedFragments.length; j++) {
                                     double score = pepObj.spectralSimObj.spectrumComparisons.get(j).scores.get(feature);
                                     formattedWrite("intersection_" + dividedFragments[j], score);
@@ -263,7 +264,7 @@ public class PinWriter {
                                 double score = pepObj.spectralSimObj.scores.get(feature);
                                 formattedWrite("dot_product", score);
                             } else {
-                                String[] dividedFragments = Constants.divideFragments.split(";");
+                                String[] dividedFragments = FragmentIonConstants.divideFragments.split(";");
                                 for (int j = 0; j < dividedFragments.length; j++) {
                                     double score = pepObj.spectralSimObj.spectrumComparisons.get(j).scores.get(feature);
                                     formattedWrite("dot_product_" + dividedFragments[j], score);
@@ -278,7 +279,7 @@ public class PinWriter {
                                 }
                                 formattedWrite("unweighted_spectral_entropy", score);
                             } else {
-                                String[] dividedFragments = Constants.divideFragments.split(";");
+                                String[] dividedFragments = FragmentIonConstants.divideFragments.split(";");
                                 for (int j = 0; j < dividedFragments.length; j++) {
                                     double score = pepObj.spectralSimObj.spectrumComparisons.get(j).scores.get(feature);
                                     formattedWrite("unweighted_spectral_entropy_" + dividedFragments[j], score);
@@ -293,7 +294,7 @@ public class PinWriter {
                                 }
                                 formattedWrite("weighted_spectral_entropy", score);
                             } else {
-                                String[] dividedFragments = Constants.divideFragments.split(";");
+                                String[] dividedFragments = FragmentIonConstants.divideFragments.split(";");
                                 for (int j = 0; j < dividedFragments.length; j++) {
                                     double score = pepObj.spectralSimObj.spectrumComparisons.get(j).scores.get(feature);
                                     formattedWrite("weighted_spectral_entropy_" + dividedFragments[j], score);
@@ -308,7 +309,7 @@ public class PinWriter {
                                 }
                                 formattedWrite("heuristic_spectral_entropy", score);
                             } else {
-                                String[] dividedFragments = Constants.divideFragments.split(";");
+                                String[] dividedFragments = FragmentIonConstants.divideFragments.split(";");
                                 for (int j = 0; j < dividedFragments.length; j++) {
                                     double score = pepObj.spectralSimObj.spectrumComparisons.get(j).scores.get(feature);
                                     formattedWrite("heuristic_spectral_entropy" + dividedFragments[j], score);

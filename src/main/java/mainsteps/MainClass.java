@@ -18,6 +18,7 @@
 package mainsteps;
 
 import allconstants.Constants;
+import allconstants.FragmentIonConstants;
 import allconstants.LowercaseModelMapper;
 import features.spectra.MassCalculator;
 import koinaclasses.KoinaMethods;
@@ -339,8 +340,7 @@ public class MainClass {
 
             //update fragment ion types based on fragmentation type
             //update Constants to be null initially
-            Constants.fragmentIonHierarchy = Constants.makeFragmentIonHierarchy();
-            Constants.lowestFragmentIonType = Constants.makeLowestFragmentIonType();
+            FragmentIonConstants.makeFragmentIonHierarchy();
             Constants.matchedIntensitiesFeatures = Constants.makeMatchedIntensitiesFeatures();
             Constants.peakCountsFeatures = Constants.makePeakCountsFeatures();
             Constants.predIntensitiesFeatures = Constants.makePredIntensitiesFeatures();
@@ -1094,7 +1094,7 @@ public class MainClass {
 //                Constants.divideFragments = "b_y_c_z;immonium_a_cdot_zdot_y-NL_b-NL_a-NL_internal_internal-NL_unknown";
 //                Constants.topFragments = 12;
 //            } else if (Constants.divideFragments.equals("0") && Constants.spectraModel.equals("DIA-NN")) {
-//                Constants.topFragments = 20; //TODO: automatically find best number of fragments to use
+//                Constants.topFragments = 20;
 //            }
 
             //check that at least pinPepXMLDirectory and mzmlDirectory are provided
@@ -1103,12 +1103,6 @@ public class MainClass {
             }
             if (Constants.mzmlDirectory == null) {
                 throw new IllegalArgumentException("mzmlDirectory must be provided");
-            }
-
-            //check that features are allowed
-            if (Constants.useMultipleCorrelatedFeatures) {
-                Constants.features = "brayCurtis,pearsonCorr,dotProduct,unweightedSpectralEntropy," +
-                        "deltaRTLOESS,deltaRTLOESSnormalized,RTprobabilityUnifPrior";
             }
 
             Constants.allowedFeatures = Constants.makeAllowedFeatures();

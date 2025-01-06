@@ -18,6 +18,7 @@
 package features;
 
 import allconstants.Constants;
+import allconstants.FragmentIonConstants;
 import features.spectra.SpectrumComparison;
 import mainsteps.PeptideObj;
 import org.apache.commons.math3.stat.correlation.PearsonsCorrelation;
@@ -131,7 +132,7 @@ public class FeatureCalculator {
                             if (pepObj.spectralSimObj.spectrumComparisons.isEmpty()) {
                                 pepObj.spectralSimObj.scores.put(feature, pepObj.spectralSimObj.brayCurtis());
                             } else {
-                                String[] dividedFragments = Constants.divideFragments.split(";");
+                                String[] dividedFragments = FragmentIonConstants.divideFragments.split(";");
                                 for (int j = 0; j < dividedFragments.length; j++) {
                                     pepObj.spectralSimObj.spectrumComparisons.get(j).scores.put(
                                             feature, pepObj.spectralSimObj.spectrumComparisons.get(j).brayCurtis()
@@ -143,7 +144,7 @@ public class FeatureCalculator {
                             if (pepObj.spectralSimObj.spectrumComparisons.isEmpty()) {
                                 pepObj.spectralSimObj.scores.put(feature, pepObj.spectralSimObj.cosineSimilarity());
                             } else {
-                                String[] dividedFragments = Constants.divideFragments.split(";");
+                                String[] dividedFragments = FragmentIonConstants.divideFragments.split(";");
                                 for (int j = 0; j < dividedFragments.length; j++) {
                                     pepObj.spectralSimObj.spectrumComparisons.get(j).scores.put(
                                             feature, pepObj.spectralSimObj.spectrumComparisons.get(j).cosineSimilarity()
@@ -155,7 +156,7 @@ public class FeatureCalculator {
                             if (pepObj.spectralSimObj.spectrumComparisons.isEmpty()) {
                                 pepObj.spectralSimObj.scores.put(feature, pepObj.spectralSimObj.spectralContrastAngle());
                             } else {
-                                String[] dividedFragments = Constants.divideFragments.split(";");
+                                String[] dividedFragments = FragmentIonConstants.divideFragments.split(";");
                                 for (int j = 0; j < dividedFragments.length; j++) {
                                     pepObj.spectralSimObj.spectrumComparisons.get(j).scores.put(
                                             feature, pepObj.spectralSimObj.spectrumComparisons.get(j).spectralContrastAngle()
@@ -167,7 +168,7 @@ public class FeatureCalculator {
                             if (pepObj.spectralSimObj.spectrumComparisons.isEmpty()) {
                                 pepObj.spectralSimObj.scores.put(feature, pepObj.spectralSimObj.euclideanDistance());
                             } else {
-                                String[] dividedFragments = Constants.divideFragments.split(";");
+                                String[] dividedFragments = FragmentIonConstants.divideFragments.split(";");
                                 for (int j = 0; j < dividedFragments.length; j++) {
                                     pepObj.spectralSimObj.spectrumComparisons.get(j).scores.put(
                                             feature, pepObj.spectralSimObj.spectrumComparisons.get(j).euclideanDistance()
@@ -179,7 +180,7 @@ public class FeatureCalculator {
                             if (pepObj.spectralSimObj.spectrumComparisons.isEmpty()) {
                                 pepObj.spectralSimObj.scores.put(feature, pepObj.spectralSimObj.pearsonCorr());
                             } else {
-                                String[] dividedFragments = Constants.divideFragments.split(";");
+                                String[] dividedFragments = FragmentIonConstants.divideFragments.split(";");
                                 for (int j = 0; j < dividedFragments.length; j++) {
                                     pepObj.spectralSimObj.spectrumComparisons.get(j).scores.put(
                                             feature, pepObj.spectralSimObj.spectrumComparisons.get(j).pearsonCorr()
@@ -191,7 +192,7 @@ public class FeatureCalculator {
                             if (pepObj.spectralSimObj.spectrumComparisons.isEmpty()) {
                                 pepObj.spectralSimObj.scores.put(feature, pepObj.spectralSimObj.spearmanCorr());
                             } else {
-                                String[] dividedFragments = Constants.divideFragments.split(";");
+                                String[] dividedFragments = FragmentIonConstants.divideFragments.split(";");
                                 for (int j = 0; j < dividedFragments.length; j++) {
                                     pepObj.spectralSimObj.spectrumComparisons.get(j).scores.put(
                                             feature, pepObj.spectralSimObj.spectrumComparisons.get(j).spearmanCorr()
@@ -203,7 +204,7 @@ public class FeatureCalculator {
                             if (pepObj.spectralSimObj.spectrumComparisons.isEmpty()) {
                                 pepObj.spectralSimObj.scores.put(feature, pepObj.spectralSimObj.hyperGeometricProbability());
                             } else {
-                                String[] dividedFragments = Constants.divideFragments.split(";");
+                                String[] dividedFragments = FragmentIonConstants.divideFragments.split(";");
                                 for (int j = 0; j < dividedFragments.length; j++) {
                                     pepObj.spectralSimObj.spectrumComparisons.get(j).scores.put(
                                             feature, pepObj.spectralSimObj.spectrumComparisons.get(j).hyperGeometricProbability()
@@ -215,7 +216,7 @@ public class FeatureCalculator {
                             if (pepObj.spectralSimObj.spectrumComparisons.isEmpty()) {
                                 pepObj.spectralSimObj.scores.put(feature, pepObj.spectralSimObj.intersection());
                             } else {
-                                String[] dividedFragments = Constants.divideFragments.split(";");
+                                String[] dividedFragments = FragmentIonConstants.divideFragments.split(";");
                                 for (int j = 0; j < dividedFragments.length; j++) {
                                     pepObj.spectralSimObj.spectrumComparisons.get(j).scores.put(
                                             feature, pepObj.spectralSimObj.spectrumComparisons.get(j).intersection()
@@ -227,7 +228,7 @@ public class FeatureCalculator {
                             if (pepObj.spectralSimObj.spectrumComparisons.isEmpty()) {
                                 pepObj.spectralSimObj.scores.put(feature, pepObj.spectralSimObj.dotProduct());
                             } else {
-                                String[] dividedFragments = Constants.divideFragments.split(";");
+                                String[] dividedFragments = FragmentIonConstants.divideFragments.split(";");
                                 for (int j = 0; j < dividedFragments.length; j++) {
                                     pepObj.spectralSimObj.spectrumComparisons.get(j).scores.put(
                                             feature, pepObj.spectralSimObj.spectrumComparisons.get(j).dotProduct()
@@ -239,7 +240,7 @@ public class FeatureCalculator {
                             if (pepObj.spectralSimObj.spectrumComparisons.isEmpty()) {
                                 pepObj.spectralSimObj.scores.put(feature, pepObj.spectralSimObj.unweightedSpectralEntropy());
                             } else {
-                                String[] dividedFragments = Constants.divideFragments.split(";");
+                                String[] dividedFragments = FragmentIonConstants.divideFragments.split(";");
                                 for (int j = 0; j < dividedFragments.length; j++) {
                                     pepObj.spectralSimObj.spectrumComparisons.get(j).scores.put(
                                             feature, pepObj.spectralSimObj.spectrumComparisons.get(j).unweightedSpectralEntropy()
@@ -251,7 +252,7 @@ public class FeatureCalculator {
                             if (pepObj.spectralSimObj.spectrumComparisons.isEmpty()) {
                                 pepObj.spectralSimObj.scores.put(feature, pepObj.spectralSimObj.weightedSpectralEntropy());
                             } else {
-                                String[] dividedFragments = Constants.divideFragments.split(";");
+                                String[] dividedFragments = FragmentIonConstants.divideFragments.split(";");
                                 for (int j = 0; j < dividedFragments.length; j++) {
                                     pepObj.spectralSimObj.spectrumComparisons.get(j).scores.put(
                                             feature, pepObj.spectralSimObj.spectrumComparisons.get(j).weightedSpectralEntropy()
@@ -263,7 +264,7 @@ public class FeatureCalculator {
                             if (pepObj.spectralSimObj.spectrumComparisons.isEmpty()) {
                                 pepObj.spectralSimObj.scores.put(feature, pepObj.spectralSimObj.heuristicSpectralEntropy());
                             } else {
-                                String[] dividedFragments = Constants.divideFragments.split(";");
+                                String[] dividedFragments = FragmentIonConstants.divideFragments.split(";");
                                 for (int j = 0; j < dividedFragments.length; j++) {
                                     pepObj.spectralSimObj.spectrumComparisons.get(j).scores.put(
                                             feature, pepObj.spectralSimObj.spectrumComparisons.get(j).heuristicSpectralEntropy()
@@ -511,11 +512,11 @@ public class FeatureCalculator {
 //                        break;
                         case "intensity_distribution_similarity":
                             //unknown should be at the end
-                            float[] predIntensities = new float[Constants.fragmentIonHierarchy.length - 1];
-                            float[] expIntensities = new float[Constants.fragmentIonHierarchy.length - 1];
-                            for (int j = 0; j < Constants.fragmentIonHierarchy.length - 1; j++) {
-                                predIntensities[j] = pepObj.predIntensities.get(Constants.fragmentIonHierarchy[j]);
-                                expIntensities[j] = pepObj.matchedIntensities.get(Constants.fragmentIonHierarchy[j]);
+                            float[] predIntensities = new float[FragmentIonConstants.fragmentIonHierarchy.length - 1];
+                            float[] expIntensities = new float[FragmentIonConstants.fragmentIonHierarchy.length - 1];
+                            for (int j = 0; j < FragmentIonConstants.fragmentIonHierarchy.length - 1; j++) {
+                                predIntensities[j] = pepObj.predIntensities.get(FragmentIonConstants.fragmentIonHierarchy[j]);
+                                expIntensities[j] = pepObj.matchedIntensities.get(FragmentIonConstants.fragmentIonHierarchy[j]);
                             }
                             double value = new PearsonsCorrelation().correlation(NumericUtils.floatToDouble(predIntensities),
                                     NumericUtils.floatToDouble(expIntensities));

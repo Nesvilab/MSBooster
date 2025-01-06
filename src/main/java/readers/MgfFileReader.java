@@ -18,6 +18,7 @@
 package readers;
 
 import allconstants.Constants;
+import allconstants.FragmentIonConstants;
 import mainsteps.MzmlScanNumber;
 import peptideptmformatting.PeptideFormatter;
 import predictions.PredictionEntry;
@@ -81,7 +82,7 @@ public class MgfFileReader implements LibraryPredictionMapper {
     public MgfFileReader(String file, boolean createScanNumObjects, ExecutorService executorService, String model) {
         try {
             //load allowed fragment ion types
-            Set<String> ignoredFragmentIonTypesSet = Constants.makeIgnoredFragmentIonTypes();
+            Set<String> ignoredFragmentIonTypesSet = FragmentIonConstants.makeIgnoredFragmentIonTypes();
 
             //add name
             filenames.add(file);

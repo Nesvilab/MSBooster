@@ -18,6 +18,7 @@
 package readers;
 
 import allconstants.Constants;
+import allconstants.FragmentIonConstants;
 import com.google.common.collect.Multimap;
 import java.nio.file.Paths;
 import java.util.ArrayList;
@@ -43,7 +44,7 @@ public class LibraryTsvReader implements LibraryPredictionMapper {
         Multimap<String, Transition> transitions = libraryTsv.read(Paths.get(file));
 
         try {
-            Set<String> ignoredFragmentIonTypesSet = Constants.makeIgnoredFragmentIonTypes();
+            Set<String> ignoredFragmentIonTypesSet = FragmentIonConstants.makeIgnoredFragmentIonTypes();
 
             for (String k : transitions.keySet()) {
                 Collection<Transition> tt = transitions.get(k);

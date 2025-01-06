@@ -18,6 +18,7 @@
 package readers.predictionreaders;
 
 import allconstants.Constants;
+import allconstants.FragmentIonConstants;
 import features.spectra.MassCalculator;
 import peptideptmformatting.PeptideFormatter;
 import peptideptmformatting.PeptideSkipper;
@@ -72,7 +73,7 @@ public class PredFullSpeclibReader extends MgfFileReader {
         String l;
 
         //filter here so don't need to annotate everything
-        Set<String> ignoredFragmentIonTypesSet = Constants.makeIgnoredFragmentIonTypes();
+        Set<String> ignoredFragmentIonTypesSet = FragmentIonConstants.makeIgnoredFragmentIonTypes();
         this.getPreds();
         while ((l = TSVReader.readLine()) != null) {
             //doing fragment annotation for everything, not just modified ones

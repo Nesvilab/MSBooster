@@ -67,8 +67,7 @@ public class KoinaModelCaller {
     private static final int unispecFragIdx = 2;
     private static final int predfullMzIdx = 1;
     private static final int predfullIntIdx = 0;
-    private static final int predfullFragIdx = 2;
-    private static String modelType;
+    private static final int predfullFragIdx = 2; //TODO
     private static String finalModel;
     static boolean useFullAnnotation = false;
     private static AtomicBoolean emptyUrl = new AtomicBoolean(false);
@@ -84,34 +83,14 @@ public class KoinaModelCaller {
             printError("Exiting");
             System.exit(1);
         }
-        modelType = model.toLowerCase().split("_")[0];
-        if (modelType.equals("prosit") && model.contains("TMT")) {
-            modelType = "prosittmt";
-        }
-        finalModel = model;
-        if (model.contains("UniSpec") || model.contains("PredFull")) {
-            useFullAnnotation = true;
-        }
-
         if (verbose) {
             printInfo("Calling " + model + " model");
         }
         long startTime = System.currentTimeMillis();
-
-        String property = null;
-        //decide if this is RT or MS2 model
-        if (Constants.KoinaRTmodels.contains(model)) {
-            property = "rt";
-        } else if (Constants.KoinaMS2models.contains(model)) {
-            property = "ms2";
-        } else if (Constants.KoinaIMmodels.contains(model)) {
-            property = "im";
-        } else {
-            printError(model + " not in Koina models");
-            System.exit(1);
+        finalModel = model;
+        if (klr.modelType.contains("unispec") || klr.modelType.contains("predfull")) {
+            useFullAnnotation = true;
         }
-        klr.getPreds().modelType = modelType;
-        klr.getPreds().property = property;
 
         try {
             //pass json files to http request
@@ -119,7 +98,7 @@ public class KoinaModelCaller {
             ArrayList<String> filenameArraylist = new ArrayList<>();
             for (File f : fileArray) {
                 String fname = f.toString();
-                if (fname.endsWith(property + ".json")) {
+                if (fname.endsWith(klr.property + ".json")) {
                     filenameArraylist.add(fname);
                 }
             }
@@ -127,7 +106,7 @@ public class KoinaModelCaller {
 
             ProgressReporter pr = new ProgressReporter(numProcesses);
             AtomicLong waitTime;
-            if (property.equals("rt") || property.equals("im")) {
+            if (klr.property.equals("rt") || klr.property.equals("im")) {
                 waitTime = new AtomicLong(Constants.initialKoinaMillisecondsToWaitRtIm);
             } else {
                 waitTime = new AtomicLong(Constants.initialKoinaMillisecondsToWaitMs2);
@@ -142,7 +121,7 @@ public class KoinaModelCaller {
             long jobStart = System.currentTimeMillis();
 
             for (int i = 0; i < numProcesses; i++) {
-                KoinaTask task = new KoinaTask(filenameArraylist.get(i), property, model,
+                KoinaTask task = new KoinaTask(filenameArraylist.get(i), klr.property, model,
                         klr, waitTime);
                 tasks[i] = task;
             }
@@ -244,7 +223,7 @@ public class KoinaModelCaller {
                 parsedResults[i] = Float.parseFloat(results[i]);
             }
 
-            assignRTs(fileName, parsedResults, klr, modelType);
+            assignRTs(fileName, parsedResults, klr);
         }
         if (property.equalsIgnoreCase("im")) {
             String ims = koinaString.split("data")[2];
@@ -254,7 +233,7 @@ public class KoinaModelCaller {
                 parsedResults[i] = Float.parseFloat(results[i]);
             }
 
-            assignIMs(fileName, parsedResults, klr, modelType);
+            assignIMs(fileName, parsedResults, klr);
         } else if (property.equalsIgnoreCase("ms2")) {
             //get indices for processing
             int mzIdx = 0;
@@ -486,18 +465,18 @@ public class KoinaModelCaller {
                 }
             if (useFullAnnotation) {
                 assignMS2(fileName, allMZs, allIntensities, allFragmentIonTypes, allFragNums, allCharges,
-                        allFullAnnotations, klr, modelType);
+                        allFullAnnotations, klr);
             } else {
-                assignMS2(fileName, allIntensities, allFragmentIonTypes, allFragNums, allCharges, klr, modelType);
+                assignMS2(fileName, allIntensities, allFragmentIonTypes, allFragNums, allCharges, klr);
             }
         }
     }
 
-    private static void assignRTs(String fileName, float[] RTs, KoinaLibReader klr, String model) throws IOException {
+    private static void assignRTs(String fileName, float[] RTs, KoinaLibReader klr) throws IOException {
         String[] peptides = readJSON(fileName, RTs.length);
         PredictionEntryHashMap preds = klr.getPreds();
         for (int i = 0; i < peptides.length; i++) {
-            PeptideFormatter pf = new PeptideFormatter(peptides[i], 1, model.toLowerCase());
+            PeptideFormatter pf = new PeptideFormatter(peptides[i], 1, klr.modelType);
             String peptide = pf.getBase() + "|";
 
             for (int charge = Constants.minPrecursorCharge; charge < Constants.maxPrecursorCharge + 1; charge++) {
@@ -514,7 +493,7 @@ public class KoinaModelCaller {
         }
     }
 
-    private static void assignIMs(String fileName, float[] IMs, KoinaLibReader klr, String model) throws IOException {
+    private static void assignIMs(String fileName, float[] IMs, KoinaLibReader klr) throws IOException {
         double CCS_IM_COEF = 1059.62245;
         double IM_GAS_MASS = 28.0;
 
@@ -522,7 +501,7 @@ public class KoinaModelCaller {
         PredictionEntryHashMap preds = klr.getPreds();
         for (int i = 0; i < peptides.length; i++) {
             String[] peptideSplit = peptides[i].split("\\|");
-            PeptideFormatter pf = new PeptideFormatter(peptideSplit[0], peptideSplit[1], model.toLowerCase());
+            PeptideFormatter pf = new PeptideFormatter(peptideSplit[0], peptideSplit[1], klr.modelType);
             String peptide = pf.getBaseCharge();
 
             PredictionEntry pe;
@@ -546,14 +525,13 @@ public class KoinaModelCaller {
     }
 
     private static void assignMS2(String fileName, float[][] intensities,
-                                  String[][] fragmentIonTypes, int[][] fragNums, int[][] charges, KoinaLibReader klr,
-                                  String model)
+                                  String[][] fragmentIonTypes, int[][] fragNums, int[][] charges, KoinaLibReader klr)
             throws IOException {
         String[] peptides = readJSON(fileName, intensities.length);
         PredictionEntryHashMap preds = klr.getPreds();
         for (int i = 0; i < peptides.length; i++) {
             String[] peptideSplit = peptides[i].split("\\|");
-            PeptideFormatter pf = new PeptideFormatter(peptideSplit[0], peptideSplit[1], model.toLowerCase());
+            PeptideFormatter pf = new PeptideFormatter(peptideSplit[0], peptideSplit[1], klr.modelType);
             String peptide = pf.getBaseCharge();
 
             //problem with Koina not including PTM mass in m/z. Need to calculate here
@@ -578,13 +556,13 @@ public class KoinaModelCaller {
 
     private static void assignMS2(String fileName, float[][] mzs, float[][] intensities,
                                   String[][] fragmentIonTypes, int[][] fragNums, int[][] charges, String[][] fullAnnotations,
-                                  KoinaLibReader klr, String model)
+                                  KoinaLibReader klr)
             throws IOException {
         String[] peptides = readJSON(fileName, intensities.length);
         PredictionEntryHashMap preds = klr.getPreds();
         for (int i = 0; i < peptides.length; i++) {
             String[] peptideSplit = peptides[i].split("\\|");
-            PeptideFormatter pf = new PeptideFormatter(peptideSplit[0], peptideSplit[1], model.toLowerCase());
+            PeptideFormatter pf = new PeptideFormatter(peptideSplit[0], peptideSplit[1], klr.modelType);
             String peptide = pf.getBaseCharge();
 
             PredictionEntry pe = new PredictionEntry(mzs[i], intensities[i], fragNums[i],

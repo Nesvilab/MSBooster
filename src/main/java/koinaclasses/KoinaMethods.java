@@ -143,15 +143,15 @@ public class KoinaMethods {
         }
 
         //send predictions to Koina
-        KoinaLibReader klr = new KoinaLibReader();
+        KoinaLibReader klr = new KoinaLibReader(model);
         KoinaModelCaller kmc = new KoinaModelCaller();
         kmc.callModel(model, klr, jsonFolder, executorService, false, false);
         executorService.shutdown();
         try {
             PredictionEntryHashMap assignedPreds = new PredictionEntryHashMap();
-            ArrayList<PredictionEntryHashMap> predList = new ArrayList<>();
-            predList.add(klr.getPreds());
-            assignedPreds.transferKoinaPreds(predList, fulltsv);
+            ArrayList<KoinaLibReader> klrs = new ArrayList<>();
+            klrs.add(klr);
+            assignedPreds.transferKoinaPreds(klrs, fulltsv);
             klr.setPreds(assignedPreds);
         } catch (Exception e) {
             e.printStackTrace();

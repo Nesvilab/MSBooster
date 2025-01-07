@@ -46,8 +46,8 @@ public class MzmlScanNumber {
     public double isolationUpper;
     public float[] expMZs;
     public float[] expIntensities;
-    public float[] savedExpMZs;
-    public float[] savedExpIntensities;
+    public final float[] savedExpMZs; //these are not changed
+    public final float[] savedExpIntensities;
     public float RT;
     public int RTbinSize;
     public float normalizedRT;
@@ -76,8 +76,11 @@ public class MzmlScanNumber {
         if (Constants.removeRankPeaks && (Constants.features.contains("hypergeometricProbability") ||
                 Constants.features.contains("intersection") ||
                 Constants.features.contains("adjacentSimilarity"))) {
-            this.savedExpMZs = this.expMZs;
-            this.savedExpIntensities = this.expIntensities;
+            this.savedExpMZs = Arrays.copyOf(this.expMZs, this.expMZs.length);
+            this.savedExpIntensities = Arrays.copyOf(this.expIntensities, this.expIntensities.length);
+        } else {
+            this.savedExpMZs = new float[0]; //will refer to expMZs instead to save memory
+            this.savedExpIntensities = new float[0];
         }
         this.RT = scan.getRt().floatValue();
         if (Constants.useIM) {
@@ -124,11 +127,21 @@ public class MzmlScanNumber {
     }
 
     //this version if creating from mgf file
+    //TODO: update support
     public MzmlScanNumber(int scanNum, float[] expMZs, float[] expInts, float RT, float IM) {
         this.scanNum = scanNum;
         this.expMZs = expMZs;
         this.expIntensities = expInts;
         sortArrays(this.expMZs, this.expIntensities);
+        if (Constants.removeRankPeaks && (Constants.features.contains("hypergeometricProbability") ||
+                Constants.features.contains("intersection") ||
+                Constants.features.contains("adjacentSimilarity"))) {
+            this.savedExpMZs = Arrays.copyOf(this.expMZs, this.expMZs.length);
+            this.savedExpIntensities = Arrays.copyOf(this.expIntensities, this.expIntensities.length);
+        } else {
+            this.savedExpMZs = new float[0]; //will refer to expMZs instead to save memory
+            this.savedExpIntensities = new float[0];
+        }
         this.RT = RT;
         this.IM = IM;
     }
@@ -155,6 +168,18 @@ public class MzmlScanNumber {
 
     public float[] getExpMZs() { return expMZs; }
     public float[] getExpIntensities() { return expIntensities; }
+    public float[] getSavedExpMZs() {
+        if (savedExpMZs.length == 0) {
+            return expMZs;
+        }
+        return savedExpMZs;
+    }
+    public float[] getSavedExpIntensities() {
+        if (savedExpIntensities.length == 0) {
+            return expIntensities;
+        }
+        return savedExpIntensities;
+    }
 
     public PeptideObj setPeptideObject(PeptideFormatter name, int rank, int targetORdecoy, String escore,
                                        PredictionEntryHashMap allPreds, boolean set) throws IOException, URISyntaxException {

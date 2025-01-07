@@ -258,6 +258,7 @@ public class SpectrumComparison {
         return matchedInts;
     }
 
+    //TODO: could replace with mass calculator
     private void getAllMatchedIntensities() {
         if (allMatchedIntensities == null) {
             MassCalculator mc = new MassCalculator(pepObj.name.split("\\|")[0], pepObj.charge);
@@ -276,7 +277,8 @@ public class SpectrumComparison {
             //sort
             Arrays.sort(mzs);
 
-            allMatchedIntensities = getMatchedIntensities(pepObj.scanNumObj.getExpMZs(), pepObj.scanNumObj.getExpIntensities(),
+            allMatchedIntensities = getMatchedIntensities(
+                    pepObj.scanNumObj.getSavedExpMZs(), pepObj.scanNumObj.getSavedExpIntensities(),
                     mzs, new float[mzs.length]);
         }
     }
@@ -744,7 +746,7 @@ public class SpectrumComparison {
     }
 
     //top 24
-    public double hyperGeometricProbability() {
+    public double hypergeometricProbability() {
         this.getAllMatchedIntensities();
         matchedIons = 0;
         for (float f : allMatchedIntensities) {
@@ -791,5 +793,52 @@ public class SpectrumComparison {
 
         //return intersection / (matchedI.length + iters - intersection); //this would be jaccard
         return intersection;
+    }
+
+    //generic way of getting score
+    public double getScore(String score) {
+        double returnScore = 0;
+        switch (score) {
+            case "brayCurtis":
+                returnScore = brayCurtis();
+                break;
+            case "cosineSimilarity":
+                returnScore = cosineSimilarity();
+                break;
+            case "spectralContrastAngle":
+                returnScore = spectralContrastAngle();
+                break;
+            case "euclideanDistance":
+                returnScore = euclideanDistance();
+                break;
+            case "pearsonCorr":
+                returnScore = pearsonCorr();
+                break;
+            case "spearmanCorr":
+                returnScore = spearmanCorr();
+                break;
+            case "hypergeometricProbability":
+                returnScore = hypergeometricProbability();
+                break;
+            case "intersection":
+                returnScore = intersection();
+                break;
+            case "dotProduct":
+                returnScore = dotProduct();
+                break;
+            case "unweightedSpectralEntropy":
+                returnScore = unweightedSpectralEntropy();
+                break;
+            case "weightedSpectralEntropy":
+                returnScore = weightedSpectralEntropy();
+                break;
+            case "heuristicSpectralEntropy":
+                returnScore = heuristicSpectralEntropy();
+                break;
+            default:
+                printError("No score called " + score + ". Exiting");
+                System.exit(1);
+        }
+        return returnScore;
     }
 }

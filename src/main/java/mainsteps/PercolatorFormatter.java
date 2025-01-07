@@ -163,7 +163,7 @@ public class PercolatorFormatter {
                 //handling for empty pin files
                 if (pin.getLength() < 2) {
                     printInfo(pinFiles[i].getCanonicalPath() + " is empty. Writing empty edited file");
-                    PinWriter pw = new PinWriter(newOutfile, pin, featuresList, mzml, null);
+                    PinWriter pw = new PinWriter(newOutfile, pin, featuresList, mzml);
                     pw.write();
                     continue;
                 }
@@ -180,20 +180,6 @@ public class PercolatorFormatter {
 
                 //Special preparations dependent on features we require
                 mzml.setPinEntries(pin, allPreds, executorService);
-                //these require all experimental peaks before removing higher rank peaks
-                if (Constants.removeRankPeaks &&
-                        (featuresList.contains("hypergeometricProbability") ||
-                                featuresList.contains("intersection") ||
-                                featuresList.contains("adjacentSimilarity"))) {
-                    for (int num : mzml.getScanNums()) {
-                        MzmlScanNumber msn = mzml.getScanNumObject(num);
-                        msn.expMZs = msn.savedExpMZs;
-                        msn.expIntensities = msn.savedExpIntensities;
-                        msn.savedExpMZs = null;
-                        msn.savedExpIntensities = null;
-                    }
-                    Constants.removeRankPeaks = false;
-                }
 
                 if (featuresList.contains("adjacentSimilarity")) {
                     printInfo("Calculating adjacent similarity");
@@ -375,7 +361,7 @@ public class PercolatorFormatter {
                                     scores[scoreIdx] = score;
                                     predictionEntry.scores.put("entropy", scores);
 
-                                    score = (float) sc.hyperGeometricProbability();
+                                    score = (float) sc.hypergeometricProbability();
                                     scores = predictionEntry.scores.get("hypergeom");
                                     scores[scoreIdx] = score;
                                     predictionEntry.scores.put("hypergeom", scores);
@@ -614,7 +600,7 @@ public class PercolatorFormatter {
                 fc.calculate(executorService);
 
                 printInfo("Writing features");
-                PinWriter pw = new PinWriter(newOutfile, pin, featuresList, mzml, fc.featureStats);
+                PinWriter pw = new PinWriter(newOutfile, pin, featuresList, mzml);
                 pw.write();
                 String histFile;
                 if (Constants.renamePin == 1) {

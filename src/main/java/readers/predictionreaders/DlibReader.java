@@ -106,7 +106,7 @@ public class DlibReader implements LibraryPredictionMapper {
                     }
 
                     PredictionEntry newPred = new PredictionEntry(finalMZs, finalIntensities,
-                            new int[0], new int[0], new String[0], new int[0]);
+                            new int[0], new int[0], new String[0]);
                     newPred.setRT(RT);
                     allPreds.put(name, newPred);
                 }
@@ -173,7 +173,7 @@ public class DlibReader implements LibraryPredictionMapper {
                             decoyMZs[i] = mz;
                         }
                         PredictionEntry newPred = new PredictionEntry(decoyMZs, pe.intensities,
-                                new int[0], new int[0], new String[0], new int[0]);
+                                new int[0], new int[0], new String[0]);
                         newPred.setRT(pe.RT);
                         allPreds.put(pfDecoy.getBaseCharge(), newPred);
                     }
@@ -239,7 +239,7 @@ public class DlibReader implements LibraryPredictionMapper {
 
                         //add to hashmap
                         PredictionEntry newPred = new PredictionEntry(newMZsArray, newIntensitiesArray,
-                                new int[0], new int[0], new String[0], new int[0]);
+                                new int[0], new int[0], new String[0]);
                         newPred.setRT(tmp.RT);
                         allPreds.put(pf.getBaseCharge(), newPred);
                     }

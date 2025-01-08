@@ -100,7 +100,6 @@ public class PredictionEntryHashMap extends ConcurrentHashMap<String, Prediction
                         pe1.fragNums = pe2.fragNums;
                         pe1.charges = pe2.charges;
                         pe1.fragmentIonTypes = pe2.fragmentIonTypes;
-                        pe1.flags = pe2.flags;
                         pe1.filtered = pe2.filtered;
                         break;
                     case "auxSpectra":
@@ -200,17 +199,16 @@ public class PredictionEntryHashMap extends ConcurrentHashMap<String, Prediction
                             newPred.fragNums = new int[]{0};
                             newPred.charges = new int[]{0};
                             newPred.fragmentIonTypes = new String[]{"y"};
-                            newPred.flags = new int[]{1};
                         } else {
                             if (newMZs.length == 0) {
                                 newMZs = oldPred.mzs;
                             }
                             if (klr.modelType.contains("unispec") || klr.modelType.contains("predfull")) {
                                 newPred = new PredictionEntry(newMZs, oldPred.intensities, oldPred.fragNums,
-                                        oldPred.charges, oldPred.fragmentIonTypes, oldPred.flags, oldPred.fullAnnotations);
+                                        oldPred.charges, oldPred.fragmentIonTypes, oldPred.fullAnnotations);
                             } else {
                                 newPred = new PredictionEntry(newMZs, oldPred.intensities, oldPred.fragNums,
-                                        oldPred.charges, oldPred.fragmentIonTypes, oldPred.flags);
+                                        oldPred.charges, oldPred.fragmentIonTypes);
                             }
                         }
                         break;

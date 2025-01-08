@@ -32,22 +32,12 @@ import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.HashMap;
 
 public class MspReader implements LibraryPredictionMapper {
     final ArrayList<String> filenames;
     PredictionEntryHashMap allPreds = new PredictionEntryHashMap();
 
-    //convert int flag to fragment ion type
-    private static HashMap<Integer, String> makeFlagTOion() {
-        HashMap<Integer, String> map = new HashMap<>();
-        map.put(0, "b");
-        map.put(1, "y");
-        return map;
-    }
-    HashMap<Integer, String> flagTOion = makeFlagTOion();
-
-    public MspReader(String files) throws FileNotFoundException {
+    public MspReader(String files) {
         File predsDirectory = new File(files);
         String[] predsFiles = predsDirectory.list();
         filenames = new ArrayList<String>();
@@ -99,7 +89,7 @@ public class MspReader implements LibraryPredictionMapper {
                     ArrayList<Float> mzsList = new ArrayList<>(numPeaks);
                     ArrayList<Float> intsList = new ArrayList<>(numPeaks);
                     ArrayList<Integer> fragNumsList = new ArrayList<>(numPeaks);
-                    ArrayList<Integer> flagsList = new ArrayList<>(numPeaks);
+                    ArrayList<String> fragmentIonTypesList = new ArrayList<>(numPeaks);
                     ArrayList<Integer> chargesList = new ArrayList<>(numPeaks);
 
                     for (int i = 0; i < numPeaks; i++) {
@@ -128,29 +118,25 @@ public class MspReader implements LibraryPredictionMapper {
                         mzsList.add(Float.parseFloat(lineSplit[0]));
                         intsList.add(tmpInt);
                         chargesList.add(fragCharge);
-                        if (fragment.charAt(0) == 'y') {
-                            flagsList.add(1);
-                        } else {
-                            flagsList.add(0);
-                        }
+                        fragmentIonTypesList.add(fragment.substring(0, 1));
                         fragNumsList.add(fragNum);
                     }
 
                     float[] mzs = new float[mzsList.size()];
                     float[] ints = new float[intsList.size()];
                     int[] fragNums = new int[intsList.size()];
-                    int[] flags = new int[intsList.size()];
+                    String[] fragmentIonTypes = new String[intsList.size()];
                     int[] charges = new int[intsList.size()];
                     for (int i = 0; i < mzs.length; i++) {
                         mzs[i] = mzsList.get(i);
                         ints[i] = intsList.get(i);
                         fragNums[i] = fragNumsList.get(i);
-                        flags[i] = flagsList.get(i);
+                        fragmentIonTypes[i] = fragmentIonTypesList.get(i);
                         charges[i] = chargesList.get(i);
                     }
 
                     PredictionEntry newPred = new PredictionEntry(mzs, ints,
-                            fragNums, charges, new String[0], flags);
+                            fragNums, charges, fragmentIonTypes);
                     newPred.setRT(RT);
                     newPred.setIM(0f);
                     allPreds.put(pep, newPred);
@@ -189,13 +175,13 @@ public class MspReader implements LibraryPredictionMapper {
                         MassCalculator mc = new MassCalculator(lineSplit2[0], lineSplit2[1]);
                         float[] newMZs = new float[tmp.mzs.length];
                         for (int i = 0; i < newMZs.length; i++) {
-                            newMZs[i] = mc.calcMass(tmp.fragNums[i], flagTOion.get(tmp.flags[i]), tmp.charges[i],
+                            newMZs[i] = mc.calcMass(tmp.fragNums[i], tmp.fragmentIonTypes[i], tmp.charges[i],
                                     tmp.isotopes[i]);
                         }
 
                         //add to hashmap
                         PredictionEntry newPred = new PredictionEntry(newMZs, tmp.intensities,
-                                tmp.fragNums, tmp.charges, new String[0], tmp.flags);
+                                tmp.fragNums, tmp.charges, tmp.fragmentIonTypes);
                         newPred.setRT(tmp.RT);
                         newPred.setIM(0f);
                         allPreds.put(mc.fullPeptide, newPred);

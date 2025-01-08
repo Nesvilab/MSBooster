@@ -306,7 +306,7 @@ public class MgfFileReader implements LibraryPredictionMapper {
                                         }
                                     } else { //act as predictions
                                         PredictionEntry newPred = new PredictionEntry(mzArray, intArray,
-                                                new int[0], new int[0], fragmentArray, new int[0]);
+                                                new int[0], new int[0], fragmentArray);
                                         newPred.setRT(RT);
                                         newPred.setIM(IM);
                                         //convert title to base format
@@ -423,7 +423,7 @@ public class MgfFileReader implements LibraryPredictionMapper {
                             }
                         } else { //act as predictions
                             PredictionEntry newPred = new PredictionEntry(mzArray, intArray,
-                                    new int[0], new int[0], fragmentArray, new int[0]);
+                                    new int[0], new int[0], fragmentArray);
                             newPred.setRT(RT);
                             newPred.setIM(IM);
                             //convert title to base format

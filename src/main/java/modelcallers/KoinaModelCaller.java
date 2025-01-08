@@ -537,7 +537,7 @@ public class KoinaModelCaller {
             }
 
             PredictionEntry pe = new PredictionEntry(mzs, intensities[i], fragNums[i],
-                    charges[i], fragmentIonTypes[i], new int[0]);
+                    charges[i], fragmentIonTypes[i]);
 
             if (preds.containsKey(peptide)) {
                 PredictionEntry oldPe = preds.get(peptide);
@@ -560,7 +560,7 @@ public class KoinaModelCaller {
             String peptide = pf.getBaseCharge();
 
             PredictionEntry pe = new PredictionEntry(mzs[i], intensities[i], fragNums[i],
-                    charges[i], fragmentIonTypes[i], new int[0], fullAnnotations[i]);
+                    charges[i], fragmentIonTypes[i], fullAnnotations[i]);
 
             if (preds.containsKey(peptide)) {
                 PredictionEntry oldPe = preds.get(peptide);

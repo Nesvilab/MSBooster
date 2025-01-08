@@ -63,15 +63,14 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.stream.Collectors;
 
 import static features.rtandim.LoessUtilities.gridSearchCV;
-import static utils.Print.printError;
-import static utils.Print.printInfo;
+import static utils.Print.*;
 
 //this is what I use in the java jar file
 public class MainClass {
     public static ScheduledThreadPoolExecutor executorService;
     public static void main(String[] args) throws Exception {
         Locale.setDefault(Locale.US);
-        printInfo("MSBooster v1.2.64");
+        printInfo("MSBooster v1.2.65");
 
         try {
             //accept command line inputs
@@ -612,7 +611,7 @@ public class MainClass {
                     }
 
                     printInfo("Choosing RT model based on top 10 consensus method");
-                    printInfo("RT model chosen is " + Constants.rtModel);
+                    printInfoHighlight("RT model chosen is " + Constants.rtModel);
 
                     //write file that has all values for each model
                     BufferedWriter bw = new BufferedWriter(new FileWriter(
@@ -806,7 +805,7 @@ public class MainClass {
                     }
 
                     printInfo("Choosing IM model based on top 10 consensus method");
-                    printInfo("IM model chosen is " + Constants.imModel);
+                    printInfoHighlight("IM model chosen is " + Constants.imModel);
                 }
 
                 //TODO: write out file with IM differences
@@ -1025,7 +1024,7 @@ public class MainClass {
                     }
                     Constants.calibrateNCE = false;
                     Constants.autoSwitchFragmentation = false;
-                    printInfo("Spectra model chosen is " + Constants.spectraModel);
+                    printInfoHighlight("Spectra model chosen is " + Constants.spectraModel);
 
                     //write file that has all values for each model
                     BufferedWriter bw = new BufferedWriter(new FileWriter(

@@ -22,6 +22,7 @@ import java.text.SimpleDateFormat;
 import java.util.Date;
 
 public class Print {
+  private static final String highlight = "~~~~~~~~~~~~~~~~~~~~";
 
   public static final DateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
 
@@ -31,6 +32,11 @@ public class Print {
 
   public static void printInfo(String message, boolean lineFeed) {
     myPrint(message, "INFO", lineFeed);
+  }
+
+  public static void printInfoHighlight(String message) {
+    message =  highlight + message + highlight;
+    printInfo(message, true);
   }
 
   public static void printError(String message) {

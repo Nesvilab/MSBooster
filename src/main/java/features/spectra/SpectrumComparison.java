@@ -31,7 +31,9 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashSet;
 import java.util.Random;
+import java.util.TreeSet;
 
+import static allconstants.FragmentIonConstants.fragmentGroups;
 import static utils.NumericUtils.floatToDouble;
 import static utils.Print.printError;
 
@@ -77,15 +79,11 @@ public class SpectrumComparison {
         predMZs = pMZs;
         predIntensities = pIntensities;
 
-        if (FragmentIonConstants.divideFragments.equals("0")) {
+        if (FragmentIonConstants.divideFragments == 0) {
             matchedIntensities = this.getMatchedIntensities(eMZs, eIntensities, predMZs, predIntensities);
         } else {
-            String[] fragmentsSplit = FragmentIonConstants.divideFragments.split(";");
-
             //get fragments that match the allowed
-            for (String fragments : fragmentsSplit) {
-                String[] allowedTypes = fragments.split("_");
-                HashSet<String> allowedTypesSet = new HashSet<String>(Arrays.asList(allowedTypes));
+            for (TreeSet<String> allowedTypesSet : fragmentGroups) {
                 ArrayList<Integer> acceptedIdx = new ArrayList<>();
 
                 for (int i = 0; i < fragmentIonTypes.length; i++) {
@@ -720,28 +718,56 @@ public class SpectrumComparison {
         return 1 - ( ((2 * spectralEntropy(SabVector)) - spectralEntropy(sum1MatchedIntensities) - spectralEntropy(sum1PredIntensities)) / Math.log(4));
     }
 
+    public double unweightedSpectralEntropy(float[] predicted, float[] matched) {
+        if (predicted.length < 2) {
+            return 0;
+        }
+
+        float[] SabVector = new float[predicted.length];
+        int numFrags = 0;
+        for (float j : matched) {
+            if (j != 0) {
+                numFrags += 1;
+            }
+        }
+
+        if (numFrags < 2) {
+            return 0;
+        } else {
+            for (int i = 0; i < SabVector.length; i++) {
+                SabVector[i] = (predicted[i] + matched[i]) / 2;
+            }
+        }
+
+        return 1 - ( ((2 * spectralEntropy(SabVector)) - spectralEntropy(matched) - spectralEntropy(predicted)) / Math.log(4));
+    }
+
     public double weightedSpectralEntropy() {
         double unweighted = unweightedSpectralEntropy();
         return unweighted * Math.pow(spectralEntropy(sum1PredIntensities), 0.5);
     }
 
     public double heuristicSpectralEntropy() {
-        double unweighted = unweightedSpectralEntropy();
+        if (sum1PredIntensities == null) {
+            oneNormalizeIntensities(predIntensities, matchedIntensities);
+        }
+
         double predEntropy = spectralEntropy(sum1PredIntensities);
         if (predEntropy < 1.75) {
             //reweighting
             double power = predEntropy / 2.75;
+
+            float[] heuristicPred = new float[predIntensities.length];
+            float[] heuristicMatched = new float[matchedIntensities.length];
+
             for (int i = 0; i < predIntensities.length; i++) {
-                predIntensities[i] = (float) Math.pow(predIntensities[i], power);
-                matchedIntensities[i] = (float) Math.pow(matchedIntensities[i], power);
+                heuristicPred[i] = (float) Math.pow(predIntensities[i], power);
+                heuristicMatched[i] = (float) Math.pow(matchedIntensities[i], power);
             }
 
-            sum1PredIntensities = null;
-            sum1MatchedIntensities = null;
-
-            return unweightedSpectralEntropy();
+            return unweightedSpectralEntropy(oneNormalize(heuristicPred), oneNormalize(heuristicMatched));
         } else {
-            return unweighted;
+            return unweightedSpectralEntropy();
         }
     }
 

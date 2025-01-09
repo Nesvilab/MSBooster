@@ -18,6 +18,7 @@
 package mainsteps;
 
 import allconstants.Constants;
+import allconstants.ConstantsInterface;
 import allconstants.FragmentIonConstants;
 import allconstants.LowercaseModelMapper;
 import features.spectra.MassCalculator;
@@ -44,6 +45,7 @@ import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.lang.reflect.Field;
+import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Modifier;
 import java.nio.file.Files;
 import java.nio.file.Paths;
@@ -75,11 +77,6 @@ public class MainClass {
 
         try {
             //accept command line inputs
-            HashSet<String> fields = new HashSet<>();
-            for (Field f : Constants.class.getDeclaredFields()) {
-                fields.add(f.getName());
-            }
-
             HashMap<String, String> params = new HashMap<String, String>();
 
             //setting new values
@@ -273,7 +270,18 @@ public class MainClass {
                 }
             }
 
+            HashSet<String> fields = new HashSet<>();
+            for (Field f : Constants.class.getDeclaredFields()) {
+                fields.add(f.getName());
+            }
             Constants c = new Constants();
+
+            HashSet<String> fieldsFragmentIon = new HashSet<>();
+            for (Field f : FragmentIonConstants.class.getDeclaredFields()) {
+                fieldsFragmentIon.add(f.getName());
+            }
+            FragmentIonConstants fic = new FragmentIonConstants();
+
             for (Map.Entry<String, String> entry : params.entrySet()) {
                 String key = entry.getKey();
                 if (key.charAt(0) == '#') { //comment
@@ -282,22 +290,14 @@ public class MainClass {
                 if (key.charAt(0) == '/') { //comment
                     continue;
                 }
-                if (!fields.contains(key)) {
+                if (!fields.contains(key) && !fieldsFragmentIon.contains(key)) {
                     throw new Exception(entry.getKey() + " is not a valid parameter");
-                } else {
-                    //get class of field
+                } else if (fields.contains(key)) {
                     Field field = Constants.class.getField(key);
-                    Class<?> myClass = field.getType();
-
-                    //do not parse use[something] if null
-                    if (myClass.getTypeName().equals("java.lang.Boolean")) {
-                        if (entry.getValue().equals("null")) {
-                            continue;
-                        }
-                    }
-
-                    //parse to appropriate type
-                    field.set(c, myClass.getConstructor(String.class).newInstance(entry.getValue()));
+                    updateField(field, entry.getValue(), c);
+                } else {
+                    Field field = FragmentIonConstants.class.getField(key);
+                    updateField(field, entry.getValue(), fic);
                 }
             }
             c.updateOutputDirectory();
@@ -1075,27 +1075,6 @@ public class MainClass {
             }
             Constants.foundBest = true;
 
-//            if (Constants.adaptiveFragmentNum) {
-//                Constants.topFragments = 36; //TODO think of better way than hardcoding
-//            } else if (Constants.divideFragments.equals("1")) { //standard setting of yb vs others
-//                Constants.divideFragments = "y_b;immonium_a_y-NL_b-NL_a-NL_internal_internal-NL_unknown";
-//                Constants.topFragments = 12;
-//            } else if (Constants.divideFragments.equals("2")) {
-//                Constants.divideFragments = "y;b;immonium;a;y-NL;b-NL;a-NL;internal;internal-NL;unknown";
-//                Constants.topFragments = 6;
-//            } else if (Constants.divideFragments.equals("3")) { //standard setting of yb vs others
-//                Constants.divideFragments = "y_b_y-NL_b-NL;immonium_a_a-NL_internal_internal-NL_unknown";
-//                Constants.topFragments = 12;
-//            } else if (Constants.divideFragments.equals("4")) { //etd
-//                Constants.divideFragments = "c_z;zdot_y_unknown";
-//                Constants.topFragments = 12;
-//            } else if (Constants.divideFragments.equals("5")) { //ethcd
-//                Constants.divideFragments = "b_y_c_z;immonium_a_cdot_zdot_y-NL_b-NL_a-NL_internal_internal-NL_unknown";
-//                Constants.topFragments = 12;
-//            } else if (Constants.divideFragments.equals("0") && Constants.spectraModel.equals("DIA-NN")) {
-//                Constants.topFragments = 20;
-//            }
-
             //check that at least pinPepXMLDirectory and mzmlDirectory are provided
             if (Constants.pinPepXMLDirectory == null) {
                 throw new IllegalArgumentException("pinPepXMLDirectory must be provided");
@@ -1567,5 +1546,22 @@ public class MainClass {
             e.getStackTrace();
             System.exit(1);
         }
+    }
+
+    //for updating constants read from parameter file
+    static private void updateField(Field field, String value, ConstantsInterface c)
+            throws NoSuchMethodException, InvocationTargetException, InstantiationException, IllegalAccessException {
+        //get class of field
+        Class<?> myClass = field.getType();
+
+        //do not parse use[something] if null
+        if (myClass.getTypeName().equals("java.lang.Boolean")) {
+            if (value.equals("null")) {
+                return;
+            }
+        }
+
+        //parse to appropriate type
+        field.set(c, myClass.getConstructor(String.class).newInstance(value));
     }
 }

@@ -28,7 +28,7 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.concurrent.ConcurrentHashMap;
 
-public class Constants {
+public class Constants implements ConstantsInterface {
     //file input
     public static String paramsList = null;
     public static String fragger = null;

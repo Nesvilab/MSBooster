@@ -82,9 +82,9 @@ public class PredictionEntryHashMap extends ConcurrentHashMap<String, Prediction
         //switch case for spectra, RT, IM, aux
         for (Entry<String, PredictionEntry> entry : this.entrySet()) {
             String peptide = entry.getKey();
-            PredictionEntry pe2 = entry.getValue();
+            PredictionEntry pe2 = entry.getValue(); //library being added
             if (fullLib.containsKey(peptide)) {
-                PredictionEntry pe1 = fullLib.get(peptide);
+                PredictionEntry pe1 = fullLib.get(peptide); //allpreds
                 switch (mode) {
                     //for RT and IM, just replace that
                     case "RT":

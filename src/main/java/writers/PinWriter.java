@@ -31,8 +31,10 @@ import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.TreeSet;
 
 import static allconstants.Constants.camelToUnderscore;
+import static allconstants.FragmentIonConstants.fragmentGroups;
 import static utils.Print.printInfo;
 
 public class PinWriter {
@@ -65,10 +67,9 @@ public class PinWriter {
             }
             //add columns for spectral features divided by fragment ion type
             if (Constants.spectraFeatures.contains(s)) {
-                if (! FragmentIonConstants.divideFragments.equals("0")) {
-                    String[] divisions = FragmentIonConstants.divideFragments.split(";");
-                    for (String div : divisions) {
-                        newNames.add(newName + "_" + div);
+                if (FragmentIonConstants.divideFragments != 0) {
+                    for (TreeSet<String> fg : fragmentGroups) {
+                        newNames.add(newName + String.join("_", fg));
                     }
                 } else {
                     newNames.add(newName);
@@ -185,10 +186,10 @@ public class PinWriter {
                                 double score = pepObj.spectralSimObj.scores.get(feature);
                                 formattedWrite(camelToUnderscore.get(feature), score);
                             } else {
-                                String[] dividedFragments = FragmentIonConstants.divideFragments.split(";");
-                                for (int j = 0; j < dividedFragments.length; j++) {
+                                for (int j = 0; j < fragmentGroups.length; j++) {
                                     double score = pepObj.spectralSimObj.spectrumComparisons.get(j).scores.get(feature);
-                                    formattedWrite(camelToUnderscore.get(feature) + "_" + dividedFragments[j], score);
+                                    formattedWrite(camelToUnderscore.get(feature) + "_" +
+                                            String.join("_", fragmentGroups[j]), score);
                                 }
                             }
                             break;

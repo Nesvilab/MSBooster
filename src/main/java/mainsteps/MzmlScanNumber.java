@@ -209,7 +209,7 @@ public class MzmlScanNumber {
             }
 
             if (predMZs.length > 1) {
-                if (FragmentIonConstants.divideFragments.equals("0")) {
+                if (FragmentIonConstants.divideFragments == 0) {
                     newPepObj = new PeptideObj(this, name.getBaseCharge(), rank, targetORdecoy, escore, predMZs,
                             predIntensities, predRT, predIM);
                 } else {

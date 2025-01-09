@@ -339,6 +339,7 @@ public class MgfFileReader implements LibraryPredictionMapper {
                                         start += line.length() + 1;
 
                                         line = returnString('\n', finalData, start);
+                                        //TODO: String[] lineSplit = line.split("[ \t]+");
                                         String[] lineSplit = line.split(" "); //for pdeep2 predictions, included space and fragment ion type
                                         if (lineSplit.length != 1) {
                                             if (! ignoredFragmentIonTypesSet.contains(lineSplit[1])) {

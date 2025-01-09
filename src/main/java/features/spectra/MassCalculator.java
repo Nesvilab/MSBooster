@@ -110,11 +110,6 @@ public class MassCalculator {
     public SortedMap<Float, String[]> unispecFragmentIons = new TreeMap<>();
     public HashMap<String, Float> annotationMasses = new HashMap<>();
     public HashMap<String, Float> unispecAnnotationMasses = new HashMap<>();
-    public static final Set<String> allowedFragmentIonTypes = new HashSet<>(Arrays.asList(
-            "z", "c", "y", "a", "x", "b", "zdot", "cdot",
-            "p", "imm", "int", "int-NL",
-            "z-NL", "c-NL", "y-NL", "a-NL", "x-NL", "b-NL",
-            "p-NL", "unknown"));
 
     //TODO: get immonium ion masses by taking amino acid and subtracting 26.99 Da. This holds for modified AA too (Falick et al 1993)
     //TODO: should we consider related ions, not just immonium?

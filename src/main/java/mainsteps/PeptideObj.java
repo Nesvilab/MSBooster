@@ -95,10 +95,8 @@ public class PeptideObj {
         }
         this.length = length;
         this.escore = escore;
-        //this.predMZs = predMZs;
-        //this.predInts = predIntensities;
         this.spectralSimObj = new SpectrumComparison(this, scanNumObj.getExpMZs(), scanNumObj.getExpIntensities(),
-                predMZs, predIntensities, length); //calculate similarity with subset of fragments
+                predMZs, predIntensities, length);
         this.RT = predRT;
         this.IM = predIM;
         if (Constants.useMatchedIntensities || Constants.usePeakCounts || Constants.useIntensitiesDifference ||
@@ -125,8 +123,6 @@ public class PeptideObj {
         }
         this.length = length;
         this.escore = escore;
-        //this.predMZs = predMZs;
-        //this.predInts = predIntensities;
         this.fragmentIonTypes = fragmentIonTypes;
         this.spectralSimObj = new SpectrumComparison(this, scanNumObj.getExpMZs(), scanNumObj.getExpIntensities(),
                 predMZs, predIntensities, length, fragmentIonTypes); //calculate similarity with subset of fragments

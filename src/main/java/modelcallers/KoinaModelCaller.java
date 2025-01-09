@@ -218,8 +218,7 @@ public class KoinaModelCaller {
             }
 
             assignRTs(fileName, parsedResults, klr);
-        }
-        if (property.equalsIgnoreCase("im")) {
+        } else if (property.equalsIgnoreCase("im")) {
             String ims = koinaString.split("data")[2];
             String[] results = ims.substring(3, ims.length() - 4).split(",");
             float[] parsedResults = new float[results.length];

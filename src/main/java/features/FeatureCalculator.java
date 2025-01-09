@@ -39,6 +39,8 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 
+import static allconstants.FragmentIonConstants.fragmentGroups;
+
 public class FeatureCalculator {
     PinReader pin;
     ArrayList<String> featuresList;
@@ -133,8 +135,7 @@ public class FeatureCalculator {
                             if (pepObj.spectralSimObj.spectrumComparisons.isEmpty()) {
                                 pepObj.spectralSimObj.scores.put(feature, pepObj.spectralSimObj.getScore(feature));
                             } else {
-                                String[] dividedFragments = FragmentIonConstants.divideFragments.split(";");
-                                for (int j = 0; j < dividedFragments.length; j++) {
+                                for (int j = 0; j < fragmentGroups.length; j++) {
                                     pepObj.spectralSimObj.spectrumComparisons.get(j).scores.put(feature,
                                             pepObj.spectralSimObj.spectrumComparisons.get(j).getScore(feature));
                                 }

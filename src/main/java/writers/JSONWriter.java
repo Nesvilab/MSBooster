@@ -169,8 +169,8 @@ public class JSONWriter {
         if (numFiles > 1) {
             futureList.clear();
             for (int i = 0; i < Constants.numThreads; i++) {
-                int start = (int) (numFiles * (long) i) / Constants.numThreads;
-                int end = (int) (numFiles * (long) (i + 1)) / Constants.numThreads;
+                int start = (int) (numFiles / (float) Constants.numThreads * i);
+                int end = (int) (numFiles / (float) Constants.numThreads * (i + 1));
                 futureList.add(executorService.submit(() -> {
                     for (int rep = start; rep < end; rep ++) {
                         JSONWriter jw = new JSONWriter(this, rep);

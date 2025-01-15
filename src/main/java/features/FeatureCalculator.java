@@ -250,8 +250,8 @@ public class FeatureCalculator {
                             if (pepObj.spectralSimObj.spectrumComparisons.size() == 0) {
                                 mzml.futureList.clear();
                                 for (int j = 0; j < Constants.numThreads; j++) {
-                                    int start = (int) (Constants.bootstraps * (long) j) / Constants.numThreads;
-                                    int end = (int) (Constants.bootstraps * (long) (j + 1)) / Constants.numThreads;
+                                    int start = (int) (Constants.bootstraps / (float) Constants.numThreads * j);
+                                    int end = (int) (Constants.bootstraps / (float) Constants.numThreads * (j + 1));
                                     PeptideObj finalPepObj = pepObj;
                                     mzml.futureList.add(executorService.submit(() -> {
                                         SpectrumComparison sc;

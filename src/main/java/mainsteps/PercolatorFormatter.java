@@ -292,8 +292,8 @@ public class PercolatorFormatter {
 
                     mzml.futureList.clear();
                     for (int j = 0; j < Constants.numThreads; j++) {
-                        int start = (int) (allPreds.size() * (long) j) / Constants.numThreads;
-                        int end = (int) (allPreds.size() * (long) (j + 1)) / Constants.numThreads;
+                        int start = (int) (allPreds.size() / (float) Constants.numThreads * j);
+                        int end = (int) (allPreds.size() / (float) Constants.numThreads * (j + 1));
                         mzml.futureList.add(executorService.submit(() -> {
                             ProgressReporter pr = new ProgressReporter(end - start);
                             PredictionEntry predictionEntry;

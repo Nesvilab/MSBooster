@@ -17,36 +17,11 @@
 
 package readers.datareaders;
 
-import static allconstants.Constants.minLinearRegressionSize;
-import static allconstants.Constants.minLoessRegressionSize;
-import static features.rtandim.LoessUtilities.LOESS;
-import static features.rtandim.LoessUtilities.gridSearchCV;
-import static utils.Print.printInfo;
-import static utils.StatMethods.characterizebins;
-import static utils.StatMethods.movingAverage;
-import static utils.StatMethods.probability;
-import static utils.StatMethods.zscore;
-
 import allconstants.Constants;
 import features.rtandim.IMFunctions;
 import features.rtandim.LinearEquation;
 import features.rtandim.LoessUtilities;
 import features.rtandim.RTFunctions;
-import java.io.IOException;
-import java.nio.file.Path;
-import java.nio.file.Paths;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.NavigableSet;
-import java.util.Objects;
-import java.util.concurrent.ConcurrentSkipListMap;
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Future;
 import kotlin.jvm.functions.Function1;
 import mainsteps.MzmlScanNumber;
 import mainsteps.PeptideObj;
@@ -63,6 +38,29 @@ import umontreal.ssj.probdist.EmpiricalDist;
 import utils.InstrumentUtils;
 import utils.ProgressReporter;
 import utils.StatMethods;
+
+import java.io.IOException;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.NavigableSet;
+import java.util.Objects;
+import java.util.concurrent.ConcurrentSkipListMap;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Future;
+
+import static allconstants.Constants.minLinearRegressionSize;
+import static allconstants.Constants.minLoessRegressionSize;
+import static features.rtandim.LoessUtilities.LOESS;
+import static features.rtandim.LoessUtilities.gridSearchCV;
+import static utils.Print.printInfo;
+import static utils.StatMethods.*;
 
 public class MzmlReader {
     public final String pathStr;
@@ -396,8 +394,8 @@ public class MzmlReader {
             scanNums.add(num);
         }
         for (int i = 0; i < Constants.numThreads; i++) {
-            int start = (int) (scanNumberObjects.size() * (long) i) / Constants.numThreads;
-            int end = (int) (scanNumberObjects.size() * (long) (i + 1)) / Constants.numThreads;
+            int start = (int) (scanNumberObjects.size() / (float) Constants.numThreads * i);
+            int end = (int) (scanNumberObjects.size() / (float) Constants.numThreads * (i + 1));
             futureList.add(executorService.submit(() -> {
                 for (int j = start; j < end; j++) {
                     MzmlScanNumber msn = null;
@@ -482,8 +480,8 @@ public class MzmlReader {
             scanNums.add(num);
         }
         for (int i = 0; i < Constants.numThreads; i++) {
-            int start = (int) (scanNumberObjects.size() * (long) i) / Constants.numThreads;
-            int end = (int) (scanNumberObjects.size() * (long) (i + 1)) / Constants.numThreads;
+            int start = (int) (scanNumberObjects.size() / (float) Constants.numThreads * i);
+            int end = (int) (scanNumberObjects.size() / (float) Constants.numThreads * (i + 1));
             futureList.add(executorService.submit(() -> {
                 for (int j = start; j < end; j++) {
                     MzmlScanNumber msn = null;
@@ -514,8 +512,8 @@ public class MzmlReader {
             scanNums.add(num);
         }
         for (int i = 0; i < Constants.numThreads; i++) {
-            int start = (int) (scanNumberObjects.size() * (long) i) / Constants.numThreads;
-            int end = (int) (scanNumberObjects.size() * (long) (i + 1)) / Constants.numThreads;
+            int start = (int) (scanNumberObjects.size() / (float) Constants.numThreads * i);
+            int end = (int) (scanNumberObjects.size() / (float) Constants.numThreads * (i + 1));
             futureList.add(executorService.submit(() -> {
                 for (int j = start; j < end; j++) {
                     MzmlScanNumber msn = null;
@@ -558,8 +556,8 @@ public class MzmlReader {
             scanNums.add(num);
         }
         for (int i = 0; i < Constants.numThreads; i++) {
-            int start = (int) (scanNumberObjects.size() * (long) i) / Constants.numThreads;
-            int end = (int) (scanNumberObjects.size() * (long) (i + 1)) / Constants.numThreads;
+            int start = (int) (scanNumberObjects.size() / (float) Constants.numThreads * i);
+            int end = (int) (scanNumberObjects.size() / (float) Constants.numThreads * (i + 1));
             futureList.add(executorService.submit(() -> {
                 HashMap<String, Double> LOESSRT = new HashMap<>();
                 for (int j = start; j < end; j++) {
@@ -611,8 +609,8 @@ public class MzmlReader {
             scanNums.add(num);
         }
         for (int i = 0; i < Constants.numThreads; i++) {
-            int start = (int) (scanNumberObjects.size() * (long) i) / Constants.numThreads;
-            int end = (int) (scanNumberObjects.size() * (long) (i + 1)) / Constants.numThreads;
+            int start = (int) (scanNumberObjects.size() / (float) Constants.numThreads * i);
+            int end = (int) (scanNumberObjects.size() / (float) Constants.numThreads * (i + 1));
             futureList.add(executorService.submit(() -> {
                 for (int j = start; j < end; j++) {
                     MzmlScanNumber msn = null;
@@ -689,8 +687,8 @@ public class MzmlReader {
                 scanNums.add(num);
             }
             for (int i = 0; i < Constants.numThreads; i++) {
-                int start = (int) (scanNumberObjects.size() * (long) i) / Constants.numThreads;
-                int end = (int) (scanNumberObjects.size() * (long) (i + 1)) / Constants.numThreads;
+                int start = (int) (scanNumberObjects.size() / (float) Constants.numThreads * i);
+                int end = (int) (scanNumberObjects.size() / (float) Constants.numThreads * (i + 1));
                 futureList.add(executorService.submit(() -> {
                     for (int j = start; j < end; j++) {
                         MzmlScanNumber msn = null;
@@ -730,8 +728,8 @@ public class MzmlReader {
                 scanNums.add(num);
             }
             for (int i = 0; i < Constants.numThreads; i++) {
-                int start = (int) (scanNumberObjects.size() * (long) i) / Constants.numThreads;
-                int end = (int) (scanNumberObjects.size() * (long) (i + 1)) / Constants.numThreads;
+                int start = (int) (scanNumberObjects.size() / (float) Constants.numThreads * i);
+                int end = (int) (scanNumberObjects.size() / (float) Constants.numThreads * (i + 1));
                 futureList.add(executorService.submit(() -> {
                     for (int j = start; j < end; j++) {
                         MzmlScanNumber msn = null;
@@ -923,8 +921,8 @@ public class MzmlReader {
             scanNums.add(num);
         }
         for (int i = 0; i < Constants.numThreads; i++) {
-            int start = (int) (scanNumberObjects.size() * (long) i) / Constants.numThreads;
-            int end = (int) (scanNumberObjects.size() * (long) (i + 1)) / Constants.numThreads;
+            int start = (int) (scanNumberObjects.size() / (float) Constants.numThreads * i);
+            int end = (int) (scanNumberObjects.size() / (float) Constants.numThreads * (i + 1));
             futureList.add(executorService.submit(() -> {
                 HashMap<String, Double> LOESSRT = new HashMap<>();
                 for (int j = start; j < end; j++) {
@@ -993,8 +991,8 @@ public class MzmlReader {
             scanNums.add(num);
         }
         for (int i = 0; i < Constants.numThreads; i++) {
-            int start = (int) (scanNumberObjects.size() * (long) i) / Constants.numThreads;
-            int end = (int) (scanNumberObjects.size() * (long) (i + 1)) / Constants.numThreads;
+            int start = (int) (scanNumberObjects.size() / (float) Constants.numThreads * i);
+            int end = (int) (scanNumberObjects.size() / (float) Constants.numThreads * (i + 1));
             futureList.add(executorService.submit(() -> {
                 for (int j = start; j < end; j++) {
                     MzmlScanNumber msn = null;

@@ -48,8 +48,8 @@ public class PredictionEntryHashMap extends ConcurrentHashMap<String, Prediction
 
         List<Future> futureList = new ArrayList<>(Constants.numThreads);
         for (int i = 0; i < Constants.numThreads; i++) {
-            int start = (int) (this.size() * (long) i) / Constants.numThreads;
-            int end = (int) (this.size() * (long) (i + 1)) / Constants.numThreads;
+            int start = (int) (this.size() / (float) Constants.numThreads * i);
+            int end = (int) (this.size() / (float) Constants.numThreads * (i + 1));
             futureList.add(executorService.submit(() -> {
                 for (int j = start; j < end; j++) {
                     PredictionEntry pe = predictions[j];

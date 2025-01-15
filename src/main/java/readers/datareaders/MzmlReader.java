@@ -50,6 +50,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.NavigableSet;
 import java.util.Objects;
+import java.util.Set;
 import java.util.concurrent.ConcurrentSkipListMap;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
@@ -206,20 +207,71 @@ public class MzmlReader {
             IScan scan = scans.getScanByNum(scanNum);
             msn = new MzmlScanNumber(scan);
             scanNumberObjects.put(scanNum, msn);
-
-            if ((!Constants.hasITMS) && (scan.getFilterString() != null)) {
-                if (scan.getFilterString().contains("ITMS")) {
-                    Constants.hasITMS = true;
-                    Constants.ppmTolerance = Constants.lowResppmTolerance;
-                    printInfo("Switching to low res MS2 peak matching");
-                }
-            }
         }
         return msn;
     }
 
     public NavigableSet<Integer> getScanNums() {
         return scanNumberObjects.keySet();
+    }
+
+    public void detectMassSpecType() {
+        IScan scan = scans.getScanByNum(getScanNums().first());
+        if ((!Constants.hasITMS) && (scan.getFilterString() != null)) {
+            if (scan.getFilterString().contains("ITMS")) {
+                Constants.hasITMS = true;
+                Constants.ppmTolerance = Constants.lowResppmTolerance;
+                printInfo("Switching to low res MS2 peak matching");
+            }
+        }
+    }
+
+    public void setFragmentationType() {
+        if (Constants.FragmentationType.isEmpty()) {
+            try {
+                Set<String> fragTypes = getScanNumObject(getScanNums().first()).NCEs.keySet();
+                if (fragTypes.contains("HCD")) {
+                    Constants.FragmentationType = "HCD";
+                    printInfo("Fragmentation type detected: " + Constants.FragmentationType);
+                } else if (fragTypes.contains("CID")) {
+                    Constants.FragmentationType = "CID";
+                    printInfo("Fragmentation type detected: " + Constants.FragmentationType);
+                } else {
+                    printInfo("No fragmentation type detected. Setting fragmentation type to HCD. " +
+                            "You can specify this with '--FragmentationType' via the command line " +
+                            "or 'FragmentationType=' in the param file.");
+                    Constants.FragmentationType = "HCD";
+                }
+            } catch (Exception e) {
+                printInfo("No fragmentation type detected. Setting fragmentation type to HCD. " +
+                        "You can specify this with '--FragmentationType' via the command line " +
+                        "or 'FragmentationType=' in the param file.");
+                Constants.FragmentationType = "HCD";
+            }
+        }
+    }
+
+    public void setNCE() {
+        if (Constants.NCE.isEmpty()) {
+            try {
+                Float NCE = getScanNumObject(getScanNums().first()).NCEs.get(Constants.FragmentationType);
+                if (NCE != null) {
+                    Constants.NCE = String.valueOf(NCE);
+                    printInfo("NCE detected: " + Constants.NCE);
+                } else {
+                    printInfo("No NCE detected. Setting NCE to 25. " +
+                            "You can specify this with '--NCE' via the command line " +
+                            "or 'NCE=' in the param file.");
+                    Constants.NCE = "25";
+                }
+            } catch (Exception e) {
+                e.printStackTrace();
+                printInfo("No NCE detected. Setting NCE to 25. " +
+                        "You can specify this with '--NCE' via the command line " +
+                        "or 'NCE=' in the param file.");
+                Constants.NCE = "25";
+            }
+        }
     }
 
     //can consider method for setting single pepxml entry

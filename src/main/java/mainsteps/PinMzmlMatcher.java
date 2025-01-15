@@ -17,8 +17,6 @@
 
 package mainsteps;
 
-import static utils.Print.printInfo;
-
 import allconstants.Constants;
 import readers.datareaders.MzmlReader;
 import readers.datareaders.PinReader;
@@ -34,7 +32,6 @@ import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
-import java.util.Set;
 import java.util.concurrent.ExecutionException;
 import java.util.stream.Collectors;
 
@@ -129,75 +126,27 @@ public class PinMzmlMatcher {
 
         mzmlReaders = new MzmlReader[mzmlFiles.length];
         loadMzmlReaders();
-        setFragmentationType();
-        setNCE();
+        mzmlReaders[0].detectMassSpecType();
+        mzmlReaders[0].setFragmentationType();
+        mzmlReaders[0].setNCE();
     }
 
     private void loadMzmlReaders() throws IOException, FileParsingException, ExecutionException, InterruptedException {
         for (int j = 0; j < mzmlReaders.length; j++) {
             if (mzmlReaders[j] == null) {
                 MzmlReader mzml = new MzmlReader(mzmlFiles[j].getCanonicalPath());
-                //set hasITMS and ppmTolerance
-                PinReader pin = new PinReader(pinFiles[j].getCanonicalPath());
-                if (pin.next(true)) {
-                    mzml.getScanNumObject(pin.getScanNum());
-                } else { //load at least 1 ms2 scan so instrument and nce are set
-                    mzml.scans.loadData(LCMSDataSubset.STRUCTURE_ONLY);
-                    IScan iscan = mzml.scans.getNextScanAtMsLevel(0, 2);
-                    mzml.getScanNumObject(iscan.getNum());
+                if (j == 0) { //initialize first ms2 scan in first mzml so we can read in metadata
+                    PinReader pin = new PinReader(pinFiles[j].getCanonicalPath());
+                    if (pin.next(true)) {
+                        mzml.getScanNumObject(pin.getScanNum());
+                    } else { //empty pin
+                        mzml.scans.loadData(LCMSDataSubset.STRUCTURE_ONLY);
+                        IScan iscan = mzml.scans.getNextScanAtMsLevel(0, 2);
+                        mzml.getScanNumObject(iscan.getNum());
+                    }
+                    pin.close();
                 }
                 mzmlReaders[j] = mzml;
-                pin.close();
-            }
-        }
-    }
-
-    private void setFragmentationType() {
-        if (Constants.FragmentationType.isEmpty()) {
-            try {
-                Set<String> fragTypes = mzmlReaders[0].
-                        getScanNumObject(mzmlReaders[0].getScanNums().first()).NCEs.keySet();
-                if (fragTypes.contains("HCD")) {
-                    Constants.FragmentationType = "HCD";
-                    printInfo("Fragmentation type detected: " + Constants.FragmentationType);
-                } else if (fragTypes.contains("CID")) {
-                    Constants.FragmentationType = "CID";
-                    printInfo("Fragmentation type detected: " + Constants.FragmentationType);
-                } else {
-                    printInfo("No fragmentation type detected. Setting fragmentation type to HCD. " +
-                            "You can specify this with '--FragmentationType' via the command line " +
-                            "or 'FragmentationType=' in the param file.");
-                    Constants.FragmentationType = "HCD";
-                }
-            } catch (Exception e) {
-                printInfo("No fragmentation type detected. Setting fragmentation type to HCD. " +
-                        "You can specify this with '--FragmentationType' via the command line " +
-                        "or 'FragmentationType=' in the param file.");
-                Constants.FragmentationType = "HCD";
-            }
-        }
-    }
-
-    private void setNCE() {
-        if (Constants.NCE.isEmpty()) {
-            try {
-                Float NCE = mzmlReaders[0].getScanNumObject(mzmlReaders[0].getScanNums().first()).
-                        NCEs.get(Constants.FragmentationType);
-                if (NCE != null) {
-                    Constants.NCE = String.valueOf(NCE);
-                    printInfo("NCE detected: " + Constants.NCE);
-                } else {
-                    printInfo("No NCE detected. Setting NCE to 25. " +
-                            "You can specify this with '--NCE' via the command line " +
-                            "or 'NCE=' in the param file.");
-                    Constants.NCE = "25";
-                }
-            } catch (Exception e) {
-                e.printStackTrace();
-                printInfo("No NCE detected. Setting NCE to 25. " +
-                        "You can specify this with '--NCE' via the command line " +
-                        "or 'NCE=' in the param file.");
-                Constants.NCE = "25";
             }
         }
     }

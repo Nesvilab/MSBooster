@@ -36,6 +36,7 @@ import readers.datareaders.MzmlReader;
 import readers.datareaders.PinReader;
 import readers.predictionreaders.LibraryPredictionMapper;
 import umich.ms.fileio.exceptions.FileParsingException;
+import utils.Multithreader;
 import utils.ProgressReporter;
 import writers.PinWriter;
 
@@ -291,18 +292,18 @@ public class PercolatorFormatter {
                     }
 
                     mzml.futureList.clear();
+                    Multithreader mt = new Multithreader(allPreds.size(), Constants.numThreads);
                     for (int j = 0; j < Constants.numThreads; j++) {
-                        int start = (int) (allPreds.size() / (float) Constants.numThreads * j);
-                        int end = (int) (allPreds.size() / (float) Constants.numThreads * (j + 1));
+                        int finalI = j;
                         mzml.futureList.add(executorService.submit(() -> {
-                            ProgressReporter pr = new ProgressReporter(end - start);
+                            ProgressReporter pr = new ProgressReporter(mt.indices[finalI + 1] - mt.indices[finalI]);
                             PredictionEntry predictionEntry;
 //                                String[] entrySplit;
 //                                MassCalculator mc;
                             ArrayList<Integer> scans;
                             MzmlScanNumber msn;
                             Float[] scores;
-                            for (int k = start; k < end; k++) {
+                            for (int k = mt.indices[finalI]; k < mt.indices[finalI + 1]; k++) {
                                 pr.progress();
 
                                 SpectrumComparison sc = null;

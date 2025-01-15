@@ -36,6 +36,7 @@ import umich.ms.fileio.exceptions.FileParsingException;
 import umich.ms.fileio.filetypes.mzml.MZMLFile;
 import umontreal.ssj.probdist.EmpiricalDist;
 import utils.InstrumentUtils;
+import utils.Multithreader;
 import utils.ProgressReporter;
 import utils.StatMethods;
 
@@ -90,7 +91,6 @@ public class MzmlReader {
     public List<Future> futureList = new ArrayList<>(Constants.numThreads);
 
     public MzmlReader(String filename) throws FileParsingException, ExecutionException, InterruptedException {
-        printInfo("Initializing " + filename);
         Path path = Paths.get(filename);
         pathStr = path.toString();
         MZMLFile source = new MZMLFile(pathStr);
@@ -445,11 +445,11 @@ public class MzmlReader {
         for (int num : getScanNums()) {
             scanNums.add(num);
         }
+        Multithreader mt = new Multithreader(scanNumberObjects.size(), Constants.numThreads);
         for (int i = 0; i < Constants.numThreads; i++) {
-            int start = (int) (scanNumberObjects.size() / (float) Constants.numThreads * i);
-            int end = (int) (scanNumberObjects.size() / (float) Constants.numThreads * (i + 1));
+            int finalI = i;
             futureList.add(executorService.submit(() -> {
-                for (int j = start; j < end; j++) {
+                for (int j = mt.indices[finalI]; j < mt.indices[finalI + 1]; j++) {
                     MzmlScanNumber msn = null;
                     try {
                         msn = getScanNumObject(scanNums.get(j));
@@ -531,11 +531,11 @@ public class MzmlReader {
         for (int num : getScanNums()) {
             scanNums.add(num);
         }
+        Multithreader mt = new Multithreader(scanNumberObjects.size(), Constants.numThreads);
         for (int i = 0; i < Constants.numThreads; i++) {
-            int start = (int) (scanNumberObjects.size() / (float) Constants.numThreads * i);
-            int end = (int) (scanNumberObjects.size() / (float) Constants.numThreads * (i + 1));
+            int finalI = i;
             futureList.add(executorService.submit(() -> {
-                for (int j = start; j < end; j++) {
+                for (int j = mt.indices[finalI]; j < mt.indices[finalI + 1]; j++) {
                     MzmlScanNumber msn = null;
                     try {
                         msn = getScanNumObject(scanNums.get(j));
@@ -563,11 +563,11 @@ public class MzmlReader {
         for (int num : getScanNums()) {
             scanNums.add(num);
         }
+        Multithreader mt = new Multithreader(scanNumberObjects.size(), Constants.numThreads);
         for (int i = 0; i < Constants.numThreads; i++) {
-            int start = (int) (scanNumberObjects.size() / (float) Constants.numThreads * i);
-            int end = (int) (scanNumberObjects.size() / (float) Constants.numThreads * (i + 1));
+            int finalI = i;
             futureList.add(executorService.submit(() -> {
-                for (int j = start; j < end; j++) {
+                for (int j = mt.indices[finalI]; j < mt.indices[finalI + 1]; j++) {
                     MzmlScanNumber msn = null;
                     try {
                         msn = getScanNumObject(scanNums.get(j));
@@ -607,12 +607,12 @@ public class MzmlReader {
         for (int num : getScanNums()) {
             scanNums.add(num);
         }
+        Multithreader mt = new Multithreader(scanNumberObjects.size(), Constants.numThreads);
         for (int i = 0; i < Constants.numThreads; i++) {
-            int start = (int) (scanNumberObjects.size() / (float) Constants.numThreads * i);
-            int end = (int) (scanNumberObjects.size() / (float) Constants.numThreads * (i + 1));
+            int finalI = i;
             futureList.add(executorService.submit(() -> {
                 HashMap<String, Double> LOESSRT = new HashMap<>();
-                for (int j = start; j < end; j++) {
+                for (int j = mt.indices[finalI]; j < mt.indices[finalI + 1]; j++) {
                     MzmlScanNumber msn = null;
                     try {
                         msn = getScanNumObject(scanNums.get(j));
@@ -660,11 +660,11 @@ public class MzmlReader {
         for (int num : getScanNums()) {
             scanNums.add(num);
         }
+        Multithreader mt = new Multithreader(scanNumberObjects.size(), Constants.numThreads);
         for (int i = 0; i < Constants.numThreads; i++) {
-            int start = (int) (scanNumberObjects.size() / (float) Constants.numThreads * i);
-            int end = (int) (scanNumberObjects.size() / (float) Constants.numThreads * (i + 1));
+            int finalI = i;
             futureList.add(executorService.submit(() -> {
-                for (int j = start; j < end; j++) {
+                for (int j = mt.indices[finalI]; j < mt.indices[finalI + 1]; j++) {
                     MzmlScanNumber msn = null;
                     try {
                         msn = getScanNumObject(scanNums.get(j));
@@ -738,11 +738,11 @@ public class MzmlReader {
             for (int num : getScanNums()) {
                 scanNums.add(num);
             }
+            Multithreader mt = new Multithreader(scanNumberObjects.size(), Constants.numThreads);
             for (int i = 0; i < Constants.numThreads; i++) {
-                int start = (int) (scanNumberObjects.size() / (float) Constants.numThreads * i);
-                int end = (int) (scanNumberObjects.size() / (float) Constants.numThreads * (i + 1));
+                int finalI = i;
                 futureList.add(executorService.submit(() -> {
-                    for (int j = start; j < end; j++) {
+                    for (int j = mt.indices[finalI]; j < mt.indices[finalI + 1]; j++) {
                         MzmlScanNumber msn = null;
                         try {
                             msn = getScanNumObject(scanNums.get(j));
@@ -779,11 +779,11 @@ public class MzmlReader {
             for (int num : getScanNums()) {
                 scanNums.add(num);
             }
+            Multithreader mt = new Multithreader(scanNumberObjects.size(), Constants.numThreads);
             for (int i = 0; i < Constants.numThreads; i++) {
-                int start = (int) (scanNumberObjects.size() / (float) Constants.numThreads * i);
-                int end = (int) (scanNumberObjects.size() / (float) Constants.numThreads * (i + 1));
+                int finalI = i;
                 futureList.add(executorService.submit(() -> {
-                    for (int j = start; j < end; j++) {
+                    for (int j = mt.indices[finalI]; j < mt.indices[finalI + 1]; j++) {
                         MzmlScanNumber msn = null;
                         try {
                             msn = getScanNumObject(scanNums.get(j));
@@ -972,12 +972,12 @@ public class MzmlReader {
         for (int num : getScanNums()) {
             scanNums.add(num);
         }
+        Multithreader mt = new Multithreader(scanNumberObjects.size(), Constants.numThreads);
         for (int i = 0; i < Constants.numThreads; i++) {
-            int start = (int) (scanNumberObjects.size() / (float) Constants.numThreads * i);
-            int end = (int) (scanNumberObjects.size() / (float) Constants.numThreads * (i + 1));
+            int finalI = i;
             futureList.add(executorService.submit(() -> {
                 HashMap<String, Double> LOESSRT = new HashMap<>();
-                for (int j = start; j < end; j++) {
+                for (int j = mt.indices[finalI]; j < mt.indices[finalI + 1]; j++) {
                     MzmlScanNumber msn = null;
                     try {
                         msn = getScanNumObject(scanNums.get(j));
@@ -1042,11 +1042,11 @@ public class MzmlReader {
         for (int num : getScanNums()) {
             scanNums.add(num);
         }
+        Multithreader mt = new Multithreader(scanNumberObjects.size(), Constants.numThreads);
         for (int i = 0; i < Constants.numThreads; i++) {
-            int start = (int) (scanNumberObjects.size() / (float) Constants.numThreads * i);
-            int end = (int) (scanNumberObjects.size() / (float) Constants.numThreads * (i + 1));
+            int finalI = i;
             futureList.add(executorService.submit(() -> {
-                for (int j = start; j < end; j++) {
+                for (int j = mt.indices[finalI]; j < mt.indices[finalI + 1]; j++) {
                     MzmlScanNumber msn = null;
                     try {
                         msn = getScanNumObject(scanNums.get(j));

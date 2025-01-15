@@ -22,6 +22,7 @@ import features.spectra.MassCalculator;
 import peptideptmformatting.PeptideFormatter;
 import peptideptmformatting.PeptideSkipper;
 import readers.predictionreaders.KoinaLibReader;
+import utils.Multithreader;
 
 import java.io.BufferedReader;
 import java.io.FileReader;
@@ -47,11 +48,11 @@ public class PredictionEntryHashMap extends ConcurrentHashMap<String, Prediction
         }
 
         List<Future> futureList = new ArrayList<>(Constants.numThreads);
+        Multithreader mt = new Multithreader(this.size(), Constants.numThreads);
         for (int i = 0; i < Constants.numThreads; i++) {
-            int start = (int) (this.size() / (float) Constants.numThreads * i);
-            int end = (int) (this.size() / (float) Constants.numThreads * (i + 1));
+            int finalI = i;
             futureList.add(executorService.submit(() -> {
-                for (int j = start; j < end; j++) {
+                for (int j = mt.indices[finalI]; j < mt.indices[finalI + 1]; j++) {
                     PredictionEntry pe = predictions[j];
                     pe.filterFragments();
                     this.put(peptides[j], pe);

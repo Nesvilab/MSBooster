@@ -20,6 +20,7 @@ package writers;
 import allconstants.Constants;
 import org.json.JSONArray;
 import org.json.JSONObject;
+import utils.Multithreader;
 import utils.MyFileUtils;
 
 import java.io.File;
@@ -168,11 +169,11 @@ public class JSONWriter {
         String fileName = "";
         if (numFiles > 1) {
             futureList.clear();
+            Multithreader mt = new Multithreader(numFiles, Constants.numThreads);
             for (int i = 0; i < Constants.numThreads; i++) {
-                int start = (int) (numFiles / (float) Constants.numThreads * i);
-                int end = (int) (numFiles / (float) Constants.numThreads * (i + 1));
+                int finalI = i;
                 futureList.add(executorService.submit(() -> {
-                    for (int rep = start; rep < end; rep ++) {
+                    for (int rep = mt.indices[finalI]; rep < mt.indices[finalI + 1]; rep++) {
                         JSONWriter jw = new JSONWriter(this, rep);
                         try {
                             jw.write(false, jsonOutFolder, executorService);

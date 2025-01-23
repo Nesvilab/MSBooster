@@ -18,6 +18,7 @@
 package mainsteps;
 
 import allconstants.Constants;
+import allconstants.FragmentIonConstants;
 import com.google.common.collect.Range;
 import com.google.common.collect.RangeMap;
 import com.google.common.collect.TreeRangeMap;
@@ -44,6 +45,7 @@ import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
+import java.net.URISyntaxException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -89,6 +91,10 @@ public class PercolatorFormatter {
                     Constants.spectraPredFile, Constants.spectraModel, executorService);
             allLibraries.put(Constants.spectraPredFile, predictedSpectra);
             allProperties.put("spectra", Constants.spectraPredFile);
+
+            for (PredictionEntry pe : predictedSpectra.getPreds().values()) {
+                FragmentIonConstants.primaryFragmentIonTypes.addAll(Arrays.asList(pe.fragmentIonTypes)); //this can be approximated if too slow
+            }
         }
 
         if (Constants.RTPredFile != null) {
@@ -349,8 +355,8 @@ public class PercolatorFormatter {
                                     } else {
                                         sc = new SpectrumComparison(pobj,
                                                 msn.getExpMZs(), msn.getExpIntensities(),
-                                                predictionEntry.mzs, predictionEntry.intensities, pobj.length,
-                                                true);
+                                                predictionEntry.mzs, predictionEntry.intensities,
+                                                predictionEntry.fragmentIonTypes, true);
                                     }
                                     float score = (float) sc.unweightedSpectralEntropy();
 //                                        if (score > maxScore) {
@@ -361,7 +367,11 @@ public class PercolatorFormatter {
                                     scores[scoreIdx] = score;
                                     predictionEntry.scores.put("entropy", scores);
 
-                                    score = (float) sc.hypergeometricProbability();
+                                    try {
+                                        score = (float) sc.hypergeometricProbability();
+                                    } catch (IOException | URISyntaxException e) {
+                                        throw new RuntimeException(e);
+                                    }
                                     scores = predictionEntry.scores.get("hypergeom");
                                     scores[scoreIdx] = score;
                                     predictionEntry.scores.put("hypergeom", scores);

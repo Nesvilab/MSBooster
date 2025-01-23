@@ -25,6 +25,8 @@ import org.apache.commons.math3.random.Well19937c;
 import org.apache.commons.math3.stat.correlation.PearsonsCorrelation;
 import org.apache.commons.math3.stat.correlation.SpearmansCorrelation;
 
+import java.io.IOException;
+import java.net.URISyntaxException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -41,6 +43,7 @@ import static utils.Print.printError;
 public class SpectrumComparison {
     float[] predMZs;
     float[] predIntensities;
+    String[] predFragmentIonTypes;
     float[] matchedIntensities;
     float[] unitNormMatchedIntensities;
     float[] unitNormPredIntensities;
@@ -48,7 +51,6 @@ public class SpectrumComparison {
     float[] sum1PredIntensities;
     float[] allMatchedIntensities;
     public HashMap<String, Double> scores = new HashMap<>();
-    int length;
     int matchedIons;
     public LinkedHashSet<Integer> matchedIdx = new LinkedHashSet<Integer>();
     private static final PearsonsCorrelation pc = new PearsonsCorrelation();
@@ -58,54 +60,39 @@ public class SpectrumComparison {
     public PeptideObj pepObj;
 
     public SpectrumComparison(PeptideObj pepObj, float[] eMZs, float[] eIntensities,
-                              float[] pMZs, float[] pIntensities, int length) {
+                              float[] pMZs, float[] pIntensities, String[] pFragmentIonTypes) {
         predMZs = pMZs;
         predIntensities = pIntensities;
-        matchedIntensities = this.getMatchedIntensities(eMZs, eIntensities, predMZs, predIntensities);
-        this.length = length;
-        predMZs = null;
-
-        this.pepObj = pepObj;
-        if (Constants.features.contains("adjacent") || Constants.features.contains("bestScan")) {
-            MassCalculator mc = new MassCalculator(pepObj.name.split("\\|")[0], pepObj.charge);
-            pepObj.precursorMz = (mc.mass + pepObj.charge * mc.proton) / pepObj.charge;
-        }
-    }
-
-    //TODO: this could be replaced with just also passing pred aux spectra arrays
-    public SpectrumComparison(PeptideObj pepObj, float[] eMZs, float[] eIntensities,
-                              float[] pMZs, float[] pIntensities, int length,
-                              String[] fragmentIonTypes) {
-        predMZs = pMZs;
-        predIntensities = pIntensities;
+        predFragmentIonTypes = pFragmentIonTypes;
 
         if (FragmentIonConstants.divideFragments == 0) {
-            matchedIntensities = this.getMatchedIntensities(eMZs, eIntensities, predMZs, predIntensities);
+            matchedIntensities = this.getMatchedIntensities(eMZs, eIntensities, predMZs);
         } else {
             //get fragments that match the allowed
             for (TreeSet<String> allowedTypesSet : fragmentGroups) {
                 ArrayList<Integer> acceptedIdx = new ArrayList<>();
 
-                for (int i = 0; i < fragmentIonTypes.length; i++) {
-                    String ion = fragmentIonTypes[i];
+                for (int i = 0; i < pFragmentIonTypes.length; i++) {
+                    String ion = pFragmentIonTypes[i];
                     if (allowedTypesSet.contains(ion)) {
                         acceptedIdx.add(i);
                     }
                 }
                 float[] mzs = new float[acceptedIdx.size()];
                 float[] ints = new float[acceptedIdx.size()];
+                String[] fits = new String[acceptedIdx.size()];
                 for (int i = 0; i < acceptedIdx.size(); i++) {
                     mzs[i] = predMZs[acceptedIdx.get(i)];
                     ints[i] = predIntensities[acceptedIdx.get(i)];
+                    fits[i] = predFragmentIonTypes[acceptedIdx.get(i)];
                 }
 
                 //create new spectrumComparison obj and add to list
                 spectrumComparisons.add(new SpectrumComparison(pepObj, eMZs, eIntensities,
-                        mzs, ints, length));
+                        mzs, ints, fits));
             }
         }
-        this.length = length;
-        predMZs = null;
+        //predMZs = null;
 
         this.pepObj = pepObj;
         if (Constants.features.contains("adjacent") || Constants.features.contains("bestScan")) {
@@ -116,13 +103,14 @@ public class SpectrumComparison {
 
     //TODO: if ever reimplement adjacent similarity, think of solution that does not require another constructor
     public SpectrumComparison(PeptideObj peptideObj, float[] eMZs, float[] eIntensities,
-                              float[] pMZs, float[] pIntensities, int length, boolean willReload) {
+                              float[] pMZs, float[] pIntensities, String[] pFragmentIonTypes,
+                              boolean willReload) {
         pepObj = peptideObj;
         predMZs = pMZs;
         predIntensities = pIntensities;
+        predFragmentIonTypes = pFragmentIonTypes;
 
-        matchedIntensities = this.getMatchedIntensities(eMZs, eIntensities, predMZs, predIntensities);
-        this.length = length;
+        matchedIntensities = this.getMatchedIntensities(eMZs, eIntensities, predMZs);
         if (! willReload) {
             predMZs = null;
         }
@@ -139,7 +127,7 @@ public class SpectrumComparison {
         sum1PredIntensities = null;
 
         allMatchedIntensities = null;
-        matchedIntensities = getMatchedIntensities(eMZs, eIntensities, predMZs, predIntensities);
+        matchedIntensities = getMatchedIntensities(eMZs, eIntensities, predMZs);
     }
 
     //TODO sort
@@ -168,9 +156,9 @@ public class SpectrumComparison {
     }
 
     private float[] getMatchedIntensities(float[] expMZs, float[] expIntensities,
-                                          float[] predMZs, float[] predIntensities) {
-        if (predIntensities.length == 1) {
-            return predIntensities;
+                                          float[] predMZs) {
+        if (predMZs.length == 1) {
+            return predMZs;
         }
         int startPos = 0;
         int matchedNum = 0;
@@ -256,29 +244,53 @@ public class SpectrumComparison {
         return matchedInts;
     }
 
-    //TODO: could replace with mass calculator
-    private void getAllMatchedIntensities() {
-        if (allMatchedIntensities == null) {
-            MassCalculator mc = new MassCalculator(pepObj.name.split("\\|")[0], pepObj.charge);
-            //calculate y and b m/zs
-            float[] mzs = new float[4 * (mc.peptide.length() - 1)];
-            String[] flags = {"y", "b"};
-            int i = 0;
-            for (int num = 1; num < mc.peptide.length(); num++) {
-                for (int charge = 1; charge < 3; charge++) {
-                    for (String flag : flags) {
-                        mzs[i] = mc.calcMass(num, flag, charge, 0);
-                        i += 1;
-                    }
-                }
-            }
-            //sort
-            Arrays.sort(mzs);
+    private TreeSet<Float> getAllMatchedIntensities() throws IOException, URISyntaxException {
+        //if (allMatchedIntensities == null) {
+        //what fragment ion types do we need?
+        HashSet<String> fiontypes = new HashSet<>(Arrays.asList(this.predFragmentIonTypes));
 
-            allMatchedIntensities = getMatchedIntensities(
-                    pepObj.scanNumObj.getSavedExpMZs(), pepObj.scanNumObj.getSavedExpIntensities(),
-                    mzs, new float[mzs.length]);
+        //calculate mzs of possible fragments
+        MassCalculator mc = new MassCalculator(pepObj.name.split("\\|")[0], pepObj.charge);
+        TreeSet<Float> mzsSet = new TreeSet<>();
+
+        //iterate over fragment ion types
+        for (String fiontype : fiontypes) {
+            if (
+                    (FragmentIonConstants.primaryFragmentIonTypes.contains(fiontype) &&
+                            Constants.spectraModel.equalsIgnoreCase("unispec")) ||
+                    (! FragmentIonConstants.primaryFragmentIonTypes.contains(fiontype) &&
+                                    Constants.auxSpectraModel.equalsIgnoreCase("unispec"))
+            ) {
+                ArrayList<Float> mzsList = mc.possibleUnispecMzs(fiontype);
+                mzsSet.addAll(mzsList);
+            } else {
+                ArrayList<Float> mzsList = mc.possibleFragmentIons(fiontype);
+                mzsSet.addAll(mzsList);
+            }
         }
+
+        //filter out peaks out of ms2 m/z range
+        HashSet<Float> excludedMzs = new HashSet<>();
+        for (float mz : mzsSet) {
+            if (mz < pepObj.scanNumObj.lowerLimit || mz > pepObj.scanNumObj.upperLimit) {
+                excludedMzs.add(mz);
+            }
+        }
+        for (Float mz : excludedMzs) {
+            mzsSet.remove(mz);
+        }
+
+        float[] mzs = new float[mzsSet.size()];
+        int i = 0;
+        for (float f : mzsSet) {
+            mzs[i] = f;
+            i++;
+        }
+
+        allMatchedIntensities = getMatchedIntensities(
+                pepObj.scanNumObj.getSavedExpMZs(), pepObj.scanNumObj.getSavedExpIntensities(), mzs);
+        //}
+        return mzsSet;
     }
 
 
@@ -744,6 +756,9 @@ public class SpectrumComparison {
 
     public double weightedSpectralEntropy() {
         double unweighted = unweightedSpectralEntropy();
+        if (unweighted == 0) {
+            return 0;
+        }
         return unweighted * Math.pow(spectralEntropy(sum1PredIntensities), 0.5);
     }
 
@@ -772,28 +787,33 @@ public class SpectrumComparison {
     }
 
     //top 24
-    public double hypergeometricProbability() {
+    public double hypergeometricProbability() throws IOException, URISyntaxException {
         this.getAllMatchedIntensities();
         matchedIons = 0;
         for (float f : allMatchedIntensities) {
-            if (f != 0) {
+            if (f != 0) { //TODO: consider filtering for values above intensity threshold, same as predIntensity filtering
                 matchedIons += 1;
             }
         }
 
         HypergeometricDistribution hgd = new HypergeometricDistribution(rng,
-                4 * (length - 1), matchedIons, predIntensities.length);
+                allMatchedIntensities.length, matchedIons, predIntensities.length);
         int successes = 0;
         for (float f : matchedIntensities) {
             if (f != 0) {
                 successes += 1;
             }
         }
+        if (successes > matchedIons) { //sig fig issue
+            successes = matchedIons;
+            System.out.println(pepObj.name + " hypergeometric score is being adjusted");
+        }
         return -1 * Math.log10(hgd.upperCumulativeProbability(successes));
     }
 
     //top 12
-    public double intersection() {
+    //biased towards longer peptides?
+    public double intersection() throws IOException, URISyntaxException {
         //calculate overlap of top predicted mzs and top matched mzs
         HashSet<Float> predSet = new HashSet<>();
         for (float f : matchedIntensities) {
@@ -802,17 +822,21 @@ public class SpectrumComparison {
 
         this.getAllMatchedIntensities();
         float intersection = 0;
-        Arrays.sort(allMatchedIntensities);
+        float[] sortedIntensities = new float[allMatchedIntensities.length];
+        for (int i = 0; i < allMatchedIntensities.length; i++) {
+            sortedIntensities[i] = allMatchedIntensities[i];
+        }
+        Arrays.sort(sortedIntensities);
         float iters = 0;
-        for (int i = allMatchedIntensities.length - 1; i > 0; i--) {
-            if (allMatchedIntensities[i] == 0) {
+        for (int i = sortedIntensities.length - 1; i > 0; i--) {
+            if (sortedIntensities[i] == 0) { //using intensities directly, not m/z, since predicted m/z not saved
                 break;
             }
-            if (predSet.contains(allMatchedIntensities[i])) {
+            if (predSet.contains(sortedIntensities[i])) {
                 intersection += 1;
             }
             iters += 1;
-            if (iters >= Constants.topFragments) {
+            if (iters >= Constants.topFragments) { //do we want to impose a ceiling?
                 break;
             }
         }
@@ -822,7 +846,7 @@ public class SpectrumComparison {
     }
 
     //generic way of getting score
-    public double getScore(String score) {
+    public double getScore(String score) throws IOException, URISyntaxException {
         double returnScore = 0;
         switch (score) {
             case "brayCurtis":

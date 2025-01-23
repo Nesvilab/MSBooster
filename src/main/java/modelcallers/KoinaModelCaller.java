@@ -370,7 +370,11 @@ public class KoinaModelCaller {
                                         break;
                                     case 'I': //internal or immonium
                                         if (result.startsWith("Int")) {
-                                            fragmentIonTypes.add("int");
+                                            if (NL) {
+                                                fragmentIonTypes.add("int-NL");
+                                            } else {
+                                                fragmentIonTypes.add("int");
+                                            }
                                         } else {
                                             fragmentIonTypes.add("imm");
                                         }

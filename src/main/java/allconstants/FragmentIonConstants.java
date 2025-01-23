@@ -146,4 +146,6 @@ public class FragmentIonConstants implements ConstantsInterface {
             fragmentIonHierarchy[i] = fragments.get(i);
         }
     }
+
+    public static HashSet<String> primaryFragmentIonTypes = new HashSet<>();
 }

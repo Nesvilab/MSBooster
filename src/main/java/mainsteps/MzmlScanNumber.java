@@ -18,7 +18,6 @@
 package mainsteps;
 
 import allconstants.Constants;
-import allconstants.FragmentIonConstants;
 import org.apache.commons.lang3.ArrayUtils;
 import peptideptmformatting.PeptideFormatter;
 import peptideptmformatting.PeptideSkipper;
@@ -53,12 +52,13 @@ public class MzmlScanNumber {
     public float normalizedRT;
     public Float IM;
     public int IMbinSize;
-    Double lowerLimit;
-    Double upperLimit;
+    public Double lowerLimit; //TODO: better names to distinguish this from isolationLower
+    public Double upperLimit;
     public HashMap<String, Float> NCEs = new HashMap<>();
     public ArrayList<PeptideObj> peptideObjects = new ArrayList<>();
     //double[] mzFreqs;
     public static float[] zeroFloatArray = new float[]{0};
+    public static String[] zeroStringArray = new String[]{""};
     public AtomicInteger skippedPSMs = new AtomicInteger(0);
 
     //this version if creating from mzml scan number
@@ -188,6 +188,7 @@ public class MzmlScanNumber {
         try {
             float[] predMZs = predictionEntry.mzs;
             float[] predIntensities = predictionEntry.intensities;
+            String[] predFragmentIonTypes = predictionEntry.fragmentIonTypes;
             float predRT = predictionEntry.RT;
             float predIM = predictionEntry.IM;
 
@@ -195,30 +196,29 @@ public class MzmlScanNumber {
             //TODO can make this faster by only comparing beginning and end
             ArrayList<Float> tmpMZs = new ArrayList<>();
             ArrayList<Float> tmpIntensities = new ArrayList<>();
+            ArrayList<String> tmpFragmentIonTypes = new ArrayList<>();
             for (int i = 0; i < predMZs.length; i++) {
                 if ((predMZs[i] >= lowerLimit) & (predMZs[i] <= upperLimit)) {
                     tmpMZs.add(predMZs[i]);
                     tmpIntensities.add(predIntensities[i]);
+                    tmpFragmentIonTypes.add(predFragmentIonTypes[i]);
                 }
             }
             predMZs = new float[tmpMZs.size()];
             predIntensities = new float[tmpIntensities.size()];
+            predFragmentIonTypes = new String[tmpFragmentIonTypes.size()];
             for (int i = 0; i < tmpMZs.size(); i++) {
                 predMZs[i] = tmpMZs.get(i);
                 predIntensities[i] = tmpIntensities.get(i);
+                predFragmentIonTypes[i] = tmpFragmentIonTypes.get(i);
             }
 
             if (predMZs.length > 1) {
-                if (FragmentIonConstants.divideFragments == 0) {
-                    newPepObj = new PeptideObj(this, name.getBaseCharge(), rank, targetORdecoy, escore, predMZs,
-                            predIntensities, predRT, predIM);
-                } else {
-                    newPepObj = new PeptideObj(this, name.getBaseCharge(), rank, targetORdecoy, escore, predMZs,
-                            predIntensities, predRT, predIM, predictionEntry.fragmentIonTypes);
-                }
+                newPepObj = new PeptideObj(this, name.getBaseCharge(), rank, targetORdecoy, escore,
+                        predMZs, predIntensities, predFragmentIonTypes, predRT, predIM);
             } else { //only 1 frag to match
-                newPepObj = new PeptideObj(this, name.getBaseCharge(), rank, targetORdecoy, escore, zeroFloatArray,
-                        zeroFloatArray, predRT, predIM);
+                newPepObj = new PeptideObj(this, name.getBaseCharge(), rank, targetORdecoy, escore,
+                        zeroFloatArray, zeroFloatArray, zeroStringArray, predRT, predIM);
             }
             if (set) {
                 peptideObjects.add(newPepObj);
@@ -247,7 +247,7 @@ public class MzmlScanNumber {
             if (PeptideSkipper.skipPeptide(name.getStripped(), name.getCharge(),
                     Constants.spectraModel + Constants.rtModel + Constants.imModel)) {
                 newPepObj = new PeptideObj(this, name.getBaseCharge(), rank, targetORdecoy, escore,
-                        zeroFloatArray, zeroFloatArray, predRT, predIM);
+                        zeroFloatArray, zeroFloatArray, zeroStringArray, predRT, predIM);
                 if (set) {
                     peptideObjects.add(newPepObj);
                 }

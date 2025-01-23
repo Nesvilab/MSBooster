@@ -32,6 +32,7 @@ import utils.ProgressReporter;
 import utils.StatMethods;
 
 import java.io.IOException;
+import java.net.URISyntaxException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.concurrent.ExecutionException;
@@ -133,11 +134,19 @@ public class FeatureCalculator {
                         case "weightedSpectralEntropy":
                         case "heuristicSpectralEntropy":
                             if (pepObj.spectralSimObj.spectrumComparisons.isEmpty()) {
-                                pepObj.spectralSimObj.scores.put(feature, pepObj.spectralSimObj.getScore(feature));
+                                try {
+                                    pepObj.spectralSimObj.scores.put(feature, pepObj.spectralSimObj.getScore(feature));
+                                } catch (IOException | URISyntaxException e) {
+                                    throw new RuntimeException(e);
+                                }
                             } else {
                                 for (int j = 0; j < fragmentGroups.length; j++) {
-                                    pepObj.spectralSimObj.spectrumComparisons.get(j).scores.put(feature,
-                                            pepObj.spectralSimObj.spectrumComparisons.get(j).getScore(feature));
+                                    try {
+                                        pepObj.spectralSimObj.spectrumComparisons.get(j).scores.put(feature,
+                                                pepObj.spectralSimObj.spectrumComparisons.get(j).getScore(feature));
+                                    } catch (IOException | URISyntaxException e) {
+                                        throw new RuntimeException(e);
+                                    }
                                 }
                             }
                             break;

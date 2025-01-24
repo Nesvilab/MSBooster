@@ -17,17 +17,16 @@
 
 package allconstants;
 
-import static utils.Print.printError;
-
 import features.detectability.FastaReader;
 import features.spectra.MassCalculator;
+import utils.CaseInsensitiveHashSet;
+
 import java.io.File;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
-import utils.CaseInsensitiveHashSet;
 
 import static utils.Print.printError;
 
@@ -45,7 +44,7 @@ public class Constants {
     public static String mzmlDirectory = null; //C:/Users/kevin/OneDriveUmich/proteomics/mzml/cptac/
     public static String outputDirectory = null; //where to write all intermediate and final files
     public static String JsonDirectory = null;
-    public static String editedPin = "edited"; //a prefix. Default is edited_
+    public static String editedPinSuffix = "edited"; //a prefix. Default is edited_
     public static Integer renamePin = 1;
     public static String spectraRTPrefix = null;
     public static String detectPredInput = null;

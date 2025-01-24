@@ -70,7 +70,7 @@ public class MainClass {
     public static ScheduledThreadPoolExecutor executorService;
     public static void main(String[] args) throws Exception {
         Locale.setDefault(Locale.US);
-        printInfo("MSBooster v1.2.67");
+        printInfo("MSBooster v1.2.68");
 
         try {
             //accept command line inputs
@@ -1456,7 +1456,7 @@ public class MainClass {
             //create new pin file with features
             printInfo("Generating edited pin with following features: " + Arrays.toString(featuresArray));
             long start = System.nanoTime();
-            PercolatorFormatter.editPin(pmMatcher, featuresArray, Constants.editedPin, executorService);
+            PercolatorFormatter.editPin(pmMatcher, featuresArray, Constants.editedPinSuffix, executorService);
             executorService.shutdown();
 
             //print parameters to ps

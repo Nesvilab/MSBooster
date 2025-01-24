@@ -35,6 +35,8 @@ import java.util.List;
 import java.util.concurrent.ExecutionException;
 import java.util.stream.Collectors;
 
+import static utils.Print.printError;
+
 public class PinMzmlMatcher {
     public File[] mzmlFiles;
     public File[] pinFiles;
@@ -45,10 +47,13 @@ public class PinMzmlMatcher {
         //get pin files
         String[] allPinDirectories = pinDirectory.split(" ");
         ArrayList<String> pinFileList = new ArrayList<>();
+        ArrayList<String> editedPinFileList = new ArrayList<>();
         for (String directory : allPinDirectories) {
             if (directory.substring(directory.length() - 3).equalsIgnoreCase("pin")) { //single file
-                if (! directory.contains("_" + Constants.editedPin)) {
+                if (! directory.contains("_" + Constants.editedPinSuffix)) {
                     pinFileList.add(directory);
+                } else {
+                    editedPinFileList.add(directory);
                 }
             } else { //directory, but not recursive
                 List<File> pinFilesCollection = Files.list(Paths.get(directory))
@@ -56,8 +61,10 @@ public class PinMzmlMatcher {
                     .filter(p -> p.getFileName().toString().toLowerCase().endsWith(".pin"))
                     .map(Path::toFile).collect(Collectors.toList());
                 for (File file : pinFilesCollection) {
-                    if (! file.getCanonicalPath().contains("_" + Constants.editedPin)) {
+                    if (! file.getCanonicalPath().contains("_" + Constants.editedPinSuffix)) {
                         pinFileList.add(file.getCanonicalPath());
+                    } else {
+                        editedPinFileList.add(file.getCanonicalPath());
                     }
                 }
             }
@@ -106,6 +113,16 @@ public class PinMzmlMatcher {
                         mzmlFileMap.put(mgfName.substring(0, mgfName.length() - 4), file);
                     }
                 }
+            }
+        }
+
+        //check that suffix specified by editedPin parameter is not in mzml file names
+        for (String name : mzmlFileMap.keySet()) {
+            if (name.contains(Constants.editedPinSuffix) && pinFileList.isEmpty() && !editedPinFileList.isEmpty()) {
+                printError("Suffix '" + Constants.editedPinSuffix + "' cannot be used in the mzml/mgf file name. " +
+                        "Please rename the files to exclude '" + Constants.editedPinSuffix + "' and rerun from the beginning of FragPipe, " +
+                        "or if running on the command line, set --editedPinSuffix to another suffix");
+                System.exit(1);
             }
         }
 

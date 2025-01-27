@@ -22,6 +22,7 @@ public class FragmentAnnotationParser {
     public int isotope = 0;
     public String internalSequence;
     public float neutralLoss = 0f;
+    public ArrayList<String> neutralLossStrings = new ArrayList<>();
 
     public FragmentAnnotationParser(String annotation) throws IOException, URISyntaxException {
         annotation = annotation.split(";")[0]; //if multiple possible annotations (from default fragment assignment), use first
@@ -153,7 +154,6 @@ public class FragmentAnnotationParser {
         String[] annotationSplit = annotation.split("-");
         if (annotationSplit.length != 1) {
             ArrayList<Integer> multipliers = new ArrayList<>();
-            ArrayList<String> nls = new ArrayList<>();
 
             for (int split = 1; split < annotationSplit.length; split++) {
                 String nlString = annotationSplit[split];
@@ -173,7 +173,7 @@ public class FragmentAnnotationParser {
                         break;
                     } else if (currentChar == '+') {
                         if (! nl.isEmpty()) {
-                            nls.add(nl);
+                            neutralLossStrings.add(nl);
                             multipliers.add(multiplier);
                         }
                         nl = "";
@@ -188,14 +188,14 @@ public class FragmentAnnotationParser {
                     }
                 }
                 if (! nl.isEmpty()) {
-                    nls.add(nl);
+                    neutralLossStrings.add(nl);
                     multipliers.add(multiplier);
                 }
             }
 
             //query neutral losses and calculate mass
-            for (int i = 0; i < nls.size(); i++) {
-                neutralLoss += allNeutralLossMasses.get(nls.get(i)) * multipliers.get(i);
+            for (int i = 0; i < neutralLossStrings.size(); i++) {
+                neutralLoss += allNeutralLossMasses.get(neutralLossStrings.get(i)) * multipliers.get(i);
             }
         }
     }

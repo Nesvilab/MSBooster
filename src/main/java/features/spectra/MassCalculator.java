@@ -19,6 +19,7 @@ package features.spectra;
 
 import allconstants.Constants;
 import allconstants.FragmentIonConstants;
+import peptideptmformatting.PTMhandler;
 import predictions.FragmentAnnotationParser;
 
 import java.io.BufferedReader;
@@ -50,7 +51,7 @@ public class MassCalculator {
     private final String[] selectNeutralLosses = new String[] {"H2O", "NH3"};
     private final String[] internalFragmentTypes = new String[] {"ay", "by"};
 
-    public static final HashMap<String, Float> makeNlMasses() throws IOException {
+    public static HashMap<String, Float> makeNlMasses() throws IOException {
         HashMap<String, Float> neutralLossMasses = new HashMap<>();
         final InputStream stream = MassCalculator.class.getClassLoader().getResourceAsStream(
                 "fragment_annotation/neutral_losses.txt");
@@ -61,11 +62,23 @@ public class MassCalculator {
         while((line = nlFile.readLine()) != null) {
             String[] lineSplit = line.split("\t");
             neutralLossMasses.put(lineSplit[0], Float.valueOf(lineSplit[1]));
+            if (lineSplit.length == 3) {
+                if (lineSplit[2].equals("phos")) {
+                    phosphoLosses.add(lineSplit[0]);
+                } else if (lineSplit[2].equals("ox")) {
+                    oxidationLosses.add(lineSplit[0]);
+                } else {
+                    printError(lineSplit[2] + " is an unrecognized type of loss. Exiting.");
+                    System.exit(1);
+                }
+            }
         }
         nlFile.close();
         return neutralLossMasses;
     }
     public static final HashMap<String, Float> allNeutralLossMasses;
+    public static final HashSet<String> phosphoLosses = new HashSet<>();
+    public static final HashSet<String> oxidationLosses = new HashSet<>();
 
     static {
         try {
@@ -75,7 +88,7 @@ public class MassCalculator {
         }
     }
 
-    public static final HashMap<String, Float> makeImmoniumMasses() throws IOException {
+    public static HashMap<String, Float> makeImmoniumMasses() throws IOException {
         HashMap<String, Float> immMasses = new HashMap<>();
         final InputStream stream = MassCalculator.class.getClassLoader().getResourceAsStream(
                 "fragment_annotation/immonium_masses.txt");
@@ -108,11 +121,9 @@ public class MassCalculator {
     public MassCalculator[] internalPeptides;
     private final int internalPeptideConstant = 3; //for PEPTIDER, only consider EP,EPT,...EPTIDE, which is 5.
     public SortedMap<Float, String[]> fragmentIons = new TreeMap<>();
-    //public SortedMap<Float, String[]> unispecFragmentIons = new TreeMap<>();
     public HashMap<String, Float> annotationMasses = new HashMap<>();
-    //public HashMap<String, Float> unispecAnnotationMasses = new HashMap<>();
 
-    //TODO: get immonium ion masses by taking amino acid and subtracting 26.99 Da. This holds for modified AA too (Falick et al 1993)
+    // get immonium ion masses by taking amino acid and subtracting 26.99 Da. This holds for modified AA too (Falick et al 1993)
     //TODO: should we consider related ions, not just immonium?
     public static HashMap<Character, Float> AAmap = new HashMap<Character, Float>()
     {{
@@ -579,7 +590,7 @@ public class MassCalculator {
                 if (fap.fragnum >= peptide.length()) {
                     return false;
                 }
-            break;
+                break;
             case "p":
             case "p-NL":
                 if ((fap.charge != 0) &&
@@ -601,6 +612,48 @@ public class MassCalculator {
                 }
                 break;
         }
+
+        //check if fap contains a neutral loss not supported by this peptide, move on
+        //check if modMasses contains close enough mass to phospho or oxidation
+        boolean needPhospho = false;
+        for (String loss : phosphoLosses) {
+            if (fap.fullAnnotation.contains(loss)) {
+                needPhospho = true;
+                break;
+            }
+        }
+        if (needPhospho) {
+            boolean hasPhospho = false;
+            for (double modMass : modMasses) {
+                if (Math.abs(modMass - PTMhandler.phosphorylationMass) < 0.0002) {
+                    hasPhospho = true;
+                    break;
+                }
+            }
+            if (!hasPhospho) {
+                return false;
+            }
+        }
+        boolean needOx = false;
+        for (String loss : oxidationLosses) {
+            if (fap.fullAnnotation.contains(loss)) {
+                needOx = true;
+                break;
+            }
+        }
+        if (needOx) {
+            boolean hasOx = false;
+            for (double modMass : modMasses) {
+                if (Math.abs(modMass - PTMhandler.oxidationMass) < 0.0002) {
+                    hasOx = true;
+                    break;
+                }
+            }
+            if (!hasOx) {
+                return false;
+            }
+        }
+
         return true;
     }
 
@@ -781,9 +834,9 @@ public class MassCalculator {
 
     public static void main(String[] args) throws IOException, URISyntaxException {
         FragmentIonConstants.fragmentIonHierarchySet = new HashSet<>();
-        FragmentIonConstants.fragmentIonHierarchySet.add("int");
-        MassCalculator mc = new MassCalculator("APAGVLPEL", 2);
-        mc.possibleUnispecMzs("int");
+        FragmentIonConstants.fragmentIonHierarchySet.add("y-NL");
+        MassCalculator mc = new MassCalculator("APAGVLPELM[15.9949]", 2);
+        mc.possibleUnispecMzs("");
         System.out.println(mc.annotationMasses);
     }
 }

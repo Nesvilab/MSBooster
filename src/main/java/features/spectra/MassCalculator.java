@@ -39,6 +39,8 @@ import java.util.TreeMap;
 import static utils.NumericUtils.sum;
 import static utils.Print.printError;
 
+//TODO: how do immonium masses change if AA has modification? e.g. would oxM also have IMA (104 Da), or would the mod mass be added?
+// possibleFragmentIons method does this, possibleUnispecMzs does not
 public class MassCalculator {
     public final float proton = 1.00727647f;
     public final float isotopic_massdiff = 1.0033548378f;
@@ -523,7 +525,7 @@ public class MassCalculator {
                     continue;
                 }
             }
-            if (! isFragmentPossible(fap)) {
+            if (! isUnispecFragmentPossible(fap)) {
                 continue;
             }
 
@@ -579,7 +581,7 @@ public class MassCalculator {
         return returnedMzs;
     }
 
-    private boolean isFragmentPossible(FragmentAnnotationParser fap) {
+    private boolean isUnispecFragmentPossible(FragmentAnnotationParser fap) {
         switch (fap.fragmentIonType) {
             case "y":
             case "b":
@@ -609,6 +611,19 @@ public class MassCalculator {
                 }
                 if (fap.internalStartPosition + fap.internalExtent - 1 >= peptide.length()) { //fragment cannot extend past peptide c-term
                     return false;
+                }
+                break;
+            case "imm": //TODO: can IKF actually occur (arginine peak from lysine)?
+                String AA = String.valueOf(fap.fullAnnotation.charAt(1));
+                if (! peptide.contains(AA)) {
+                    return false;
+                }
+                if (AA.equals("C") && fap.fullAnnotation.startsWith("CAM", 2)) { // C+57
+                    boolean contains = modMasses.stream().anyMatch(
+                            value -> Math.abs(value - PTMhandler.carbamidomethylationMass) <= 0.0002);
+                    if (!contains) {
+                        return false;
+                    }
                 }
                 break;
         }
@@ -834,7 +849,7 @@ public class MassCalculator {
 
     public static void main(String[] args) throws IOException, URISyntaxException {
         FragmentIonConstants.fragmentIonHierarchySet = new HashSet<>();
-        FragmentIonConstants.fragmentIonHierarchySet.add("y-NL");
+        FragmentIonConstants.fragmentIonHierarchySet.add("imm");
         MassCalculator mc = new MassCalculator("APAGVLPELM[15.9949]", 2);
         mc.possibleUnispecMzs("");
         System.out.println(mc.annotationMasses);

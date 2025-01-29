@@ -27,6 +27,7 @@ import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.OutputStream;
+import java.net.ConnectException;
 import java.net.HttpURLConnection;
 import java.net.URL;
 import java.nio.charset.StandardCharsets;
@@ -35,7 +36,9 @@ import java.util.TimerTask;
 import java.util.concurrent.Callable;
 import java.util.concurrent.atomic.AtomicLong;
 
+import static allconstants.Constants.numKoinaAttempts;
 import static utils.Print.printError;
+import static utils.Print.printInfo;
 
 public class KoinaTask implements Callable<Boolean> {
     private final String jsonFilePath;
@@ -69,22 +72,39 @@ public class KoinaTask implements Callable<Boolean> {
     public Boolean call() throws Exception {
         URL url = new URL(Constants.KoinaURL + model + "/infer");
         HttpURLConnection connection;
-        if (Constants.KoinaURL.startsWith("http:")) {
-            connection = (HttpURLConnection) url.openConnection();
-        } else { //https:
-            connection = (HttpsURLConnection) url.openConnection();
-        }
-
-        connection.setRequestMethod("POST");
-        connection.setRequestProperty("Content-Type", "application/json; utf-8");
-        connection.setDoOutput(true);
 
         // Read the JSON file's contents into a string
         String jsonInputString = new String(readFile(jsonFilePath), StandardCharsets.UTF_8);
 
-        try (OutputStream os = connection.getOutputStream()) {
-            byte[] input = jsonInputString.getBytes(StandardCharsets.UTF_8);
-            os.write(input, 0, input.length);
+        int numAttempts = 0;
+        while (true) {
+            if (Constants.KoinaURL.startsWith("http:")) {
+                connection = (HttpURLConnection) url.openConnection();
+            } else { //https:
+                connection = (HttpsURLConnection) url.openConnection();
+            }
+
+            connection.setRequestMethod("POST");
+            connection.setRequestProperty("Content-Type", "application/json; utf-8");
+            connection.setDoOutput(true);
+
+            try (OutputStream os = connection.getOutputStream()) { //this step may occasionally time out
+//                Random random = new Random();
+//                int randomNumber = random.nextInt(5);
+//                if (randomNumber == 0) {
+//                    throw new ConnectException();
+//                }
+                byte[] input = jsonInputString.getBytes(StandardCharsets.UTF_8);
+                os.write(input, 0, input.length);
+                break;
+            } catch (ConnectException e) {
+                if (numAttempts >= numKoinaAttempts) {
+                    printError("Koina server is busy. Please retry later, or use DIA-NN for prediction. Exiting");
+                    System.exit(1);
+                }
+                printInfo("Koina server may be running slow. Resending " + jsonFilePath);
+                numAttempts++;
+            }
         }
 
         StringBuilder response = new StringBuilder();
@@ -120,7 +140,7 @@ public class KoinaTask implements Callable<Boolean> {
             return true;
         } catch (Exception e) {
             try {
-                if (failedAttempts == Constants.numKoinaAttempts) {
+                if (failedAttempts == numKoinaAttempts) {
                     BufferedReader inErrors = new BufferedReader(new InputStreamReader(connection.getErrorStream()));
                     String inputLine;
                     while ((inputLine = inErrors.readLine()) != null) {

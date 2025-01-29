@@ -89,6 +89,11 @@ public class KoinaTask implements Callable<Boolean> {
             connection.setDoOutput(true);
 
             try (OutputStream os = connection.getOutputStream()) { //this step may occasionally time out
+//                Random random = new Random();
+//                int randomNumber = random.nextInt(5);
+//                if (randomNumber == 0) {
+//                    throw new ConnectException();
+//                }
                 byte[] input = jsonInputString.getBytes(StandardCharsets.UTF_8);
                 os.write(input, 0, input.length);
                 break;

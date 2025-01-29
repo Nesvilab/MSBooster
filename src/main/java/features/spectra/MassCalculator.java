@@ -386,13 +386,11 @@ public class MassCalculator {
     }
 
     //in case masses overlap
-    private void addToFragmentIons(Float mass, String[] info,
-                                   SortedMap<Float, String[]> mzToAnnotationMap,
-                                   HashMap<String, Float> annotationToMzMap, ArrayList<Float> mzArrayList) {
+    private void addToFragmentIons(Float mass, String[] info, ArrayList<Float> mzArrayList) {
         if (FragmentIonConstants.fragmentIonHierarchySet.contains(info[1])) {
-            mzToAnnotationMap.merge(mass, info, (a, b) -> new String[]{a[0] + ";" + b[0],
+            fragmentIons.merge(mass, info, (a, b) -> new String[]{a[0] + ";" + b[0],
                     a[1] + ";" + b[1]});
-            annotationToMzMap.put(info[0], mass);
+            annotationMasses.put(info[0], mass);
             mzArrayList.add(mass);
         }
     }
@@ -408,7 +406,7 @@ public class MassCalculator {
             if (fragmentType.equals("p") || fragmentType.isEmpty()) {
                 String ionName = "p^" + iCharge;
                 addToFragmentIons(calcMassPrecursor(0, 0, iCharge),
-                        new String[]{ionName, "p"}, fragmentIons, annotationMasses, returnedMzs);
+                        new String[]{ionName, "p"}, returnedMzs);
             }
 
             //neutral loss
@@ -416,7 +414,7 @@ public class MassCalculator {
                 for (String nl : selectNeutralLosses) {
                     String ionName = "p-" + nl + "^" + iCharge;
                     addToFragmentIons(calcMassPrecursor(0, allNeutralLossMasses.get(nl), iCharge),
-                            new String[]{ionName, "p-NL"}, fragmentIons, annotationMasses, returnedMzs);
+                            new String[]{ionName, "p-NL"}, returnedMzs);
                 }
             }
         }
@@ -431,7 +429,7 @@ public class MassCalculator {
                     if (fragmentType.equals(ionType) || fragmentType.isEmpty()) {
                         String ionName = ionType + num + "^" + iCharge;
                         addToFragmentIons(calcMass(num, ionType, iCharge, 0), new String[]{ionName, ionType},
-                                fragmentIons, annotationMasses, returnedMzs);
+                                returnedMzs);
                     }
 
                     //neutral loss fragments
@@ -440,14 +438,12 @@ public class MassCalculator {
                             for (String nl : selectNeutralLosses) {
                                 String ionName = ionType + num + "-" + nl + "^" + iCharge;
                                 addToFragmentIons(calcMass(num, ionType, iCharge, allNeutralLossMasses.get(nl), 0),
-                                        new String[]{ionName, ionType + "-NL"},
-                                        fragmentIons, annotationMasses, returnedMzs);
+                                        new String[]{ionName, ionType + "-NL"}, returnedMzs);
                             }
                         } else { //c-NH3 is same as b
                             String ionName = ionType + num + "-H2O^" + iCharge;
                             addToFragmentIons(calcMass(num, ionType, iCharge, allNeutralLossMasses.get("H2O"), 0),
-                                    new String[]{ionName, "c-NL"},
-                                    fragmentIons, annotationMasses, returnedMzs);
+                                    new String[]{ionName, "c-NL"}, returnedMzs);
                         }
                     }
                 }
@@ -471,14 +467,14 @@ public class MassCalculator {
                     if (fragmentType.equals("int") || fragmentType.isEmpty()) {
                         String ionName = "Int:y" + num1 + ionType.charAt(0) + num2 + "/" + subsequence;
                         addToFragmentIons(calcMass(num1, num2, ionType, 0), new String[]{ionName, "int"},
-                                fragmentIons, annotationMasses, returnedMzs);
+                                returnedMzs);
                     }
                     if (fragmentType.equals("int-NL") || fragmentType.isEmpty()) {
                         for (String nl : selectNeutralLosses) {
                             String ionName = "Int:y" + num1 + ionType.charAt(0) + num2 + "-" + nl + "/" + subsequence;
                             addToFragmentIons(calcMass(num1, num2, ionType,
                                             allNeutralLossMasses.get(nl), 0), new String[]{ionName, "int-NL"},
-                                    fragmentIons, annotationMasses, returnedMzs);
+                                    returnedMzs);
                         }
                     }
                 }
@@ -500,8 +496,7 @@ public class MassCalculator {
                     }
 
                     addToFragmentIons((float) (modMasses.get(i + 1) + AAmap.get(peptide.charAt(i)) - 26.99),
-                            new String[]{ionName, "imm"},
-                            fragmentIons, annotationMasses, returnedMzs);
+                            new String[]{ionName, "imm"}, returnedMzs);
                     checkedImmoniumIons.add(peptide.charAt(i));
                 }
             }
@@ -574,8 +569,7 @@ public class MassCalculator {
                     printError(fap.fragmentIonType + " is not supported. Exiting");
                     System.exit(1);
             }
-            addToFragmentIons(mz, new String[]{fap.fullAnnotation, fap.fragmentIonType},
-                    fragmentIons, annotationMasses, returnedMzs);
+            addToFragmentIons(mz, new String[]{fap.fullAnnotation, fap.fragmentIonType}, returnedMzs);
         }
         fragmentsFile.close();
         return returnedMzs;

@@ -66,7 +66,7 @@ public class SpectrumComparison {
         predFragmentIonTypes = pFragmentIonTypes;
 
         if (FragmentIonConstants.divideFragments == 0) {
-            matchedIntensities = this.getMatchedIntensities(eMZs, eIntensities, predMZs);
+            matchedIntensities = this.getMatchedIntensities(eMZs, eIntensities, predMZs, pFragmentIonTypes);
         } else {
             //get fragments that match the allowed
             for (TreeSet<String> allowedTypesSet : fragmentGroups) {
@@ -110,7 +110,7 @@ public class SpectrumComparison {
         predIntensities = pIntensities;
         predFragmentIonTypes = pFragmentIonTypes;
 
-        matchedIntensities = this.getMatchedIntensities(eMZs, eIntensities, predMZs);
+        matchedIntensities = this.getMatchedIntensities(eMZs, eIntensities, predMZs, pFragmentIonTypes);
         if (! willReload) {
             predMZs = null;
         }
@@ -118,17 +118,17 @@ public class SpectrumComparison {
     private SpectrumComparison() {}
 
     //get new scan read in
-    public void reload(PeptideObj pobj, float[] eMZs, float[] eIntensities) {
-        pepObj = pobj;
-
-        unitNormMatchedIntensities = null;
-        unitNormPredIntensities = null;
-        sum1MatchedIntensities = null;
-        sum1PredIntensities = null;
-
-        allMatchedIntensities = null;
-        matchedIntensities = getMatchedIntensities(eMZs, eIntensities, predMZs);
-    }
+//    public void reload(PeptideObj pobj, float[] eMZs, float[] eIntensities) {
+//        pepObj = pobj;
+//
+//        unitNormMatchedIntensities = null;
+//        unitNormPredIntensities = null;
+//        sum1MatchedIntensities = null;
+//        sum1PredIntensities = null;
+//
+//        allMatchedIntensities = null;
+//        matchedIntensities = getMatchedIntensities(eMZs, eIntensities, predMZs);
+//    }
 
     //TODO sort
     public SpectrumComparison pickedPredicted() {
@@ -155,29 +155,46 @@ public class SpectrumComparison {
         }
     }
 
+    /* Get best peaks from experimental spectrum that match to predicted peaks.
+           Same experimental peak may match to the multiple predicted peaks,
+              if they're close enough and experimental peak is strong.
+           Unmatched peaks assigned 0
+    */
     private float[] getMatchedIntensities(float[] expMZs, float[] expIntensities,
-                                          float[] predMZs) {
+                                          float[] predMZs, String[] predFragmentIonTypes) {
         if (predMZs.length == 1) {
-            return predMZs;
+            return predMZs; // I think we can return predMZs here instead of intensities array because a length 1 array will just return score of 1
         }
         int startPos = 0;
         int matchedNum = 0;
         float[] matchedInts = new float[predMZs.length];
-        if (! Constants.matchWithDaltons) {
-            double ppm = Constants.ppmTolerance / 1000000;
 
-        /* Get best peaks from experimental spectrum that match to predicted peaks.
-           Same experimental peak may match to the multiple predicted peaks,
-              if they're close enough and experimental peak is strong.
-           Unmatched peaks assigned 0
-         */
-            for (double mz : predMZs) {
+        //based on fragment ion type, decide if we need to use ppm or Da tolerance
+        boolean[] usePPMs = new boolean[predFragmentIonTypes.length];
+        boolean mwd;
+        for (int i = 0; i < predFragmentIonTypes.length; i++) {
+            if (FragmentIonConstants.primaryFragmentIonTypes.contains(predFragmentIonTypes[i])) {
+                mwd = Constants.matchWithDaltons;
+            } else { //use aux spectrum model
+                mwd = Constants.matchWithDaltonsAux;
+            }
+            usePPMs[i] = !mwd;
+        }
+
+        //matching fragments
+        double ppm = Constants.ppmTolerance / 1000000;
+
+        for (int i = 0; i < predMZs.length; i++) {
+            double mz = predMZs[i];
+            boolean usePPM = usePPMs[i];
+
+            if (usePPM) {
                 //see if any experimental peaks in vicinity
                 //double fragmentError = ppm * mz;
                 double fragmentMin = mz * (1 - ppm);
                 double fragmentMax = mz * (1 + ppm);
 
-                float predInt = 0;
+                float matchedInt = 0;
                 int pastStart = 0;
 
                 while (startPos + pastStart < expMZs.length) {
@@ -193,8 +210,8 @@ public class SpectrumComparison {
 
                         float potentialInt = expIntensities[startPos + pastStart];
 
-                        if (potentialInt > predInt) { //new maximum intensity
-                            predInt = potentialInt;
+                        if (potentialInt > matchedInt) { //new maximum intensity
+                            matchedInt = potentialInt;
                         }
                         pastStart += 1;
                     } else { //outside of fragment tolerance range again
@@ -202,17 +219,15 @@ public class SpectrumComparison {
                     }
                 }
 
-                matchedInts[matchedNum] = predInt;
+                matchedInts[matchedNum] = matchedInt;
                 matchedNum += 1;
-            }
-        } else {
-            for (double mz : predMZs) { //TODO: because fragments besides unknown have correct m/z, is this unnecessary?
+            } else {
                 //see if any experimental peaks in vicinity
                 //double fragmentError = ppm * mz;
                 double fragmentMin = mz - Constants.DaTolerance;
                 double fragmentMax = mz + Constants.DaTolerance;
 
-                float predInt = 0;
+                float matchedInt = 0;
                 int pastStart = 0;
 
                 while (startPos + pastStart < expMZs.length) {
@@ -228,8 +243,8 @@ public class SpectrumComparison {
 
                         float potentialInt = expIntensities[startPos + pastStart];
 
-                        if (potentialInt > predInt) { //new maximum intensity
-                            predInt = potentialInt;
+                        if (potentialInt > matchedInt) { //new maximum intensity
+                            matchedInt = potentialInt;
                         }
                         pastStart += 1;
                     } else { //outside of fragment tolerance range again
@@ -237,60 +252,73 @@ public class SpectrumComparison {
                     }
                 }
 
-                matchedInts[matchedNum] = predInt;
+                matchedInts[matchedNum] = matchedInt;
                 matchedNum += 1;
             }
         }
+
         return matchedInts;
     }
 
-    private TreeSet<Float> getAllMatchedIntensities() throws IOException, URISyntaxException {
-        //if (allMatchedIntensities == null) {
-        //what fragment ion types do we need?
-        HashSet<String> fiontypes = new HashSet<>(Arrays.asList(this.predFragmentIonTypes));
+    private void getAllMatchedIntensities() throws IOException, URISyntaxException {
+        if (allMatchedIntensities == null) {
+            //what fragment ion types do we need?
+            HashSet<String> fiontypes = new HashSet<>(Arrays.asList(this.predFragmentIonTypes));
 
-        //calculate mzs of possible fragments
-        MassCalculator mc = new MassCalculator(pepObj.name.split("\\|")[0], pepObj.charge);
-        TreeSet<Float> mzsSet = new TreeSet<>();
+            //calculate mzs of possible fragments
+            MassCalculator mc = new MassCalculator(pepObj.name.split("\\|")[0], pepObj.charge);
+            TreeSet<Float> mzsSet = new TreeSet<>();
+            HashMap<Float, String> mzToIontype = new HashMap<>();
 
-        //iterate over fragment ion types
-        for (String fiontype : fiontypes) {
-            if (
-                    (FragmentIonConstants.primaryFragmentIonTypes.contains(fiontype) &&
-                            Constants.spectraModel.equalsIgnoreCase("unispec")) ||
-                    (! FragmentIonConstants.primaryFragmentIonTypes.contains(fiontype) &&
-                                    Constants.auxSpectraModel.equalsIgnoreCase("unispec"))
-            ) {
-                ArrayList<Float> mzsList = mc.possibleUnispecMzs(fiontype);
-                mzsSet.addAll(mzsList);
-            } else {
-                ArrayList<Float> mzsList = mc.possibleFragmentIons(fiontype);
-                mzsSet.addAll(mzsList);
+            //iterate over fragment ion types
+            for (String fiontype : fiontypes) {
+                if (
+                        (FragmentIonConstants.primaryFragmentIonTypes.contains(fiontype) &&
+                                Constants.spectraModel.equalsIgnoreCase("unispec")) ||
+                                (!FragmentIonConstants.primaryFragmentIonTypes.contains(fiontype) &&
+                                        Constants.auxSpectraModel.equalsIgnoreCase("unispec"))
+                ) {
+                    ArrayList<Float> mzsList = mc.possibleUnispecMzs(fiontype);
+                    mzsSet.addAll(mzsList);
+                    for (float mz : mzsList) {
+                        mzToIontype.put(mz, fiontype);
+                    }
+                } else {
+                    ArrayList<Float> mzsList = mc.possibleFragmentIons(fiontype);
+                    mzsSet.addAll(mzsList);
+                    for (float mz : mzsList) {
+                        mzToIontype.put(mz, fiontype);
+                    }
+                }
             }
-        }
 
-        //filter out peaks out of ms2 m/z range
-        HashSet<Float> excludedMzs = new HashSet<>();
-        for (float mz : mzsSet) {
-            if (mz < pepObj.scanNumObj.lowerLimit || mz > pepObj.scanNumObj.upperLimit) {
-                excludedMzs.add(mz);
+            //filter out peaks out of ms2 m/z range
+            HashSet<Float> excludedMzs = new HashSet<>();
+            for (float mz : mzsSet) {
+                if (mz < pepObj.scanNumObj.lowerLimit || mz > pepObj.scanNumObj.upperLimit) {
+                    excludedMzs.add(mz);
+                }
             }
-        }
-        for (Float mz : excludedMzs) {
-            mzsSet.remove(mz);
-        }
+            for (Float mz : excludedMzs) {
+                mzsSet.remove(mz);
+            }
 
-        float[] mzs = new float[mzsSet.size()];
-        int i = 0;
-        for (float f : mzsSet) {
-            mzs[i] = f;
-            i++;
-        }
+            float[] mzs = new float[mzsSet.size()];
+            int i = 0;
+            for (float f : mzsSet) {
+                mzs[i] = f;
+                i++;
+            }
 
-        allMatchedIntensities = getMatchedIntensities(
-                pepObj.scanNumObj.getSavedExpMZs(), pepObj.scanNumObj.getSavedExpIntensities(), mzs);
-        //}
-        return mzsSet;
+            String[] fragmentIonTypes = new String[mzs.length];
+            for (int j = 0; j < fragmentIonTypes.length; j++) {
+                fragmentIonTypes[j] = mzToIontype.get(mzs[j]);
+            }
+
+            allMatchedIntensities = getMatchedIntensities(
+                    pepObj.scanNumObj.getSavedExpMZs(), pepObj.scanNumObj.getSavedExpIntensities(),
+                    mzs, fragmentIonTypes);
+        }
     }
 
 
@@ -890,5 +918,16 @@ public class SpectrumComparison {
                 System.exit(1);
         }
         return returnScore;
+    }
+
+    public static void main(String[] args) {
+        FragmentIonConstants.makeFragmentIonHierarchy();
+        FragmentIonConstants.primaryFragmentIonTypes.add("y");
+        Constants.matchWithDaltons = true;
+        Constants.matchWithDaltonsAux = true;
+        SpectrumComparison sc = new SpectrumComparison(new PeptideObj(),
+                new float[]{10f, 20f, 30f}, new float[]{1f, 1f, 1f},
+                new float[]{9.9997f, 19.9997f, 30.04f}, new float[]{1f, 1f, 1f}, new String[]{"y", "y", "y-NL"});
+        System.out.println(Arrays.toString(sc.matchedIntensities));
     }
 }

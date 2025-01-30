@@ -147,5 +147,6 @@ public class FragmentIonConstants implements ConstantsInterface {
         }
     }
 
+    //contains fragment ion types predicted by primary, not auxiliary spectra model
     public static HashSet<String> primaryFragmentIonTypes = new HashSet<>();
 }

@@ -254,7 +254,7 @@ public class MainClass {
                     }
 
                     float tol = Float.parseFloat(params.get("ppmTolerance"));
-                    if (ppmToDa) {
+                    if (ppmToDa) { //read in from msfragger params. Low res tolerance used for all matching
                         Constants.matchWithDaltons = true;
                         Constants.matchWithDaltonsAux = true;
                         Constants.DaTolerance = tol;

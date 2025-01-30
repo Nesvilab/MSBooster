@@ -93,18 +93,18 @@ public class PeptideObj {
                 predMZs, predIntensities, predFragmentIonTypes);
         this.RT = predRT;
         this.IM = predIM;
-        if (Constants.useMatchedIntensities || Constants.usePeakCounts || Constants.useIntensitiesDifference ||
-                Constants.usePredIntensities || Constants.useIndividualSpectralSimilarities ||
-                Constants.useIntensityDistributionSimilarity) {
-            makeFragmentAnnotationFeatures(predMZs, predIntensities);
-        }
+//        if (Constants.useMatchedIntensities || Constants.usePeakCounts || Constants.useIntensitiesDifference ||
+//                Constants.usePredIntensities || Constants.useIndividualSpectralSimilarities ||
+//                Constants.useIntensityDistributionSimilarity) {
+//            makeFragmentAnnotationFeatures(predMZs, predIntensities);
+//        }
     }
 
     public PeptideObj(){}
 
-    //how to deal with this if ignored fragment ions types, so matchedIntensities and fragmentIonTypes not same length?
-    //save masscalculator and annotateMZs
-    private void makeFragmentAnnotationFeatures(float[] predMZs, float[] predInts) throws IOException, URISyntaxException { //TODO what if we want to use unispec?
+    //TODO what if we want to use unispec?
+    // unispec would be more comprehensive. But we haven't extensively tested these features (matched intensity, etc.), so not a big deal for now
+    private void makeFragmentAnnotationFeatures(float[] predMZs, float[] predInts) throws IOException, URISyntaxException {
         //filter for top fragments for all experimental and pred vectors
         ArrayList<Float> expIntensitiesList = new ArrayList<>();
         ArrayList<Float> expMZsList = new ArrayList<>();

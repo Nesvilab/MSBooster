@@ -667,6 +667,7 @@ public class MassCalculator {
     }
 
     //takes array of mz values and tries to annotate
+    //usually default is sufficient, just to calculate y and b m/z values
     public String[][] annotateMZs(float[] mzs,
                                   String mode,
                                   boolean daltonTolerance) throws IOException, URISyntaxException {

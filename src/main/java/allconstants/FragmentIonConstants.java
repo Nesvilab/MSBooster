@@ -1,5 +1,12 @@
 package allconstants;
 
+import predictions.FragmentAnnotationParser;
+
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.net.URISyntaxException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashSet;
@@ -149,4 +156,32 @@ public class FragmentIonConstants implements ConstantsInterface {
 
     //contains fragment ion types predicted by primary, not auxiliary spectra model
     public static HashSet<String> primaryFragmentIonTypes = new HashSet<>();
+
+    //to be used by possible unispec mzs method
+    public static ArrayList<FragmentAnnotationParser> fragmentAnnotationParserArrayList;
+
+    static {
+        try {
+            fragmentAnnotationParserArrayList = makeFragmentAnnotationParserArrayList();
+        } catch (IOException | URISyntaxException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    public static ArrayList<FragmentAnnotationParser> makeFragmentAnnotationParserArrayList() throws IOException, URISyntaxException {
+        final InputStream stream = FragmentIonConstants.class.getClassLoader().getResourceAsStream(
+                "fragment_annotation/unispec_fragments.txt");
+        final InputStreamReader reader = new InputStreamReader(stream);
+        final BufferedReader fragmentsFile = new BufferedReader(reader);
+        ArrayList<FragmentAnnotationParser> faps = new ArrayList<>();
+
+        String line;
+        while((line = fragmentsFile.readLine()) != null) {
+            FragmentAnnotationParser fap = new FragmentAnnotationParser(line);
+            faps.add(fap);
+        }
+        fragmentsFile.close();
+
+        return faps;
+    }
 }

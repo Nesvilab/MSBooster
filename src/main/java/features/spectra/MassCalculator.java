@@ -505,16 +505,10 @@ public class MassCalculator {
         return returnedMzs;
     }
 
-    public ArrayList<Float> possibleUnispecMzs(String fragmentType) throws IOException, URISyntaxException {
-        final InputStream stream = getClass().getClassLoader().getResourceAsStream(
-                "fragment_annotation/unispec_fragments.txt");
-        final InputStreamReader reader = new InputStreamReader(stream);
-        final BufferedReader fragmentsFile = new BufferedReader(reader);
+    public ArrayList<Float> possibleUnispecMzs(String fragmentType) {
         ArrayList<Float> returnedMzs = new ArrayList<>();
 
-        String line;
-        while((line = fragmentsFile.readLine()) != null) {
-            FragmentAnnotationParser fap = new FragmentAnnotationParser(line);
+        for (FragmentAnnotationParser fap : FragmentIonConstants.fragmentAnnotationParserArrayList) {
             if (! fragmentType.isEmpty()) {
                 if (!Objects.equals(fap.fragmentIonType, fragmentType)) {
                     continue;
@@ -571,7 +565,7 @@ public class MassCalculator {
             }
             addToFragmentIons(mz, new String[]{fap.fullAnnotation, fap.fragmentIonType}, returnedMzs);
         }
-        fragmentsFile.close();
+
         return returnedMzs;
     }
 

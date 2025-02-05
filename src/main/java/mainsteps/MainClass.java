@@ -373,6 +373,12 @@ public class MainClass {
                 printError("No IM model called " + Constants.imModel + ". Exiting.");
                 System.exit(0);
             }
+            if (modelMapper.containsKey(Constants.auxSpectraModel.toLowerCase())) {
+                Constants.auxSpectraModel = modelMapper.get(Constants.auxSpectraModel.toLowerCase());
+            } else {
+                printError("No auxiliary spectra model called " + Constants.auxSpectraModel + ". Exiting.");
+                System.exit(0);
+            }
 
             if (Constants.spectraModel.equals("PredFull")) {
                 Constants.matchWithDaltons = true; //they report predictions in bins
@@ -467,8 +473,6 @@ public class MainClass {
                                     jsonOutFolder + File.separator + model,
                                     jsonOutFolder + File.separator + model + "_full.tsv");
                         }
-
-                        //
 
                         //collect the data for testing
                         ArrayList<Float> expRTs = new ArrayList<>();
@@ -1106,7 +1110,7 @@ public class MainClass {
                 if (Constants.useSpectra) {
                     Set<String> intersection = new HashSet<>(featureLL);
                     intersection.retainAll(Constants.spectraFeatures);
-                    if (intersection.size() == 0) {
+                    if (intersection.isEmpty()) {
                         featureLL.add("unweightedSpectralEntropy");
                     }
                 } else {
@@ -1118,8 +1122,9 @@ public class MainClass {
                 if (Constants.useRT) {
                     Set<String> intersection = new HashSet<>(featureLL);
                     intersection.retainAll(Constants.rtFeatures);
-                    if (intersection.size() == 0) {
+                    if (intersection.isEmpty()) {
                         featureLL.add("deltaRTLOESS");
+                        featureLL.add("predRTrealUnits");
                     }
                 } else {
                     featureLL.removeIf(Constants.rtFeatures::contains);
@@ -1146,7 +1151,7 @@ public class MainClass {
                 if (Constants.useMatchedIntensities) {
                     Set<String> intersection = new HashSet<>(featureLL);
                     intersection.retainAll(Constants.matchedIntensitiesFeatures);
-                    if (intersection.size() == 0) {
+                    if (intersection.isEmpty()) {
                         featureLL.addAll(Constants.matchedIntensitiesFeatures);
                     }
                 } else {
@@ -1173,7 +1178,7 @@ public class MainClass {
                 if (Constants.usePeakCounts) {
                     Set<String> intersection = new HashSet<>(featureLL);
                     intersection.retainAll(Constants.peakCountsFeatures);
-                    if (intersection.size() == 0) {
+                    if (intersection.isEmpty()) {
                         featureLL.addAll(Constants.peakCountsFeatures);
                     }
                 } else {
@@ -1187,7 +1192,7 @@ public class MainClass {
                 if (Constants.useIndividualSpectralSimilarities) {
                     Set<String> intersection = new HashSet<>(featureLL);
                     intersection.retainAll(Constants.individualSpectralSimilaritiesFeatures);
-                    if (intersection.size() == 0) {
+                    if (intersection.isEmpty()) {
                         featureLL.addAll(Constants.individualSpectralSimilaritiesFeatures);
                     }
                 } else {
@@ -1201,7 +1206,7 @@ public class MainClass {
                 if (Constants.useIntensitiesDifference) {
                     Set<String> intersection = new HashSet<>(featureLL);
                     intersection.retainAll(Constants.intensitiesDifferenceFeatures);
-                    if (intersection.size() == 0) {
+                    if (intersection.isEmpty()) {
                         featureLL.addAll(Constants.intensitiesDifferenceFeatures);
                     }
                 } else {

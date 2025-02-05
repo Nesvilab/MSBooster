@@ -110,6 +110,7 @@ public class KoinaMethods {
 //        }
 //    }
 
+    //used for partial prediction. allHits is only a subset of all the hits in a pin file
     public PredictionEntryHashMap getKoinaPredictions(
             HashSet<String> allHits, String model, int NCE, String folder, String fulltsv) {
         ScheduledThreadPoolExecutor executorService = new ScheduledThreadPoolExecutor(1);
@@ -163,7 +164,7 @@ public class KoinaMethods {
                                           HashMap<String, LinkedList<Integer>> scanNums,
                                           HashMap<String, LinkedList<PeptideFormatter>> peptides)
             throws FileParsingException, ExecutionException, InterruptedException, IOException, URISyntaxException {
-        allPreds.filterTopFragments(new ScheduledThreadPoolExecutor(Constants.numThreads));
+        allPreds.filterFragments(new ScheduledThreadPoolExecutor(Constants.numThreads));
 
         int arrayLength = 0;
         for (LinkedList<Integer> scanNum : scanNums.values()) {

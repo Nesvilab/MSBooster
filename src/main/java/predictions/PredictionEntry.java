@@ -25,8 +25,6 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.stream.IntStream;
 
-import static allconstants.FragmentIonConstants.fragmentIonHierarchySet;
-
 public class PredictionEntry {
     public float[] mzs = new float[0];
     public float[] intensities = new float[0];
@@ -37,6 +35,7 @@ public class PredictionEntry {
     public int[] isotopes = new int[0];
     public float RT;
     public float IM;
+    public PredictionEntry auxSpectra = null;
     public HashMap<String, Float[]> scores = new HashMap<>();
     public ArrayList<Integer> times = new ArrayList<>();
     public double precursorMz = 0d;
@@ -104,7 +103,7 @@ public class PredictionEntry {
         setFullAnnotations(fullAnnotations, sortedIndices);
     }
 
-    public void filterFragments() {
+    public void filterFragments(HashSet<String> fragmentIonTypesSet) {
         if (!filtered) {
             filtered = true;
             if (intensities.length != 0) {
@@ -117,7 +116,7 @@ public class PredictionEntry {
                 //filter for allowed fragment ion types
                 if (fragmentIonTypes.length > 0) {
                     for (int i = 0; i < fragmentIonTypes.length; i++) {
-                        if (!fragmentIonHierarchySet.contains(fragmentIonTypes[i])) {
+                        if (!fragmentIonTypesSet.contains(fragmentIonTypes[i])) {
                             tmpInts[i] = 0f;
                             potentialFragments--;
                         }

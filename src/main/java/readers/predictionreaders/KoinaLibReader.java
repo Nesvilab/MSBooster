@@ -45,7 +45,11 @@ public class KoinaLibReader implements LibraryPredictionMapper {
         if (Constants.KoinaRTmodels.contains(model)) {
             property = "rt";
         } else if (Constants.KoinaMS2models.contains(model)) {
-            property = "ms2";
+            if (Constants.auxSpectraModel.equals(model)) {
+                property = "ms2_aux";
+            } else {
+                property = "ms2";
+            }
         } else if (Constants.KoinaIMmodels.contains(model)) {
             property = "im";
         } else {

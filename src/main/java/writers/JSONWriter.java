@@ -61,6 +61,8 @@ public class JSONWriter {
         this.model = url.toLowerCase().split("_")[0];
         if (Constants.KoinaRTmodels.contains(url)) {
             property = "rt";
+        } else if (Constants.auxSpectraModel.equals(url)) {
+            property = "ms2_aux";
         } else if (Constants.KoinaMS2models.contains(url)) {
             property = "ms2";
         } else if (Constants.KoinaIMmodels.contains(url)) {
@@ -134,6 +136,8 @@ public class JSONWriter {
         this.model = url.toLowerCase().split("_")[0];
         if (Constants.KoinaRTmodels.contains(url)) {
             property = "rt";
+        } else if (Constants.auxSpectraModel.equals(url)) {
+            property = "ms2_aux";
         } else if (Constants.KoinaMS2models.contains(url)) {
             property = "ms2";
         } else if (Constants.KoinaIMmodels.contains(url)) {
@@ -216,7 +220,7 @@ public class JSONWriter {
                     peptideObject.put("data", peptideData);
                     inputsArray.put(peptideObject);
 
-                    if (property.equals("ms2")) {
+                    if (property.equals("ms2") || property.equals("ms2_aux")) {
                         //precursor charges
                         JSONObject chargeObject = new JSONObject();
                         chargeObject.put("name", "precursor_charges");

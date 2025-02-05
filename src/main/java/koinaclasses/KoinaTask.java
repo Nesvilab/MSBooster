@@ -49,10 +49,9 @@ public class KoinaTask implements Callable<Boolean> {
     public int failedAttempts = 0;
     public boolean completed = false;
 
-    public KoinaTask(String jsonFilePath, String property, String model,
-                     KoinaLibReader klr, AtomicLong waitTime) {
+    public KoinaTask(String jsonFilePath, String model, KoinaLibReader klr, AtomicLong waitTime) {
         this.jsonFilePath = jsonFilePath;
-        this.property = property;
+        this.property = klr.property;
         this.model = model;
         this.klr = klr;
         this.waitTime = waitTime;
@@ -132,8 +131,7 @@ public class KoinaTask implements Callable<Boolean> {
             }
             in.close();
 
-            KoinaModelCaller.parseKoinaOutput(jsonFilePath, response.toString(),
-                    property, model, klr);
+            KoinaModelCaller.parseKoinaOutput(jsonFilePath, response.toString(), property, model, klr);
             long timeDiff = System.currentTimeMillis() - start;
             long currentWaitTime = waitTime.get();
             waitTime.set(currentWaitTime + ((3 * timeDiff - currentWaitTime) / 30));

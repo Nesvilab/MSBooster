@@ -103,7 +103,7 @@ public class KoinaModelCaller {
             AtomicLong waitTime;
             if (klr.property.equals("rt") || klr.property.equals("im")) {
                 waitTime = new AtomicLong(Constants.initialKoinaMillisecondsToWaitRtIm);
-            } else {
+            } else { //ms2 or ms2_aux
                 waitTime = new AtomicLong(Constants.initialKoinaMillisecondsToWaitMs2);
             }
 
@@ -116,8 +116,7 @@ public class KoinaModelCaller {
             long jobStart = System.currentTimeMillis();
 
             for (int i = 0; i < numProcesses; i++) {
-                KoinaTask task = new KoinaTask(filenameArraylist.get(i), klr.property, model,
-                        klr, waitTime);
+                KoinaTask task = new KoinaTask(filenameArraylist.get(i), model, klr, waitTime);
                 tasks[i] = task;
             }
 
@@ -227,7 +226,7 @@ public class KoinaModelCaller {
             }
 
             assignIMs(fileName, parsedResults, klr);
-        } else if (property.equalsIgnoreCase("ms2")) {
+        } else if (property.equalsIgnoreCase("ms2") || property.equalsIgnoreCase("ms2_aux")) {
             //get indices for processing
             int mzIdx = 0;
             int intIdx = 0;
@@ -466,6 +465,9 @@ public class KoinaModelCaller {
             } else {
                 assignMS2(fileName, allIntensities, allFragmentIonTypes, allFragNums, allCharges, klr);
             }
+        } else {
+            printError(property + " is not a valid property. Exiting.");
+            System.exit(1);
         }
     }
 
@@ -482,7 +484,7 @@ public class KoinaModelCaller {
                 if (preds.containsKey(peptideCharge)) {
                     pe = preds.get(peptideCharge);
                 } else {
-                    pe = new PredictionEntry();
+                    pe = new PredictionEntry(); //TODO: is this overkill?
                 }
                 pe.setRT(RTs[i]);
                 preds.put(peptideCharge, pe);

@@ -358,7 +358,7 @@ public class MzmlReader {
     }
     public void setPinEntries(PinReader pin, PredictionEntryHashMap allPreds, ExecutorService executorService)
             throws AssertionError, Exception {
-        allPreds.filterTopFragments(executorService);
+        allPreds.filterFragments(executorService);
         ProgressReporter pr = new ProgressReporter(pin.getLength());
         futureList.clear();
         createScanNumObjects();

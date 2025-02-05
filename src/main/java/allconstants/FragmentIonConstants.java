@@ -10,6 +10,7 @@ import java.net.URISyntaxException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
 import java.util.TreeSet;
 
@@ -36,6 +37,8 @@ public class FragmentIonConstants implements ConstantsInterface {
         TreeSet[] fg;
         switch (divideFragments) {
             case -1: //custom
+                printError("Custom fragment groups not yet supported. Exiting");
+                System.exit(1);
                 String[] splits = customFragmentGroups.split(";");
                 fg = new TreeSet[splits.length];
                 for (int i = 0; i < splits.length; i++) {
@@ -156,6 +159,17 @@ public class FragmentIonConstants implements ConstantsInterface {
 
     //contains fragment ion types predicted by primary, not auxiliary spectra model
     public static HashSet<String> primaryFragmentIonTypes = new HashSet<>();
+    public static HashSet<String> auxFragmentIonTypes = new HashSet<>();
+
+    public static void setPrimaryAndAuxFragmentIonTypes(String[] primaryTypes) {
+        List<String> primaryTypesList = Arrays.asList(primaryTypes);
+        primaryFragmentIonTypes.addAll(primaryTypesList);
+        if (auxFragmentIonTypes.isEmpty()) {
+            auxFragmentIonTypes.addAll(fragmentIonHierarchySet);
+        } else {
+            primaryTypesList.forEach(auxFragmentIonTypes::remove);
+        }
+    }
 
     //to be used by possible unispec mzs method
     public static ArrayList<FragmentAnnotationParser> fragmentAnnotationParserArrayList;

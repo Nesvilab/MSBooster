@@ -29,6 +29,7 @@ import modelcallers.DiannModelCaller;
 import modelcallers.KoinaModelCaller;
 import peptideptmformatting.PTMhandler;
 import peptideptmformatting.PeptideFormatter;
+import predictions.PredictionEntry;
 import predictions.PredictionEntryHashMap;
 import readers.datareaders.MzmlReader;
 import readers.predictionreaders.KoinaLibReader;
@@ -1248,6 +1249,7 @@ public class MainClass {
             }
 
             //go through all models and do any preprocessing needed
+            //models needs to be in this order, as other code relies on this order, like spectra before aux spectra
             ArrayList<String> models = new ArrayList<>();
             ArrayList<String> modelTypes = new ArrayList<>();
             if (! Constants.spectraModel.isEmpty()) {
@@ -1368,58 +1370,72 @@ public class MainClass {
                     koinaPreds.transferKoinaPreds(klrs, Constants.spectraRTPrefix + "_full.tsv");
                 }
 
-                String koinaPredFilePath = "koina.mgf";
+                StringBuilder koinaPredFilePath = new StringBuilder("koina.mgf");
+                StringBuilder auxPredFilePath = new StringBuilder("koina.mgf");
                 for (int j = 0; j < models.size(); j++) {
                     switch (modelTypes.get(j)) {
                         case "spectra":
                             if (predFilePaths.get(j).startsWith("koina")) {
-                                koinaPredFilePath = "spectra-" + predFilePaths.get(j).substring(5) + "." + koinaPredFilePath;
+                                koinaPredFilePath.insert(0, "spectra-" +
+                                        predFilePaths.get(j).substring(5) + ".");
                             } else { //DIANN
                                 Constants.spectraPredFile = DiannPredFilePath;
                             }
                             break;
                         case "RT":
                             if (predFilePaths.get(j).startsWith("koina")) {
-                                koinaPredFilePath = "RT-" + predFilePaths.get(j).substring(5) + "." + koinaPredFilePath;
+                                koinaPredFilePath.insert(0, "RT-" +
+                                        predFilePaths.get(j).substring(5) + ".");
                             } else {
                                 Constants.RTPredFile = DiannPredFilePath;
                             }
                             break;
                         case "IM":
                             if (predFilePaths.get(j).startsWith("koina")) {
-                                koinaPredFilePath = "IM-" + predFilePaths.get(j).substring(5) + "." + koinaPredFilePath;
+                                koinaPredFilePath.insert(0, "IM-" +
+                                        predFilePaths.get(j).substring(5) + ".");
                             } else {
                                 Constants.IMPredFile = DiannPredFilePath;
                             }
                             break;
                         case "auxSpectra": //DIANN cannot predict this
-                            koinaPredFilePath = "auxSpectra-" + predFilePaths.get(j).substring(5) + "." + koinaPredFilePath;
+                            auxPredFilePath.insert(0, "auxSpectra-" +
+                                    predFilePaths.get(j).substring(5) + ".");
                             break;
                     }
                 }
 
-                if (!koinaPredFilePath.equals("koina.mgf")) { //koina was used
+                if (!koinaPredFilePath.toString().equals("koina.mgf")) { //koina was used
                     MgfFileWriter mfw = new MgfFileWriter(koinaPreds);
-                    koinaPredFilePath = Constants.outputDirectory + File.separator + koinaPredFilePath;
-                    mfw.write(koinaPredFilePath);
+                    koinaPredFilePath.insert(0, Constants.outputDirectory + File.separator);
+                    mfw.write(koinaPredFilePath.toString());
                     for (int j = 0; j < models.size(); j++) {
                         if (predFilePaths.get(j).startsWith("koina")) {
                             switch (modelTypes.get(j)) {
                                 case "spectra":
-                                    Constants.spectraPredFile = koinaPredFilePath;
+                                    Constants.spectraPredFile = koinaPredFilePath.toString();
                                     break;
                                 case "RT":
-                                    Constants.RTPredFile = koinaPredFilePath;
+                                    Constants.RTPredFile = koinaPredFilePath.toString();
                                     break;
                                 case "IM":
-                                    Constants.IMPredFile = koinaPredFilePath;
-                                    break;
-                                case "auxSpectra":
-                                    Constants.auxSpectraPredFile = koinaPredFilePath;
+                                    Constants.IMPredFile = koinaPredFilePath.toString();
                                     break;
                             }
                         }
                     }
+                }
+                if (!auxPredFilePath.toString().equals("koina.mgf")) { //koina was used
+                    //make mini prediction entry hashmap
+                    PredictionEntryHashMap miniMap = new PredictionEntryHashMap();
+                    for (Map.Entry<String, PredictionEntry> pe : koinaPreds.entrySet()) {
+                        miniMap.put(pe.getKey(), pe.getValue().auxSpectra);
+                    }
+
+                    MgfFileWriter mfwAux = new MgfFileWriter(miniMap);
+                    auxPredFilePath.insert(0, Constants.outputDirectory + File.separator);
+                    mfwAux.write(auxPredFilePath.toString());
+                    Constants.auxSpectraPredFile = auxPredFilePath.toString();
                 }
             }
 

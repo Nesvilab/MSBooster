@@ -18,7 +18,10 @@
 package utils;
 
 import java.util.ArrayList;
+import java.util.Comparator;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 public class NumericUtils {
     //move to another class if used more often
@@ -56,5 +59,45 @@ public class NumericUtils {
 
     public static boolean isUppercaseOrDigit(char c) {
         return Character.isUpperCase(c) || Character.isDigit(c);
+    }
+
+    //method from chat gpt to return ranked indices of two arrays
+    public static void getRanks(float[] arr1, float[] arr2, List<Integer> rankList1, List<Integer> rankList2) {
+        List<float[]> combined = new ArrayList<>();
+
+        // Add arr1 elements with indices
+        for (int i = 0; i < arr1.length; i++) {
+            combined.add(new float[]{arr1[i], i, 1}); // 1 means from arr1
+        }
+        // Add arr2 elements with indices
+        for (int i = 0; i < arr2.length; i++) {
+            combined.add(new float[]{arr2[i], i, 2}); // 2 means from arr2
+        }
+
+        // Sort the list by float values
+        combined.sort(Comparator.comparingDouble(a -> a[0]));
+
+        // Assign ranks
+        Map<Integer, List<Integer>> rankMap1 = new HashMap<>();
+        Map<Integer, List<Integer>> rankMap2 = new HashMap<>();
+        for (int rank = 0; rank < combined.size(); rank++) {
+            float[] item = combined.get(rank);
+            int index = (int) item[1];
+            int arrayType = (int) item[2];
+
+            if (arrayType == 1) {
+                rankMap1.computeIfAbsent(index, k -> new ArrayList<>()).add(rank);
+            } else {
+                rankMap2.computeIfAbsent(index, k -> new ArrayList<>()).add(rank);
+            }
+        }
+
+        // Populate rank lists
+        for (int i = 0; i < arr1.length; i++) {
+            rankList1.add(rankMap1.get(i).get(0));
+        }
+        for (int i = 0; i < arr2.length; i++) {
+            rankList2.add(rankMap2.get(i).get(0));
+        }
     }
 }

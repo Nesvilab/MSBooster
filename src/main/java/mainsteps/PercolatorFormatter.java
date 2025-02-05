@@ -71,7 +71,8 @@ public class PercolatorFormatter {
         LibraryPredictionMapper predictedIM;
         LibraryPredictionMapper predictedAuxSpectra;
 
-        HashMap<String, LibraryPredictionMapper> allLibraries = new HashMap<>(); //key: library file path, value: library
+        ArrayList<String> libraryFilePaths = new ArrayList<>();
+        ArrayList<LibraryPredictionMapper> libraries = new ArrayList<>();
         HashMap<String, String> allProperties = new HashMap<>(); //key: property, value: library file path
 
         //could use aux spectra if primary spectra missing
@@ -79,50 +80,54 @@ public class PercolatorFormatter {
             printInfo("Loading predicted spectra: " + Constants.spectraPredFile);
             predictedSpectra = LibraryPredictionMapper.createLibraryPredictionMapper(
                     Constants.spectraPredFile, Constants.spectraModel, executorService);
-            allLibraries.put(Constants.spectraPredFile, predictedSpectra);
+            libraryFilePaths.add(Constants.spectraPredFile);
+            libraries.add(predictedSpectra);
             allProperties.put("spectra", Constants.spectraPredFile);
 
             for (PredictionEntry pe : predictedSpectra.getPreds().values()) {
-                FragmentIonConstants.primaryFragmentIonTypes.addAll(Arrays.asList(pe.fragmentIonTypes)); //this can be approximated if too slow
+                FragmentIonConstants.setPrimaryAndAuxFragmentIonTypes(pe.fragmentIonTypes); //this can be approximated if too slow
             }
         }
 
         if (Constants.RTPredFile != null) {
             printInfo("Loading predicted retention times: " + Constants.RTPredFile);
-            if (! allLibraries.containsKey(Constants.RTPredFile)) {
+            if (! libraryFilePaths.contains(Constants.RTPredFile)) {
                 predictedRT = LibraryPredictionMapper.createLibraryPredictionMapper(
                         Constants.RTPredFile, Constants.rtModel, executorService);
-                allLibraries.put(Constants.RTPredFile, predictedRT);
+                libraryFilePaths.add(Constants.RTPredFile);
+                libraries.add(predictedRT);
             }
             allProperties.put("RT", Constants.RTPredFile);
         }
 
         if (Constants.IMPredFile != null) {
             printInfo("Loading predicted ion mobilities: " + Constants.IMPredFile);
-            if (! allLibraries.containsKey(Constants.IMPredFile)) {
+            if (! libraryFilePaths.contains(Constants.IMPredFile)) {
                 predictedIM = LibraryPredictionMapper.createLibraryPredictionMapper(
                         Constants.IMPredFile, Constants.imModel, executorService);
-                allLibraries.put(Constants.IMPredFile, predictedIM);
+                libraryFilePaths.add(Constants.IMPredFile);
+                libraries.add(predictedIM);
             }
             allProperties.put("IM", Constants.IMPredFile);
         }
 
         if (Constants.auxSpectraPredFile != null) {
             printInfo("Loading predicted auxiliary spectra: " + Constants.auxSpectraPredFile);
-            if (! allLibraries.containsKey(Constants.auxSpectraPredFile)) {
+            if (! libraryFilePaths.contains(Constants.auxSpectraPredFile)) {
                 predictedAuxSpectra = LibraryPredictionMapper.createLibraryPredictionMapper(
                         Constants.auxSpectraPredFile, Constants.auxSpectraModel, executorService);
-                allLibraries.put(Constants.auxSpectraPredFile, predictedAuxSpectra);
+                libraryFilePaths.add(Constants.auxSpectraPredFile);
+                libraries.add(predictedAuxSpectra);
             }
             allProperties.put("auxSpectra", Constants.auxSpectraPredFile);
         }
 
         //merging libraries
-        if (allLibraries.size() > 1) {
+        if (libraries.size() > 1) {
             printInfo("Merging libraries");
-            for (Map.Entry<String, LibraryPredictionMapper> entry : allLibraries.entrySet()) {
-                String libraryPath = entry.getKey();
-                LibraryPredictionMapper library = entry.getValue();
+            for (int i = 0; i < libraries.size(); i++) {
+                String libraryPath = libraryFilePaths.get(i);
+                LibraryPredictionMapper library = libraries.get(i);
                 for (Map.Entry<String, String> prop : allProperties.entrySet()) {
                     if (prop.getValue().equals(libraryPath)) {
                         library.getPreds().mergeIntoLibrary(allPreds, prop.getKey());
@@ -130,7 +135,7 @@ public class PercolatorFormatter {
                 }
             }
         } else {
-            for (LibraryPredictionMapper lpm : allLibraries.values()) {
+            for (LibraryPredictionMapper lpm : libraries) {
                 allPreds = lpm.getPreds();
             }
         }

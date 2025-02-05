@@ -33,9 +33,11 @@ import java.net.URISyntaxException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
+import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import static utils.NumericUtils.doubleToFloat;
+import static utils.NumericUtils.getRanks;
 import static utils.Print.printError;
 import static utils.Print.printInfo;
 
@@ -186,9 +188,37 @@ public class MzmlScanNumber {
         PredictionEntry predictionEntry = allPreds.get(name.getBaseCharge());
         PeptideObj newPepObj = null;
         try {
-            float[] predMZs = predictionEntry.mzs;
-            float[] predIntensities = predictionEntry.intensities;
-            String[] predFragmentIonTypes = predictionEntry.fragmentIonTypes;
+            //merge spectra and aux spectra
+            float[] predMZs;
+            float[] predIntensities;
+            String[] predFragmentIonTypes;
+
+            if (predictionEntry.auxSpectra != null) {
+                List<Integer> rankListMain = new ArrayList<>();
+                List<Integer> rankListAux = new ArrayList<>();
+
+                getRanks(predictionEntry.mzs, predictionEntry.auxSpectra.mzs, rankListMain, rankListAux);
+
+                predMZs = new float[rankListMain.size() + rankListAux.size()];
+                predIntensities = new float[rankListMain.size() + rankListAux.size()];
+                predFragmentIonTypes = new String[rankListMain.size() + rankListAux.size()];
+
+                for (int i = 0; i < rankListMain.size(); i++) {
+                    predMZs[rankListMain.get(i)] = predictionEntry.mzs[i];
+                    predIntensities[rankListMain.get(i)] = predictionEntry.intensities[i];
+                    predFragmentIonTypes[rankListMain.get(i)] = predictionEntry.fragmentIonTypes[i];
+                }
+                for (int i = 0; i < rankListAux.size(); i++) {
+                    predMZs[rankListAux.get(i)] = predictionEntry.auxSpectra.mzs[i];
+                    predIntensities[rankListAux.get(i)] = predictionEntry.auxSpectra.intensities[i];
+                    predFragmentIonTypes[rankListAux.get(i)] = predictionEntry.auxSpectra.fragmentIonTypes[i];
+                }
+            } else {
+                predMZs = predictionEntry.mzs;
+                predIntensities = predictionEntry.intensities;
+                predFragmentIonTypes = predictionEntry.fragmentIonTypes;
+            }
+
             float predRT = predictionEntry.RT;
             float predIM = predictionEntry.IM;
 

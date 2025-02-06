@@ -18,7 +18,6 @@
 package predictions;
 
 import allconstants.Constants;
-import allconstants.FragmentIonConstants;
 import features.spectra.MassCalculator;
 import peptideptmformatting.PeptideFormatter;
 import peptideptmformatting.PeptideSkipper;
@@ -28,6 +27,7 @@ import utils.Multithreader;
 import java.io.BufferedReader;
 import java.io.FileReader;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutionException;
@@ -37,7 +37,7 @@ import java.util.concurrent.Future;
 import static utils.Print.printError;
 
 public class PredictionEntryHashMap extends ConcurrentHashMap<String, PredictionEntry> {
-    public void filterFragments(ExecutorService executorService)
+    public void filterFragments(ExecutorService executorService, HashSet<String> primaryTypes, HashSet<String> auxTypes)
             throws ExecutionException, InterruptedException {
         String[] peptides = new String[this.size()];
         PredictionEntry[] predictions = new PredictionEntry[this.size()];
@@ -55,9 +55,9 @@ public class PredictionEntryHashMap extends ConcurrentHashMap<String, Prediction
             futureList.add(executorService.submit(() -> {
                 for (int j = mt.indices[finalI]; j < mt.indices[finalI + 1]; j++) {
                     PredictionEntry pe = predictions[j];
-                    pe.filterFragments(FragmentIonConstants.primaryFragmentIonTypes);
+                    pe.filterFragments(primaryTypes);
                     if (pe.auxSpectra != null) {
-                        pe.auxSpectra.filterFragments(FragmentIonConstants.auxFragmentIonTypes);
+                        pe.auxSpectra.filterFragments(auxTypes);
                     }
                     this.put(peptides[j], pe);
                 }

@@ -18,7 +18,7 @@
 package readers.datareaders;
 
 import allconstants.Constants;
-import mainsteps.PinMzmlMatcher;
+import allconstants.NceConstants;
 import org.apache.commons.lang3.ArrayUtils;
 import peptideptmformatting.PeptideFormatter;
 import peptideptmformatting.PeptideSkipper;
@@ -26,7 +26,6 @@ import umich.ms.fileio.exceptions.FileParsingException;
 
 import java.io.BufferedInputStream;
 import java.io.BufferedReader;
-import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileReader;
 import java.io.IOException;
@@ -297,71 +296,33 @@ public class PinReader {
         return peps.toArray(new String[0]);
     }
 
-    public String[] createPredFullList(File mzmlFile, PinMzmlMatcher pmm) throws IOException, InterruptedException, ExecutionException, FileParsingException {
+    public String[] createPrositList()
+            throws IOException, InterruptedException, ExecutionException, FileParsingException {
         ArrayList<String> peps = new ArrayList<String>();
-        int fileI = 0;
-        if (Constants.NCE.equals("") && pmm.mzmlReaders[fileI] == null) {
-            mzml = new MzmlReader(mzmlFile.getCanonicalPath());
-            pmm.mzmlReaders[fileI] = mzml;
-        } else if (pmm.mzmlReaders[fileI] != null) {
-            mzml = pmm.mzmlReaders[fileI];
-        }
         while (next(true)) {
             PeptideFormatter pf = getPep();
-            if (! pf.getStripped().contains("O") && ! pf.getStripped().contains("U") &&
-                    ! pf.getStripped().contains("Z") && ! pf.getStripped().contains("B") &&
-                    ! pf.getStripped().contains("X")) {
-                peps.add(pf.getPredfull() + "\t" + pf.getCharge() + "\t" + Constants.FragmentationType + "\t" + Constants.NCE);
-            }
+            peps.add(pf.getProsit() + "," + NceConstants.getNCE() + "," + pf.getCharge());
         }
         return peps.toArray(new String[0]);
     }
 
-    public String[] createPrositList(File mzmlFile, PinMzmlMatcher pmm) throws IOException, InterruptedException, ExecutionException, FileParsingException {
+    public String[] createPrositTMTList()
+            throws IOException, InterruptedException, ExecutionException, FileParsingException {
         ArrayList<String> peps = new ArrayList<String>();
-        int fileI = 0;
-        if (Constants.NCE.equals("") && pmm.mzmlReaders[fileI] == null) {
-            mzml = new MzmlReader(mzmlFile.getCanonicalPath());
-            pmm.mzmlReaders[fileI] = mzml;
-        } else if (pmm.mzmlReaders[fileI] != null) {
-            mzml = pmm.mzmlReaders[fileI];
-        }
         while (next(true)) {
             PeptideFormatter pf = getPep();
-            peps.add(pf.getProsit() + "," + Constants.NCE + "," + pf.getCharge());
+            peps.add(pf.getProsit() + "," + NceConstants.getNCE() + "," + pf.getCharge() + "," + Constants.FragmentationType);
         }
         return peps.toArray(new String[0]);
     }
 
-    public String[] createPrositTMTList(File mzmlFile, PinMzmlMatcher pmm) throws IOException, InterruptedException, ExecutionException, FileParsingException {
+    public String[] createAlphapeptdeepList()
+            throws IOException, InterruptedException, ExecutionException, FileParsingException {
         ArrayList<String> peps = new ArrayList<String>();
-        int fileI = 0;
-        if (Constants.NCE.equals("") && pmm.mzmlReaders[fileI] == null) {
-            mzml = new MzmlReader(mzmlFile.getCanonicalPath());
-            pmm.mzmlReaders[fileI] = mzml;
-        } else if (pmm.mzmlReaders[fileI] != null) {
-            mzml = pmm.mzmlReaders[fileI];
-        }
         while (next(true)) {
             PeptideFormatter pf = getPep();
-            peps.add(pf.getProsit() + "," + Constants.NCE + "," + pf.getCharge() + "," + Constants.FragmentationType);
-        }
-        return peps.toArray(new String[0]);
-    }
-
-    public String[] createAlphapeptdeepList(File mzmlFile, PinMzmlMatcher pmm) throws IOException, InterruptedException, ExecutionException, FileParsingException {
-        ArrayList<String> peps = new ArrayList<String>();
-        int fileI = 0;
-        if (Constants.NCE.equals("") && pmm.mzmlReaders[fileI] == null) {
-            mzml = new MzmlReader(mzmlFile.getCanonicalPath());
-            pmm.mzmlReaders[fileI] = mzml;
-        } else if (pmm.mzmlReaders[fileI] != null) {
-            mzml = pmm.mzmlReaders[fileI];
-        }
-        while (next(true)) {
-            PeptideFormatter pf = getPep();
-            peps.add(pf.getStripped() + "," + pf.getAlphapeptdeepMods() + "," + pf.getModPositions() + "," + pf.getCharge() + "," +
-                    Constants.NCE + "," + Constants.instrument + "," + pf.getBase());
+            peps.add(pf.getStripped() + "," + pf.getAlphapeptdeepMods() + "," + pf.getModPositions() + "," +
+                    pf.getCharge() + "," + NceConstants.getNCE() + "," + Constants.instrument + "," + pf.getBase());
         }
         return peps.toArray(new String[0]);
     }
@@ -398,22 +359,9 @@ public class PinReader {
         return peps.toArray(new String[0]);
     }
 
-    public String[] createJSON(File mzmlFile, PinMzmlMatcher pmm, String modelFormat)
+    public String[] createJSON(String modelFormat)
             throws IOException, InterruptedException, ExecutionException, FileParsingException {
         ArrayList<String> peps = new ArrayList<String>();
-        int fileI = 0;
-        for (File f : pmm.mzmlFiles) {
-            if (f.toString().equals(mzmlFile.toString())) {
-                break;
-            }
-            fileI++;
-        }
-        if (pmm.mzmlReaders[fileI] == null) {
-            mzml = new MzmlReader(mzmlFile.getCanonicalPath());
-            pmm.mzmlReaders[fileI] = mzml;
-        } else if (pmm.mzmlReaders[fileI] != null) {
-            mzml = pmm.mzmlReaders[fileI];
-        }
 
         //instrument restriction for unispec QE charge 1
         boolean charge1none = false;
@@ -434,7 +382,7 @@ public class PinReader {
                 instrument = "NONE";
             }
             String pep = pf.getModel(modelFormat);
-            String sb = pep + "," + pf.getCharge() + "," +  Constants.NCE + "," +
+            String sb = pep + "," + pf.getCharge() + "," + NceConstants.getCalibratedNCE(modelFormat) + "," +
                     instrument + "," + Constants.FragmentationType + "," + pf.getStripped().length();
             peps.add(sb);
         }

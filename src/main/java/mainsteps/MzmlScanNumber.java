@@ -18,6 +18,7 @@
 package mainsteps;
 
 import allconstants.Constants;
+import allconstants.NceConstants;
 import org.apache.commons.lang3.ArrayUtils;
 import peptideptmformatting.PeptideFormatter;
 import peptideptmformatting.PeptideSkipper;
@@ -32,7 +33,6 @@ import java.io.IOException;
 import java.net.URISyntaxException;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.HashMap;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -56,7 +56,6 @@ public class MzmlScanNumber {
     public int IMbinSize;
     public Double lowerLimit; //TODO: better names to distinguish this from isolationLower
     public Double upperLimit;
-    public HashMap<String, Float> NCEs = new HashMap<>();
     public ArrayList<PeptideObj> peptideObjects = new ArrayList<>();
     //double[] mzFreqs;
     public static float[] zeroFloatArray = new float[]{0};
@@ -96,9 +95,7 @@ public class MzmlScanNumber {
         lowerLimit = scan.getScanMzWindowLower();
         upperLimit = scan.getScanMzWindowUpper();
 
-        if (!Constants.NCE.isEmpty() && !Constants.FragmentationType.isEmpty()) {
-            NCEs.put(Constants.FragmentationType, Float.parseFloat(Constants.NCE));
-        } else {
+        if (NceConstants.mzmlNCEs.isEmpty()) {
             try {
                 String[] nceInfo = scan.getFilterString().split("@");
                 if (nceInfo.length > 1) {
@@ -108,8 +105,8 @@ public class MzmlScanNumber {
                         for (int i = 0; i < fragmentationInfo.length(); i++) {
                             char myChar = fragmentationInfo.charAt(i);
                             if (Character.isDigit(myChar)) {
-                                NCEs.put(fragmentationType.toString().toUpperCase(),
-                                        Float.parseFloat(fragmentationInfo.substring(i)));
+                                NceConstants.mzmlNCEs.put(
+                                        fragmentationType.toString().toUpperCase(), fragmentationInfo.substring(i));
                                 break;
                             } else {
                                 fragmentationType.append(myChar);
@@ -117,14 +114,12 @@ public class MzmlScanNumber {
                         }
                     }
                 }
+                printInfo("NCE and fragmentation type detected: " + NceConstants.mzmlNCEs);
             } catch (NullPointerException e) { //like in DIA-Umpire, there is no filter string
-                printInfo("mzml file does not contain filter string. Setting NCE to 25 and " +
-                        "FragmentationType to HCD. If other values are desired, please set them in " +
-                        "the parameter file with NCE and FragmentationType.");
-                Constants.NCE = "25";
+                printInfo("mzml file does not contain filter string. Setting NCE to 25 and FragmentationType to HCD.");
+                NceConstants.mzmlNCEs.put("HCD", "25");
                 Constants.FragmentationType = "HCD";
             }
-//            }
         }
     }
 

@@ -18,6 +18,8 @@
 package readers.datareaders;
 
 import allconstants.Constants;
+import allconstants.FragmentIonConstants;
+import allconstants.NceConstants;
 import features.rtandim.IMFunctions;
 import features.rtandim.LinearEquation;
 import features.rtandim.LoessUtilities;
@@ -51,7 +53,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.NavigableSet;
 import java.util.Objects;
-import java.util.Set;
 import java.util.concurrent.ConcurrentSkipListMap;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
@@ -226,16 +227,14 @@ public class MzmlReader {
         }
     }
 
+    //TODO: for now, assume 1 fragmentation type only
     public void setFragmentationType() {
         if (Constants.FragmentationType.isEmpty()) {
             try {
-                Set<String> fragTypes = getScanNumObject(getScanNums().first()).NCEs.keySet();
-                if (fragTypes.contains("HCD")) {
+                if (NceConstants.mzmlNCEs.containsKey("HCD")) {
                     Constants.FragmentationType = "HCD";
-                    printInfo("Fragmentation type detected: " + Constants.FragmentationType);
-                } else if (fragTypes.contains("CID")) {
+                } else if (NceConstants.mzmlNCEs.containsKey("CID")) {
                     Constants.FragmentationType = "CID";
-                    printInfo("Fragmentation type detected: " + Constants.FragmentationType);
                 } else {
                     printInfo("No fragmentation type detected. Setting fragmentation type to HCD. " +
                             "You can specify this with '--FragmentationType' via the command line " +
@@ -251,26 +250,9 @@ public class MzmlReader {
         }
     }
 
-    public void setNCE() {
-        if (Constants.NCE.isEmpty()) {
-            try {
-                Float NCE = getScanNumObject(getScanNums().first()).NCEs.get(Constants.FragmentationType);
-                if (NCE != null) {
-                    Constants.NCE = String.valueOf(NCE);
-                    printInfo("NCE detected: " + Constants.NCE);
-                } else {
-                    printInfo("No NCE detected. Setting NCE to 25. " +
-                            "You can specify this with '--NCE' via the command line " +
-                            "or 'NCE=' in the param file.");
-                    Constants.NCE = "25";
-                }
-            } catch (Exception e) {
-                e.printStackTrace();
-                printInfo("No NCE detected. Setting NCE to 25. " +
-                        "You can specify this with '--NCE' via the command line " +
-                        "or 'NCE=' in the param file.");
-                Constants.NCE = "25";
-            }
+    public void setNCE() throws FileParsingException {
+        if (NceConstants.mzmlNCEs.isEmpty()) {
+            getScanNumObject(getScanNums().first());
         }
     }
 
@@ -358,7 +340,8 @@ public class MzmlReader {
     }
     public void setPinEntries(PinReader pin, PredictionEntryHashMap allPreds, ExecutorService executorService)
             throws AssertionError, Exception {
-        allPreds.filterFragments(executorService);
+        allPreds.filterFragments(executorService,
+                FragmentIonConstants.primaryFragmentIonTypes, FragmentIonConstants.auxFragmentIonTypes);
         ProgressReporter pr = new ProgressReporter(pin.getLength());
         futureList.clear();
         createScanNumObjects();

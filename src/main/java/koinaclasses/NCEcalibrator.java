@@ -18,6 +18,7 @@
 package koinaclasses;
 
 import allconstants.Constants;
+import allconstants.NceConstants;
 import com.google.common.util.concurrent.AtomicDouble;
 import mainsteps.MainClass;
 import mainsteps.PeptideObj;
@@ -50,16 +51,17 @@ import static utils.Print.printInfo;
 
 public class NCEcalibrator {
     public static Object[] calibrateNCE(String currentModel,
-                                        KoinaMethods km, String jsonOutFolder,
-                                        ArrayList<PeptideFormatter> peptideFormatterArrayList,
-                                        HashMap<String, LinkedList<Integer>> scanNums,
-                                        HashMap<String, LinkedList<PeptideFormatter>> peptides)
+                                        KoinaMethods km, String jsonOutFolder)
             throws IOException, ExecutionException, InterruptedException {
+        ArrayList<PeptideFormatter> peptideFormatterArrayList = km.peptideArraylist;
+        HashMap<String, LinkedList<Integer>> scanNums = km.scanNums;
+        HashMap<String, LinkedList<PeptideFormatter>> peptides = km.peptides;
+
         TreeMap<Integer, ArrayList<Double>> similarities = new TreeMap<>();
         double bestMedianDouble = 0d;
         int bestNCEint = 0;
-        if (Constants.nceModels.contains(currentModel)) {
-            printInfo("Calibrating NCE");
+        if (NceConstants.nceModels.contains(currentModel)) {
+            printInfo("Calibrating NCE for " + currentModel);
 
             //create nce calibration directory
             MyFileUtils.createWholeDirectory(jsonOutFolder);
@@ -77,10 +79,10 @@ public class NCEcalibrator {
             AtomicInteger bestNCE = new AtomicInteger();
             boolean old = Constants.removeRankPeaks;
             Constants.removeRankPeaks = false;
-            ProgressReporter pr = new ProgressReporter(Constants.maxNCE - Constants.minNCE + 1);
+            ProgressReporter pr = new ProgressReporter(NceConstants.maxNCE - NceConstants.minNCE + 1);
 
             List<Future> futureList = new ArrayList<>(Constants.numThreads);
-            for (int NCE = Constants.minNCE; NCE < Constants.maxNCE + 1; NCE++) {
+            for (int NCE = NceConstants.minNCE; NCE < NceConstants.maxNCE + 1; NCE++) {
                 int finalNCE = NCE;
                 futureList.add(MainClass.executorService.submit(() -> {
                     PredictionEntryHashMap allPreds =
@@ -119,10 +121,10 @@ public class NCEcalibrator {
             printInfo("Best NCE for " + currentModel + " after calibration is " + bestNCE);
             bestMedianDouble = bestMedian.get();
             printInfo("Median similarity for " + currentModel + " is " + String.format("%.4f", bestMedianDouble));
-            if (bestNCE.get() == Constants.minNCE) {
-                printInfo("Consider lowering minNCE below " + Constants.minNCE);
-            } else if (bestNCE.get() == Constants.maxNCE) {
-                printInfo("Consider increasing maxNCE above " + Constants.maxNCE);
+            if (bestNCE.get() == NceConstants.minNCE) {
+                printInfo("Consider lowering minNCE below " + NceConstants.minNCE);
+            } else if (bestNCE.get() == NceConstants.maxNCE) {
+                printInfo("Consider increasing maxNCE above " + NceConstants.maxNCE);
             }
             bestNCEint = bestNCE.get();
         }
@@ -138,10 +140,10 @@ public class NCEcalibrator {
                 new File(figureDirectory).mkdirs();
             }
 
-            int currentNCE = Constants.minNCE;
+            int currentNCE = NceConstants.minNCE;
             int added = 0;
 
-            while (currentNCE <= Constants.maxNCE) {
+            while (currentNCE <= NceConstants.maxNCE) {
                 //create figure
                 BoxChart chart = new BoxChartBuilder().title("NCE calibration").
                         width(510).height(340).
@@ -149,7 +151,7 @@ public class NCEcalibrator {
                 chart.getStyler().setBoxplotCalCulationMethod(BoxStyler.BoxplotCalCulationMethod.N_LESS_1);
 
                 int startNCE = currentNCE;
-                while (added < 6 && currentNCE <= Constants.maxNCE) {
+                while (added < 6 && currentNCE <= NceConstants.maxNCE) {
                     chart.addSeries(String.valueOf(currentNCE), similarities.get(currentNCE));
                     added++;
                     currentNCE++;

@@ -141,21 +141,11 @@ public class Constants implements ConstantsInterface {
     public static String imSearchModelsString = "DIA-NN,AlphaPept_ccs_generic";
     public static final CaseInsensitiveHashSet ms2SearchModelsTMT = new CaseInsensitiveHashSet(
             new String[] {"DIA-NN", "Prosit_2020_intensity_TMT"});
-    public static CaseInsensitiveHashSet nceModels = new CaseInsensitiveHashSet(
-            new String[] {
-                    "PredFull", "Prosit", "PrositTMT", "alphapeptdeep", //externally supported
-                    "AlphaPept_ms2_generic",
-                    "Prosit_2019_intensity", "Prosit_2023_intensity_timsTOF",
-                    "Prosit_2020_intensity_TMT", "Prosit_2020_intensity_HCD",
-                    "UniSpec", "PredFull"});
     public static Integer numKoinaAttempts = 3;
     public static Integer initialKoinaMillisecondsToWaitRtIm = 30000;
     public static Integer initialKoinaMillisecondsToWaitMs2 = 60000;
     public static Float minIntensityToWriteToMgf = 0.01f; //TODO: should be same as basePeak?
-    public static Boolean calibrateNCE = true;
     public static Integer numPSMsToCalibrate = 1000;
-    public static Integer minNCE = 20;
-    public static Integer maxNCE = 40;
     public static Boolean autoSwitchFragmentation = true;
 
     //additional modifications
@@ -253,7 +243,6 @@ public class Constants implements ConstantsInterface {
 
     //support for PredFull and Prosit
     public static String FragmentationType = "";
-    public static String NCE = "";
     public static String instrument = "";
     public static Integer maxPredictedFragmentCharge = 100;
     public static Integer minPredictedFragmentNum = 0;

@@ -114,7 +114,7 @@ public class PredictionEntry {
                 System.arraycopy(intensities, 0, tmpInts, 0, potentialFragments);
 
                 //filter for allowed fragment ion types
-                if (fragmentIonTypes.length > 0) {
+                if (fragmentIonTypes.length > 0 && !fragmentIonTypesSet.isEmpty()) {
                     for (int i = 0; i < fragmentIonTypes.length; i++) {
                         if (!fragmentIonTypesSet.contains(fragmentIonTypes[i])) {
                             tmpInts[i] = 0f;

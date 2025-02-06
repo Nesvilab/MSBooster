@@ -20,6 +20,7 @@ package mainsteps;
 import allconstants.Constants;
 import allconstants.ConstantsInterface;
 import allconstants.FragmentIonConstants;
+import allconstants.NceConstants;
 import allconstants.LowercaseModelMapper;
 import features.spectra.MassCalculator;
 import koinaclasses.KoinaMethods;
@@ -283,6 +284,12 @@ public class MainClass {
             }
             FragmentIonConstants fic = new FragmentIonConstants();
 
+            HashSet<String> fieldsNCE = new HashSet<>();
+            for (Field f : NceConstants.class.getDeclaredFields()) {
+                fieldsNCE.add(f.getName());
+            }
+            NceConstants nc = new NceConstants();
+
             for (Map.Entry<String, String> entry : params.entrySet()) {
                 String key = entry.getKey();
                 if (key.charAt(0) == '#') { //comment
@@ -291,14 +298,17 @@ public class MainClass {
                 if (key.charAt(0) == '/') { //comment
                     continue;
                 }
-                if (!fields.contains(key) && !fieldsFragmentIon.contains(key)) {
+                if (!fields.contains(key) && !fieldsFragmentIon.contains(key) && !fieldsNCE.contains(key)) {
                     throw new Exception(entry.getKey() + " is not a valid parameter");
                 } else if (fields.contains(key)) {
                     Field field = Constants.class.getField(key);
                     updateField(field, entry.getValue(), c);
-                } else {
+                } else if (fieldsFragmentIon.contains(key)) {
                     Field field = FragmentIonConstants.class.getField(key);
                     updateField(field, entry.getValue(), fic);
+                } else {
+                    Field field = NceConstants.class.getField(key);
+                    updateField(field, entry.getValue(), nc);
                 }
             }
             c.updateOutputDirectory();
@@ -388,7 +398,8 @@ public class MainClass {
             if (Constants.findBestRtModel || Constants.findBestSpectraModel || Constants.findBestImModel ||
                     Constants.KoinaMS2models.contains(Constants.spectraModel) ||
                     Constants.KoinaRTmodels.contains(Constants.rtModel) ||
-                    Constants.KoinaIMmodels.contains(Constants.imModel)
+                    Constants.KoinaIMmodels.contains(Constants.imModel) ||
+                    ! Constants.auxSpectraModel.isEmpty()
             ) {
                 km.getTopPeptides();
                 //km.getDecoyPeptides();
@@ -927,16 +938,16 @@ public class MainClass {
 //                                datapointsDecoys.put(model, similarity);
 //                            } catch (Exception e) {}
                         } else { //mode for koina
-                            if (Constants.nceModels.contains(model)) {
+                            if (NceConstants.nceModels.contains(model)) {
                                 Object[] results = NCEcalibrator.calibrateNCE(model, km,
                                         Constants.outputDirectory + File.separator + "best_model" +
-                                                File.separator + model, km.peptideArraylist,
-                                        km.scanNums, km.peptides);
+                                                File.separator + model);
                                 for (PeptideFormatter pf : km.peptideArraylist) {
                                     pf.foundUnimods.clear();
                                 }
                                 medianSimilarities.put(model + "&" + results[2], (Double) results[1]);
                                 int bestNCE = (int) results[2];
+                                NceConstants.calibratedModels.put(model, String.valueOf(bestNCE));
                                 similarities.put(model + "&" + bestNCE,
                                         (TreeMap<Integer, ArrayList<Double>>) results[0]);
                                 try {
@@ -1019,12 +1030,10 @@ public class MainClass {
                     if (bestModel.contains("&")) { //model that uses NCE
                         String[] modelSplit = bestModel.split("&");
                         Constants.spectraModel = modelSplit[0];
-                        Constants.NCE = modelSplit[1];
                         NCEcalibrator.plotNCEchart(similarities.get(bestModel));
                     } else {
                         Constants.spectraModel = bestModel;
                     }
-                    Constants.calibrateNCE = false;
                     Constants.autoSwitchFragmentation = false;
                     printInfoHighlight("Spectra model chosen is " + Constants.spectraModel);
 
@@ -1284,14 +1293,15 @@ public class MainClass {
 
                 HashSet<String> modelsRan = new HashSet<>();
                 for (String currentModel : models) {
-                    if (! modelsRan.contains(currentModel)) {
+                    if (! modelsRan.contains(currentModel)) { //do not rerun (e.g. spectra and RT same model)
                         if (Constants.KoinaModels.contains(currentModel)) {
-                            if (Constants.KoinaMS2models.contains(currentModel) && Constants.calibrateNCE &&
-                                    Constants.nceModels.contains(currentModel)) {
+                            if (NceConstants.nceModels.contains(currentModel) && NceConstants.calibrateNCE &&
+                                    ! NceConstants.calibratedModels.containsKey(currentModel)) {
                                 Object[] modelInfo = NCEcalibrator.calibrateNCE(currentModel, km,
-                                        Constants.outputDirectory + File.separator + "NCE_calibration",
-                                        km.peptideArraylist, km.scanNums, km.peptides);
-                                Constants.NCE = String.valueOf((int) modelInfo[2]);
+                                        Constants.outputDirectory + File.separator + "NCE_calibration");
+
+                                String bestNCE = String.valueOf((int) modelInfo[2]);
+                                NceConstants.calibratedModels.put(currentModel, bestNCE);
                                 NCEcalibrator.plotNCEchart((TreeMap<Integer, ArrayList<Double>>) modelInfo[0]);
                             }
 

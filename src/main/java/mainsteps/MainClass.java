@@ -348,10 +348,17 @@ public class MainClass {
 
             //get matched pin files for mzML files
             PinMzmlMatcher pmMatcher = new PinMzmlMatcher(Constants.mzmlDirectory, Constants.pinPepXMLDirectory);
+
             //if no pin files, continue
             if (pmMatcher.pinFiles.length == 0) {
                 printInfo("No pin files to process. Continuing without MSBooster.");
                 executorService.shutdown();
+                System.exit(0);
+            }
+
+            //exit if no models used
+            if (!Constants.useSpectra && !Constants.useRT && !Constants.useIM) {
+                printInfo("useSpectra, useRT, and useIM are all false. Exiting.");
                 System.exit(0);
             }
 
@@ -1092,6 +1099,7 @@ public class MainClass {
                 }
             } else {
                 Constants.spectraModel = "";
+                Constants.auxSpectraModel = "";
             }
             Constants.foundBest = true;
 

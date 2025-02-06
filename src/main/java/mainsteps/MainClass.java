@@ -349,6 +349,12 @@ public class MainClass {
             //get matched pin files for mzML files
             PinMzmlMatcher pmMatcher = new PinMzmlMatcher(Constants.mzmlDirectory, Constants.pinPepXMLDirectory);
 
+            //exit if no models used
+            if (!Constants.useSpectra && !Constants.useRT && !Constants.useIM) {
+                printInfo("useSpectra, useRT, and useIM are all false. Exiting.");
+                System.exit(0);
+            }
+
             //update fragment ion types based on fragmentation type
             FragmentIonConstants.makeFragmentIonHierarchy();
             Constants.matchedIntensitiesFeatures = Constants.makeMatchedIntensitiesFeatures();
@@ -1086,6 +1092,7 @@ public class MainClass {
                 }
             } else {
                 Constants.spectraModel = "";
+                Constants.auxSpectraModel = "";
             }
             Constants.foundBest = true;
 

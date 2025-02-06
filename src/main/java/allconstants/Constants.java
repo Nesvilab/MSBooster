@@ -85,7 +85,7 @@ public class Constants implements ConstantsInterface {
     public static String spectraModel = "";
     public static String rtModel = "";
     public static String imModel = "";
-    public static String auxSpectraModel = ""; //TODO: support this
+    public static String auxSpectraModel = "";
     public static Integer splitPredInputFile = 1;
     public static Boolean useKoina = false;
     public static Boolean usedKoina = false;
@@ -183,7 +183,7 @@ public class Constants implements ConstantsInterface {
     public static Boolean hasITMS = false;
 
     //for limiting number of fragments used
-    public static Boolean useSpectra = true;
+    public static Boolean useSpectra = true; //applies to aux spectra model too
     public static Boolean useTopFragments = true;
     public static Integer topFragments = 20;
     public static Boolean adaptiveFragmentNum = false; //TODO: automatically find best number of fragments to use

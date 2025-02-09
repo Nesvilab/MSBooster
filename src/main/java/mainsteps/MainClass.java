@@ -1392,6 +1392,10 @@ public class MainClass {
                     koinaPreds.transferKoinaPreds(klrs, Constants.spectraRTPrefix + "_full.tsv");
                 }
 
+                //filter out fragment ion types not considered by fragmentation type before writing predictions
+                koinaPreds.filterFragments(executorService,
+                        FragmentIonConstants.fragmentIonHierarchySet, FragmentIonConstants.fragmentIonHierarchySet);
+
                 StringBuilder koinaPredFilePath = new StringBuilder("koina.mgf");
                 StringBuilder auxPredFilePath = new StringBuilder("koina.mgf");
                 for (int j = 0; j < models.size(); j++) {

@@ -127,7 +127,7 @@ public class PredictionEntry {
                 if (Constants.useBasePeak && Constants.percentBasePeak < 100) {
                     //get max intensity
                     float maxIntensity = 0f;
-                    for (float f : intensities) {
+                    for (float f : tmpInts) {
                         if (f > maxIntensity) {
                             maxIntensity = f;
                         }

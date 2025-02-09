@@ -144,7 +144,6 @@ public class Constants implements ConstantsInterface {
     public static Integer numKoinaAttempts = 3;
     public static Integer initialKoinaMillisecondsToWaitRtIm = 30000;
     public static Integer initialKoinaMillisecondsToWaitMs2 = 60000;
-    public static Float minIntensityToWriteToMgf = 0.01f; //TODO: should be same as basePeak?
     public static Integer numPSMsToCalibrate = 1000;
     public static Boolean autoSwitchFragmentation = true;
 

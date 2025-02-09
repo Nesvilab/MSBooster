@@ -17,7 +17,6 @@
 
 package writers;
 
-import allconstants.Constants;
 import predictions.PredictionEntry;
 import predictions.PredictionEntryHashMap;
 
@@ -50,9 +49,8 @@ public class MgfFileWriter {
             bw.write("RT=" + pe.RT + "\n");
             bw.write("1/K0=" + pe.IM + "\n");
             for (int i = 0; i < pe.mzs.length; i++) {
-                if (pe.intensities[i] > Constants.minIntensityToWriteToMgf) {
-                    bw.write(pe.mzs[i] + "\t" + pe.intensities[i] + " " + pe.fragmentIonTypes[i] + "\n");
-                }
+                //no need to filter by intensity since that's already done
+                bw.write(pe.mzs[i] + "\t" + pe.intensities[i] + " " + pe.fragmentIonTypes[i] + "\n");
             }
             bw.write("END IONS" + "\n");
         }

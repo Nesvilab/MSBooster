@@ -27,7 +27,7 @@ public class FragmentIonConstants implements ConstantsInterface {
     public static String ignoredFragmentIonTypes = ""; //split with commas
     public static String onlyFragmentIonTypes = ""; //split with commas
     public static String[] fragmentIonHierarchy; //ordering fragments in decreasing priority
-    public static Set<String> fragmentIonHierarchySet;
+    public static HashSet<String> fragmentIonHierarchySet;
 
     //this is how we group fragments to similarity calculations
     public static int divideFragments = 0;

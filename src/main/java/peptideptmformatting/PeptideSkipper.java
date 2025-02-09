@@ -33,9 +33,8 @@ public class PeptideSkipper {
             }
         }
         //length
-        //TODO: check predfull length requirement
-        if ((model.contains("ms2pip") || //model.contains("predfull") || //predfull has been updated to take longer peptides
-                (model.contains("prosit") && model.contains("tmt"))) && stripped.length() > 30) {
+        if ((model.contains("ms2pip") || (model.contains("prosit") && model.contains("tmt")))
+                && stripped.length() > 30) {
             return true;
         }
         if (model.contains("unispec") && stripped.length() > 40) {

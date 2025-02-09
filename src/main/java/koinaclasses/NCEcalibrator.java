@@ -96,7 +96,9 @@ public class NCEcalibrator {
                     ArrayList<Double> similarity = new ArrayList<>();
                     try {
                         for (PeptideObj peptideObj : km.getPeptideObjects(allPreds, scanNums, peptides)) {
-                            similarity.add(peptideObj.spectralSimObj.unweightedSpectralEntropy());
+                            if (peptideObj != null) {
+                                similarity.add(peptideObj.spectralSimObj.unweightedSpectralEntropy());
+                            }
                         }
                     } catch (Exception e) {
                         throw new RuntimeException(e);

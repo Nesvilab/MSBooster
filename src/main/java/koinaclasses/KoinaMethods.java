@@ -184,10 +184,12 @@ public class KoinaMethods {
                 MzmlScanNumber msn = mzmlReader.getScanNumObject(scanNum);
 
                 PeptideFormatter pf = thisPeptides.get(k);
-                PeptideObj pobj = msn.setPeptideObject(
-                        new PeptideFormatter(pf.getBase(), pf.getCharge(), "base"),
-                        1, 1, "0", allPreds, false);
-                peptideObjs[index] = pobj;
+                if (allPreds.containsKey(pf.getBaseCharge())) {
+                    PeptideObj pobj = msn.setPeptideObject(
+                            new PeptideFormatter(pf.getBase(), pf.getCharge(), "base"),
+                            1, 1, "0", allPreds, false);
+                    peptideObjs[index] = pobj;
+                }
                 index++;
             }
         }

@@ -26,6 +26,8 @@ import java.io.FileWriter;
 import java.io.IOException;
 import java.util.Map;
 
+import static utils.Print.printInfo;
+
 public class MgfFileWriter {
     PredictionEntryHashMap allPreds;
     public MgfFileWriter(PredictionEntryHashMap allPreds) {
@@ -33,6 +35,7 @@ public class MgfFileWriter {
     }
 
     public void write(String outfile) throws IOException {
+        printInfo("Writing " + outfile);
         BufferedWriter bw = new BufferedWriter(new FileWriter(outfile));
         for (Map.Entry<String, PredictionEntry> entry : allPreds.entrySet()) {
             String[] peptide = entry.getKey().split("\\|");

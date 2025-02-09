@@ -102,7 +102,7 @@ public class PredictionEntryHashMap extends ConcurrentHashMap<String, Prediction
                         pe1.intensities = pe2.intensities;
                         pe1.fragNums = pe2.fragNums;
                         pe1.charges = pe2.charges;
-                        pe1.fragmentIonTypes = pe2.fragmentIonTypes; //TODO: lengths get messed up here?
+                        pe1.fragmentIonTypes = pe2.fragmentIonTypes;
                         pe1.filtered = pe2.filtered; //TODO: remove this?
                         break;
                     case "auxSpectra":
@@ -112,6 +112,7 @@ public class PredictionEntryHashMap extends ConcurrentHashMap<String, Prediction
 
                 fullLib.put(peptide, pe1); //entry in library1, but getting property for it from library2
             } else { //first entry loaded
+                //if running whole workflow, even if one model does not support all peptides, will have empty entry in mgf
                 fullLib.put(peptide, pe2);
             }
         }

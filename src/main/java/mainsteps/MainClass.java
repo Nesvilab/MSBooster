@@ -438,8 +438,7 @@ public class MainClass {
                             }
                         }
                     }
-                    printInfo("Searching the following models: ");
-                    printInfo(String.valueOf(consideredModels));
+                    printInfo("Searching the following models: " + consideredModels);
 
                     String jsonOutFolder = Constants.outputDirectory + File.separator + "best_model";
                     MyFileUtils.createWholeDirectory(jsonOutFolder);
@@ -701,8 +700,7 @@ public class MainClass {
                             System.exit(0);
                         }
                     }
-                    printInfo("Searching the following models: ");
-                    printInfo(String.valueOf(consideredModels));
+                    printInfo("Searching the following models: " + consideredModels);
 
                     String jsonOutFolder = Constants.outputDirectory + File.separator + "best_model";
                     MyFileUtils.createWholeDirectory(jsonOutFolder);
@@ -859,8 +857,7 @@ public class MainClass {
                             }
                         }
                     }
-                    printInfo("Searching the following models: ");
-                    printInfo(String.valueOf(consideredModels));
+                    printInfo("Searching the following models: " + consideredModels);
 
                     String jsonOutFolder = Constants.outputDirectory + File.separator + "best_model";
                     MyFileUtils.createWholeDirectory(jsonOutFolder);
@@ -1091,6 +1088,11 @@ public class MainClass {
                     if (model.equalsIgnoreCase(Constants.spectraModel)) {
                         Constants.spectraModel = model;
                     }
+                }
+
+                if (Constants.spectraModel.equals(Constants.auxSpectraModel)) {
+                    printInfo("Spectra and aux spectra model are the same. Only predicting once.");
+                    Constants.auxSpectraModel = "";
                 }
             } else {
                 Constants.spectraModel = "";

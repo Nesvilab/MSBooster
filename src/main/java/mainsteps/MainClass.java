@@ -991,7 +991,9 @@ public class MainClass {
                                 //get median similarity
                                 ArrayList<Double> similarity = new ArrayList<>();
                                 for (PeptideObj peptideObj : km.getPeptideObjects(allPreds, km.scanNums, km.peptides)) {
-                                    similarity.add(peptideObj.spectralSimObj.unweightedSpectralEntropy());
+                                    if (peptideObj != null) {
+                                        similarity.add(peptideObj.spectralSimObj.unweightedSpectralEntropy());
+                                    }
                                 }
                                 try {
                                     similarity.sort(Comparator.naturalOrder());

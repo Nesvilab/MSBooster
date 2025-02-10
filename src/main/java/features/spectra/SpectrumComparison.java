@@ -260,7 +260,7 @@ public class SpectrumComparison {
         return matchedInts;
     }
 
-    private void getAllMatchedIntensities() throws IOException, URISyntaxException {
+    private void getAllMatchedIntensities() {
         if (allMatchedIntensities == null) {
             //what fragment ion types do we need?
             HashSet<String> fiontypes = new HashSet<>(Arrays.asList(this.predFragmentIonTypes));

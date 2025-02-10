@@ -57,6 +57,14 @@ public class NumericUtils {
         return sum;
     }
 
+    public static int intSum(int[] arr) {
+        int sum = 0;
+        for (int f : arr) {
+            sum += f;
+        }
+        return sum;
+    }
+
     public static boolean isUppercaseOrDigit(char c) {
         return Character.isUpperCase(c) || Character.isDigit(c);
     }

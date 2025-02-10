@@ -19,6 +19,7 @@ package writers;
 
 import predictions.PredictionEntry;
 import predictions.PredictionEntryHashMap;
+import utils.NumericUtils;
 
 import java.io.BufferedWriter;
 import java.io.FileWriter;
@@ -43,6 +44,9 @@ public class MgfFileWriter {
                 continue;
             }
 
+            //isotopic information
+            int isotopeSum = NumericUtils.intSum(pe.isotopes);
+
             bw.write("BEGIN IONS" + "\n");
             bw.write("TITLE=" + peptide[0] + "\n");
             bw.write("CHARGE=" + peptide[1] + "\n");
@@ -50,7 +54,13 @@ public class MgfFileWriter {
             bw.write("1/K0=" + pe.IM + "\n");
             for (int i = 0; i < pe.mzs.length; i++) {
                 //no need to filter by intensity since that's already done
-                bw.write(pe.mzs[i] + "\t" + pe.intensities[i] + " " + pe.fragmentIonTypes[i] + "\n");
+                if (pe.intensities[i] != 0) {
+                    if (isotopeSum > 0) {
+                        bw.write(pe.mzs[i] + "\t" + pe.intensities[i] + " " + pe.fragmentIonTypes[i] + " " + pe.isotopes[i] + "\n");
+                    } else {
+                        bw.write(pe.mzs[i] + "\t" + pe.intensities[i] + " " + pe.fragmentIonTypes[i] + "\n");
+                    }
+                }
             }
             bw.write("END IONS" + "\n");
         }

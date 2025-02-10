@@ -208,6 +208,7 @@ public class MgfFileReader implements LibraryPredictionMapper {
                         ArrayList<Float> intensities = new ArrayList<>(12000);
                         ArrayList<Float> mzs = new ArrayList<>(12000);
                         ArrayList<String> fragmentIonTypes = new ArrayList<>(12000);
+                        ArrayList<Integer> isotopes = new ArrayList<>(12000);
                         int start = finalChunks[finalI];
                         int end = finalChunks[finalI + 1];
                         String line = "";
@@ -284,6 +285,10 @@ public class MgfFileReader implements LibraryPredictionMapper {
                                     for (int h = 0; h < fragmentIonTypes.size(); h++) {
                                         fragmentArray[h] = fragmentIonTypes.get(h);
                                     }
+                                    int[] isotopeArray = new int[isotopes.size()];
+                                    for (int h = 0; h < isotopes.size(); h++) {
+                                        isotopeArray[h] = isotopes.get(h);
+                                    }
                                     if (createScanNumObjects) { //act as mzml
                                         if (! scanNumberObjects.containsKey(scanNum)) {
                                             Integer[] indices = new Integer[mzArray.length];
@@ -309,6 +314,9 @@ public class MgfFileReader implements LibraryPredictionMapper {
                                                 new int[0], new int[0], fragmentArray);
                                         newPred.setRT(RT);
                                         newPred.setIM(IM);
+                                        if (isotopeArray.length > 0) {
+                                            newPred.isotopes = isotopeArray;
+                                        }
                                         //convert title to base format
                                         String basePep = sb.toString();
                                         if (model.contains("pDeep")) {
@@ -323,6 +331,7 @@ public class MgfFileReader implements LibraryPredictionMapper {
                                     mzs.clear();
                                     intensities.clear();
                                     fragmentIonTypes.clear();
+                                    isotopes.clear();
                                     break;
                                 case 'B': // BEGIN IONS
                                     start += 11;
@@ -346,6 +355,9 @@ public class MgfFileReader implements LibraryPredictionMapper {
                                                 fragmentIonTypes.add(lineSplit[1]);
                                                 mzs.add(newMZ);
                                                 intensities.add(Float.parseFloat(lineSplit[0]));
+                                                if (lineSplit.length == 3) {
+                                                    isotopes.add(Integer.valueOf(lineSplit[2]));
+                                                }
                                             }
                                         } else {
                                             mzs.add(newMZ);
@@ -375,6 +387,9 @@ public class MgfFileReader implements LibraryPredictionMapper {
                                             fragmentIonTypes.add(lineSplit[1]);
                                             mzs.add(newMZ);
                                             intensities.add(Float.parseFloat(lineSplit[0]));
+                                            if (lineSplit.length == 3) {
+                                                isotopes.add(Integer.valueOf(lineSplit[2]));
+                                            }
                                         }
                                     } else {
                                         mzs.add(newMZ);
@@ -402,6 +417,10 @@ public class MgfFileReader implements LibraryPredictionMapper {
                         for (int h = 0; h < fragmentIonTypes.size(); h++) {
                             fragmentArray[h] = fragmentIonTypes.get(h);
                         }
+                        int[] isotopeArray = new int[isotopes.size()];
+                        for (int h = 0; h < isotopes.size(); h++) {
+                            isotopeArray[h] = isotopes.get(h);
+                        }
                         if (createScanNumObjects) { //act as mzml
                             if (! scanNumberObjects.containsKey(scanNum)) {
                                 Integer[] indices = new Integer[mzArray.length];
@@ -427,6 +446,9 @@ public class MgfFileReader implements LibraryPredictionMapper {
                                     new int[0], new int[0], fragmentArray);
                             newPred.setRT(RT);
                             newPred.setIM(IM);
+                            if (isotopeArray.length > 0) {
+                                newPred.isotopes = isotopeArray;
+                            }
                             //convert title to base format
                             String basePep = sb.toString();
                             if (model.contains("pDeep")) {
@@ -440,6 +462,7 @@ public class MgfFileReader implements LibraryPredictionMapper {
                         mzs.clear();
                         intensities.clear();
                         fragmentIonTypes.clear();
+                        isotopes.clear();
                     }));
                 }
                 for (Future future : futureList) {

@@ -39,7 +39,7 @@ public class PredictionEntry {
     public HashMap<String, Float[]> scores = new HashMap<>();
     public ArrayList<Integer> times = new ArrayList<>();
     public double precursorMz = 0d;
-    public boolean filtered = false;
+    //public boolean filtered = false; //work with this if filtering step is unnecessarily run multiple times
 
     public PredictionEntry() {}
 
@@ -104,142 +104,139 @@ public class PredictionEntry {
     }
 
     public void filterFragments(HashSet<String> fragmentIonTypesSet) {
-        if (!filtered) {
-            filtered = true;
-            if (intensities.length != 0) {
-                mergeCloseMzs();
+        if (intensities.length != 0) {
+            mergeCloseMzs();
 
-                int potentialFragments = intensities.length; //number of fragments to consider
-                float[] tmpInts = new float[potentialFragments]; //indicates if fragment should be used (0 means no)
-                System.arraycopy(intensities, 0, tmpInts, 0, potentialFragments);
+            int potentialFragments = intensities.length; //number of fragments to consider
+            float[] tmpInts = new float[potentialFragments]; //indicates if fragment should be used (0 means no)
+            System.arraycopy(intensities, 0, tmpInts, 0, potentialFragments);
 
-                //filter for allowed fragment ion types
-                if (fragmentIonTypes.length > 0 && !fragmentIonTypesSet.isEmpty()) {
-                    for (int i = 0; i < fragmentIonTypes.length; i++) {
-                        if (!fragmentIonTypesSet.contains(fragmentIonTypes[i])) {
-                            tmpInts[i] = 0f;
-                            potentialFragments--;
-                        }
+            //filter for allowed fragment ion types
+            if (fragmentIonTypes.length > 0 && !fragmentIonTypesSet.isEmpty()) {
+                for (int i = 0; i < fragmentIonTypes.length; i++) {
+                    if (!fragmentIonTypesSet.contains(fragmentIonTypes[i])) {
+                        tmpInts[i] = 0f;
+                        potentialFragments--;
+                    }
+                }
+            }
+
+            //above intensity threshold
+            if (Constants.useBasePeak && Constants.percentBasePeak < 100) {
+                //get max intensity
+                float maxIntensity = 0f;
+                for (float f : tmpInts) {
+                    if (f > maxIntensity) {
+                        maxIntensity = f;
                     }
                 }
 
-                //above intensity threshold
-                if (Constants.useBasePeak && Constants.percentBasePeak < 100) {
-                    //get max intensity
-                    float maxIntensity = 0f;
-                    for (float f : tmpInts) {
-                        if (f > maxIntensity) {
-                            maxIntensity = f;
-                        }
-                    }
-
-                    //make cutoff by percentage
-                    float cutoff = Constants.percentBasePeak / 100f * maxIntensity;
-                    for (int i = 0; i < tmpInts.length; i++) {
-                        if (tmpInts[i] < cutoff && tmpInts[i] != 0f) {
-                            tmpInts[i] = 0f;
-                            potentialFragments--;
-                        }
+                //make cutoff by percentage
+                float cutoff = Constants.percentBasePeak / 100f * maxIntensity;
+                for (int i = 0; i < tmpInts.length; i++) {
+                    if (tmpInts[i] < cutoff && tmpInts[i] != 0f) {
+                        tmpInts[i] = 0f;
+                        potentialFragments--;
                     }
                 }
+            }
 
-                //only use N top fragments
-                if ((potentialFragments > Constants.topFragments) && Constants.useTopFragments) {
-                    potentialFragments = Constants.topFragments;
+            //only use N top fragments
+            if ((potentialFragments > Constants.topFragments) && Constants.useTopFragments) {
+                potentialFragments = Constants.topFragments;
 
-                    //setting highest intensities to -1
-                    for (int i = 0; i < Constants.topFragments; i++) {
-                        float maxInt = tmpInts[0];
-                        int index = 0;
-                        for (int j = 1; j < tmpInts.length; j++) {
-                            float thisInt = tmpInts[j];
-                            if (thisInt > maxInt) {
-                                maxInt = thisInt;
-                                index = j;
-                            }
+                //setting highest intensities to -1
+                for (int i = 0; i < Constants.topFragments; i++) {
+                    float maxInt = tmpInts[0];
+                    int index = 0;
+                    for (int j = 1; j < tmpInts.length; j++) {
+                        float thisInt = tmpInts[j];
+                        if (thisInt > maxInt) {
+                            maxInt = thisInt;
+                            index = j;
                         }
-                        tmpInts[index] = -1f; //no longer highest intensity peak
+                    }
+                    tmpInts[index] = -1f; //no longer highest intensity peak
+                }
+            } else {
+                for (int i = 0; i < tmpInts.length; i++) {
+                    if (tmpInts[i] != 0f) {
+                        tmpInts[i] = -1f;
+                    }
+                }
+            }
+
+            //assigning final values
+            float[] predIntensities = new float[potentialFragments];
+            float[] predMZs = new float[potentialFragments];
+            int[] pfragNums = new int[potentialFragments];
+            int[] pcharges = new int[potentialFragments];
+            String[] pfragmentIonTypes = new String[potentialFragments];
+            String[] pfullAnnotations = new String[potentialFragments];
+            int[] pisotopes = new int[potentialFragments];
+            int addIdx = 0;
+            for (int i = 0; i < tmpInts.length; i++) {
+                if (Constants.useTopFragments) {
+                    if (tmpInts[i] == -1f) { //TODO: could make the steps below a method
+                        predIntensities[addIdx] = intensities[i];
+                        predMZs[addIdx] = mzs[i];
+                        if (fragNums.length > 0) {
+                            pfragNums[addIdx] = fragNums[i];
+                        }
+                        if (charges.length > 0) {
+                            pcharges[addIdx] = charges[i];
+                        }
+                        if (fragmentIonTypes.length > 0) {
+                            pfragmentIonTypes[addIdx] = fragmentIonTypes[i];
+                        }
+                        if (fullAnnotations.length > 0) {
+                            pfullAnnotations[addIdx] = fullAnnotations[i];
+                        }
+                        if (isotopes.length > 0) {
+                            pisotopes[addIdx] = isotopes[i];
+                        }
+                        addIdx++;
                     }
                 } else {
-                    for (int i = 0; i < tmpInts.length; i++) {
-                        if (tmpInts[i] != 0f) {
-                            tmpInts[i] = -1f;
+                    if (tmpInts[i] != 0f) {
+                        predIntensities[addIdx] = intensities[i];
+                        predMZs[addIdx] = mzs[i];
+                        if (fragNums.length > 0) {
+                            pfragNums[addIdx] = fragNums[i];
                         }
+                        if (charges.length > 0) {
+                            pcharges[addIdx] = charges[i];
+                        }
+                        if (fragmentIonTypes.length > 0) {
+                            pfragmentIonTypes[addIdx] = fragmentIonTypes[i];
+                        }
+                        if (fullAnnotations.length > 0) {
+                            pfullAnnotations[addIdx] = fullAnnotations[i];
+                        }
+                        if (isotopes.length > 0) {
+                            pisotopes[addIdx] = isotopes[i];
+                        }
+                        addIdx++;
                     }
                 }
+            }
 
-                //assigning final values
-                float[] predIntensities = new float[potentialFragments];
-                float[] predMZs = new float[potentialFragments];
-                int[] pfragNums = new int[potentialFragments];
-                int[] pcharges = new int[potentialFragments];
-                String[] pfragmentIonTypes = new String[potentialFragments];
-                String[] pfullAnnotations = new String[potentialFragments];
-                int[] pisotopes = new int[potentialFragments];
-                int addIdx = 0;
-                for (int i = 0; i < tmpInts.length; i++) {
-                    if (Constants.useTopFragments) {
-                        if (tmpInts[i] == -1f) { //TODO: could make the steps below a method
-                            predIntensities[addIdx] = intensities[i];
-                            predMZs[addIdx] = mzs[i];
-                            if (fragNums.length > 0) {
-                                pfragNums[addIdx] = fragNums[i];
-                            }
-                            if (charges.length > 0) {
-                                pcharges[addIdx] = charges[i];
-                            }
-                            if (fragmentIonTypes.length > 0) {
-                                pfragmentIonTypes[addIdx] = fragmentIonTypes[i];
-                            }
-                            if (fullAnnotations.length > 0) {
-                                pfullAnnotations[addIdx] = fullAnnotations[i];
-                            }
-                            if (isotopes.length > 0) {
-                                pisotopes[addIdx] = isotopes[i];
-                            }
-                            addIdx++;
-                        }
-                    } else {
-                        if (tmpInts[i] != 0f) {
-                            predIntensities[addIdx] = intensities[i];
-                            predMZs[addIdx] = mzs[i];
-                            if (fragNums.length > 0) {
-                                pfragNums[addIdx] = fragNums[i];
-                            }
-                            if (charges.length > 0) {
-                                pcharges[addIdx] = charges[i];
-                            }
-                            if (fragmentIonTypes.length > 0) {
-                                pfragmentIonTypes[addIdx] = fragmentIonTypes[i];
-                            }
-                            if (fullAnnotations.length > 0) {
-                                pfullAnnotations[addIdx] = fullAnnotations[i];
-                            }
-                            if (isotopes.length > 0) {
-                                pisotopes[addIdx] = isotopes[i];
-                            }
-                            addIdx++;
-                        }
-                    }
-                }
-
-                mzs = predMZs;
-                intensities = predIntensities;
-                if (fragNums.length > 0) {
-                    fragNums = pfragNums;
-                }
-                if (charges.length > 0) {
-                    charges = pcharges;
-                }
-                if (fragmentIonTypes.length > 0) {
-                    fragmentIonTypes = pfragmentIonTypes;
-                }
-                if (fullAnnotations.length > 0) {
-                    fullAnnotations = pfullAnnotations;
-                }
-                if (isotopes.length > 0) {
-                    isotopes = pisotopes;
-                }
+            mzs = predMZs;
+            intensities = predIntensities;
+            if (fragNums.length > 0) {
+                fragNums = pfragNums;
+            }
+            if (charges.length > 0) {
+                charges = pcharges;
+            }
+            if (fragmentIonTypes.length > 0) {
+                fragmentIonTypes = pfragmentIonTypes;
+            }
+            if (fullAnnotations.length > 0) {
+                fullAnnotations = pfullAnnotations;
+            }
+            if (isotopes.length > 0) {
+                isotopes = pisotopes;
             }
         }
     }

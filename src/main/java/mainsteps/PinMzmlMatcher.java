@@ -35,7 +35,9 @@ import java.util.List;
 import java.util.concurrent.ExecutionException;
 import java.util.stream.Collectors;
 
+import static mainsteps.MainClass.executorService;
 import static utils.Print.printError;
+import static utils.Print.printInfo;
 
 public class PinMzmlMatcher {
     public File[] mzmlFiles;
@@ -124,6 +126,13 @@ public class PinMzmlMatcher {
                         "or if running on the command line, set --editedPinSuffix to another suffix");
                 System.exit(1);
             }
+        }
+
+        //check if no pin files
+        if (pinFileList.isEmpty()) {
+            printInfo("No pin files to process. Continuing without MSBooster.");
+            executorService.shutdown();
+            System.exit(0);
         }
 
         //add files to array

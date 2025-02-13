@@ -335,12 +335,6 @@ public class MainClass {
 
             //get matched pin files for mzML files
             PinMzmlMatcher pmMatcher = new PinMzmlMatcher(Constants.mzmlDirectory, Constants.pinPepXMLDirectory);
-            //if no pin files, continue
-            if (pmMatcher.pinFiles.length == 0) {
-                printInfo("No pin files to process. Continuing without MSBooster.");
-                executorService.shutdown();
-                System.exit(0);
-            }
 
             //update fragment ion types based on fragmentation type
             //update Constants to be null initially

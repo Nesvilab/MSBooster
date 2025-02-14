@@ -493,4 +493,7 @@ public class Constants {
             detectPredInput = outputDirectory + File.separator + "detect.tsv";
         }
     }
+
+    /////////////////////////////////////////////////model searching////////////////////////////////////////////////////
+    public static Boolean searchTMTmodels = false;
 }

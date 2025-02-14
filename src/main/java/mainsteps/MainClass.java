@@ -262,6 +262,7 @@ public class MainClass {
                                             printInfo("TMT/iTRAQ mass detected in fragger.params as variable modification: " +
                                                     potentialTmtMass);
                                             PTMhandler.setTmtMass(potentialTmtMass);
+                                            Constants.searchTMTmodels = true;
                                             break;
                                         }
                                     }
@@ -272,6 +273,7 @@ public class MainClass {
                                             printInfo("TMT/iTRAQ mass detected in fragger.params as fixed modification: " +
                                                     potentialTmtMass);
                                             PTMhandler.setTmtMass(potentialTmtMass);
+                                            Constants.searchTMTmodels = true;
                                             break;
                                         }
                                     }
@@ -398,7 +400,6 @@ public class MainClass {
             //needed for nce calibration and best model search
             //TODO: could also make a new koinamethods object for decoys
             KoinaMethods km = new KoinaMethods(pmMatcher);
-            boolean TMT = false;
             if (Constants.findBestRtModel || Constants.findBestSpectraModel || Constants.findBestImModel ||
                     Constants.KoinaMS2models.contains(Constants.spectraModel) ||
                     Constants.KoinaRTmodels.contains(Constants.rtModel) ||
@@ -406,23 +407,17 @@ public class MainClass {
             ) {
                 km.getTopPeptides();
                 //km.getDecoyPeptides();
-                for (PeptideFormatter pf : km.peptideArraylist) {
-                    if (pf.getBase().contains(String.valueOf(PTMhandler.getTmtMass()))) {
-                        TMT = true;
-                        break;
-                    }
-                }
             }
 
             //if different RT and spectra models
             HashMap<String, float[]> datapointsRT = new HashMap<>();
-            HashMap<String, float[]> datapointsRTDecoys = new HashMap<>();
+            //HashMap<String, float[]> datapointsRTDecoys = new HashMap<>();
             if (Constants.useRT) {
                 //here, look for best rt model
                 if (Constants.findBestRtModel) {
                     printInfo("Searching for best RT model for your data");
                     ArrayList<String> consideredModels = new ArrayList<>();
-                    if (TMT) {
+                    if (Constants.searchTMTmodels) {
                         consideredModels.addAll(Constants.rtSearchModelsTMT);
                     } else {
                         String[] rtSearchModels = Constants.rtSearchModelsString.split(",");
@@ -845,7 +840,7 @@ public class MainClass {
                 if (Constants.findBestSpectraModel) {
                     printInfo("Searching for best spectra model for your data");
                     ArrayList<String> consideredModels = new ArrayList<>();
-                    if (TMT) {
+                    if (Constants.searchTMTmodels) {
                         consideredModels.addAll(Constants.ms2SearchModelsTMT);
                     } else {
                         String[] ms2SearchModels = Constants.ms2SearchModelsString.split(",");

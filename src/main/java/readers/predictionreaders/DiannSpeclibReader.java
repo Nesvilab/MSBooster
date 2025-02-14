@@ -22,8 +22,6 @@ import peptideptmformatting.PeptideFormatter;
 import predictions.PredictionEntry;
 import predictions.PredictionEntryHashMap;
 
-import static utils.Print.printError;
-
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileInputStream;
@@ -34,7 +32,8 @@ import java.io.InputStream;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.util.ArrayList;
-import java.util.Arrays;
+
+import static utils.Print.printError;
 
 public class DiannSpeclibReader implements LibraryPredictionMapper {
     final ArrayList<String> filenames;
@@ -135,8 +134,6 @@ public class DiannSpeclibReader implements LibraryPredictionMapper {
                 }
                 TSVReader.close();
 
-                //comment the next section out if doing if for TMT alignment
-                //repeat this process with full peptides
                 textFile = bFile.substring(0, splitDot - 1) + "_full.tsv";
                 TSVReader = new BufferedReader(new FileReader(textFile));
                 String l;

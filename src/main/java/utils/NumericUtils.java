@@ -57,4 +57,9 @@ public class NumericUtils {
     public static boolean isUppercaseOrDigit(char c) {
         return Character.isUpperCase(c) || Character.isDigit(c);
     }
+
+    public static boolean massesCloseEnough(double mass1, double mass2) { //TODO: use this method more
+        double errorTol = 0.001;
+        return Math.abs(mass2 - mass1) < errorTol;
+    }
 }

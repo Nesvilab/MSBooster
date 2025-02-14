@@ -69,6 +69,10 @@ public class NumericUtils {
         return Character.isUpperCase(c) || Character.isDigit(c);
     }
 
+    public static boolean massesCloseEnough(double mass1, double mass2) { //TODO: use this method more
+        double errorTol = 0.001;
+        return Math.abs(mass2 - mass1) < errorTol;
+        
     //method from chat gpt to return ranked indices of two arrays
     public static void getRanks(float[] arr1, float[] arr2, List<Integer> rankList1, List<Integer> rankList2) {
         List<float[]> combined = new ArrayList<>();

@@ -44,6 +44,7 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import static allconstants.Constants.figureDirectory;
 import static figures.ExtensionPlotter.plot;
 import static utils.Print.printInfo;
 
@@ -133,9 +134,8 @@ public class NCEcalibrator {
 
     public static void plotNCEchart(TreeMap<Integer, ArrayList<Double>> similarities) {
         try {
-            String dir = Constants.outputDirectory + File.separator + "MSBooster_plots";
-            if (!new File(dir).exists()) {
-                new File(dir).mkdirs();
+            if (!new File(figureDirectory).exists()) {
+                new File(figureDirectory).mkdirs();
             }
 
             int currentNCE = Constants.minNCE;
@@ -156,7 +156,7 @@ public class NCEcalibrator {
                 }
                 int endNCE = currentNCE - 1;
                 added = 0;
-                plot(chart, dir + File.separator + "NCE_calibration" + startNCE + "to" + endNCE);
+                plot(chart, figureDirectory + File.separator + "NCE_calibration" + startNCE + "to" + endNCE);
             }
         } catch (IOException e) {
             e.printStackTrace();

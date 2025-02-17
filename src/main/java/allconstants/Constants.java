@@ -20,8 +20,10 @@ package allconstants;
 import features.detectability.FastaReader;
 import features.spectra.MassCalculator;
 import utils.CaseInsensitiveHashSet;
+import utils.MyFileUtils;
 
 import java.io.File;
+import java.io.IOException;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -43,6 +45,7 @@ public class Constants {
     public static String pinPepXMLDirectory = null; //C:/Users/kevin/Downloads/proteomics/cptac/2021-2-21/
     public static String mzmlDirectory = null; //C:/Users/kevin/OneDriveUmich/proteomics/mzml/cptac/
     public static String outputDirectory = null; //where to write all intermediate and final files
+    public static String figureDirectory = null;
     public static String JsonDirectory = null;
     public static String editedPinSuffix = "edited"; //a prefix. Default is edited_
     public static Integer renamePin = 1;
@@ -469,16 +472,18 @@ public class Constants {
     ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
     //methods
-    public void updateOutputDirectory() {
+    public void updateOutputDirectory() throws IOException {
         if (outputDirectory == null) {
             String firstFile = pinPepXMLDirectory.split(" ")[0];
             File newFile = new File(firstFile);
             if (newFile.isDirectory()) {
-                outputDirectory = firstFile;
+                outputDirectory = firstFile + File.separator + "MSBooster";
             } else { //file
-                outputDirectory = newFile.getAbsoluteFile().getParent();
+                outputDirectory = newFile.getAbsoluteFile().getParent() + File.separator + "MSBooster";
             }
+            MyFileUtils.createWholeDirectory(outputDirectory);
         }
+        figureDirectory = outputDirectory + File.separator + "MSBooster_plots";
     }
     public void updateInputPaths() {
         if (spectraRTPrefix == null) {

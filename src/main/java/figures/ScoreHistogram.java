@@ -33,6 +33,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Set;
 
+import static allconstants.Constants.figureDirectory;
 import static figures.ExtensionPlotter.plot;
 
 public class ScoreHistogram {
@@ -159,17 +160,15 @@ public class ScoreHistogram {
                 chart.addSeries("decoys", xData, yData);
             } catch (Exception e) {e.printStackTrace();}
 
-            String pinPath = new File(pinReader.name).getParent();
             String name = new File(pinReader.name).getName();
-            String dir = pinPath + File.separator + "MSBooster_plots";
-            if (!new File(dir).exists()) {
-                new File(dir).mkdirs();
+            if (!new File(figureDirectory).exists()) {
+                new File(figureDirectory).mkdirs();
             }
-            if (!new File(dir + File.separator + "score_histograms").exists()) {
-                new File(dir + File.separator + "score_histograms").mkdirs();
+            if (!new File(figureDirectory + File.separator + "score_histograms").exists()) {
+                new File(figureDirectory + File.separator + "score_histograms").mkdirs();
             }
 
-            plot(chart, dir + File.separator + "score_histograms" + File.separator +
+            plot(chart, figureDirectory + File.separator + "score_histograms" + File.separator +
                     name.substring(0, name.length() - 4) + "_" + feature);
         }
         pinReader.close();

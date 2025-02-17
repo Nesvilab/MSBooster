@@ -48,6 +48,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 
+import static allconstants.Constants.figureDirectory;
 import static figures.ExtensionPlotter.plot;
 import static utils.Print.printError;
 import static utils.Print.printInfo;
@@ -195,12 +196,11 @@ public class KoinaModelCaller {
                 chart.getStyler().setLegendFont(new Font("Helvetica", Font.PLAIN, 21));
                 chart.getStyler().setAxisTickLabelsFont(new Font("Helvetica", Font.PLAIN, 15));
 
-                String dir = Constants.outputDirectory + File.separator + "MSBooster_plots";
-                if (!new File(dir).exists()) {
-                    new File(dir).mkdirs();
+                if (!new File(figureDirectory).exists()) {
+                    new File(figureDirectory).mkdirs();
                 }
 
-                plot(chart, dir + File.separator + "Koina_timing_" + model);
+                plot(chart, figureDirectory + File.separator + "Koina_timing_" + model);
             }
         } catch (Exception e) {
             e.printStackTrace();

@@ -35,6 +35,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 
+import static allconstants.Constants.figureDirectory;
 import static figures.ExtensionPlotter.plot;
 
 public class CalibrationFigure {
@@ -46,18 +47,16 @@ public class CalibrationFigure {
     public void plotFigure(MzmlReader mzml, String outFile, float opacity,
                            HashMap<String, double[][]> massToData,
                            HashMap<String, Function1<Double, Double>> loessFunctions) throws IOException {
-        String pinPath = new File(outFile).getParent();
         String pinName = new File(outFile).getName();
         if (mode.equals("IM")) {
             pinName = "charge" + charge + "_" + pinName;
         }
 
-        String dir = pinPath + File.separator + "MSBooster_plots";
-        if (! new File(dir).exists()) {
-            new File(dir).mkdirs();
+        if (! new File(figureDirectory).exists()) {
+            new File(figureDirectory).mkdirs();
         }
-        if (! new File(dir + File.separator + folderString).exists()) {
-            new File(dir + File.separator + folderString).mkdirs();
+        if (! new File(figureDirectory + File.separator + folderString).exists()) {
+            new File(figureDirectory + File.separator + folderString).mkdirs();
         }
 
         XYChart chart = new XYChartBuilder().width(1000).height(1000).build();
@@ -228,7 +227,7 @@ public class CalibrationFigure {
             j++;
         }
 
-        plot(chart, dir + File.separator + folderString +
+        plot(chart, figureDirectory + File.separator + folderString +
                 File.separator + pinName.substring(0, pinName.length() - 4));
     }
 

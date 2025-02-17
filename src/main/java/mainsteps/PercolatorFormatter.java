@@ -55,6 +55,7 @@ import java.util.TreeSet;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Future;
 
+import static allconstants.Constants.figureDirectory;
 import static utils.Print.printError;
 import static utils.Print.printInfo;
 
@@ -440,7 +441,7 @@ public class PercolatorFormatter {
 
                         File f = new File(pinFiles[i].getCanonicalPath());
                         String calibrationPeptideFilePathBase =
-                                f.getParent() + File.separator + "MSBooster_plots" + File.separator + cf.folderString +
+                                figureDirectory + File.separator + cf.folderString +
                                         File.separator + f.getName().substring(0, f.getName().length() - 4) +
                                         "_RTcalibrationPeptides";
 
@@ -536,7 +537,7 @@ public class PercolatorFormatter {
 
                             File f = new File(pinFiles[i].getCanonicalPath());
                             String calibrationPeptideFilePathBase =
-                                    f.getParent() + File.separator + "MSBooster_plots" + File.separator + cf.folderString +
+                                    figureDirectory + File.separator + cf.folderString +
                                             File.separator + f.getName().substring(0, f.getName().length() - 4) +
                                             "_IMcalibrationPeptides";
 

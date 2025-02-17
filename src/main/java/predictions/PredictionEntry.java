@@ -18,7 +18,7 @@
 package predictions;
 
 import allconstants.Constants;
-import features.spectra.MassCalculator;
+import featurescalc.spectra.MassCalculator;
 
 import java.util.ArrayList;
 import java.util.HashMap;

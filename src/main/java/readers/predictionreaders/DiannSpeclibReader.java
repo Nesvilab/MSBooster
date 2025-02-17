@@ -17,7 +17,7 @@
 
 package readers.predictionreaders;
 
-import features.spectra.MassCalculator;
+import featurescalc.spectra.MassCalculator;
 import peptideptmformatting.PeptideFormatter;
 import predictions.PredictionEntry;
 import predictions.PredictionEntryHashMap;

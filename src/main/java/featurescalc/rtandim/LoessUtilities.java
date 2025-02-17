@@ -15,14 +15,14 @@
  * along with MSBooster. If not, see <https://www.gnu.org/licenses/>.
  */
 
-package features.rtandim;
+package featurescalc.rtandim;
 
 import allconstants.Constants;
 import com.github.sanity.pav.PairAdjacentViolators;
 import com.github.sanity.pav.Point;
 import kotlin.jvm.functions.Function1;
-import mainsteps.MzmlScanNumber;
-import mainsteps.PeptideObj;
+import Features.MzmlScanNumber;
+import Features.PeptideObj;
 import org.apache.commons.math3.analysis.interpolation.LoessInterpolator;
 import readers.datareaders.MzmlReader;
 import umich.ms.fileio.exceptions.FileParsingException;

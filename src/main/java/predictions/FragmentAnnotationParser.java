@@ -6,7 +6,7 @@ import java.io.IOException;
 import java.net.URISyntaxException;
 import java.util.ArrayList;
 
-import static features.spectra.MassCalculator.allNeutralLossMasses;
+import static featurescalc.spectra.MassCalculator.allNeutralLossMasses;
 import static utils.NumericUtils.isUppercaseOrDigit;
 
 //class to parse annotations for unispec and predfull

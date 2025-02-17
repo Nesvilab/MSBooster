@@ -15,7 +15,7 @@
  * along with MSBooster. If not, see <https://www.gnu.org/licenses/>.
  */
 
-package features.detectability;
+package featurescalc.detectability;
 
 import java.io.BufferedReader;
 import java.io.File;

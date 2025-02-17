@@ -15,11 +15,11 @@
  * along with MSBooster. If not, see <https://www.gnu.org/licenses/>.
  */
 
-package features;
+package featurescalc;
 
 import allconstants.Constants;
-import features.spectra.SpectrumComparison;
-import mainsteps.PeptideObj;
+import featurescalc.spectra.SpectrumComparison;
+import Features.PeptideObj;
 import org.apache.commons.math3.stat.correlation.PearsonsCorrelation;
 import peptideptmformatting.PeptideFormatter;
 import readers.datareaders.MzmlReader;

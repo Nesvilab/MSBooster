@@ -19,9 +19,9 @@ package koinaclasses;
 
 import allconstants.Constants;
 import com.google.common.collect.ImmutableMap;
-import mainsteps.MzmlScanNumber;
-import mainsteps.PeptideObj;
-import mainsteps.PinMzmlMatcher;
+import Features.MzmlScanNumber;
+import Features.PeptideObj;
+import Features.PinMzmlMatcher;
 import modelcallers.KoinaModelCaller;
 import peptideptmformatting.PeptideFormatter;
 import peptideptmformatting.PeptideSkipper;

@@ -15,7 +15,7 @@
  * along with MSBooster. If not, see <https://www.gnu.org/licenses/>.
  */
 
-package mainsteps;
+package Features;
 
 import allconstants.Constants;
 import org.apache.commons.lang3.ArrayUtils;

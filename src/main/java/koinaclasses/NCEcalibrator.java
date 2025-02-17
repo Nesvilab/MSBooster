@@ -19,8 +19,8 @@ package koinaclasses;
 
 import allconstants.Constants;
 import com.google.common.util.concurrent.AtomicDouble;
-import mainsteps.MainClass;
-import mainsteps.PeptideObj;
+import Features.MainClass;
+import Features.PeptideObj;
 import org.knowm.xchart.BoxChart;
 import org.knowm.xchart.BoxChartBuilder;
 import org.knowm.xchart.style.BoxStyler;

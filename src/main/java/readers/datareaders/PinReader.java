@@ -18,7 +18,7 @@
 package readers.datareaders;
 
 import allconstants.Constants;
-import mainsteps.PinMzmlMatcher;
+import Features.PinMzmlMatcher;
 import org.apache.commons.lang3.ArrayUtils;
 import peptideptmformatting.PeptideFormatter;
 import peptideptmformatting.PeptideSkipper;

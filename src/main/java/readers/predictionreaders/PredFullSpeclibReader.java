@@ -18,7 +18,7 @@
 package readers.predictionreaders;
 
 import allconstants.Constants;
-import features.spectra.MassCalculator;
+import featurescalc.spectra.MassCalculator;
 import peptideptmformatting.PeptideFormatter;
 import peptideptmformatting.PeptideSkipper;
 import predictions.PredictionEntry;
@@ -37,7 +37,7 @@ import java.util.Set;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 
-import static features.spectra.MassCalculator.allNeutralLossMasses;
+import static featurescalc.spectra.MassCalculator.allNeutralLossMasses;
 import static utils.Print.printInfo;
 
 public class PredFullSpeclibReader extends MgfFileReader {

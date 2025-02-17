@@ -17,8 +17,8 @@
 
 package allconstants;
 
-import features.detectability.FastaReader;
-import features.spectra.MassCalculator;
+import featurescalc.detectability.FastaReader;
+import featurescalc.spectra.MassCalculator;
 import utils.CaseInsensitiveHashSet;
 import utils.MyFileUtils;
 

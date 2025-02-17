@@ -15,11 +15,11 @@
  * along with MSBooster. If not, see <https://www.gnu.org/licenses/>.
  */
 
-package features.rtandim;
+package featurescalc.rtandim;
 
 import allconstants.Constants;
-import mainsteps.MzmlScanNumber;
-import mainsteps.PeptideObj;
+import Features.MzmlScanNumber;
+import Features.PeptideObj;
 import readers.datareaders.MzmlReader;
 import umich.ms.fileio.exceptions.FileParsingException;
 

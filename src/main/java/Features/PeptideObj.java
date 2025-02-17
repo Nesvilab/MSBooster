@@ -15,11 +15,11 @@
  * along with MSBooster. If not, see <https://www.gnu.org/licenses/>.
  */
 
-package mainsteps;
+package Features;
 
 import allconstants.Constants;
-import features.spectra.MassCalculator;
-import features.spectra.SpectrumComparison;
+import featurescalc.spectra.MassCalculator;
+import featurescalc.spectra.SpectrumComparison;
 
 import java.io.IOException;
 import java.net.URISyntaxException;

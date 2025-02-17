@@ -20,7 +20,7 @@ package modelcallers;
 import allconstants.Constants;
 import com.google.gson.Gson;
 import com.google.gson.stream.JsonReader;
-import features.spectra.MassCalculator;
+import featurescalc.spectra.MassCalculator;
 import koinaclasses.KoinaTask;
 import org.knowm.xchart.XYChart;
 import org.knowm.xchart.XYChartBuilder;

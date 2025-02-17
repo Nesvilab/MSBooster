@@ -15,15 +15,15 @@
  * along with MSBooster. If not, see <https://www.gnu.org/licenses/>.
  */
 
-package mainsteps;
+package Features;
 
 import allconstants.Constants;
 import com.google.common.collect.Range;
 import com.google.common.collect.RangeMap;
 import com.google.common.collect.TreeRangeMap;
-import features.FeatureCalculator;
-import features.rtandim.IMFunctions;
-import features.spectra.SpectrumComparison;
+import featurescalc.FeatureCalculator;
+import featurescalc.rtandim.IMFunctions;
+import featurescalc.spectra.SpectrumComparison;
 import figures.CalibrationFigure;
 import figures.IMCalibrationFigure;
 import figures.RTCalibrationFigure;

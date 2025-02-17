@@ -9,7 +9,7 @@ broken into 4 steps:
 predictors' input files
 2. Calling the prediction model(s) and saving the output
 3. Feature calculation
-4. Addition of new features to the search results file
+4. Addition of new featurescalc to the search results file
 
 MSBooster is compatible with many types of database searches, including HLA immunopeptidomics, DDA and
 DIA, and single cell proteomics. It is incorporated into [FragPipe](https://fragpipe.nesvilab.org/) 
@@ -40,7 +40,7 @@ MSBooster is equipped to handle multiple input file formats and models:
 ### In FragPipe
 MSBooster can be run in Windows and Linux systems. If using FragPipe, no other installation steps are
 needed besides installing FragPipe. MSBooster is located in the "Validation" tab. Choose to enable 
-retention time features with "Predict RT" and MS/MS spectral features with "Predict spectra". Please refer to the 
+retention time featurescalc with "Predict RT" and MS/MS spectral featurescalc with "Predict spectra". Please refer to the 
 [FragPipe](https://fragpipe.nesvilab.org/) documentation for how to run an analysis.
 ![Alt text](README_imgs/fragpipe_koina_interface.png)
 
@@ -88,7 +88,7 @@ update will be printed every 10%.
 to 1, but you can increase this to specify how many smaller files the DIA-NN input file should be broken up into. Each
 file will then be predicted sequentially, easy the memory burden
   <li><code>plotExtension (String)</code>: what file format plots should be in. png by default, and pdf is also allowed
-  <li><code>features (String)</code>: list of features to be calculated. Case-sensitive, comm-separated without spaces in between.
+  <li><code>featurescalc (String)</code>: list of featurescalc to be calculated. Case-sensitive, comm-separated without spaces in between.
 Default is "predRTrealUnits,unweightedSpectralEntropy,deltaRTLOESS"
 </ul>
 </details>
@@ -103,9 +103,9 @@ location here
   <li><code>spectraModel (String)</code>: which spectral prediction model to use
   <li><code>rtModel (String)</code>: same as spectraModel, but for RT
   <li><code>imModel (String)</code>: same as spectraModel, but for IM
-  <li><code>useSpectra (boolean)</code>: whether to use spectral prediction-based features. Set to true by default
-  <li><code>useRT (boolean)</code>: whether to use RT prediction-based features. Set to true by default
-  <li><code>useIM (boolean)</code>: whether to use IM prediction-based features. Set to false by default
+  <li><code>useSpectra (boolean)</code>: whether to use spectral prediction-based featurescalc. Set to true by default
+  <li><code>useRT (boolean)</code>: whether to use RT prediction-based featurescalc. Set to true by default
+  <li><code>useIM (boolean)</code>: whether to use IM prediction-based featurescalc. Set to false by default
 </ul>
 </details>
 
@@ -148,9 +148,9 @@ is comma-separated with no spaces in between. The masses should be written to th
 </details>
 
 ## Output files
- - .pin file with new features. By default, new pin files will be produced ending in "_edited.pin". The
- default features used are "unweighted_spectral_entropy", "delta_RT_loess", and "pred_RT_real_units". If ion mobility
- features are enabled, "delta_IM_loess" and "ion_mobility" will also be included
+ - .pin file with new featurescalc. By default, new pin files will be produced ending in "_edited.pin". The
+ default featurescalc used are "unweighted_spectral_entropy", "delta_RT_loess", and "pred_RT_real_units". If ion mobility
+ featurescalc are enabled, "delta_IM_loess" and "ion_mobility" will also be included
  - spectraRT.tsv and spectraRT_full.tsv: input files for DIA-NN prediction model
  - spectraRT.predicted.bin: a binary file with predictions from DIA-NN to be used by MSBooster for 
 feature calculation. If using FragPipe-PDV, these files are used to generate mirror plots of experimental
@@ -169,10 +169,10 @@ predictions.
       will be learned for each charge state. The figure below is an example for charge 2 precursors
     ![Alt text](README_imgs/im_calibration_charge2.png?raw=true)
     - score_histograms: overlayed histograms of all target and decoy PSMs for each pin file. Some 
-    features are plotted here on a log scale for better visualization of the bimodal distribution of
+    featurescalc are plotted here on a log scale for better visualization of the bimodal distribution of
     true and false positives, but the original value is what is used in the pin files, not the log-scaled
     version. Shown here are histograms for the unweighted spectral entropy and delta RT scores, but similar ones are
-    produced for all features
+    produced for all featurescalc
     ![Alt text](README_imgs/entropy_hist.png?raw=true)
     ![Alt text](README_imgs/delta_RT_loess_hist.png?raw=true)
 
@@ -181,7 +181,7 @@ predictions.
 - [Reading in predictions from any model via MGF files](ReadMgfPredictions.md) 
 
 ## TODO
-- Documentation on all allowed features and how to QC them with graphical output
+- Documentation on all allowed featurescalc and how to QC them with graphical output
     
 ## How to cite
 Please cite the following when using MSBooster: https://www.nature.com/articles/s41467-023-40129-9 

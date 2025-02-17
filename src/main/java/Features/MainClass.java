@@ -15,11 +15,11 @@
  * along with MSBooster. If not, see <https://www.gnu.org/licenses/>.
  */
 
-package mainsteps;
+package Features;
 
 import allconstants.Constants;
 import allconstants.LowercaseModelMapper;
-import features.spectra.MassCalculator;
+import featurescalc.spectra.MassCalculator;
 import koinaclasses.KoinaMethods;
 import koinaclasses.NCEcalibrator;
 import kotlin.jvm.functions.Function1;
@@ -63,7 +63,7 @@ import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.stream.Collectors;
 
-import static features.rtandim.LoessUtilities.gridSearchCV;
+import static featurescalc.rtandim.LoessUtilities.gridSearchCV;
 import static peptideptmformatting.PTMhandler.tmtMasses;
 import static utils.Print.*;
 
@@ -72,7 +72,7 @@ public class MainClass {
     public static ScheduledThreadPoolExecutor executorService;
     public static void main(String[] args) throws Exception {
         Locale.setDefault(Locale.US);
-        printInfo("MSBooster v1.2.70");
+        printInfo("MSBooster vTMTpro_beta_1.2.70");
 
         try {
             //accept command line inputs

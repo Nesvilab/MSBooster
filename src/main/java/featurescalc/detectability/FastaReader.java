@@ -15,10 +15,10 @@
  * along with MSBooster. If not, see <https://www.gnu.org/licenses/>.
  */
 
-package features.detectability;
+package featurescalc.detectability;
 
 import allconstants.Constants;
-import features.spectra.MassCalculator;
+import featurescalc.spectra.MassCalculator;
 
 import java.io.BufferedReader;
 import java.io.FileNotFoundException;

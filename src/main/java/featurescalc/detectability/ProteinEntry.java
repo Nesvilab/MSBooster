@@ -15,10 +15,17 @@
  * along with MSBooster. If not, see <https://www.gnu.org/licenses/>.
  */
 
-package features.rtandim
+package featurescalc.detectability;
 
-class LinearEquation(private val m: Double, private val b: Double) {
-    operator fun invoke(): (Double) -> Double {
-        return { x -> m * x + b }
+import java.util.ArrayList;
+
+public class ProteinEntry {
+    public ArrayList<String> peptides = new ArrayList<>();
+    float[] detects;
+    float[] presence;
+    float[] spectralCounts;
+
+    public ProteinEntry(){
+
     }
 }

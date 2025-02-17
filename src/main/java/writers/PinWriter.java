@@ -21,8 +21,8 @@ import static allconstants.Constants.camelToUnderscore;
 import static utils.Print.printInfo;
 
 import allconstants.Constants;
-import mainsteps.PeptideObj;
-import mainsteps.PercolatorFormatter;
+import Features.PeptideObj;
+import Features.PercolatorFormatter;
 import readers.datareaders.MzmlReader;
 import readers.datareaders.PinReader;
 import com.univocity.parsers.tsv.TsvWriter;

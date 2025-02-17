@@ -18,7 +18,7 @@
 package readers;
 
 import allconstants.Constants;
-import mainsteps.MzmlScanNumber;
+import Features.MzmlScanNumber;
 import peptideptmformatting.PeptideFormatter;
 import predictions.PredictionEntry;
 import predictions.PredictionEntryHashMap;

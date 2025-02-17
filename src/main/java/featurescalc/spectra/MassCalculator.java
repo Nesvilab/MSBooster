@@ -15,7 +15,7 @@
  * along with MSBooster. If not, see <https://www.gnu.org/licenses/>.
  */
 
-package features.spectra;
+package featurescalc.spectra;
 
 import allconstants.Constants;
 import predictions.FragmentAnnotationParser;

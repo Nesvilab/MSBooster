@@ -18,13 +18,13 @@
 package readers.datareaders;
 
 import allconstants.Constants;
-import features.rtandim.IMFunctions;
-import features.rtandim.LinearEquation;
-import features.rtandim.LoessUtilities;
-import features.rtandim.RTFunctions;
+import featurescalc.rtandim.IMFunctions;
+import featurescalc.rtandim.LinearEquation;
+import featurescalc.rtandim.LoessUtilities;
+import featurescalc.rtandim.RTFunctions;
 import kotlin.jvm.functions.Function1;
-import mainsteps.MzmlScanNumber;
-import mainsteps.PeptideObj;
+import Features.MzmlScanNumber;
+import Features.PeptideObj;
 import peptideptmformatting.PeptideFormatter;
 import predictions.PredictionEntryHashMap;
 import readers.MgfFileReader;
@@ -59,8 +59,8 @@ import java.util.concurrent.Future;
 
 import static allconstants.Constants.minLinearRegressionSize;
 import static allconstants.Constants.minLoessRegressionSize;
-import static features.rtandim.LoessUtilities.LOESS;
-import static features.rtandim.LoessUtilities.gridSearchCV;
+import static featurescalc.rtandim.LoessUtilities.LOESS;
+import static featurescalc.rtandim.LoessUtilities.gridSearchCV;
 import static utils.Print.printInfo;
 import static utils.StatMethods.*;
 

@@ -230,7 +230,7 @@ Iteration 1...2...3...4...5...
 2024-07-24 13:10:40 [INFO] - Finished
 2024-07-24 13:10:41 [INFO] - Done generating DIA-NN predictions
 2024-07-24 13:10:41 [INFO] - Model running took 7236 milliseconds
-2024-07-24 13:10:41 [INFO] - Generating edited pin with following features: [predRTrealUnits, unweightedSpectralEntropy, deltaRTLOESS]
+2024-07-24 13:10:41 [INFO] - Generating edited pin with following featurescalc: [predRTrealUnits, unweightedSpectralEntropy, deltaRTLOESS]
 2024-07-24 13:10:41 [INFO] - Loading predicted spectra
 2024-07-24 13:10:41 [INFO] - Loading predicted retention times
 2024-07-24 13:10:42 [INFO] - Merging libraries

@@ -6,7 +6,7 @@
 
     <groupId>org.example</groupId>
     <artifactId>MSBooster</artifactId>
-    <version>1.2.70</version>
+    <version>TMTpro_beta_1.2.70</version>
 
     <properties>
         <maven.compiler.source>11</maven.compiler.source>
@@ -189,7 +189,7 @@
                             <transformers>
                                 <transformer implementation="org.apache.maven.plugins.shade.resource.ServicesResourceTransformer"/>
                                 <transformer implementation="org.apache.maven.plugins.shade.resource.ManifestResourceTransformer">
-                                    <mainClass>mainsteps.MainClass</mainClass>
+                                    <mainClass>Features.MainClass</mainClass>
                                 </transformer>
                             </transformers>
                         </configuration>

@@ -15,7 +15,7 @@
  * along with MSBooster. If not, see <https://www.gnu.org/licenses/>.
  */
 
-package features.spectra;
+package featurescalc.spectra;
 
 import static utils.NumericUtils.floatToDouble;
 import static utils.Print.printError;
@@ -28,7 +28,7 @@ import java.util.LinkedHashSet;
 import java.util.Random;
 
 import allconstants.Constants;
-import mainsteps.PeptideObj;
+import Features.PeptideObj;
 import org.apache.commons.math3.distribution.HypergeometricDistribution;
 import org.apache.commons.math3.random.Well19937c;
 import org.apache.commons.math3.stat.correlation.PearsonsCorrelation;

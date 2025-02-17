@@ -17,8 +17,8 @@
 
 #PercolatorFormatter
 if (featuresList.contains("detectability")) {
-            int idx = ArrayUtils.indexOf(features, "detectability");
-            features = ArrayUtils.remove(features, idx);
+            int idx = ArrayUtils.indexOf(featurescalc, "detectability");
+            featurescalc = ArrayUtils.remove(featurescalc, idx);
         }
 
         //create detectMap to store detectabilities for base sequence peptides
@@ -128,7 +128,7 @@ if (featuresList.contains("detectability")) {
 #Main
 try {
                 if (Constants.useDetect) {
-                    printInfo("Detect features not fully tested");
+                    printInfo("Detect featurescalc not fully tested");
                     Set<String> intersection = new HashSet<>(featureLL);
                     intersection.retainAll(Constants.detectFeatures);
                     if (intersection.size() == 0) {
@@ -145,7 +145,7 @@ try {
             if (featureLL.contains("detectFractionGreater") || featureLL.contains("detectSubtractMissing") ||
                     featureLL.contains("detectProtSpearmanDiff")) {
                 if (Constants.fasta == null) {
-                    throw new IllegalArgumentException("Using current combination of features, " +
+                    throw new IllegalArgumentException("Using current combination of featurescalc, " +
                             "detectFractionGreater is calculated and needs a fasta provided using " +
                             "--fasta <fasta file location>");
                 }

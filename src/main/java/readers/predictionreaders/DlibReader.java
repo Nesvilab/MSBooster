@@ -18,8 +18,8 @@
 package readers.predictionreaders;
 
 import allconstants.Constants;
-import features.spectra.MassCalculator;
-import mainsteps.PinMzmlMatcher;
+import featurescalc.spectra.MassCalculator;
+import Features.PinMzmlMatcher;
 import peptideptmformatting.PTMhandler;
 import peptideptmformatting.PeptideFormatter;
 import predictions.PredictionEntry;

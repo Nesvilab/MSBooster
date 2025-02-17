@@ -19,8 +19,8 @@ package writers;
 
 import allconstants.Constants;
 import jakarta.xml.bind.JAXBException;
-import mainsteps.MainClass;
-import mainsteps.PinMzmlMatcher;
+import Features.MainClass;
+import Features.PinMzmlMatcher;
 import peptideptmformatting.PeptideFormatter;
 import peptideptmformatting.PeptideSkipper;
 import readers.datareaders.MzmlReader;

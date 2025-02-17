@@ -15,7 +15,7 @@
  * along with MSBooster. If not, see <https://www.gnu.org/licenses/>.
  */
 
-package mainsteps;
+package Features;
 
 import allconstants.Constants;
 import readers.datareaders.MzmlReader;
@@ -35,7 +35,7 @@ import java.util.List;
 import java.util.concurrent.ExecutionException;
 import java.util.stream.Collectors;
 
-import static mainsteps.MainClass.executorService;
+import static Features.MainClass.executorService;
 import static utils.Print.printError;
 import static utils.Print.printInfo;
 

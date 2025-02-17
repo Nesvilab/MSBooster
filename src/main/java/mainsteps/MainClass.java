@@ -1458,12 +1458,29 @@ public class MainClass {
 
             //delete pred files
             if (Constants.deletePreds) {
+                //DIA-NN input files
                 File predFile = new File(Constants.outputDirectory + File.separator + "spectraRT.tsv");
                 predFile.delete();
                 predFile = new File(Constants.outputDirectory + File.separator + "spectraRT_full.tsv");
                 predFile.delete();
-                predFile = new File(Constants.outputDirectory + File.separator + "spectraRT.predicted.bin");
-                predFile.delete();
+
+                //prediction files
+                if (Constants.spectraPredFile != null) {
+                    predFile = new File(Constants.spectraPredFile);
+                    predFile.delete();
+                }
+                if (Constants.RTPredFile != null) {
+                    predFile = new File(Constants.RTPredFile);
+                    predFile.delete();
+                }
+                if (Constants.IMPredFile != null) {
+                    predFile = new File(Constants.IMPredFile);
+                    predFile.delete();
+                }
+                if (Constants.auxSpectraPredFile != null) {
+                    predFile = new File(Constants.auxSpectraPredFile);
+                    predFile.delete();
+                }
             }
             //clean directories
             MyFileUtils.deleteWholeDirectory(Constants.outputDirectory + File.separator + "best_model");

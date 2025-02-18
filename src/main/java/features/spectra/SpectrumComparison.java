@@ -343,7 +343,7 @@ public class SpectrumComparison {
     }
 
     private float[][] filterFragments(int top) {
-        printError("Reimplement filterFragments!");
+        printError("Reimplement preprocessFragments!");
         System.exit(1);
 //        top = Math.min(top, sortedIndicesList.size());
 //

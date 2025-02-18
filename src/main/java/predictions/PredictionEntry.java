@@ -40,6 +40,7 @@ public class PredictionEntry {
     public ArrayList<Integer> times = new ArrayList<>();
     public double precursorMz = 0d;
     //public boolean filtered = false; //work with this if filtering step is unnecessarily run multiple times
+    private static final float maxIntensity = 1f;
 
     public PredictionEntry() {}
 
@@ -103,7 +104,7 @@ public class PredictionEntry {
         setFullAnnotations(fullAnnotations, sortedIndices);
     }
 
-    public void filterFragments(HashSet<String> fragmentIonTypesSet) {
+    public void preprocessFragments(HashSet<String> fragmentIonTypesSet) {
         if (intensities.length != 0) {
             mergeCloseMzs();
 
@@ -124,15 +125,15 @@ public class PredictionEntry {
             //above intensity threshold
             if (Constants.useBasePeak && Constants.percentBasePeak < 100) {
                 //get max intensity
-                float maxIntensity = 0f;
+                float maxInt = 0f;
                 for (float f : tmpInts) {
-                    if (f > maxIntensity) {
-                        maxIntensity = f;
+                    if (f > maxInt) {
+                        maxInt = f;
                     }
                 }
 
                 //make cutoff by percentage
-                float cutoff = Constants.percentBasePeak / 100f * maxIntensity;
+                float cutoff = Constants.percentBasePeak / 100f * maxInt;
                 for (int i = 0; i < tmpInts.length; i++) {
                     if (tmpInts[i] < cutoff && tmpInts[i] != 0f) {
                         tmpInts[i] = 0f;
@@ -237,6 +238,19 @@ public class PredictionEntry {
             }
             if (isotopes.length > 0) {
                 isotopes = pisotopes;
+            }
+
+            //set max intensity as 1
+            float maxInt = 0f;
+            for (int i = 0; i < intensities.length; i++) {
+                if (intensities[i] > maxInt) {
+                    maxInt = intensities[i];
+                }
+            }
+            if (maxInt != maxIntensity) {
+                for (int i = 0; i < intensities.length; i++) {
+                    intensities[i] /= maxInt;
+                }
             }
         }
     }

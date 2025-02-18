@@ -37,7 +37,7 @@ import java.util.concurrent.Future;
 import static utils.Print.printError;
 
 public class PredictionEntryHashMap extends ConcurrentHashMap<String, PredictionEntry> {
-    public void filterFragments(ExecutorService executorService, HashSet<String> primaryTypes, HashSet<String> auxTypes)
+    public void preprocessPredictedSpectra(ExecutorService executorService, HashSet<String> primaryTypes, HashSet<String> auxTypes)
             throws ExecutionException, InterruptedException {
         String[] peptides = new String[this.size()];
         PredictionEntry[] predictions = new PredictionEntry[this.size()];
@@ -55,9 +55,9 @@ public class PredictionEntryHashMap extends ConcurrentHashMap<String, Prediction
             futureList.add(executorService.submit(() -> {
                 for (int j = mt.indices[finalI]; j < mt.indices[finalI + 1]; j++) {
                     PredictionEntry pe = predictions[j];
-                    pe.filterFragments(primaryTypes);
+                    pe.preprocessFragments(primaryTypes);
                     if (pe.auxSpectra != null) {
-                        pe.auxSpectra.filterFragments(auxTypes);
+                        pe.auxSpectra.preprocessFragments(auxTypes);
                     }
                     this.put(peptides[j], pe);
                 }

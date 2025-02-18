@@ -165,7 +165,7 @@ public class KoinaMethods {
                                           HashMap<String, LinkedList<PeptideFormatter>> peptides)
             throws FileParsingException, ExecutionException, InterruptedException, IOException, URISyntaxException {
         //pass empty hashsets since no fragment filtering at this step
-        allPreds.filterFragments(new ScheduledThreadPoolExecutor(Constants.numThreads), new HashSet<>(), new HashSet<>());
+        allPreds.preprocessPredictedSpectra(new ScheduledThreadPoolExecutor(Constants.numThreads), new HashSet<>(), new HashSet<>());
 
         int arrayLength = 0;
         for (LinkedList<Integer> scanNum : scanNums.values()) {

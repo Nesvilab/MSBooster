@@ -1052,7 +1052,7 @@ public class MainClass {
                     if (bestModel.contains("&")) { //model that uses NCE
                         String[] modelSplit = bestModel.split("&");
                         Constants.spectraModel = modelSplit[0];
-                        NCEcalibrator.plotNCEchart(similarities.get(bestModel));
+                        NCEcalibrator.plotNCEchart(Constants.spectraModel, similarities.get(bestModel));
                     } else {
                         Constants.spectraModel = bestModel;
                     }
@@ -1342,7 +1342,7 @@ public class MainClass {
 
                                 String bestNCE = String.valueOf((int) modelInfo[2]);
                                 NceConstants.calibratedModels.put(currentModel, bestNCE);
-                                NCEcalibrator.plotNCEchart((TreeMap<Integer, ArrayList<Double>>) modelInfo[0]);
+                                NCEcalibrator.plotNCEchart(currentModel, (TreeMap<Integer, ArrayList<Double>>) modelInfo[0]);
                             }
 
                             PeptideFileCreator.createPeptideFile(pmMatcher,
@@ -1426,7 +1426,7 @@ public class MainClass {
                 }
 
                 //filter out fragment ion types not considered by fragmentation type before writing predictions
-                koinaPreds.filterFragments(executorService,
+                koinaPreds.preprocessPredictedSpectra(executorService,
                         FragmentIonConstants.fragmentIonHierarchySet, FragmentIonConstants.fragmentIonHierarchySet);
 
                 StringBuilder koinaPredFilePath = new StringBuilder("koina.mgf");

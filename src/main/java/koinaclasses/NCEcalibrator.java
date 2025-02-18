@@ -136,7 +136,7 @@ public class NCEcalibrator {
         //bestNCEint is NCE at which highest median similarity is achieved
     }
 
-    public static void plotNCEchart(TreeMap<Integer, ArrayList<Double>> similarities) {
+    public static void plotNCEchart(String currentModel, TreeMap<Integer, ArrayList<Double>> similarities) {
         try {
             if (!new File(figureDirectory).exists()) {
                 new File(figureDirectory).mkdirs();
@@ -160,7 +160,8 @@ public class NCEcalibrator {
                 }
                 int endNCE = currentNCE - 1;
                 added = 0;
-                plot(chart, figureDirectory + File.separator + "NCE_calibration" + startNCE + "to" + endNCE);
+                plot(chart, figureDirectory + File.separator + "NCE_calibration_" +
+                        currentModel + startNCE + "to" + endNCE);
             }
         } catch (IOException e) {
             e.printStackTrace();

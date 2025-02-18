@@ -104,6 +104,7 @@ public class FragmentIonConstants implements ConstantsInterface {
         }
         removeIgnoredFragments();
         fragmentIonHierarchySet = new HashSet<>(Arrays.asList(fragmentIonHierarchy));
+        auxFragmentIonTypes.addAll(fragmentIonHierarchySet);
     }
     public static Set<String> makeIgnoredFragmentIonTypes() {
         Set<String> ignoredFragmentIonTypesSet = new HashSet<>();
@@ -164,11 +165,7 @@ public class FragmentIonConstants implements ConstantsInterface {
     public static void setPrimaryAndAuxFragmentIonTypes(String[] primaryTypes) {
         List<String> primaryTypesList = Arrays.asList(primaryTypes);
         primaryFragmentIonTypes.addAll(primaryTypesList);
-        if (auxFragmentIonTypes.isEmpty()) {
-            auxFragmentIonTypes.addAll(fragmentIonHierarchySet);
-        } else {
-            primaryTypesList.forEach(auxFragmentIonTypes::remove);
-        }
+        primaryTypesList.forEach(auxFragmentIonTypes::remove);
     }
 
     //to be used by possible unispec mzs method

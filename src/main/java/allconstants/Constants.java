@@ -23,7 +23,6 @@ import utils.MyFileUtils;
 
 import java.io.File;
 import java.io.IOException;
-import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.concurrent.ConcurrentHashMap;
@@ -176,8 +175,9 @@ public class Constants implements ConstantsInterface {
     public static Float ppmTolerance = 20f; //ppm tolerance of MS2 scans
     public static Float lowResppmTolerance = 300f;
     public static Float highResppmTolerance = 20f;
-    public static Boolean matchWithDaltons = false;
-    public static Boolean matchWithDaltonsAux = false;
+    public static Boolean matchWithDaltons = null;
+    public static Boolean matchWithDaltonsAux = null;
+    public static Boolean matchWithDaltonsDefault = null; //use during best model search
     public static Float DaTolerance = 0.05f;
     public static Boolean hasITMS = false;
 

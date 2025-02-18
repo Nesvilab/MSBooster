@@ -363,6 +363,17 @@ public class MainClass {
             Constants.individualSpectralSimilaritiesFeatures = Constants.makeIndividualSpectralSimilarities();
             Constants.intensitiesDifferenceFeatures = Constants.makeintensitiesDifference();
 
+            //if best model search, initially set models to nothing
+            if (Constants.findBestSpectraModel) {
+                Constants.spectraModel = "";
+            }
+            if (Constants.findBestRtModel) {
+                Constants.rtModel = "";
+            }
+            if (Constants.findBestImModel) {
+                Constants.imModel = "";
+            }
+
             //make models properly uppercased, or throw error if not right
             HashMap<String, String> modelMapper = LowercaseModelMapper.lowercaseToModel;
             if (modelMapper.containsKey(Constants.spectraModel.toLowerCase())) {
@@ -388,13 +399,6 @@ public class MainClass {
             } else {
                 printError("No auxiliary spectra model called " + Constants.auxSpectraModel + ". Exiting.");
                 System.exit(0);
-            }
-
-            if (Constants.spectraModel.equals("PredFull")) {
-                Constants.matchWithDaltons = true; //they report predictions in bins
-            }
-            if (Constants.auxSpectraModel.equals("PredFull")) {
-                Constants.matchWithDaltonsAux = true;
             }
 
             //needed for nce calibration and best model search
@@ -868,6 +872,19 @@ public class MainClass {
                     HashMap<String, ArrayList<Double>> datapointsDecoys = new HashMap<>();
                     for (String model : consideredModels) {
                         Constants.spectraModel = model;
+
+                        //set matching with Da or not
+                        //if matchWithDaltons are true, also accept that (e.g. from reading it from fragger.params)
+                        if (model.equalsIgnoreCase("predfull")) {
+                            Constants.matchWithDaltonsDefault = true;
+                        } else {
+                            if (Constants.matchWithDaltons == null) {
+                                Constants.matchWithDaltonsDefault = false;
+                            } else {
+                                Constants.matchWithDaltonsDefault = Constants.matchWithDaltons;
+                            }
+                        }
+
                         MyFileUtils.createWholeDirectory(jsonOutFolder + File.separator + model);
                         if (model.equals("DIA-NN")) { //mode for DIA-NN
                             PeptideFileCreator.createPartialFile(
@@ -941,7 +958,7 @@ public class MainClass {
 //                                datapointsDecoys.put(model, similarity);
 //                            } catch (Exception e) {}
                         } else { //mode for koina
-                            if (NceConstants.nceModels.contains(model)) {
+                            if (NceConstants.nceModels.contains(model) && NceConstants.calibrateNCE) {
                                 Object[] results = NCEcalibrator.calibrateNCE(model, km,
                                         Constants.outputDirectory + File.separator + "best_model" +
                                                 File.separator + model);
@@ -981,7 +998,7 @@ public class MainClass {
                                     pf.foundUnimods.clear();
                                 }
                                 PredictionEntryHashMap allPreds =
-                                        km.getKoinaPredictions(allHits, model, 30,
+                                        km.getKoinaPredictions(allHits, model, (int) Float.parseFloat(NceConstants.getNCE()),
                                                 jsonOutFolder + File.separator + model,
                                                 jsonOutFolder + File.separator + model + "_full.tsv");
 
@@ -1308,6 +1325,18 @@ public class MainClass {
                         if (Constants.KoinaModels.contains(currentModel)) {
                             if (NceConstants.nceModels.contains(currentModel) && NceConstants.calibrateNCE &&
                                     ! NceConstants.calibratedModels.containsKey(currentModel)) {
+                                //set matching with Da or not
+                                //if matchWithDaltons are true, also accept that (e.g. from reading it from fragger.params)
+                                if (currentModel.equalsIgnoreCase("predfull")) {
+                                    Constants.matchWithDaltonsDefault = true;
+                                } else {
+                                    if (Constants.matchWithDaltons == null) {
+                                        Constants.matchWithDaltonsDefault = false;
+                                    } else {
+                                        Constants.matchWithDaltonsDefault = Constants.matchWithDaltons;
+                                    }
+                                }
+
                                 Object[] modelInfo = NCEcalibrator.calibrateNCE(currentModel, km,
                                         Constants.outputDirectory + File.separator + "NCE_calibration");
 

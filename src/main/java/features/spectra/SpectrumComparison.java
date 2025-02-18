@@ -51,7 +51,6 @@ public class SpectrumComparison {
     float[] sum1PredIntensities;
     float[] allMatchedIntensities;
     public HashMap<String, Double> scores = new HashMap<>();
-    int matchedIons;
     public LinkedHashSet<Integer> matchedIdx = new LinkedHashSet<Integer>();
     private static final PearsonsCorrelation pc = new PearsonsCorrelation();
     private static final SpearmansCorrelation sc = new SpearmansCorrelation();
@@ -92,7 +91,7 @@ public class SpectrumComparison {
                         mzs, ints, fits));
             }
         }
-        //predMZs = null;
+        predMZs = null;
 
         this.pepObj = pepObj;
         if (Constants.features.contains("adjacent") || Constants.features.contains("bestScan")) {
@@ -173,10 +172,14 @@ public class SpectrumComparison {
         boolean[] usePPMs = new boolean[predFragmentIonTypes.length];
         boolean mwd;
         for (int i = 0; i < predFragmentIonTypes.length; i++) {
-            if (FragmentIonConstants.primaryFragmentIonTypes.contains(predFragmentIonTypes[i])) {
-                mwd = Constants.matchWithDaltons;
-            } else { //use aux spectrum model
-                mwd = Constants.matchWithDaltonsAux;
+            if (FragmentIonConstants.primaryFragmentIonTypes.isEmpty()) {
+                mwd = Constants.matchWithDaltonsDefault;
+            } else {
+                if (FragmentIonConstants.primaryFragmentIonTypes.contains(predFragmentIonTypes[i])) {
+                    mwd = Constants.matchWithDaltons;
+                } else { //use aux spectrum model
+                    mwd = Constants.matchWithDaltonsAux;
+                }
             }
             usePPMs[i] = !mwd;
         }
@@ -815,9 +818,9 @@ public class SpectrumComparison {
     }
 
     //top 24
-    public double hypergeometricProbability() throws IOException, URISyntaxException {
+    public double hypergeometricProbability() {
         this.getAllMatchedIntensities();
-        matchedIons = 0;
+        int matchedIons = 0;
         for (float f : allMatchedIntensities) {
             if (f != 0) { //TODO: consider filtering for values above intensity threshold, same as predIntensity filtering
                 matchedIons += 1;
@@ -835,6 +838,10 @@ public class SpectrumComparison {
         if (successes > matchedIons) { //sig fig issue
             successes = matchedIons;
             System.out.println(pepObj.name + " hypergeometric score is being adjusted");
+            if (pepObj.name.equals("SLADIM[15.9949]AKR|2")) {
+                System.out.println(Arrays.toString(matchedIntensities));
+                System.exit(1);
+            }
         }
         return -1 * Math.log10(hgd.upperCumulativeProbability(successes));
     }

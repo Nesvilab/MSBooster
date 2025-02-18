@@ -48,7 +48,6 @@ import java.util.Map;
 import java.util.concurrent.ExecutorService;
 
 import static allconstants.Constants.figureDirectory;
-import static utils.Print.printError;
 import static utils.Print.printInfo;
 
 public class PercolatorFormatter {
@@ -87,6 +86,11 @@ public class PercolatorFormatter {
             for (PredictionEntry pe : predictedSpectra.getPreds().values()) {
                 FragmentIonConstants.setPrimaryAndAuxFragmentIonTypes(pe.fragmentIonTypes); //this can be approximated if too slow
             }
+            if (Constants.spectraModel.equals("PredFull")) {
+                Constants.matchWithDaltons = true; //they report predictions in bins
+            } else if (Constants.matchWithDaltons == null) {
+                Constants.matchWithDaltons = false;
+            }
         }
 
         if (Constants.RTPredFile != null) {
@@ -120,6 +124,11 @@ public class PercolatorFormatter {
                 libraries.add(predictedAuxSpectra);
             }
             allProperties.put("auxSpectra", Constants.auxSpectraPredFile);
+            if (Constants.auxSpectraModel.equals("PredFull")) {
+                Constants.matchWithDaltonsAux = true; //they report predictions in bins
+            } else if (Constants.matchWithDaltonsAux == null) {
+                Constants.matchWithDaltonsAux = false;
+            }
         }
 
         //merging libraries

@@ -116,7 +116,15 @@ public class FragmentAnnotationParser {
                 String[] annotationSplit = annotation.split("/");
                 internalSequence = annotationSplit[1];
                 internalStartPosition = Integer.parseInt(annotationSplit[2]);
-                internalExtent = internalSequence.length();
+
+                int plusIndex = internalSequence.indexOf('+');
+                int minusIndex = internalSequence.indexOf('-');
+                int firstIndex = (plusIndex == -1) ? minusIndex : (minusIndex == -1) ? plusIndex : Math.min(plusIndex, minusIndex);
+                if (firstIndex == -1) {
+                    internalExtent = internalSequence.length();
+                } else {
+                    internalExtent = firstIndex;
+                }
             } else { //text based fragment dictionary file
                 String internalString = annotation.substring(3);
                 String[] internalStringSplit = internalString.split(">");

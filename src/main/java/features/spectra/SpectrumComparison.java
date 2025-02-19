@@ -32,12 +32,14 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashSet;
+import java.util.Objects;
 import java.util.Random;
 import java.util.TreeSet;
 
 import static allconstants.FragmentIonConstants.fragmentGroups;
 import static utils.NumericUtils.floatToDouble;
 import static utils.Print.printError;
+import static utils.Print.printInfo;
 
 //TODO: also square root intensities? Squaring intensities may help for single cell data
 public class SpectrumComparison {
@@ -819,7 +821,20 @@ public class SpectrumComparison {
 
     //top 24
     public double hypergeometricProbability() {
+        if (predIntensities.length <= 1) {
+            return 0;
+        }
         this.getAllMatchedIntensities();
+
+        if (allMatchedIntensities.length == 0) {
+            HashSet<String> ftypes = new HashSet<>(Arrays.asList(predFragmentIonTypes));
+            if (ftypes.size() == 1 && ftypes.contains("unknown")) {
+                return 0; //predictions only include unannotated fragments
+            } else {
+                printInfo(pepObj.name + " contains only fragment ion types " + ftypes);
+            }
+        }
+
         int matchedIons = 0;
         for (float f : allMatchedIntensities) {
             if (f != 0) { //TODO: consider filtering for values above intensity threshold, same as predIntensity filtering
@@ -827,28 +842,34 @@ public class SpectrumComparison {
             }
         }
 
-        HypergeometricDistribution hgd = new HypergeometricDistribution(rng,
-                allMatchedIntensities.length, matchedIons, predIntensities.length);
         int successes = 0;
-        for (float f : matchedIntensities) {
-            if (f != 0) {
-                successes += 1;
+        int possible = 0; //number of predicted fragments that aren't unknown
+        for (int i = 0; i < matchedIntensities.length; i++) {
+            if (!Objects.equals(predFragmentIonTypes[i], "unknown")) {
+                possible++;
+                float f = matchedIntensities[i];
+                if (f != 0) {
+                    successes++;
+                }
             }
         }
         if (successes > matchedIons) { //sig fig issue
             successes = matchedIons;
-            System.out.println(pepObj.name + " hypergeometric score is being adjusted");
-            if (pepObj.name.equals("SLADIM[15.9949]AKR|2")) {
-                System.out.println(Arrays.toString(matchedIntensities));
-                System.exit(1);
-            }
         }
+
+        HypergeometricDistribution hgd = new HypergeometricDistribution(rng,
+                allMatchedIntensities.length, matchedIons, possible);
+
         return -1 * Math.log10(hgd.upperCumulativeProbability(successes));
     }
 
     //top 12
     //biased towards longer peptides?
-    public double intersection() throws IOException, URISyntaxException {
+    public double intersection() {
+        if (predIntensities.length <= 1) {
+            return 0;
+        }
+
         //calculate overlap of top predicted mzs and top matched mzs
         HashSet<Float> predSet = new HashSet<>();
         for (float f : matchedIntensities) {

@@ -163,6 +163,7 @@ public class JSONWriter {
     public String write(boolean createDir, String jsonOutFolder, ExecutorService executorService)
             throws IOException, ExecutionException, InterruptedException {
         if (createDir) {
+            MyFileUtils.deleteWholeDirectory(jsonOutFolder);
             MyFileUtils.createWholeDirectory(jsonOutFolder);
         } else {
             if (! Files.exists(Paths.get(jsonOutFolder))) {

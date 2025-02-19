@@ -17,14 +17,11 @@
 
 package peptideptmformatting;
 
-import static peptideptmformatting.PTMhandler.tmtUnimod;
-import static peptideptmformatting.PTMhandler.unimodOboToModMass;
-import static peptideptmformatting.PTMhandler.unimodToModMass;
-import static peptideptmformatting.PTMhandler.unimodToModMassAlphaPeptDeep;
-import static utils.Print.printError;
-
 import java.util.ArrayList;
 import java.util.HashSet;
+
+import static peptideptmformatting.PTMhandler.*;
+import static utils.Print.printError;
 
 //lots of different ways to format peptide string
 public class PeptideFormatter {
@@ -50,6 +47,7 @@ public class PeptideFormatter {
     String charge;
 
     public HashSet<String> foundUnimods = new HashSet<>(); //collection of previously used unimod codes
+    //TODO: should this be shared amongst all PFs? Can store in a thread-safe set
 
     public boolean cterm = false;
 

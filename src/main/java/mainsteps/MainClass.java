@@ -1340,6 +1340,9 @@ public class MainClass {
 
                                 Object[] modelInfo = NCEcalibrator.calibrateNCE(currentModel, km,
                                         Constants.outputDirectory + File.separator + "NCE_calibration");
+                                for (PeptideFormatter pf : km.peptideArraylist) {
+                                    pf.foundUnimods.clear();
+                                }
 
                                 String bestNCE = String.valueOf((int) modelInfo[2]);
                                 NceConstants.calibratedModels.put(currentModel, bestNCE);

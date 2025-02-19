@@ -1313,6 +1313,7 @@ public class MainClass {
             }
 
             //generate input files for prediction models
+            MyFileUtils.deleteWholeDirectory(Constants.outputDirectory + File.separator + "NCE_calibration");
             if (createSpectraRTPredFile || Constants.createPredFileOnly) {
                 //createfull is needed for everything
                 PeptideFileCreator.createPeptideFile(pmMatcher,

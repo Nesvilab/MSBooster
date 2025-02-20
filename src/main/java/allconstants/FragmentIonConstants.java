@@ -84,6 +84,7 @@ public class FragmentIonConstants implements ConstantsInterface {
 //                Constants.topFragments = 20;
 //            }
 
+    //TODO: allow defining fragment ion hierarchy
     public static void makeFragmentIonHierarchy() {
         switch (Constants.FragmentationType) {
             case "HCD":
@@ -195,4 +196,6 @@ public class FragmentIonConstants implements ConstantsInterface {
 
         return faps;
     }
+
+    public static Boolean annotatePredfullLikeUnispec = false;
 }

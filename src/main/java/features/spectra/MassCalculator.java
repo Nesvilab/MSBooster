@@ -563,7 +563,28 @@ public class MassCalculator {
                     printError(fap.fragmentIonType + " is not supported. Exiting");
                     System.exit(1);
             }
-            addToFragmentIons(mz, new String[]{fap.fullAnnotation, fap.fragmentIonType}, returnedMzs);
+
+            //need to change full annotation for internal ions
+            //needs to be done separately for each masscalculator
+            if (fap.fragmentIonType.contains("int")) {
+                String sequence = internalPeptides[peptide.length() - fap.internalStartPosition + 1 - internalPeptideConstant]
+                        .peptide.substring(0, fap.internalExtent);
+
+                int plusIndex = fap.fullAnnotation.indexOf('+');
+                int minusIndex = fap.fullAnnotation.indexOf('-');
+
+                // Find the first occurrence of either
+                int firstIndex = (plusIndex == -1) ? minusIndex : (minusIndex == -1) ? plusIndex : Math.min(plusIndex, minusIndex);
+                String finalAnnotation;
+                if (firstIndex == -1) {
+                    finalAnnotation = "Int/" + sequence + "/" + fap.internalStartPosition;
+                } else {
+                    finalAnnotation = "Int/" + sequence + fap.fullAnnotation.substring(firstIndex) + "/" + fap.internalStartPosition;
+                }
+                addToFragmentIons(mz, new String[]{finalAnnotation, fap.fragmentIonType}, returnedMzs);
+            } else {
+                addToFragmentIons(mz, new String[]{fap.fullAnnotation, fap.fragmentIonType}, returnedMzs);
+            }
         }
 
         return returnedMzs;
@@ -664,13 +685,13 @@ public class MassCalculator {
     //usually default is sufficient, just to calculate y and b m/z values
     public String[][] annotateMZs(float[] mzs,
                                   String mode,
-                                  boolean daltonTolerance) throws IOException, URISyntaxException {
+                                  boolean daltonTolerance) {
         SortedMap<Float, String[]> mzToAnnotationMap = null;
         if (fragmentIons.isEmpty()) {
-            if (mode.equals("default")) {
-                possibleFragmentIons("");
-            } else if (mode.equals("unispec")) {
+            if (mode.equals("unispec") || FragmentIonConstants.annotatePredfullLikeUnispec) {
                 possibleUnispecMzs("");
+            } else if (mode.equals("default")) {
+                possibleFragmentIons("");
             } else {
                 printError(mode + " not supported for mz annotation. Exiting");
                 System.exit(1);
@@ -838,7 +859,8 @@ public class MassCalculator {
 
     public static void main(String[] args) throws IOException, URISyntaxException {
         FragmentIonConstants.fragmentIonHierarchySet = new HashSet<>();
-        FragmentIonConstants.fragmentIonHierarchySet.add("imm");
+        FragmentIonConstants.fragmentIonHierarchySet.add("int");
+        FragmentIonConstants.fragmentIonHierarchySet.add("int-NL");
         MassCalculator mc = new MassCalculator("APAGVLPELM[15.9949]", 2);
         mc.possibleUnispecMzs("");
         System.out.println(mc.annotationMasses);

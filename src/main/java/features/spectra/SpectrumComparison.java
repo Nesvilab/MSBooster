@@ -281,7 +281,8 @@ public class SpectrumComparison {
                         (FragmentIonConstants.primaryFragmentIonTypes.contains(fiontype) &&
                                 Constants.spectraModel.equalsIgnoreCase("unispec")) ||
                                 (!FragmentIonConstants.primaryFragmentIonTypes.contains(fiontype) &&
-                                        Constants.auxSpectraModel.equalsIgnoreCase("unispec"))
+                                        Constants.auxSpectraModel.equalsIgnoreCase("unispec")) ||
+                                FragmentIonConstants.annotatePredfullLikeUnispec
                 ) {
                     ArrayList<Float> mzsList = mc.possibleUnispecMzs(fiontype);
                     mzsSet.addAll(mzsList);

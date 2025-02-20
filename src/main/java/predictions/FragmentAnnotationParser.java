@@ -13,7 +13,7 @@ import static utils.NumericUtils.isUppercaseOrDigit;
 //designed to handle output from unispec koina prediction and read in dictionary of unispec allowed fragments
 //TODO: support for c/z ions
 public class FragmentAnnotationParser {
-    public String fullAnnotation;
+    public final String fullAnnotation;
     public int charge = 1;
     public String fragmentIonType;
     public int fragnum = 0;

@@ -18,6 +18,7 @@
 package modelcallers;
 
 import allconstants.Constants;
+import allconstants.FragmentIonConstants;
 import com.google.gson.Gson;
 import com.google.gson.stream.JsonReader;
 import features.spectra.MassCalculator;
@@ -438,7 +439,12 @@ public class KoinaModelCaller {
                         String peptide = pf.getBaseCharge();
                         String[] pepSplit = peptide.split("\\|");
                         MassCalculator mc = new MassCalculator(pepSplit[0], pepSplit[1]);
-                        String[][] annot_frag = mc.annotateMZs(allMZs[i], "default", true);
+                        String[][] annot_frag;
+                        if (FragmentIonConstants.annotatePredfullLikeUnispec) {
+                            annot_frag = mc.annotateMZs(allMZs[i], "unispec", true);
+                        } else {
+                            annot_frag = mc.annotateMZs(allMZs[i], "default", true);
+                        }
 
                         //assign values
                         //use fragment annotation parser here to get fragnums and charge

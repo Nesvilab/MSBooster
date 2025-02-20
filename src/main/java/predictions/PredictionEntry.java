@@ -108,6 +108,20 @@ public class PredictionEntry {
         if (intensities.length != 0) {
             mergeCloseMzs();
 
+            //set max intensity as 1
+            //do it before fragment ion filtering so it considers truly highest intensity peak as intensity 1
+            float maxInt = 0f;
+            for (int i = 0; i < intensities.length; i++) {
+                if (intensities[i] > maxInt) {
+                    maxInt = intensities[i];
+                }
+            }
+            if (maxInt != maxIntensity) {
+                for (int i = 0; i < intensities.length; i++) {
+                    intensities[i] /= maxInt;
+                }
+            }
+
             int potentialFragments = intensities.length; //number of fragments to consider
             float[] tmpInts = new float[potentialFragments]; //indicates if fragment should be used (0 means no)
             System.arraycopy(intensities, 0, tmpInts, 0, potentialFragments);
@@ -125,7 +139,7 @@ public class PredictionEntry {
             //above intensity threshold
             if (Constants.useBasePeak && Constants.percentBasePeak < 100) {
                 //get max intensity
-                float maxInt = 0f;
+                maxInt = 0f;
                 for (float f : tmpInts) {
                     if (f > maxInt) {
                         maxInt = f;
@@ -148,7 +162,7 @@ public class PredictionEntry {
 
                 //setting highest intensities to -1
                 for (int i = 0; i < Constants.topFragments; i++) {
-                    float maxInt = tmpInts[0];
+                    maxInt = tmpInts[0];
                     int index = 0;
                     for (int j = 1; j < tmpInts.length; j++) {
                         float thisInt = tmpInts[j];
@@ -238,19 +252,6 @@ public class PredictionEntry {
             }
             if (isotopes.length > 0) {
                 isotopes = pisotopes;
-            }
-
-            //set max intensity as 1
-            float maxInt = 0f;
-            for (int i = 0; i < intensities.length; i++) {
-                if (intensities[i] > maxInt) {
-                    maxInt = intensities[i];
-                }
-            }
-            if (maxInt != maxIntensity) {
-                for (int i = 0; i < intensities.length; i++) {
-                    intensities[i] /= maxInt;
-                }
             }
         }
     }

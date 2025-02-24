@@ -48,6 +48,7 @@ import java.util.Map;
 import java.util.concurrent.ExecutorService;
 
 import static allconstants.Constants.figureDirectory;
+import static allconstants.FragmentIonConstants.createFragmentGroups;
 import static utils.Print.printInfo;
 
 public class PercolatorFormatter {
@@ -83,9 +84,12 @@ public class PercolatorFormatter {
             libraries.add(predictedSpectra);
             allProperties.put("spectra", Constants.spectraPredFile);
 
+            //deciding which fragments to use for primary and aux models, as well as setting which fragments to use for multiple scores
             for (PredictionEntry pe : predictedSpectra.getPreds().values()) {
                 FragmentIonConstants.setPrimaryAndAuxFragmentIonTypes(pe.fragmentIonTypes); //this can be approximated if too slow
             }
+            FragmentIonConstants.fragmentGroups = createFragmentGroups();
+
             if (Constants.spectraModel.equals("PredFull")) {
                 Constants.matchWithDaltons = true; //they report predictions in bins
             } else if (Constants.matchWithDaltons == null) {
@@ -629,7 +633,7 @@ public class PercolatorFormatter {
                 }
 
                 //plot hist
-                new ScoreHistogram(new PinReader(histFile), featuresList);
+                new ScoreHistogram(new PinReader(histFile), pw.newColumnNames);
                 mzml.clear();
             }
         } catch (Exception e) {

@@ -61,12 +61,12 @@ public class SpectrumComparison {
     public PeptideObj pepObj;
 
     public SpectrumComparison(PeptideObj pepObj, float[] eMZs, float[] eIntensities,
-                              float[] pMZs, float[] pIntensities, String[] pFragmentIonTypes) {
+                              float[] pMZs, float[] pIntensities, String[] pFragmentIonTypes, boolean separateByFragmentGroup) {
         predMZs = pMZs;
         predIntensities = pIntensities;
         predFragmentIonTypes = pFragmentIonTypes;
 
-        if (FragmentIonConstants.divideFragments == 0) {
+        if (fragmentGroups.length == 1 || !separateByFragmentGroup) {
             matchedIntensities = this.getMatchedIntensities(eMZs, eIntensities, predMZs, pFragmentIonTypes);
         } else {
             //get fragments that match the allowed
@@ -90,7 +90,7 @@ public class SpectrumComparison {
 
                 //create new spectrumComparison obj and add to list
                 spectrumComparisons.add(new SpectrumComparison(pepObj, eMZs, eIntensities,
-                        mzs, ints, fits));
+                        mzs, ints, fits, false));
             }
         }
         predMZs = null;
@@ -103,19 +103,19 @@ public class SpectrumComparison {
     }
 
     //TODO: if ever reimplement adjacent similarity, think of solution that does not require another constructor
-    public SpectrumComparison(PeptideObj peptideObj, float[] eMZs, float[] eIntensities,
-                              float[] pMZs, float[] pIntensities, String[] pFragmentIonTypes,
-                              boolean willReload) {
-        pepObj = peptideObj;
-        predMZs = pMZs;
-        predIntensities = pIntensities;
-        predFragmentIonTypes = pFragmentIonTypes;
-
-        matchedIntensities = this.getMatchedIntensities(eMZs, eIntensities, predMZs, pFragmentIonTypes);
-        if (! willReload) {
-            predMZs = null;
-        }
-    }
+//    public SpectrumComparison(PeptideObj peptideObj, float[] eMZs, float[] eIntensities,
+//                              float[] pMZs, float[] pIntensities, String[] pFragmentIonTypes,
+//                              boolean willReload) {
+//        pepObj = peptideObj;
+//        predMZs = pMZs;
+//        predIntensities = pIntensities;
+//        predFragmentIonTypes = pFragmentIonTypes;
+//
+//        matchedIntensities = this.getMatchedIntensities(eMZs, eIntensities, predMZs, pFragmentIonTypes);
+//        if (! willReload) {
+//            predMZs = null;
+//        }
+//    }
     private SpectrumComparison() {}
 
     //get new scan read in
@@ -956,7 +956,7 @@ public class SpectrumComparison {
         Constants.matchWithDaltonsAux = true;
         SpectrumComparison sc = new SpectrumComparison(new PeptideObj(),
                 new float[]{10f, 20f, 30f}, new float[]{1f, 1f, 1f},
-                new float[]{9.9997f, 19.9997f, 30.04f}, new float[]{1f, 1f, 1f}, new String[]{"y", "y", "y-NL"});
+                new float[]{9.9997f, 19.9997f, 30.04f}, new float[]{1f, 1f, 1f}, new String[]{"y", "y", "y-NL"}, false);
         System.out.println(Arrays.toString(sc.matchedIntensities));
     }
 }

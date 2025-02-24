@@ -90,7 +90,7 @@ public class PeptideObj {
         this.targetORdecoy = targetORdecoy;
         this.escore = escore;
         this.spectralSimObj = new SpectrumComparison(this, scanNumObj.getExpMZs(), scanNumObj.getExpIntensities(),
-                predMZs, predIntensities, predFragmentIonTypes);
+                predMZs, predIntensities, predFragmentIonTypes, true);
         this.RT = predRT;
         this.IM = predIM;
 //        if (Constants.useMatchedIntensities || Constants.usePeakCounts || Constants.useIntensitiesDifference ||
@@ -220,7 +220,7 @@ public class PeptideObj {
 
                 individualSpectralSimilarities.put(entry.getKey(),
                         (float) new SpectrumComparison(this, expMZs, expIntensities,
-                                subsetPredMZsArray, subsetPredIntsArray, subsetPredTypesArray).unweightedSpectralEntropy());
+                                subsetPredMZsArray, subsetPredIntsArray, subsetPredTypesArray, false).unweightedSpectralEntropy());
             }
         }
     }

@@ -335,6 +335,7 @@ public class MainClass {
             printInfo("Using " + Constants.numThreads + " threads");
             executorService = new ScheduledThreadPoolExecutor(Constants.numThreads);
 
+            //collecting mass offsets
             if (!Objects.equals(Constants.massDiffToVariableMod, "0")) {
                 if (!Constants.massesForLoessCalibration.isEmpty()) {
                     Constants.massesForLoessCalibration += ",";
@@ -344,6 +345,12 @@ public class MainClass {
                 } else if (!Constants.massOffsets.isEmpty()) {
                     Constants.massesForLoessCalibration += Constants.massOffsets;
                 }
+            }
+
+            //deciding how many fragments to predict and keep
+            //TODO: number of fragments to use right now is arbitrary. 10 + 10 * (# of fragment groups)
+            if (FragmentIonConstants.divideFragments == 1) {
+                Constants.topFragments = 30;
             }
 
             //get matched pin files for mzML files

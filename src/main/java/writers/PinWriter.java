@@ -18,7 +18,6 @@
 package writers;
 
 import allconstants.Constants;
-import allconstants.FragmentIonConstants;
 import com.univocity.parsers.tsv.TsvWriter;
 import com.univocity.parsers.tsv.TsvWriterSettings;
 import mainsteps.PeptideObj;
@@ -44,6 +43,7 @@ public class PinWriter {
     MzmlReader mzml;
     TsvWriter writer;
     ArrayList<String> header = new ArrayList<>();
+    public ArrayList<String> newColumnNames = new ArrayList<>();
 
     public PinWriter(String newOutfile, PinReader pin, ArrayList<String> featuresList, MzmlReader mzml) {
         this.newOutfile = newOutfile;
@@ -58,8 +58,8 @@ public class PinWriter {
 
         //add header to written tsv
         header.addAll(Arrays.asList(pin.header));
+
         //replace column names
-        ArrayList<String> newNames = new ArrayList<>(featuresList.size());
         for (String s : featuresList) {
             String newName = s;
             if (camelToUnderscore.containsKey(s)) {
@@ -67,18 +67,18 @@ public class PinWriter {
             }
             //add columns for spectral features divided by fragment ion type
             if (Constants.spectraFeatures.contains(s)) {
-                if (FragmentIonConstants.divideFragments != 0) {
+                if (fragmentGroups.length != 1) {
                     for (TreeSet<String> fg : fragmentGroups) {
-                        newNames.add(newName + String.join("_", fg));
+                        newColumnNames.add(newName + "^" +String.join("_", fg));
                     }
                 } else {
-                    newNames.add(newName);
+                    newColumnNames.add(newName);
                 }
             } else {
-                newNames.add(newName);
+                newColumnNames.add(newName);
             }
         }
-        header.addAll(pin.pepIdx, newNames); //add features before Peptide
+        header.addAll(pin.pepIdx, newColumnNames); //add features before Peptide
         writer.writeHeaders(header);
     }
 
@@ -188,7 +188,7 @@ public class PinWriter {
                             } else {
                                 for (int j = 0; j < fragmentGroups.length; j++) {
                                     double score = pepObj.spectralSimObj.spectrumComparisons.get(j).scores.get(feature);
-                                    formattedWrite(camelToUnderscore.get(feature) + "_" +
+                                    formattedWrite(camelToUnderscore.get(feature) + "^" +
                                             String.join("_", fragmentGroups[j]), score);
                                 }
                             }

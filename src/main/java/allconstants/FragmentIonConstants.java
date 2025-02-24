@@ -11,6 +11,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Objects;
 import java.util.Set;
 import java.util.TreeSet;
 
@@ -30,13 +31,43 @@ public class FragmentIonConstants implements ConstantsInterface {
     public static HashSet<String> fragmentIonHierarchySet;
 
     //this is how we group fragments to similarity calculations
-    public static int divideFragments = 0;
+    public static Integer divideFragments = 0;
     public static String customFragmentGroups;
-    public static TreeSet<String>[] fragmentGroups = createFragmentGroups(); //iterate through sets
-    private static TreeSet<String>[] createFragmentGroups() {
+    public static TreeSet<String>[] fragmentGroups = new TreeSet[1]; //iterate through sets
+    public static TreeSet<String>[] createFragmentGroups() {
         TreeSet[] fg;
         switch (divideFragments) {
-            case -1: //custom
+            case 0: //use everything in one score
+                fg = new TreeSet[1];
+                fg[0] = new TreeSet<>();
+                for (String s : fragmentIonHierarchySet) {
+                    fg[0].add(s);
+                }
+                break;
+            case 1: //primary & aux separation
+                fg = new TreeSet[2];
+                fg[0] = new TreeSet<>();
+                fg[1] = new TreeSet<>();
+                for (String s : primaryFragmentIonTypes) {
+                    fg[0].add(s);
+                }
+                for (String s : auxFragmentIonTypes) {
+                    fg[1].add(s);
+                }
+                break;
+            case 2: //break into y/b and others, HCD/CID version
+                fg = new TreeSet[2];
+                fg[0] = new TreeSet<>();
+                fg[1] = new TreeSet<>();
+                fg[0].add("y");
+                fg[0].add("b");
+                for (String s : fragmentIonHierarchy) {
+                    if (!Objects.equals(s, "y") && !Objects.equals(s, "b")) {
+                        fg[1].add(s);
+                    }
+                }
+                break;
+            default: //custom
                 printError("Custom fragment groups not yet supported. Exiting");
                 System.exit(1);
                 String[] splits = customFragmentGroups.split(";");
@@ -47,17 +78,6 @@ public class FragmentIonConstants implements ConstantsInterface {
                         fg[i].add(s);
                     }
                 }
-                break;
-            case 0: //use everything
-                fg = new TreeSet[1];
-                fg[0] = new TreeSet<>();
-                for (String s : allowedFragmentIonTypes) {
-                    fg[0].add(s);
-                }
-                break;
-            default:
-                System.exit(1);
-                fg = new TreeSet[0];
                 break;
         }
         return fg;

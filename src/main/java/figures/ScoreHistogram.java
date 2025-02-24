@@ -30,6 +30,7 @@ import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
@@ -37,10 +38,11 @@ import static allconstants.Constants.figureDirectory;
 import static figures.ExtensionPlotter.plot;
 
 public class ScoreHistogram {
-
-    Set<String> logScaleFeatures = Set.of("delta_RT_loess", "delta_RT_loess_normalized", "RT_probability_unif_prior",
-            "hypergeometric_probability", "delta_IM_loess");
-    Set<String> intScores = Set.of("peptide_counts"); //TODO: gets crowded for many bins, can consider binning by 10s
+    HashSet<String> logScaleFeatures = new HashSet<>(Set.of(
+            "delta_RT_loess", "delta_RT_loess_normalized", "RT_probability_unif_prior",
+            "hypergeometric_probability", "delta_IM_loess"
+    ));
+    HashSet<String> intScores = new HashSet<>(Set.of("peptide_counts")); //TODO: gets crowded for many bins, can consider binning by 10s
 
     public ScoreHistogram(PinReader pinReader, ArrayList<String> fs) throws IOException {
         HashMap<String, ArrayList<Double>> targetScores = new HashMap<>();
@@ -49,10 +51,16 @@ public class ScoreHistogram {
         HashMap<String, Double> scoreMin = new HashMap<>();
 
         ArrayList<String> features = new ArrayList<>(fs.size());
-        for (int i = 0; i < fs.size(); i++) {
-            String feature = fs.get(i);
-            feature = Constants.camelToUnderscore.get(feature);
+        ArrayList<Boolean> logScaleBooleans = new ArrayList<>(fs.size());
+
+        for (String feature : fs) {
+            String baseFeature = feature.split("\\^")[0];
             features.add(feature);
+            if (logScaleFeatures.contains(baseFeature)) {
+                logScaleBooleans.add(true);
+            } else {
+                logScaleBooleans.add(false);
+            }
             targetScores.put(feature, new ArrayList<>());
             decoyScores.put(feature, new ArrayList<>());
             scoreMax.put(feature, -1 * Double.MAX_VALUE);
@@ -61,9 +69,12 @@ public class ScoreHistogram {
 
         //get scores
         while (pinReader.next(true)) {
-            for (String feature : features) {
+            for (int i = 0; i < features.size(); i++) {
+                String feature = features.get(i);
+                boolean useLogScale = logScaleBooleans.get(i);
+
                 double score = Double.parseDouble(pinReader.getColumn(feature));
-                if (logScaleFeatures.contains(feature)) {
+                if (useLogScale) {
                     score = Math.log10(score + 0.01);
                 }
                 if (intScores.contains(feature)) {
@@ -89,9 +100,12 @@ public class ScoreHistogram {
         }
         pinReader.reset();
 
-        for (String feature : features) {
-            String xAxisLabel = feature;
-            if (logScaleFeatures.contains(feature)) {
+        for (int i = 0; i < features.size(); i++) {
+            String feature = features.get(i);
+            String xAxisLabel = features.get(i);
+            boolean useLogScale = logScaleBooleans.get(i);
+
+            if (useLogScale) {
                 xAxisLabel = "log(" + xAxisLabel + " + 0.01)";
             }
             String yAxisLabel = "PSMs";

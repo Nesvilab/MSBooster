@@ -42,7 +42,7 @@ public class ScoreHistogram {
             "delta_RT_loess", "delta_RT_loess_normalized", "RT_probability_unif_prior",
             "hypergeometric_probability", "delta_IM_loess"
     ));
-    HashSet<String> intScores = new HashSet<>(Set.of("peptide_counts")); //TODO: gets crowded for many bins, can consider binning by 10s
+    HashSet<String> intScores = new HashSet<>(Set.of("peptide_counts", "intersection")); //TODO: gets crowded for many bins, can consider binning by 10s
 
     public ScoreHistogram(PinReader pinReader, ArrayList<String> fs) throws IOException {
         HashMap<String, ArrayList<Double>> targetScores = new HashMap<>();
@@ -52,6 +52,7 @@ public class ScoreHistogram {
 
         ArrayList<String> features = new ArrayList<>(fs.size());
         ArrayList<Boolean> logScaleBooleans = new ArrayList<>(fs.size());
+        ArrayList<Boolean> intBooleans = new ArrayList<>(fs.size());
 
         for (String feature : fs) {
             String baseFeature = feature.split("\\^")[0];
@@ -60,6 +61,11 @@ public class ScoreHistogram {
                 logScaleBooleans.add(true);
             } else {
                 logScaleBooleans.add(false);
+            }
+            if (intScores.contains(baseFeature)) {
+                intBooleans.add(true);
+            } else {
+                intBooleans.add(false);
             }
             targetScores.put(feature, new ArrayList<>());
             decoyScores.put(feature, new ArrayList<>());
@@ -72,12 +78,13 @@ public class ScoreHistogram {
             for (int i = 0; i < features.size(); i++) {
                 String feature = features.get(i);
                 boolean useLogScale = logScaleBooleans.get(i);
+                boolean useInt = intBooleans.get(i);
 
                 double score = Double.parseDouble(pinReader.getColumn(feature));
                 if (useLogScale) {
                     score = Math.log10(score + 0.01);
                 }
-                if (intScores.contains(feature)) {
+                if (useInt) {
                     if (pinReader.getTD() == 1) {
                         targetScores.get(feature).add(score - 0.5);
                     } else {
@@ -104,6 +111,7 @@ public class ScoreHistogram {
             String feature = features.get(i);
             String xAxisLabel = features.get(i);
             boolean useLogScale = logScaleBooleans.get(i);
+            boolean useInt = intBooleans.get(i);
 
             if (useLogScale) {
                 xAxisLabel = "log(" + xAxisLabel + " + 0.01)";
@@ -144,12 +152,12 @@ public class ScoreHistogram {
 
             //plot histogram
             int numBins = 100;
-            if (intScores.contains(feature)) {
+            if (useInt) {
                 numBins = (int) (scoreMax.get(feature) - scoreMin.get(feature) + 1);
             }
             try {
                 Histogram histT;
-                if (intScores.contains(feature)) {
+                if (useInt) {
                     histT = new Histogram(targetScores.get(feature), numBins,
                             scoreMin.get(feature) - 0.5, scoreMax.get(feature) + 1 - 0.5);
                 } else {
@@ -162,7 +170,7 @@ public class ScoreHistogram {
             } catch (Exception e) {e.printStackTrace();}
             try {
                 Histogram histD;
-                if (intScores.contains(feature)) {
+                if (useInt) {
                     histD = new Histogram(decoyScores.get(feature), numBins,
                             scoreMin.get(feature) - 0.5, scoreMax.get(feature) + 1 - 0.5);
                 } else {

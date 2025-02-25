@@ -240,5 +240,5 @@ public class FragmentIonConstants implements ConstantsInterface {
         return faps;
     }
 
-    public static Boolean annotatePredfullLikeUnispec = false;
+    public static Boolean annotatePredfullLikeUnispec = true;
 }

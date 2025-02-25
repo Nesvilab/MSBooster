@@ -67,6 +67,29 @@ public class FragmentIonConstants implements ConstantsInterface {
                     }
                 }
                 break;
+            case 3: //break into y/b, others, and unknown
+                fg = new TreeSet[3];
+                fg[0] = new TreeSet<>();
+                fg[1] = new TreeSet<>();
+                fg[2] = new TreeSet<>();
+                fg[0].add("y");
+                fg[0].add("b");
+                for (String s : fragmentIonHierarchy) {
+                    if (!Objects.equals(s, "y") && !Objects.equals(s, "b") && !Objects.equals(s, "unknown")) {
+                        fg[1].add(s);
+                    }
+                }
+                fg[2].add("unknown");
+                break;
+            case 4: //all individual groups
+                fg = new TreeSet[fragmentIonHierarchy.length];
+                int j = 0;
+                for (String s : fragmentIonHierarchy) {
+                    fg[j] = new TreeSet<>();
+                    fg[j].add(s);
+                    j++;
+                }
+                break;
             default: //custom
                 printError("Custom fragment groups not yet supported. Exiting");
                 System.exit(1);

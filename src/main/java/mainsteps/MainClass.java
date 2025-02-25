@@ -348,9 +348,13 @@ public class MainClass {
             }
 
             //deciding how many fragments to predict and keep
-            //TODO: number of fragments to use right now is arbitrary. 10 + 10 * (# of fragment groups)
-            if (FragmentIonConstants.divideFragments == 1) {
-                Constants.topFragments = 30;
+            //TODO: number of fragments to use right now is arbitrary. Need to test
+            if (Constants.topFragments == 0) {
+                if (FragmentIonConstants.divideFragments != 0) {
+                    Constants.topFragments = 30;
+                } else {
+                    Constants.topFragments = 20;
+                }
             }
 
             //get matched pin files for mzML files

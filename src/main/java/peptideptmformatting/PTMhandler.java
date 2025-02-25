@@ -19,6 +19,7 @@ package peptideptmformatting;
 
 import allconstants.Constants;
 import umich.ms.fileio.filetypes.unimod.UnimodOboReader;
+import utils.NumericUtils;
 
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -38,29 +39,48 @@ import static utils.Print.printError;
 
 public class PTMhandler {
     //handling of PTMs, all in one location.
-    public static final Double oxidationMass = 15.9949;
-    public static final Double carbamidomethylationMass = 57.0215;
-    public static final Double acetylationMass = 42.0106;
-    public static final Double phosphorylationMass = 79.9663;
-    public static final Double glyglyMass = 114.042927;
-    public static final Double tmtMass = 229.1629;
-    public static final Double pyrogluQMass = -17.0265;
-    public static final Double pyrogluEMass = -18.01057;
-    public static final Double pyroCarbamidomethylMass = 39.9950;
+    public static final double oxidationMass = 15.9949;
+    public static final double carbamidomethylationMass = 57.0215;
+    public static final double acetylationMass = 42.0106;
+    public static final double phosphorylationMass = 79.9663;
+    public static final double glyglyMass = 114.042927;
+    public static final double pyrogluQMass = -17.0265;
+    public static final double pyrogluEMass = -18.01057;
+    public static final double pyroCarbamidomethylMass = 39.9950;
     public static final int carbamidomethylationUnimod = 4;
     public static final int oxidationUnimod = 35;
     public static final int acetylationUnimod = 1;
     public static final int phosphorylationUnimod = 21;
     public static final int glyglyUnimod = 121;
-    public static final int tmtUnimod = 737;
     public static final int pyrogluQUnimod = 28;
     public static final int pyrogluEUnimod = 27;
     public static final int pyroCarbamidomethylUnimod = 26;
 
-    public static final HashMap<Integer, Double> unimodToModMass;
+    //models trained on tmt6/10/11 extrapolate well to tmt pro and itraq
+    public static final double tmt6_10_11Mass = 229.1629;
+    public static final double tmtproMass = 304.20715;
+    public static final double itraqMass = 144.102063;
+    public static final int tmt6_10_11Unimod = 737;
+    public static final int tmtproUnimod = 2016;
+    public static final int itraqUnimod = 214;
+    public static final double[] tmtMasses = {tmt6_10_11Mass, tmtproMass, itraqMass};
+    private static double tmtMass = tmt6_10_11Mass;
+    public static int tmtUnimod = tmt6_10_11Unimod;
 
-    static  {
-        unimodToModMass = new HashMap<>();
+    public static void setTmtMass(double mass) {
+        tmtMass = mass;
+        updateUnimodToModMass();
+        updateAAUnimodToModMass();
+    }
+    public static double getTmtMass() { return tmtMass; }
+
+    public static HashMap<Integer, Double> unimodToModMass = new HashMap<>();
+    static {
+        updateUnimodToModMass();
+    }
+
+    private static void updateUnimodToModMass() {
+        unimodToModMass.clear();
         unimodToModMass.put(carbamidomethylationUnimod, carbamidomethylationMass);
         unimodToModMass.put(oxidationUnimod, oxidationMass);
         unimodToModMass.put(acetylationUnimod, acetylationMass);
@@ -74,30 +94,32 @@ public class PTMhandler {
 
     //TODO: see if methods need AA or not
     //TODO: what models are AA restrictive? Do we need to go check on github?
-    private static HashMap<String, Double> makeAAUnimodToModMass() {
-        HashMap<String, Double> map = new HashMap<>();
-        map.put("C" + carbamidomethylationUnimod, carbamidomethylationMass);
-        map.put("M" + oxidationUnimod, oxidationMass);
-        map.put("[" + acetylationUnimod, acetylationMass);
-        map.put("S" + phosphorylationUnimod, phosphorylationMass);
-        map.put("T" + phosphorylationUnimod, phosphorylationMass);
-        map.put("Y" + phosphorylationUnimod, phosphorylationMass);
-        map.put("[" + glyglyUnimod, glyglyMass);
-        map.put("K" + glyglyUnimod, glyglyMass);
-        map.put("T" + glyglyUnimod, glyglyMass);
-        map.put("C" + glyglyUnimod, glyglyMass);
-        map.put("S" + glyglyUnimod, glyglyMass);
-        map.put("K" + tmtUnimod, tmtMass);
-        map.put("S" + tmtUnimod, tmtMass);
-        map.put("T" + tmtUnimod, tmtMass);
-        map.put("H" + tmtUnimod, tmtMass);
-        map.put("[" + tmtUnimod, tmtMass);
-        map.put("Q" + pyrogluQUnimod, pyrogluQMass);
-        map.put("E" + pyrogluEUnimod, pyrogluEMass);
-        map.put("C" + pyroCarbamidomethylUnimod, pyroCarbamidomethylMass);
-        return map;
+    private static void updateAAUnimodToModMass() {
+        AAunimodToModMass.clear();
+        AAunimodToModMass.put("C" + carbamidomethylationUnimod, carbamidomethylationMass);
+        AAunimodToModMass.put("M" + oxidationUnimod, oxidationMass);
+        AAunimodToModMass.put("[" + acetylationUnimod, acetylationMass);
+        AAunimodToModMass.put("S" + phosphorylationUnimod, phosphorylationMass);
+        AAunimodToModMass.put("T" + phosphorylationUnimod, phosphorylationMass);
+        AAunimodToModMass.put("Y" + phosphorylationUnimod, phosphorylationMass);
+        AAunimodToModMass.put("[" + glyglyUnimod, glyglyMass);
+        AAunimodToModMass.put("K" + glyglyUnimod, glyglyMass);
+        AAunimodToModMass.put("T" + glyglyUnimod, glyglyMass);
+        AAunimodToModMass.put("C" + glyglyUnimod, glyglyMass);
+        AAunimodToModMass.put("S" + glyglyUnimod, glyglyMass);
+        AAunimodToModMass.put("K" + tmtUnimod, tmtMass);
+        AAunimodToModMass.put("S" + tmtUnimod, tmtMass);
+        AAunimodToModMass.put("T" + tmtUnimod, tmtMass);
+        AAunimodToModMass.put("H" + tmtUnimod, tmtMass);
+        AAunimodToModMass.put("[" + tmtUnimod, tmtMass);
+        AAunimodToModMass.put("Q" + pyrogluQUnimod, pyrogluQMass);
+        AAunimodToModMass.put("E" + pyrogluEUnimod, pyrogluEMass);
+        AAunimodToModMass.put("C" + pyroCarbamidomethylUnimod, pyroCarbamidomethylMass);
     }
-    public static final HashMap<String, Double> AAunimodToModMass = makeAAUnimodToModMass();
+    public static final HashMap<String, Double> AAunimodToModMass = new HashMap<>();
+    static {
+        updateAAUnimodToModMass();
+    }
 
     @SuppressWarnings("unchecked")
     private static <T> Map<T, Double> makeUnimodToModMassAlphaPeptDeep(boolean includeAA) throws IOException {
@@ -299,7 +321,7 @@ public class PTMhandler {
 
         for (String unimod : allowedMods) {
             Double PTMmass = modMap.get(unimod);
-            if (Math.abs(PTMmass - reportedMass) < 0.001) {
+            if (NumericUtils.massesCloseEnough(PTMmass, reportedMass)) {
                 String AA = unimod.substring(0, 1);
                 if (start == -1) { //nterm
                     if (AA.equals("[")) {
@@ -341,7 +363,7 @@ public class PTMhandler {
         for (int i = newStarts.size() - 1; i > -1; i--) {
             int unimod = Integer.parseInt(newpeptide.substring(newStarts.get(i) + 1, newEnds.get(i)));
             try {
-                String modMass = String.format("%.4f", modmap.get(unimod));
+                String modMass = String.format("%.4f", modmap.get(unimod)); //TODO: will this be an issue? Working directly with strings
                 newpeptide = newpeptide.substring(0, newStarts.get(i) + 1) + modMass + newpeptide.substring(newEnds.get(i));
             } catch (Exception ignored) {
                 printError("Did not recognize unimod " + unimod + " in peptide " + peptide + ". Exiting");
@@ -356,7 +378,7 @@ public class PTMhandler {
         HashMap<String, Double> map = new HashMap<>();
         map.put("Oxidation", oxidationMass);
         map.put("Carbamidomethyl", carbamidomethylationMass);
-        map.put("TMT_6", tmtMass);
+        map.put("TMT_6", tmt6_10_11Mass);
         return map;
     }
     public static final HashMap<String, Double> prositToModAAmass = makePrositToModAAmass();

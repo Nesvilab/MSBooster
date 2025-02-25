@@ -141,8 +141,6 @@ public class DiannSpeclibReader implements LibraryPredictionMapper {
                 }
                 TSVReader.close();
 
-                //comment the next section out if doing if for TMT alignment
-                //repeat this process with full peptides
                 textFile = bFile.substring(0, splitDot - 1) + "_full.tsv";
                 TSVReader = new BufferedReader(new FileReader(textFile));
                 String l;

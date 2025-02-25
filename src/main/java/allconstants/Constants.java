@@ -411,4 +411,7 @@ public class Constants implements ConstantsInterface {
             detectPredInput = outputDirectory + File.separator + "detect.tsv";
         }
     }
+
+    /////////////////////////////////////////////////model searching////////////////////////////////////////////////////
+    public static Boolean searchTMTmodels = false;
 }

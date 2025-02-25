@@ -18,6 +18,7 @@
 package modelcallers;
 
 import allconstants.Constants;
+import peptideptmformatting.PTMhandler;
 
 import java.io.BufferedReader;
 import java.io.File;
@@ -113,7 +114,8 @@ public class DiannModelCaller {
                             "--predict-n-frag",
                             "100",
                             "--mod",
-                            "TMT,229.1629",
+                            //"TMT,229.1629",
+                            "TMT," + PTMhandler.getTmtMass(),
                             "--original-mods");
                 } else {
                     builder = new ProcessBuilder(Constants.DiaNN,

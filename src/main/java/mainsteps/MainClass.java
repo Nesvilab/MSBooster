@@ -18,6 +18,9 @@
 package mainsteps;
 
 import allconstants.Constants;
+import allconstants.ConstantsInterface;
+import allconstants.FragmentIonConstants;
+import allconstants.NceConstants;
 import allconstants.LowercaseModelMapper;
 import features.spectra.MassCalculator;
 import koinaclasses.KoinaMethods;
@@ -27,6 +30,7 @@ import modelcallers.DiannModelCaller;
 import modelcallers.KoinaModelCaller;
 import peptideptmformatting.PTMhandler;
 import peptideptmformatting.PeptideFormatter;
+import predictions.PredictionEntry;
 import predictions.PredictionEntryHashMap;
 import readers.datareaders.MzmlReader;
 import readers.predictionreaders.KoinaLibReader;
@@ -43,6 +47,7 @@ import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.lang.reflect.Field;
+import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Modifier;
 import java.nio.file.Files;
 import java.nio.file.Paths;
@@ -74,11 +79,6 @@ public class MainClass {
 
         try {
             //accept command line inputs
-            HashSet<String> fields = new HashSet<>();
-            for (Field f : Constants.class.getDeclaredFields()) {
-                fields.add(f.getName());
-            }
-
             HashMap<String, String> params = new HashMap<String, String>();
 
             //setting new values
@@ -256,8 +256,9 @@ public class MainClass {
                     }
 
                     float tol = Float.parseFloat(params.get("ppmTolerance"));
-                    if (ppmToDa) {
+                    if (ppmToDa) { //read in from msfragger params. Low res tolerance used for all matching
                         Constants.matchWithDaltons = true;
+                        Constants.matchWithDaltonsAux = true;
                         Constants.DaTolerance = tol;
                         printInfo("Using Dalton tolerance of " + Constants.DaTolerance + " Da");
                     } else {
@@ -271,7 +272,24 @@ public class MainClass {
                 }
             }
 
+            HashSet<String> fields = new HashSet<>();
+            for (Field f : Constants.class.getDeclaredFields()) {
+                fields.add(f.getName());
+            }
             Constants c = new Constants();
+
+            HashSet<String> fieldsFragmentIon = new HashSet<>();
+            for (Field f : FragmentIonConstants.class.getDeclaredFields()) {
+                fieldsFragmentIon.add(f.getName());
+            }
+            FragmentIonConstants fic = new FragmentIonConstants();
+
+            HashSet<String> fieldsNCE = new HashSet<>();
+            for (Field f : NceConstants.class.getDeclaredFields()) {
+                fieldsNCE.add(f.getName());
+            }
+            NceConstants nc = new NceConstants();
+
             for (Map.Entry<String, String> entry : params.entrySet()) {
                 String key = entry.getKey();
                 if (key.charAt(0) == '#') { //comment
@@ -280,22 +298,17 @@ public class MainClass {
                 if (key.charAt(0) == '/') { //comment
                     continue;
                 }
-                if (!fields.contains(key)) {
+                if (!fields.contains(key) && !fieldsFragmentIon.contains(key) && !fieldsNCE.contains(key)) {
                     throw new Exception(entry.getKey() + " is not a valid parameter");
-                } else {
-                    //get class of field
+                } else if (fields.contains(key)) {
                     Field field = Constants.class.getField(key);
-                    Class<?> myClass = field.getType();
-
-                    //do not parse use[something] if null
-                    if (myClass.getTypeName().equals("java.lang.Boolean")) {
-                        if (entry.getValue().equals("null")) {
-                            continue;
-                        }
-                    }
-
-                    //parse to appropriate type
-                    field.set(c, myClass.getConstructor(String.class).newInstance(entry.getValue()));
+                    updateField(field, entry.getValue(), c);
+                } else if (fieldsFragmentIon.contains(key)) {
+                    Field field = FragmentIonConstants.class.getField(key);
+                    updateField(field, entry.getValue(), fic);
+                } else {
+                    Field field = NceConstants.class.getField(key);
+                    updateField(field, entry.getValue(), nc);
                 }
             }
             c.updateOutputDirectory();
@@ -322,6 +335,7 @@ public class MainClass {
             printInfo("Using " + Constants.numThreads + " threads");
             executorService = new ScheduledThreadPoolExecutor(Constants.numThreads);
 
+            //collecting mass offsets
             if (!Objects.equals(Constants.massDiffToVariableMod, "0")) {
                 if (!Constants.massesForLoessCalibration.isEmpty()) {
                     Constants.massesForLoessCalibration += ",";
@@ -333,18 +347,43 @@ public class MainClass {
                 }
             }
 
+            //deciding how many fragments to predict and keep
+            //TODO: number of fragments to use right now is arbitrary. Need to test
+            if (Constants.topFragments == 0) {
+                if (FragmentIonConstants.divideFragments != 0) {
+                    Constants.topFragments = 30;
+                } else {
+                    Constants.topFragments = 20;
+                }
+            }
+
             //get matched pin files for mzML files
             PinMzmlMatcher pmMatcher = new PinMzmlMatcher(Constants.mzmlDirectory, Constants.pinPepXMLDirectory);
 
+            //exit if no models used
+            if (!Constants.useSpectra && !Constants.useRT && !Constants.useIM) {
+                printInfo("useSpectra, useRT, and useIM are all false. Exiting.");
+                System.exit(0);
+            }
+
             //update fragment ion types based on fragmentation type
-            //update Constants to be null initially
-            Constants.fragmentIonHierarchy = Constants.makeFragmentIonHierarchy();
-            Constants.lowestFragmentIonType = Constants.makeLowestFragmentIonType();
+            FragmentIonConstants.makeFragmentIonHierarchy();
             Constants.matchedIntensitiesFeatures = Constants.makeMatchedIntensitiesFeatures();
             Constants.peakCountsFeatures = Constants.makePeakCountsFeatures();
             Constants.predIntensitiesFeatures = Constants.makePredIntensitiesFeatures();
             Constants.individualSpectralSimilaritiesFeatures = Constants.makeIndividualSpectralSimilarities();
             Constants.intensitiesDifferenceFeatures = Constants.makeintensitiesDifference();
+
+            //if best model search, initially set models to nothing
+            if (Constants.findBestSpectraModel) {
+                Constants.spectraModel = "";
+            }
+            if (Constants.findBestRtModel) {
+                Constants.rtModel = "";
+            }
+            if (Constants.findBestImModel) {
+                Constants.imModel = "";
+            }
 
             //make models properly uppercased, or throw error if not right
             HashMap<String, String> modelMapper = LowercaseModelMapper.lowercaseToModel;
@@ -366,9 +405,11 @@ public class MainClass {
                 printError("No IM model called " + Constants.imModel + ". Exiting.");
                 System.exit(0);
             }
-
-            if (Constants.spectraModel.equals("PredFull")) { //TODO: is this still needed? Not sure if mz is corrected
-                Constants.matchWithDaltons = true; //they report predictions in bins
+            if (modelMapper.containsKey(Constants.auxSpectraModel.toLowerCase())) {
+                Constants.auxSpectraModel = modelMapper.get(Constants.auxSpectraModel.toLowerCase());
+            } else {
+                printError("No auxiliary spectra model called " + Constants.auxSpectraModel + ". Exiting.");
+                System.exit(0);
             }
 
             //needed for nce calibration and best model search
@@ -378,7 +419,8 @@ public class MainClass {
             if (Constants.findBestRtModel || Constants.findBestSpectraModel || Constants.findBestImModel ||
                     Constants.KoinaMS2models.contains(Constants.spectraModel) ||
                     Constants.KoinaRTmodels.contains(Constants.rtModel) ||
-                    Constants.KoinaIMmodels.contains(Constants.imModel)
+                    Constants.KoinaIMmodels.contains(Constants.imModel) ||
+                    ! Constants.auxSpectraModel.isEmpty()
             ) {
                 km.getTopPeptides();
                 //km.getDecoyPeptides();
@@ -411,8 +453,7 @@ public class MainClass {
                             }
                         }
                     }
-                    printInfo("Searching the following models: ");
-                    printInfo(String.valueOf(consideredModels));
+                    printInfo("Searching the following models: " + consideredModels);
 
                     String jsonOutFolder = Constants.outputDirectory + File.separator + "best_model";
                     MyFileUtils.createWholeDirectory(jsonOutFolder);
@@ -457,8 +498,6 @@ public class MainClass {
                                     jsonOutFolder + File.separator + model,
                                     jsonOutFolder + File.separator + model + "_full.tsv");
                         }
-
-                        //
 
                         //collect the data for testing
                         ArrayList<Float> expRTs = new ArrayList<>();
@@ -676,8 +715,7 @@ public class MainClass {
                             System.exit(0);
                         }
                     }
-                    printInfo("Searching the following models: ");
-                    printInfo(String.valueOf(consideredModels));
+                    printInfo("Searching the following models: " + consideredModels);
 
                     String jsonOutFolder = Constants.outputDirectory + File.separator + "best_model";
                     MyFileUtils.createWholeDirectory(jsonOutFolder);
@@ -834,8 +872,7 @@ public class MainClass {
                             }
                         }
                     }
-                    printInfo("Searching the following models: ");
-                    printInfo(String.valueOf(consideredModels));
+                    printInfo("Searching the following models: " + consideredModels);
 
                     String jsonOutFolder = Constants.outputDirectory + File.separator + "best_model";
                     MyFileUtils.createWholeDirectory(jsonOutFolder);
@@ -846,6 +883,19 @@ public class MainClass {
                     HashMap<String, ArrayList<Double>> datapointsDecoys = new HashMap<>();
                     for (String model : consideredModels) {
                         Constants.spectraModel = model;
+
+                        //set matching with Da or not
+                        //if matchWithDaltons are true, also accept that (e.g. from reading it from fragger.params)
+                        if (model.equalsIgnoreCase("predfull")) {
+                            Constants.matchWithDaltonsDefault = true;
+                        } else {
+                            if (Constants.matchWithDaltons == null) {
+                                Constants.matchWithDaltonsDefault = false;
+                            } else {
+                                Constants.matchWithDaltonsDefault = Constants.matchWithDaltons;
+                            }
+                        }
+
                         MyFileUtils.createWholeDirectory(jsonOutFolder + File.separator + model);
                         if (model.equals("DIA-NN")) { //mode for DIA-NN
                             PeptideFileCreator.createPartialFile(
@@ -919,16 +969,16 @@ public class MainClass {
 //                                datapointsDecoys.put(model, similarity);
 //                            } catch (Exception e) {}
                         } else { //mode for koina
-                            if (Constants.nceModels.contains(model)) {
+                            if (NceConstants.nceModels.contains(model) && NceConstants.calibrateNCE) {
                                 Object[] results = NCEcalibrator.calibrateNCE(model, km,
                                         Constants.outputDirectory + File.separator + "best_model" +
-                                                File.separator + model, km.peptideArraylist,
-                                        km.scanNums, km.peptides);
+                                                File.separator + model);
                                 for (PeptideFormatter pf : km.peptideArraylist) {
                                     pf.foundUnimods.clear();
                                 }
                                 medianSimilarities.put(model + "&" + results[2], (Double) results[1]);
                                 int bestNCE = (int) results[2];
+                                NceConstants.calibratedModels.put(model, String.valueOf(bestNCE));
                                 similarities.put(model + "&" + bestNCE,
                                         (TreeMap<Integer, ArrayList<Double>>) results[0]);
                                 try {
@@ -959,14 +1009,16 @@ public class MainClass {
                                     pf.foundUnimods.clear();
                                 }
                                 PredictionEntryHashMap allPreds =
-                                        km.getKoinaPredictions(allHits, model, 30,
+                                        km.getKoinaPredictions(allHits, model, (int) Float.parseFloat(NceConstants.getNCE()),
                                                 jsonOutFolder + File.separator + model,
                                                 jsonOutFolder + File.separator + model + "_full.tsv");
 
                                 //get median similarity
                                 ArrayList<Double> similarity = new ArrayList<>();
                                 for (PeptideObj peptideObj : km.getPeptideObjects(allPreds, km.scanNums, km.peptides)) {
-                                    similarity.add(peptideObj.spectralSimObj.unweightedSpectralEntropy());
+                                    if (peptideObj != null) {
+                                        similarity.add(peptideObj.spectralSimObj.unweightedSpectralEntropy());
+                                    }
                                 }
                                 try {
                                     similarity.sort(Comparator.naturalOrder());
@@ -1011,12 +1063,10 @@ public class MainClass {
                     if (bestModel.contains("&")) { //model that uses NCE
                         String[] modelSplit = bestModel.split("&");
                         Constants.spectraModel = modelSplit[0];
-                        Constants.NCE = modelSplit[1];
-                        NCEcalibrator.plotNCEchart(similarities.get(bestModel));
+                        NCEcalibrator.plotNCEchart(Constants.spectraModel, similarities.get(bestModel));
                     } else {
                         Constants.spectraModel = bestModel;
                     }
-                    Constants.calibrateNCE = false;
                     Constants.autoSwitchFragmentation = false;
                     printInfoHighlight("Spectra model chosen is " + Constants.spectraModel);
 
@@ -1067,31 +1117,16 @@ public class MainClass {
                         Constants.spectraModel = model;
                     }
                 }
+
+                if (Constants.spectraModel.equals(Constants.auxSpectraModel)) {
+                    printInfo("Spectra and aux spectra model are the same. Only predicting once.");
+                    Constants.auxSpectraModel = "";
+                }
             } else {
                 Constants.spectraModel = "";
+                Constants.auxSpectraModel = "";
             }
             Constants.foundBest = true;
-
-//            if (Constants.adaptiveFragmentNum) {
-//                Constants.topFragments = 36; //TODO think of better way than hardcoding
-//            } else if (Constants.divideFragments.equals("1")) { //standard setting of yb vs others
-//                Constants.divideFragments = "y_b;immonium_a_y-NL_b-NL_a-NL_internal_internal-NL_unknown";
-//                Constants.topFragments = 12;
-//            } else if (Constants.divideFragments.equals("2")) {
-//                Constants.divideFragments = "y;b;immonium;a;y-NL;b-NL;a-NL;internal;internal-NL;unknown";
-//                Constants.topFragments = 6;
-//            } else if (Constants.divideFragments.equals("3")) { //standard setting of yb vs others
-//                Constants.divideFragments = "y_b_y-NL_b-NL;immonium_a_a-NL_internal_internal-NL_unknown";
-//                Constants.topFragments = 12;
-//            } else if (Constants.divideFragments.equals("4")) { //etd
-//                Constants.divideFragments = "c_z;zdot_y_unknown";
-//                Constants.topFragments = 12;
-//            } else if (Constants.divideFragments.equals("5")) { //ethcd
-//                Constants.divideFragments = "b_y_c_z;immonium_a_cdot_zdot_y-NL_b-NL_a-NL_internal_internal-NL_unknown";
-//                Constants.topFragments = 12;
-//            } else if (Constants.divideFragments.equals("0") && Constants.spectraModel.equals("DIA-NN")) {
-//                Constants.topFragments = 20; //TODO: automatically find best number of fragments to use
-//            }
 
             //check that at least pinPepXMLDirectory and mzmlDirectory are provided
             if (Constants.pinPepXMLDirectory == null) {
@@ -1099,12 +1134,6 @@ public class MainClass {
             }
             if (Constants.mzmlDirectory == null) {
                 throw new IllegalArgumentException("mzmlDirectory must be provided");
-            }
-
-            //check that features are allowed
-            if (Constants.useMultipleCorrelatedFeatures) {
-                Constants.features = "brayCurtis,pearsonCorr,dotProduct,unweightedSpectralEntropy," +
-                        "deltaRTLOESS,deltaRTLOESSnormalized,RTprobabilityUnifPrior";
             }
 
             Constants.allowedFeatures = Constants.makeAllowedFeatures();
@@ -1123,7 +1152,7 @@ public class MainClass {
                 if (Constants.useSpectra) {
                     Set<String> intersection = new HashSet<>(featureLL);
                     intersection.retainAll(Constants.spectraFeatures);
-                    if (intersection.size() == 0) {
+                    if (intersection.isEmpty()) {
                         featureLL.add("unweightedSpectralEntropy");
                     }
                 } else {
@@ -1135,8 +1164,9 @@ public class MainClass {
                 if (Constants.useRT) {
                     Set<String> intersection = new HashSet<>(featureLL);
                     intersection.retainAll(Constants.rtFeatures);
-                    if (intersection.size() == 0) {
+                    if (intersection.isEmpty()) {
                         featureLL.add("deltaRTLOESS");
+                        featureLL.add("predRTrealUnits");
                     }
                 } else {
                     featureLL.removeIf(Constants.rtFeatures::contains);
@@ -1163,7 +1193,7 @@ public class MainClass {
                 if (Constants.useMatchedIntensities) {
                     Set<String> intersection = new HashSet<>(featureLL);
                     intersection.retainAll(Constants.matchedIntensitiesFeatures);
-                    if (intersection.size() == 0) {
+                    if (intersection.isEmpty()) {
                         featureLL.addAll(Constants.matchedIntensitiesFeatures);
                     }
                 } else {
@@ -1190,7 +1220,7 @@ public class MainClass {
                 if (Constants.usePeakCounts) {
                     Set<String> intersection = new HashSet<>(featureLL);
                     intersection.retainAll(Constants.peakCountsFeatures);
-                    if (intersection.size() == 0) {
+                    if (intersection.isEmpty()) {
                         featureLL.addAll(Constants.peakCountsFeatures);
                     }
                 } else {
@@ -1204,7 +1234,7 @@ public class MainClass {
                 if (Constants.useIndividualSpectralSimilarities) {
                     Set<String> intersection = new HashSet<>(featureLL);
                     intersection.retainAll(Constants.individualSpectralSimilaritiesFeatures);
-                    if (intersection.size() == 0) {
+                    if (intersection.isEmpty()) {
                         featureLL.addAll(Constants.individualSpectralSimilaritiesFeatures);
                     }
                 } else {
@@ -1218,7 +1248,7 @@ public class MainClass {
                 if (Constants.useIntensitiesDifference) {
                     Set<String> intersection = new HashSet<>(featureLL);
                     intersection.retainAll(Constants.intensitiesDifferenceFeatures);
-                    if (intersection.size() == 0) {
+                    if (intersection.isEmpty()) {
                         featureLL.addAll(Constants.intensitiesDifferenceFeatures);
                     }
                 } else {
@@ -1272,6 +1302,7 @@ public class MainClass {
             }
 
             //go through all models and do any preprocessing needed
+            //models needs to be in this order, as other code relies on this order, like spectra before aux spectra
             ArrayList<String> models = new ArrayList<>();
             ArrayList<String> modelTypes = new ArrayList<>();
             if (! Constants.spectraModel.isEmpty()) {
@@ -1293,6 +1324,7 @@ public class MainClass {
             }
 
             //generate input files for prediction models
+            MyFileUtils.deleteWholeDirectory(Constants.outputDirectory + File.separator + "NCE_calibration");
             if (createSpectraRTPredFile || Constants.createPredFileOnly) {
                 //createfull is needed for everything
                 PeptideFileCreator.createPeptideFile(pmMatcher,
@@ -1301,15 +1333,31 @@ public class MainClass {
 
                 HashSet<String> modelsRan = new HashSet<>();
                 for (String currentModel : models) {
-                    if (! modelsRan.contains(currentModel)) {
+                    if (! modelsRan.contains(currentModel)) { //do not rerun (e.g. spectra and RT same model)
                         if (Constants.KoinaModels.contains(currentModel)) {
-                            if (Constants.KoinaMS2models.contains(currentModel) && Constants.calibrateNCE &&
-                                    Constants.nceModels.contains(currentModel)) {
+                            if (NceConstants.nceModels.contains(currentModel) && NceConstants.calibrateNCE &&
+                                    ! NceConstants.calibratedModels.containsKey(currentModel)) {
+                                //set matching with Da or not
+                                //if matchWithDaltons are true, also accept that (e.g. from reading it from fragger.params)
+                                if (currentModel.equalsIgnoreCase("predfull")) {
+                                    Constants.matchWithDaltonsDefault = true;
+                                } else {
+                                    if (Constants.matchWithDaltons == null) {
+                                        Constants.matchWithDaltonsDefault = false;
+                                    } else {
+                                        Constants.matchWithDaltonsDefault = Constants.matchWithDaltons;
+                                    }
+                                }
+
                                 Object[] modelInfo = NCEcalibrator.calibrateNCE(currentModel, km,
-                                        Constants.outputDirectory + File.separator + "NCE_calibration",
-                                        km.peptideArraylist, km.scanNums, km.peptides);
-                                Constants.NCE = String.valueOf((int) modelInfo[2]);
-                                NCEcalibrator.plotNCEchart((TreeMap<Integer, ArrayList<Double>>) modelInfo[0]);
+                                        Constants.outputDirectory + File.separator + "NCE_calibration");
+                                for (PeptideFormatter pf : km.peptideArraylist) {
+                                    pf.foundUnimods.clear();
+                                }
+
+                                String bestNCE = String.valueOf((int) modelInfo[2]);
+                                NceConstants.calibratedModels.put(currentModel, bestNCE);
+                                NCEcalibrator.plotNCEchart(currentModel, (TreeMap<Integer, ArrayList<Double>>) modelInfo[0]);
                             }
 
                             PeptideFileCreator.createPeptideFile(pmMatcher,
@@ -1392,58 +1440,76 @@ public class MainClass {
                     koinaPreds.transferKoinaPreds(klrs, Constants.spectraRTPrefix + "_full.tsv");
                 }
 
-                String koinaPredFilePath = "koina.mgf";
+                //filter out fragment ion types not considered by fragmentation type before writing predictions
+                koinaPreds.preprocessPredictedSpectra(executorService,
+                        FragmentIonConstants.fragmentIonHierarchySet, FragmentIonConstants.fragmentIonHierarchySet);
+
+                StringBuilder koinaPredFilePath = new StringBuilder("koina.mgf");
+                StringBuilder auxPredFilePath = new StringBuilder("koina.mgf");
                 for (int j = 0; j < models.size(); j++) {
                     switch (modelTypes.get(j)) {
                         case "spectra":
                             if (predFilePaths.get(j).startsWith("koina")) {
-                                koinaPredFilePath = "spectra-" + predFilePaths.get(j).substring(5) + "." + koinaPredFilePath;
+                                koinaPredFilePath.insert(0, "spectra-" +
+                                        predFilePaths.get(j).substring(5) + ".");
                             } else { //DIANN
                                 Constants.spectraPredFile = DiannPredFilePath;
                             }
                             break;
                         case "RT":
                             if (predFilePaths.get(j).startsWith("koina")) {
-                                koinaPredFilePath = "RT-" + predFilePaths.get(j).substring(5) + "." + koinaPredFilePath;
+                                koinaPredFilePath.insert(0, "RT-" +
+                                        predFilePaths.get(j).substring(5) + ".");
                             } else {
                                 Constants.RTPredFile = DiannPredFilePath;
                             }
                             break;
                         case "IM":
                             if (predFilePaths.get(j).startsWith("koina")) {
-                                koinaPredFilePath = "IM-" + predFilePaths.get(j).substring(5) + "." + koinaPredFilePath;
+                                koinaPredFilePath.insert(0, "IM-" +
+                                        predFilePaths.get(j).substring(5) + ".");
                             } else {
                                 Constants.IMPredFile = DiannPredFilePath;
                             }
                             break;
                         case "auxSpectra": //DIANN cannot predict this
-                            koinaPredFilePath = "auxSpectra-" + predFilePaths.get(j).substring(5) + "." + koinaPredFilePath;
+                            auxPredFilePath.insert(0, "auxSpectra-" +
+                                    predFilePaths.get(j).substring(5) + ".");
                             break;
                     }
                 }
 
-                if (!koinaPredFilePath.equals("koina.mgf")) { //koina was used
+                if (!koinaPredFilePath.toString().equals("koina.mgf")) { //koina was used
                     MgfFileWriter mfw = new MgfFileWriter(koinaPreds);
-                    koinaPredFilePath = Constants.outputDirectory + File.separator + koinaPredFilePath;
-                    mfw.write(koinaPredFilePath);
+                    koinaPredFilePath.insert(0, Constants.outputDirectory + File.separator);
+                    mfw.write(koinaPredFilePath.toString());
                     for (int j = 0; j < models.size(); j++) {
                         if (predFilePaths.get(j).startsWith("koina")) {
                             switch (modelTypes.get(j)) {
                                 case "spectra":
-                                    Constants.spectraPredFile = koinaPredFilePath;
+                                    Constants.spectraPredFile = koinaPredFilePath.toString();
                                     break;
                                 case "RT":
-                                    Constants.RTPredFile = koinaPredFilePath;
+                                    Constants.RTPredFile = koinaPredFilePath.toString();
                                     break;
                                 case "IM":
-                                    Constants.IMPredFile = koinaPredFilePath;
-                                    break;
-                                case "auxSpectra":
-                                    Constants.auxSpectraPredFile = koinaPredFilePath;
+                                    Constants.IMPredFile = koinaPredFilePath.toString();
                                     break;
                             }
                         }
                     }
+                }
+                if (!auxPredFilePath.toString().equals("koina.mgf")) { //koina was used
+                    //make mini prediction entry hashmap
+                    PredictionEntryHashMap miniMap = new PredictionEntryHashMap();
+                    for (Map.Entry<String, PredictionEntry> pe : koinaPreds.entrySet()) {
+                        miniMap.put(pe.getKey(), pe.getValue().auxSpectra);
+                    }
+
+                    MgfFileWriter mfwAux = new MgfFileWriter(miniMap);
+                    auxPredFilePath.insert(0, Constants.outputDirectory + File.separator);
+                    mfwAux.write(auxPredFilePath.toString());
+                    Constants.auxSpectraPredFile = auxPredFilePath.toString();
                 }
             }
 
@@ -1570,5 +1636,22 @@ public class MainClass {
             e.getStackTrace();
             System.exit(1);
         }
+    }
+
+    //for updating constants read from parameter file
+    static private void updateField(Field field, String value, ConstantsInterface c)
+            throws NoSuchMethodException, InvocationTargetException, InstantiationException, IllegalAccessException {
+        //get class of field
+        Class<?> myClass = field.getType();
+
+        //do not parse use[something] if null
+        if (myClass.getTypeName().equals("java.lang.Boolean")) {
+            if (value.equals("null")) {
+                return;
+            }
+        }
+
+        //parse to appropriate type
+        field.set(c, myClass.getConstructor(String.class).newInstance(value));
     }
 }

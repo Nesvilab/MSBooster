@@ -17,15 +17,16 @@
 
 package writers;
 
-import allconstants.Constants;
 import predictions.PredictionEntry;
 import predictions.PredictionEntryHashMap;
-import readers.predictionreaders.LibraryPredictionMapper;
+import utils.NumericUtils;
 
 import java.io.BufferedWriter;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.util.Map;
+
+import static utils.Print.printInfo;
 
 public class MgfFileWriter {
     PredictionEntryHashMap allPreds;
@@ -34,6 +35,7 @@ public class MgfFileWriter {
     }
 
     public void write(String outfile) throws IOException {
+        printInfo("Writing " + outfile);
         BufferedWriter bw = new BufferedWriter(new FileWriter(outfile));
         for (Map.Entry<String, PredictionEntry> entry : allPreds.entrySet()) {
             String[] peptide = entry.getKey().split("\\|");
@@ -42,14 +44,22 @@ public class MgfFileWriter {
                 continue;
             }
 
+            //isotopic information
+            int isotopeSum = NumericUtils.intSum(pe.isotopes);
+
             bw.write("BEGIN IONS" + "\n");
             bw.write("TITLE=" + peptide[0] + "\n");
             bw.write("CHARGE=" + peptide[1] + "\n");
             bw.write("RT=" + pe.RT + "\n");
             bw.write("1/K0=" + pe.IM + "\n");
             for (int i = 0; i < pe.mzs.length; i++) {
-                if (pe.intensities[i] > Constants.minIntensityToWriteToMgf) {
-                    bw.write(pe.mzs[i] + "\t" + pe.intensities[i] + "\n");
+                //no need to filter by intensity since that's already done
+                if (pe.intensities[i] != 0) {
+                    if (isotopeSum > 0) {
+                        bw.write(pe.mzs[i] + "\t" + pe.intensities[i] + " " + pe.fragmentIonTypes[i] + " " + pe.isotopes[i] + "\n");
+                    } else {
+                        bw.write(pe.mzs[i] + "\t" + pe.intensities[i] + " " + pe.fragmentIonTypes[i] + "\n");
+                    }
                 }
             }
             bw.write("END IONS" + "\n");

@@ -18,6 +18,8 @@
 package features.spectra;
 
 import allconstants.Constants;
+import allconstants.FragmentIonConstants;
+import peptideptmformatting.PTMhandler;
 import predictions.FragmentAnnotationParser;
 
 import java.io.BufferedReader;
@@ -29,7 +31,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 import java.util.SortedMap;
 import java.util.TreeMap;
@@ -37,6 +39,8 @@ import java.util.TreeMap;
 import static utils.NumericUtils.sum;
 import static utils.Print.printError;
 
+//TODO: how do immonium masses change if AA has modification? e.g. would oxM also have IMA (104 Da), or would the mod mass be added?
+// possibleFragmentIons method does this, possibleUnispecMzs does not
 public class MassCalculator {
     public final float proton = 1.00727647f;
     public final float isotopic_massdiff = 1.0033548378f;
@@ -49,7 +53,7 @@ public class MassCalculator {
     private final String[] selectNeutralLosses = new String[] {"H2O", "NH3"};
     private final String[] internalFragmentTypes = new String[] {"ay", "by"};
 
-    public static final HashMap<String, Float> makeNlMasses() throws IOException {
+    public static HashMap<String, Float> makeNlMasses() throws IOException {
         HashMap<String, Float> neutralLossMasses = new HashMap<>();
         final InputStream stream = MassCalculator.class.getClassLoader().getResourceAsStream(
                 "fragment_annotation/neutral_losses.txt");
@@ -60,11 +64,23 @@ public class MassCalculator {
         while((line = nlFile.readLine()) != null) {
             String[] lineSplit = line.split("\t");
             neutralLossMasses.put(lineSplit[0], Float.valueOf(lineSplit[1]));
+            if (lineSplit.length == 3) {
+                if (lineSplit[2].equals("phos")) {
+                    phosphoLosses.add(lineSplit[0]);
+                } else if (lineSplit[2].equals("ox")) {
+                    oxidationLosses.add(lineSplit[0]);
+                } else {
+                    printError(lineSplit[2] + " is an unrecognized type of loss. Exiting.");
+                    System.exit(1);
+                }
+            }
         }
         nlFile.close();
         return neutralLossMasses;
     }
     public static final HashMap<String, Float> allNeutralLossMasses;
+    public static final HashSet<String> phosphoLosses = new HashSet<>();
+    public static final HashSet<String> oxidationLosses = new HashSet<>();
 
     static {
         try {
@@ -74,7 +90,7 @@ public class MassCalculator {
         }
     }
 
-    public static final HashMap<String, Float> makeImmoniumMasses() throws IOException {
+    public static HashMap<String, Float> makeImmoniumMasses() throws IOException {
         HashMap<String, Float> immMasses = new HashMap<>();
         final InputStream stream = MassCalculator.class.getClassLoader().getResourceAsStream(
                 "fragment_annotation/immonium_masses.txt");
@@ -105,18 +121,11 @@ public class MassCalculator {
     public float mass;
     public ArrayList<Double> modMasses = new ArrayList<Double>();
     public MassCalculator[] internalPeptides;
-    private final int internalAaFromNterm = 3;
+    private final int internalPeptideConstant = 3; //for PEPTIDER, only consider EP,EPT,...EPTIDE, which is 5.
     public SortedMap<Float, String[]> fragmentIons = new TreeMap<>();
-    public SortedMap<Float, String[]> unispecFragmentIons = new TreeMap<>();
     public HashMap<String, Float> annotationMasses = new HashMap<>();
-    public HashMap<String, Float> unispecAnnotationMasses = new HashMap<>();
-    public static final Set<String> allowedFragmentIonTypes = new HashSet<>(Arrays.asList(
-            "z", "c", "y", "a", "x", "b", "zdot", "cdot",
-            "p", "imm", "int", "int-NL",
-            "z-NL", "c-NL", "y-NL", "a-NL", "x-NL", "b-NL",
-            "p-NL", "unknown"));
 
-    //TODO: get immonium ion masses by taking amino acid and subtracting 26.99 Da. This holds for modified AA too (Falick et al 1993)
+    // get immonium ion masses by taking amino acid and subtracting 26.99 Da. This holds for modified AA too (Falick et al 1993)
     //TODO: should we consider related ions, not just immonium?
     public static HashMap<Character, Float> AAmap = new HashMap<Character, Float>()
     {{
@@ -151,39 +160,6 @@ public class MassCalculator {
     private final HashMap<String, double[]> series = new HashMap<>();
     Set<String> leftIons = new HashSet<>(Arrays.asList("a", "b", "c", "cdot"));
     Set<String> rightIons = new HashSet<>(Arrays.asList("x", "y", "z", "zdot"));
-
-    private static HashMap<Integer, String> makeFlagTOion() { //TODO: revamp c/zdot and add to this hashmap
-        HashMap<Integer, String> map = new HashMap<>();
-        map.put(0, "b");
-        map.put(1, "y");
-        map.put(2, "b-NL");
-        map.put(3, "y-NL");
-        map.put(4, "a");
-        map.put(5, "x");
-        map.put(6, "a-NL");
-        map.put(7, "x-NL");
-        map.put(8, "c");
-        map.put(9, "z");
-        map.put(10, "c-NL");
-        map.put(11, "z-NL");
-        map.put(12, "imm"); //immonium
-        map.put(13, "int"); //internal
-        map.put(14, "int-NL");
-        map.put(15, "p"); //precursor
-        map.put(16, "p-NL");
-        map.put(17, "unknown");
-        return map;
-    }
-    public static HashMap<Integer, String> flagTOion = makeFlagTOion();
-
-    private static HashMap<String, Integer> makeIonToFlag() {
-        HashMap<String, Integer> map = new HashMap<>();
-        for (Map.Entry<Integer, String> entry : flagTOion.entrySet()) {
-            map.put(entry.getValue(), entry.getKey());
-        }
-        return map;
-    }
-    public static HashMap<String, Integer> ionTOflag = makeIonToFlag();
 
     private MassCalculator() {}
 
@@ -226,7 +202,7 @@ public class MassCalculator {
         }
 
         this.mass = calcMass(pep.length(), "y", 1, 0) - H;
-        this.internalPeptides = new MassCalculator[peptide.length() - internalAaFromNterm]; //for PEPTIDER, only consider EP,EPT,...EPTIDE, which is 5.
+        this.internalPeptides = new MassCalculator[peptide.length() - internalPeptideConstant];
 
         //TODO something smarter, like based off fragmentation mode? Or optional parameter to pass flags to initialize.
         // Or fragger.params. Or based on model (DIANN always uses yb)
@@ -341,7 +317,7 @@ public class MassCalculator {
     //num2 is the a/b ion that is formed from that
     //assume charge 1 only
     public float calcMass(int num1, int num2, String flag, int isotope) {
-        MassCalculator newY = internalPeptides[num1 - internalAaFromNterm];
+        MassCalculator newY = internalPeptides[num1 - internalPeptideConstant];
         if (newY == null) {
             newY = makeInternalPeptide(num1);
         }
@@ -405,38 +381,40 @@ public class MassCalculator {
         MassCalculator mc = new MassCalculator();
         mc.peptide = peptide;
         mc.modMasses = modMasses;
-        this.internalPeptides[y - internalAaFromNterm] = mc;
+        this.internalPeptides[y - internalPeptideConstant] = mc;
         return mc;
     }
 
     //in case masses overlap
-    private void addToFragmentIons(Float mass, String[] info,
-                                   SortedMap<Float, String[]> mzToAnnotationMap,
-                                   HashMap<String, Float> annotationToMzMap) {
-        mzToAnnotationMap.merge(mass, info, (a, b) -> new String[]{a[0] + ";" + b[0],
-                a[1] + ";" + b[1]});
-        annotationToMzMap.put(info[0], mass);
+    private void addToFragmentIons(Float mass, String[] info, ArrayList<Float> mzArrayList) {
+        if (FragmentIonConstants.fragmentIonHierarchySet.contains(info[1])) {
+            fragmentIons.merge(mass, info, (a, b) -> new String[]{a[0] + ";" + b[0],
+                    a[1] + ";" + b[1]});
+            annotationMasses.put(info[0], mass);
+            mzArrayList.add(mass);
+        }
     }
 
-    //currently up to charge 2
     //format of value is [name, fragment ion type]
     //only support 1 neutral loss
-    private void possibleFragmentIons() { //TODO: edit based on allowedFragmentIonTypes? Allow everything above lowest rank allowed
+    public ArrayList<Float> possibleFragmentIons(String fragmentType) {
+        ArrayList<Float> returnedMzs = new ArrayList<>();
+
         //calculate precursor isotopic peaks. Will calculate with lower values of charge
         for (int iCharge = 1; iCharge < charge + 1; iCharge++) {
             //regular
-            if (Constants.lowestFragmentIonType.contains("p")) {
+            if (fragmentType.equals("p") || fragmentType.isEmpty()) {
                 String ionName = "p^" + iCharge;
                 addToFragmentIons(calcMassPrecursor(0, 0, iCharge),
-                        new String[]{ionName, "p"}, fragmentIons, annotationMasses);
+                        new String[]{ionName, "p"}, returnedMzs);
             }
 
             //neutral loss
-            if (Constants.lowestFragmentIonType.contains("p-NL")) {
+            if (fragmentType.equals("p-NL") || fragmentType.isEmpty()) {
                 for (String nl : selectNeutralLosses) {
                     String ionName = "p-" + nl + "^" + iCharge;
                     addToFragmentIons(calcMassPrecursor(0, allNeutralLossMasses.get(nl), iCharge),
-                            new String[]{ionName, "p-NL"}, fragmentIons, annotationMasses);
+                            new String[]{ionName, "p-NL"}, returnedMzs);
                 }
             }
         }
@@ -444,31 +422,28 @@ public class MassCalculator {
         //calculate all abcxyz ions
         String[] ions = new String[]{"a", "b", "c", "x", "y", "z", "zdot", "cdot"};
         int maxCharge = charge; //max fragment ion charge?
-        for (int i = 0; i < ions.length; i++) {
-            String ionType = ions[i];
+        for (String ionType : ions) {
             for (int num = 1; num < this.peptide.length(); num++) {
                 for (int iCharge = 1; iCharge < maxCharge + 1; iCharge++) {
                     //regular fragment
-                    if (Constants.lowestFragmentIonType.contains(ionType)) {
+                    if (fragmentType.equals(ionType) || fragmentType.isEmpty()) {
                         String ionName = ionType + num + "^" + iCharge;
                         addToFragmentIons(calcMass(num, ionType, iCharge, 0), new String[]{ionName, ionType},
-                                fragmentIons, annotationMasses);
+                                returnedMzs);
                     }
 
                     //neutral loss fragments
-                    if (Constants.lowestFragmentIonType.contains(ionType + "-NL")) {
+                    if (fragmentType.equals(ionType + "-NL") || fragmentType.isEmpty()) {
                         if (!ionType.equals("c")) {
                             for (String nl : selectNeutralLosses) {
                                 String ionName = ionType + num + "-" + nl + "^" + iCharge;
                                 addToFragmentIons(calcMass(num, ionType, iCharge, allNeutralLossMasses.get(nl), 0),
-                                        new String[]{ionName, ionType + "-NL"},
-                                        fragmentIons, annotationMasses);
+                                        new String[]{ionName, ionType + "-NL"}, returnedMzs);
                             }
                         } else { //c-NH3 is same as b
                             String ionName = ionType + num + "-H2O^" + iCharge;
                             addToFragmentIons(calcMass(num, ionType, iCharge, allNeutralLossMasses.get("H2O"), 0),
-                                    new String[]{ionName, "c-NL"},
-                                    fragmentIons, annotationMasses);
+                                    new String[]{ionName, "c-NL"}, returnedMzs);
                         }
                     }
                 }
@@ -489,17 +464,17 @@ public class MassCalculator {
                     int start = peptide.length() - num1;
                     String subsequence = peptide.substring(start, start + num2);
 
-                    if (Constants.lowestFragmentIonType.contains("int")) {
+                    if (fragmentType.equals("int") || fragmentType.isEmpty()) {
                         String ionName = "Int:y" + num1 + ionType.charAt(0) + num2 + "/" + subsequence;
                         addToFragmentIons(calcMass(num1, num2, ionType, 0), new String[]{ionName, "int"},
-                                fragmentIons, annotationMasses);
+                                returnedMzs);
                     }
-                    if (Constants.lowestFragmentIonType.contains("int-NL")) {
+                    if (fragmentType.equals("int-NL") || fragmentType.isEmpty()) {
                         for (String nl : selectNeutralLosses) {
                             String ionName = "Int:y" + num1 + ionType.charAt(0) + num2 + "-" + nl + "/" + subsequence;
                             addToFragmentIons(calcMass(num1, num2, ionType,
-                                    allNeutralLossMasses.get(nl), 0), new String[]{ionName, "int-NL"},
-                                    fragmentIons, annotationMasses);
+                                            allNeutralLossMasses.get(nl), 0), new String[]{ionName, "int-NL"},
+                                    returnedMzs);
                         }
                     }
                 }
@@ -507,10 +482,10 @@ public class MassCalculator {
         }
 
         //calculate immonium ions
-        if (Constants.lowestFragmentIonType.contains("imm")) {
+        if (fragmentType.equals("imm") || fragmentType.isEmpty()) {
             HashSet<Character> checkedImmoniumIons = new HashSet<>();
             for (int i = 0; i < peptide.length(); i++) {
-                if (! checkedImmoniumIons.contains(peptide.charAt(i))) {
+                if (!checkedImmoniumIons.contains(peptide.charAt(i))) {
                     String ionName;
 
                     //get attached mod
@@ -521,80 +496,101 @@ public class MassCalculator {
                     }
 
                     addToFragmentIons((float) (modMasses.get(i + 1) + AAmap.get(peptide.charAt(i)) - 26.99),
-                            new String[]{ionName, "imm"},
-                            fragmentIons, annotationMasses);
+                            new String[]{ionName, "imm"}, returnedMzs);
                     checkedImmoniumIons.add(peptide.charAt(i));
                 }
             }
         }
+
+        return returnedMzs;
     }
 
-    private void possibleUnispecMzs() throws IOException, URISyntaxException {
-        final InputStream stream = getClass().getClassLoader().getResourceAsStream(
-                "fragment_annotation/unispec_fragments.txt");
-        final InputStreamReader reader = new InputStreamReader(stream);
-        final BufferedReader fragmentsFile = new BufferedReader(reader);
+    public ArrayList<Float> possibleUnispecMzs(String fragmentType) {
+        ArrayList<Float> returnedMzs = new ArrayList<>();
 
-        String line;
-        while((line = fragmentsFile.readLine()) != null) {
-            FragmentAnnotationParser fap = new FragmentAnnotationParser(line);
-            if (! isFragmentPossible(fap)) {
+        for (FragmentAnnotationParser fap : FragmentIonConstants.fragmentAnnotationParserArrayList) {
+            if (! fragmentType.isEmpty()) {
+                if (!Objects.equals(fap.fragmentIonType, fragmentType)) {
+                    continue;
+                }
+            }
+            if (! isUnispecFragmentPossible(fap)) {
                 continue;
             }
 
+            float mz;
             switch (fap.fragmentIonType) {
                 case "y":
                 case "b":
                 case "a":
-                    addToFragmentIons(calcMass(fap.fragnum, fap.fragmentIonType, fap.charge, fap.isotope),
-                            new String[]{fap.fullAnnotation, fap.fragmentIonType},
-                            unispecFragmentIons, unispecAnnotationMasses);
+                    mz = calcMass(fap.fragnum, fap.fragmentIonType, fap.charge, fap.isotope);
                     break;
                 case "y-NL":
                 case "b-NL":
                 case "a-NL":
-                    addToFragmentIons(calcMass(fap.fragnum, fap.fragmentIonType, fap.charge, fap.neutralLoss, fap.isotope),
-                            new String[]{fap.fullAnnotation, fap.fragmentIonType},
-                            unispecFragmentIons, unispecAnnotationMasses);
+                    mz = calcMass(fap.fragnum, fap.fragmentIonType, fap.charge, fap.neutralLoss, fap.isotope);
                     break;
                 case "p": //p and p-NL are assumed to be the precursor charge
                     int thisCharge = fap.charge;
                     if (thisCharge == 0) { //for p, this means we need to use the precursor charge
                         thisCharge = charge;
                     }
-                    addToFragmentIons(calcMassPrecursor(fap.isotope, 0, thisCharge),
-                            new String[]{fap.fullAnnotation, fap.fragmentIonType},
-                            unispecFragmentIons, unispecAnnotationMasses);
+                    mz = calcMassPrecursor(fap.isotope, 0, thisCharge);
                     break;
                 case "p-NL":
                     thisCharge = fap.charge;
                     if (thisCharge == 0) {
                         thisCharge = charge;
                     }
-                    addToFragmentIons(calcMassPrecursor(fap.isotope, fap.neutralLoss, thisCharge),
-                            new String[]{fap.fullAnnotation, fap.fragmentIonType},
-                            unispecFragmentIons, unispecAnnotationMasses);
+                    mz = calcMassPrecursor(fap.isotope, fap.neutralLoss, thisCharge);
                     break;
                 case "imm":
-                    addToFragmentIons(calcMassImmonium(fap.fullAnnotation, fap.neutralLoss, fap.isotope),
-                            new String[]{fap.fullAnnotation, fap.fragmentIonType},
-                            unispecFragmentIons, unispecAnnotationMasses);
+                    mz = calcMassImmonium(fap.fullAnnotation, fap.neutralLoss, fap.isotope);
                     break;
                 case "int":
                     //num1 is peptide length - start + 1
                     //num2 should be extent
                     //unispec only has b/y internal fragments
-                    addToFragmentIons(calcMass(peptide.length() - fap.internalStartPosition + 1, fap.internalExtent,
-                            "by", fap.isotope),
-                            new String[]{fap.fullAnnotation, fap.fragmentIonType},
-                            unispecFragmentIons, unispecAnnotationMasses);
+                    mz = calcMass(peptide.length() - fap.internalStartPosition + 1, fap.internalExtent,
+                            "by", fap.isotope);
                     break;
+                case "int-NL":
+                    mz = calcMass(peptide.length() - fap.internalStartPosition + 1, fap.internalExtent,
+                            "by", fap.neutralLoss, fap.isotope);
+                    break;
+                default:
+                    mz = 0f;
+                    printError(fap.fragmentIonType + " is not supported. Exiting");
+                    System.exit(1);
+            }
+
+            //need to change full annotation for internal ions
+            //needs to be done separately for each masscalculator
+            if (fap.fragmentIonType.contains("int")) {
+                String sequence = internalPeptides[peptide.length() - fap.internalStartPosition + 1 - internalPeptideConstant]
+                        .peptide.substring(0, fap.internalExtent);
+
+                int plusIndex = fap.fullAnnotation.indexOf('+');
+                int minusIndex = fap.fullAnnotation.indexOf('-');
+
+                // Find the first occurrence of either
+                int firstIndex = (plusIndex == -1) ? minusIndex : (minusIndex == -1) ? plusIndex : Math.min(plusIndex, minusIndex);
+                String finalAnnotation;
+                if (firstIndex == -1) {
+                    finalAnnotation = "Int/" + sequence + "/" + fap.internalStartPosition;
+                } else {
+                    finalAnnotation = "Int/" + sequence + fap.fullAnnotation.substring(firstIndex) + "/" + fap.internalStartPosition;
+                }
+                addToFragmentIons(mz, new String[]{finalAnnotation, fap.fragmentIonType}, returnedMzs);
+            } else {
+                addToFragmentIons(mz, new String[]{fap.fullAnnotation, fap.fragmentIonType}, returnedMzs);
             }
         }
-        fragmentsFile.close();
+
+        return returnedMzs;
     }
 
-    private boolean isFragmentPossible(FragmentAnnotationParser fap) {
+    private boolean isUnispecFragmentPossible(FragmentAnnotationParser fap) {
         switch (fap.fragmentIonType) {
             case "y":
             case "b":
@@ -605,7 +601,7 @@ public class MassCalculator {
                 if (fap.fragnum >= peptide.length()) {
                     return false;
                 }
-            break;
+                break;
             case "p":
             case "p-NL":
                 if ((fap.charge != 0) &&
@@ -615,39 +611,93 @@ public class MassCalculator {
                 }
                 break;
             case "int":
-                if (fap.internalStartPosition < internalAaFromNterm - 1) { //TODO: could adapt
+            case "int-NL":
+                if (fap.internalStartPosition < internalPeptideConstant - 1) { //only start at position 2
                     return false;
                 }
-                if (fap.internalStartPosition >= peptide.length()) {
+                if (fap.internalStartPosition >= peptide.length()) { //starting position outside range of peptide length
                     return false;
                 }
-                if (fap.internalStartPosition + fap.internalExtent >= peptide.length() - 1) {
+                if (fap.internalStartPosition + fap.internalExtent - 1 >= peptide.length()) { //fragment cannot extend past peptide c-term
                     return false;
                 }
                 break;
+            case "imm": //TODO: can IKF actually occur (arginine peak from lysine)?
+                String AA = String.valueOf(fap.fullAnnotation.charAt(1));
+                if (! peptide.contains(AA)) {
+                    return false;
+                }
+                if (AA.equals("C") && fap.fullAnnotation.startsWith("CAM", 2)) { // C+57
+                    boolean contains = modMasses.stream().anyMatch(
+                            value -> Math.abs(value - PTMhandler.carbamidomethylationMass) <= 0.0002);
+                    if (!contains) {
+                        return false;
+                    }
+                }
+                break;
         }
+
+        //check if fap contains a neutral loss not supported by this peptide, move on
+        //check if modMasses contains close enough mass to phospho or oxidation
+        boolean needPhospho = false;
+        for (String loss : phosphoLosses) {
+            if (fap.fullAnnotation.contains(loss)) {
+                needPhospho = true;
+                break;
+            }
+        }
+        if (needPhospho) {
+            boolean hasPhospho = false;
+            for (double modMass : modMasses) {
+                if (Math.abs(modMass - PTMhandler.phosphorylationMass) < 0.0002) {
+                    hasPhospho = true;
+                    break;
+                }
+            }
+            if (!hasPhospho) {
+                return false;
+            }
+        }
+        boolean needOx = false;
+        for (String loss : oxidationLosses) {
+            if (fap.fullAnnotation.contains(loss)) {
+                needOx = true;
+                break;
+            }
+        }
+        if (needOx) {
+            boolean hasOx = false;
+            for (double modMass : modMasses) {
+                if (Math.abs(modMass - PTMhandler.oxidationMass) < 0.0002) {
+                    hasOx = true;
+                    break;
+                }
+            }
+            if (!hasOx) {
+                return false;
+            }
+        }
+
         return true;
     }
 
     //takes array of mz values and tries to annotate
+    //usually default is sufficient, just to calculate y and b m/z values
     public String[][] annotateMZs(float[] mzs,
                                   String mode,
-                                  boolean daltonTolerance) throws IOException, URISyntaxException {
+                                  boolean daltonTolerance) {
         SortedMap<Float, String[]> mzToAnnotationMap = null;
-        if (mode.equals("default")) {
-            if (fragmentIons.isEmpty()) {
-                possibleFragmentIons();
+        if (fragmentIons.isEmpty()) {
+            if (mode.equals("unispec") || FragmentIonConstants.annotatePredfullLikeUnispec) {
+                possibleUnispecMzs("");
+            } else if (mode.equals("default")) {
+                possibleFragmentIons("");
+            } else {
+                printError(mode + " not supported for mz annotation. Exiting");
+                System.exit(1);
             }
-            mzToAnnotationMap = fragmentIons;
-        } else if (mode.equals("unispec")) {
-            if (unispecFragmentIons.isEmpty()) {
-                possibleUnispecMzs();
-            }
-            mzToAnnotationMap = unispecFragmentIons;
-        } else {
-            printError(mode + " not supported for mz annotation. Exiting");
-            System.exit(1);
         }
+        mzToAnnotationMap = fragmentIons;
 
         String[] annotations = new String[mzs.length]; //full annotation with everything
         String[] fragmentIonTypes = new String[mzs.length];
@@ -710,7 +760,7 @@ public class MassCalculator {
 
             //annotate with highest priority fragment ion type
             StringBuilder sb = new StringBuilder();
-            for (String ionType : Constants.fragmentIonHierarchy) {
+            for (String ionType : FragmentIonConstants.fragmentIonHierarchy) {
                 for (String[] candidates : consideredFragmentIons) {
                     if (candidates[1].equals(ionType)) {
                         if (!sb.toString().isEmpty()) { //multiple matches
@@ -808,8 +858,11 @@ public class MassCalculator {
     }
 
     public static void main(String[] args) throws IOException, URISyntaxException {
-        Constants.FragmentationType = "HCD";
-        MassCalculator mc = new MassCalculator("PEPTIDER", 3);
-        mc.possibleUnispecMzs();
+        FragmentIonConstants.fragmentIonHierarchySet = new HashSet<>();
+        FragmentIonConstants.fragmentIonHierarchySet.add("int");
+        FragmentIonConstants.fragmentIonHierarchySet.add("int-NL");
+        MassCalculator mc = new MassCalculator("APAGVLPELM[15.9949]", 2);
+        mc.possibleUnispecMzs("");
+        System.out.println(mc.annotationMasses);
     }
 }

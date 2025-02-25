@@ -18,21 +18,16 @@
 package allconstants;
 
 import features.detectability.FastaReader;
-import features.spectra.MassCalculator;
 import utils.CaseInsensitiveHashSet;
 import utils.MyFileUtils;
 
 import java.io.File;
 import java.io.IOException;
-import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
-import static utils.Print.printError;
-
-public class Constants {
+public class Constants implements ConstantsInterface {
     //file input
     public static String paramsList = null;
     public static String fragger = null;
@@ -89,7 +84,7 @@ public class Constants {
     public static String spectraModel = "";
     public static String rtModel = "";
     public static String imModel = "";
-    public static String auxSpectraModel = ""; //TODO: support this
+    public static String auxSpectraModel = "";
     public static Integer splitPredInputFile = 1;
     public static Boolean useKoina = false;
     public static Boolean usedKoina = false;
@@ -145,21 +140,10 @@ public class Constants {
     public static String imSearchModelsString = "DIA-NN,AlphaPept_ccs_generic";
     public static final CaseInsensitiveHashSet ms2SearchModelsTMT = new CaseInsensitiveHashSet(
             new String[] {"DIA-NN", "Prosit_2020_intensity_TMT"});
-    public static CaseInsensitiveHashSet nceModels = new CaseInsensitiveHashSet(
-            new String[] {
-                    "PredFull", "Prosit", "PrositTMT", "alphapeptdeep", //externally supported
-                    "AlphaPept_ms2_generic",
-                    "Prosit_2019_intensity", "Prosit_2023_intensity_timsTOF",
-                    "Prosit_2020_intensity_TMT", "Prosit_2020_intensity_HCD",
-                    "UniSpec", "PredFull"});
     public static Integer numKoinaAttempts = 3;
     public static Integer initialKoinaMillisecondsToWaitRtIm = 30000;
     public static Integer initialKoinaMillisecondsToWaitMs2 = 60000;
-    public static Float minIntensityToWriteToMgf = 0.01f;
-    public static Boolean calibrateNCE = true;
     public static Integer numPSMsToCalibrate = 1000;
-    public static Integer minNCE = 20;
-    public static Integer maxNCE = 40;
     public static Boolean autoSwitchFragmentation = true;
 
     //additional modifications
@@ -191,15 +175,17 @@ public class Constants {
     public static Float ppmTolerance = 20f; //ppm tolerance of MS2 scans
     public static Float lowResppmTolerance = 300f;
     public static Float highResppmTolerance = 20f;
-    public static Boolean matchWithDaltons = false;
+    public static Boolean matchWithDaltons = null;
+    public static Boolean matchWithDaltonsAux = null;
+    public static Boolean matchWithDaltonsDefault = null; //use during best model search
     public static Float DaTolerance = 0.05f;
     public static Boolean hasITMS = false;
 
     //for limiting number of fragments used
-    public static Boolean useSpectra = true;
+    public static Boolean useSpectra = true; //applies to aux spectra model too
     public static Boolean useTopFragments = true;
-    public static Integer topFragments = 20;
-    public static Boolean adaptiveFragmentNum = false;
+    public static Integer topFragments = 0;
+    public static Boolean adaptiveFragmentNum = false; //TODO: automatically find best number of fragments to use
     public static Boolean removeRankPeaks = true; //whether to remove peaks from higher ranks
     public static Boolean useBasePeak = true;
     public static Float percentBasePeak = 1f;
@@ -256,83 +242,12 @@ public class Constants {
 
     //support for PredFull and Prosit
     public static String FragmentationType = "";
-    public static String NCE = "";
     public static String instrument = "";
     public static Integer maxPredictedFragmentCharge = 100;
     public static Integer minPredictedFragmentNum = 0;
     public static Boolean createPredFileOnly = false;
-    public static String ignoredFragmentIonTypes = ""; //split with commas
-    public static String onlyFragmentIonTypes = ""; //split with commas
-    public static Set<String> makeIgnoredFragmentIonTypes() {
-        Set<String> ignoredFragmentIonTypes = new HashSet<>();
-        Set<String> onlyFragmentIonTypes = new HashSet<>();
-        if (! Constants.onlyFragmentIonTypes.equals("")) {
-            String[] commaSplit = Constants.onlyFragmentIonTypes.split(",");
-            for (int i = 0; i < commaSplit.length; i++) {
-                String fragmentIonType = commaSplit[i].trim();
-                if (MassCalculator.allowedFragmentIonTypes.contains(fragmentIonType)) {
-                    onlyFragmentIonTypes.add(fragmentIonType);
-                } else {
-                    printError(fragmentIonType + " is not a supported fragment ion type to include. " +
-                            "Please choose from " + MassCalculator.allowedFragmentIonTypes);
-                    System.exit(1);
-                }
-            }
-            for (String fragment : MassCalculator.allowedFragmentIonTypes) {
-                if (! onlyFragmentIonTypes.contains(fragment)) {
-                    ignoredFragmentIonTypes.add(fragment);
-                }
-            }
-        } else if (! Constants.ignoredFragmentIonTypes.equals("")) {
-            //only filter if not excluding certain fragment ion types
-            //check that this is allowed
-            String[] commaSplit = Constants.ignoredFragmentIonTypes.split(",");
-            for (int i = 0; i < commaSplit.length; i++) {
-                String fragmentIonType = commaSplit[i].trim();
-                if (MassCalculator.allowedFragmentIonTypes.contains(fragmentIonType)) {
-                    ignoredFragmentIonTypes.add(fragmentIonType);
-                } else {
-                    printError(fragmentIonType + " is not a supported fragment ion type to exclude. " +
-                            "Please choose from " + MassCalculator.allowedFragmentIonTypes);
-                    System.exit(1);
-                }
-            }
-        }
-        return ignoredFragmentIonTypes;
-    }
-    public static String[] fragmentIonHierarchy = makeFragmentIonHierarchy();
-    public static String[] makeFragmentIonHierarchy() {
-        switch (Constants.FragmentationType) {
-            case "HCD":
-                return new String[]{"p", "imm", "y", "b", "a", "p-NL",
-                        "y-NL", "b-NL", "a-NL", "int", "int-NL", "unknown"};
-            case "ETD":
-                return new String[]{"zdot", "c", "z", "y", "unknown"};
-            case "ETHCD":
-                return new String[]{"imm", "y", "b", "a", "zdot", "c", "z", "cdot",
-                        "y-NL", "b-NL", "a-NL", "int", "int-NL", "unknown"};
-            default:  //everything else, like CID
-                return new String[]{"imm", "y", "b", "a",
-                        "y-NL", "b-NL", "a-NL", "int", "int-NL", "unknown"};
-        }
-    }
-    public static Set<String> lowestFragmentIonType = makeLowestFragmentIonType();
-    public static Set<String> makeLowestFragmentIonType() {
-        Set<String> ignoredFragmentIonTypesSet = makeIgnoredFragmentIonTypes();
-        int index = 0;
-        for (int i = fragmentIonHierarchy.length - 1; i > -1; i--) {
-            String ion = fragmentIonHierarchy[i];
-            if (! ignoredFragmentIonTypesSet.contains(ion)) {
-                index = i;
-                break;
-            }
-        }
-        return new HashSet<>(Arrays.asList(fragmentIonHierarchy).subList(0, index + 1));
-    }
-    public static String divideFragments = "0";
 
-    //PredFull fragment ion annotation
-    //TODO: can only use for PredFull
+    //fragment ion annotation
     public static Boolean useMatchedIntensities = false;
     public static Boolean usePredIntensities = false;
     public static Boolean usePeakCounts = false;
@@ -345,7 +260,6 @@ public class Constants {
     //use single string sep by comma delimiter
     //public static String features = "predRTrealUnits,unweightedSpectralEntropy,deltaRTLOESS,peptideCounts";
     public static String features = "predRTrealUnits,unweightedSpectralEntropy,deltaRTLOESS";
-    public static Boolean useMultipleCorrelatedFeatures = false;
 
     //don't currently support weighted similarity features
     public static final CaseInsensitiveHashSet detectFeatures = new CaseInsensitiveHashSet(
@@ -353,18 +267,20 @@ public class Constants {
                     "detectSubtractMissing", "detectProtSpearmanDiff"});
     public static final CaseInsensitiveHashSet spectraRTFeatures = new CaseInsensitiveHashSet(
             new String[] {
-            "cosineSimilarity", "weightedCosineSimilarity", "spectralContrastAngle", "weightedSpectralContrastAngle",
-            "euclideanDistance", "weightedEuclideanDistance", "brayCurtis", "weightedBrayCurtis",
-            "pearsonCorr", "weightedPearsonCorr", "spearmanCorr", "dotProduct", "weightedDotProduct", "unweightedSpectralEntropy",
-            "deltaRTlinear", "deltaRTbins", "deltaRTLOESS", "RTzscore", "RTprobability", "RTprobabilityUnifPrior",
-            "deltaRTLOESSnormalized", "calibratedRT", "predictedRT", "numMatchedFragments", "hypergeometricProbability",
-            "intersection", "adjacentSimilarity", "bestScan", "bootstrapSimilarity", "deltaRTLOESSreal", "predRTrealUnits"});
+                    "cosineSimilarity", "weightedCosineSimilarity", "spectralContrastAngle", "weightedSpectralContrastAngle",
+                    "euclideanDistance", "weightedEuclideanDistance", "brayCurtis", "weightedBrayCurtis",
+                    "pearsonCorr", "weightedPearsonCorr", "spearmanCorr", "dotProduct", "weightedDotProduct",
+                    "unweightedSpectralEntropy", "deltaRTlinear", "deltaRTbins", "deltaRTLOESS", "RTzscore", "RTprobability",
+                    "RTprobabilityUnifPrior", "deltaRTLOESSnormalized", "calibratedRT", "predictedRT", "numMatchedFragments",
+                    "hypergeometricProbability", "intersection", "adjacentSimilarity", "bestScan", "bootstrapSimilarity",
+                    "deltaRTLOESSreal", "predRTrealUnits", "weightedSpectralEntropy", "heuristicSpectralEntropy"});
     public static final CaseInsensitiveHashSet spectraFeatures = new CaseInsensitiveHashSet(
             new String[] {
-            "cosineSimilarity", "weightedCosineSimilarity", "spectralContrastAngle", "weightedSpectralContrastAngle",
-            "euclideanDistance", "weightedEuclideanDistance", "brayCurtis", "weightedBrayCurtis", "unweightedSpectralEntropy",
-            "pearsonCorr", "weightedPearsonCorr", "spearmanCorr", "dotProduct", "weightedDotProduct", "numMatchedFragments",
-            "hypergeometricProbability", "intersection", "adjacentSimilarity", "bestScan", "bootstrapSimilarity"});
+                    "cosineSimilarity", "weightedCosineSimilarity", "spectralContrastAngle", "weightedSpectralContrastAngle",
+                    "euclideanDistance", "weightedEuclideanDistance", "brayCurtis", "weightedBrayCurtis",
+                    "unweightedSpectralEntropy", "pearsonCorr", "weightedPearsonCorr", "spearmanCorr", "dotProduct",
+                    "weightedDotProduct", "numMatchedFragments", "hypergeometricProbability", "intersection",
+                    "adjacentSimilarity", "bestScan", "bootstrapSimilarity", "weightedSpectralEntropy", "heuristicSpectralEntropy"});
     public static final CaseInsensitiveHashSet rtFeatures = new CaseInsensitiveHashSet(
             new String[] {
             "deltaRTlinear", "deltaRTbins", "deltaRTLOESS", "RTzscore", "RTprobability", "RTprobabilityUnifPrior",
@@ -376,7 +292,7 @@ public class Constants {
     public static HashSet<String> matchedIntensitiesFeatures = null;
     public static HashSet<String> makeMatchedIntensitiesFeatures() {
         HashSet<String> set = new HashSet<>();
-        for (String s : Constants.fragmentIonHierarchy) {
+        for (String s : FragmentIonConstants.fragmentIonHierarchy) {
             set.add(s + "_matched_intensity");
         }
         return set;
@@ -384,7 +300,7 @@ public class Constants {
     public static HashSet<String> peakCountsFeatures = null;
     public static HashSet<String> makePeakCountsFeatures() {
         HashSet<String> set = new HashSet<>();
-        for (String s : Constants.fragmentIonHierarchy) {
+        for (String s : FragmentIonConstants.fragmentIonHierarchy) {
             set.add(s + "_peak_counts");
         }
         return set;
@@ -392,7 +308,7 @@ public class Constants {
     public static HashSet<String> predIntensitiesFeatures = null;
     public static HashSet<String> makePredIntensitiesFeatures() {
         HashSet<String> set = new HashSet<>();
-        for (String s : Constants.fragmentIonHierarchy) {
+        for (String s : FragmentIonConstants.fragmentIonHierarchy) {
             set.add(s + "_pred_intensity");
         }
         return set;
@@ -400,7 +316,7 @@ public class Constants {
     public static HashSet<String> individualSpectralSimilaritiesFeatures = null;
     public static HashSet<String> makeIndividualSpectralSimilarities() {
         HashSet<String> set = new HashSet<>();
-        for (String s : Constants.fragmentIonHierarchy) {
+        for (String s : FragmentIonConstants.fragmentIonHierarchy) {
             set.add(s + "_spectral_similarity");
         }
         return set;
@@ -408,7 +324,7 @@ public class Constants {
     public static HashSet<String> intensitiesDifferenceFeatures = null;
     public static HashSet<String> makeintensitiesDifference() {
         HashSet<String> set = new HashSet<>();
-        for (String s : Constants.fragmentIonHierarchy) {
+        for (String s : FragmentIonConstants.fragmentIonHierarchy) {
             set.add(s + "_intensities_difference");
         }
         return set;
@@ -442,6 +358,8 @@ public class Constants {
         map.put("spearmanCorr", "spearman_corr");
         map.put("dotProduct", "dot_product");
         map.put("unweightedSpectralEntropy", "unweighted_spectral_entropy");
+        map.put("weightedSpectralEntropy", "weighted_spectral_entropy");
+        map.put("heuristicSpectralEntropy", "heuristic_spectral_entropy");
         map.put("numMatchedFragments", "num_matched_fragments");
         map.put("deltaRTLOESS", "delta_RT_loess");
         map.put("deltaRTLOESSreal", "delta_RT_loess_real");

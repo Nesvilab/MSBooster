@@ -110,6 +110,7 @@ public class KoinaMethods {
 //        }
 //    }
 
+    //used for partial prediction. allHits is only a subset of all the hits in a pin file
     public PredictionEntryHashMap getKoinaPredictions(
             HashSet<String> allHits, String model, int NCE, String folder, String fulltsv) {
         ScheduledThreadPoolExecutor executorService = new ScheduledThreadPoolExecutor(1);
@@ -163,7 +164,8 @@ public class KoinaMethods {
                                           HashMap<String, LinkedList<Integer>> scanNums,
                                           HashMap<String, LinkedList<PeptideFormatter>> peptides)
             throws FileParsingException, ExecutionException, InterruptedException, IOException, URISyntaxException {
-        allPreds.filterTopFragments(new ScheduledThreadPoolExecutor(Constants.numThreads));
+        //pass empty hashsets since no fragment filtering at this step
+        allPreds.preprocessPredictedSpectra(new ScheduledThreadPoolExecutor(Constants.numThreads), new HashSet<>(), new HashSet<>());
 
         int arrayLength = 0;
         for (LinkedList<Integer> scanNum : scanNums.values()) {
@@ -182,10 +184,12 @@ public class KoinaMethods {
                 MzmlScanNumber msn = mzmlReader.getScanNumObject(scanNum);
 
                 PeptideFormatter pf = thisPeptides.get(k);
-                PeptideObj pobj = msn.setPeptideObject(
-                        new PeptideFormatter(pf.getBase(), pf.getCharge(), "base"),
-                        1, 1, "0", allPreds, false);
-                peptideObjs[index] = pobj;
+                if (allPreds.containsKey(pf.getBaseCharge())) {
+                    PeptideObj pobj = msn.setPeptideObject(
+                            new PeptideFormatter(pf.getBase(), pf.getCharge(), "base"),
+                            1, 1, "0", allPreds, false);
+                    peptideObjs[index] = pobj;
+                }
                 index++;
             }
         }

@@ -18,18 +18,20 @@
 package readers;
 
 import allconstants.Constants;
+import allconstants.FragmentIonConstants;
 import com.google.common.collect.Multimap;
-import java.nio.file.Paths;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.List;
-import java.util.Set;
 import peptideptmformatting.PeptideFormatter;
 import predictions.PredictionEntry;
 import predictions.PredictionEntryHashMap;
 import readers.predictionreaders.LibraryPredictionMapper;
 import umich.ms.fileio.filetypes.library.LibraryTsv;
 import umich.ms.fileio.filetypes.library.Transition;
+
+import java.nio.file.Paths;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.List;
+import java.util.Set;
 
 public class LibraryTsvReader implements LibraryPredictionMapper {
 
@@ -43,7 +45,7 @@ public class LibraryTsvReader implements LibraryPredictionMapper {
         Multimap<String, Transition> transitions = libraryTsv.read(Paths.get(file));
 
         try {
-            Set<String> ignoredFragmentIonTypesSet = Constants.makeIgnoredFragmentIonTypes();
+            Set<String> ignoredFragmentIonTypesSet = FragmentIonConstants.makeIgnoredFragmentIonTypes();
 
             for (String k : transitions.keySet()) {
                 Collection<Transition> tt = transitions.get(k);
@@ -63,7 +65,7 @@ public class LibraryTsvReader implements LibraryPredictionMapper {
                         }
                     }
 
-                    PredictionEntry newPred = new PredictionEntry(mzArray, intArray, new int[0], new int[0], fragmentIonTypes, new int[0]);
+                    PredictionEntry newPred = new PredictionEntry(mzArray, intArray, new int[0], new int[0], fragmentIonTypes);
                     newPred.setRT(t.normalizedRetentionTime);
                     newPred.setIM(t.precursorIonMobility);
                     allPreds.put(basePep, newPred);

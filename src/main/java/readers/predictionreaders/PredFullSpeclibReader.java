@@ -17,14 +17,13 @@
 
 package readers.predictionreaders;
 
-import allconstants.Constants;
+import allconstants.FragmentIonConstants;
 import features.spectra.MassCalculator;
 import peptideptmformatting.PeptideFormatter;
 import peptideptmformatting.PeptideSkipper;
 import predictions.PredictionEntry;
 import readers.MgfFileReader;
 import readers.datareaders.PinReader;
-import umich.ms.fileio.exceptions.FileParsingException;
 
 import java.io.BufferedReader;
 import java.io.File;
@@ -34,7 +33,6 @@ import java.net.URISyntaxException;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.Set;
-import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 
 import static features.spectra.MassCalculator.allNeutralLossMasses;
@@ -45,7 +43,7 @@ public class PredFullSpeclibReader extends MgfFileReader {
 
     public PredFullSpeclibReader(String file, boolean createScanNumObjects, File[] pinFiles,
                                  ExecutorService executorService)
-            throws InterruptedException, ExecutionException, FileParsingException, IOException, URISyntaxException {
+            throws IOException, URISyntaxException {
         //initially start with mgf reading
         super(file, createScanNumObjects, executorService, "PredFull");
 
@@ -72,7 +70,7 @@ public class PredFullSpeclibReader extends MgfFileReader {
         String l;
 
         //filter here so don't need to annotate everything
-        Set<String> ignoredFragmentIonTypesSet = Constants.makeIgnoredFragmentIonTypes();
+        Set<String> ignoredFragmentIonTypesSet = FragmentIonConstants.makeIgnoredFragmentIonTypes();
         this.getPreds();
         while ((l = TSVReader.readLine()) != null) {
             //doing fragment annotation for everything, not just modified ones
@@ -233,7 +231,7 @@ public class PredFullSpeclibReader extends MgfFileReader {
             }
 
             PredictionEntry newPred = new PredictionEntry(mzArray, intArray,
-                    new int[0], new int[0], fragmentArray, new int[0]);
+                    new int[0], new int[0], fragmentArray);
             newPred.setRT(pe.RT);
             newPred.setIM(pe.IM);
             this.allPredsHashMap.put(lSplit[0] + "|" + lSplit[1], newPred);

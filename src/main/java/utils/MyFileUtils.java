@@ -18,7 +18,6 @@
 package utils;
 
 import java.io.File;
-import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -26,7 +25,7 @@ import java.util.Comparator;
 import java.util.stream.Stream;
 
 public class MyFileUtils {
-    public static void deleteWholeDirectory(String directory) throws IOException {
+    public static void deleteWholeDirectory(String directory) {
         try {
             Path rootPath = Paths.get(directory);
             if (Files.exists(rootPath)) {
@@ -39,8 +38,8 @@ public class MyFileUtils {
         } catch (Exception ignored) {}
     }
 
-    public static void createWholeDirectory(String directory) throws IOException {
-        deleteWholeDirectory(directory);
+    public static void createWholeDirectory(String directory) {
+        //deleteWholeDirectory(directory);
         if (! new File(directory).exists()) {
             new File(directory).mkdirs();
         }

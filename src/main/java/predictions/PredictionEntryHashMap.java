@@ -27,6 +27,7 @@ import utils.Multithreader;
 import java.io.BufferedReader;
 import java.io.FileReader;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutionException;
@@ -36,7 +37,7 @@ import java.util.concurrent.Future;
 import static utils.Print.printError;
 
 public class PredictionEntryHashMap extends ConcurrentHashMap<String, PredictionEntry> {
-    public void filterTopFragments(ExecutorService executorService)
+    public void preprocessPredictedSpectra(ExecutorService executorService, HashSet<String> primaryTypes, HashSet<String> auxTypes)
             throws ExecutionException, InterruptedException {
         String[] peptides = new String[this.size()];
         PredictionEntry[] predictions = new PredictionEntry[this.size()];
@@ -54,7 +55,10 @@ public class PredictionEntryHashMap extends ConcurrentHashMap<String, Prediction
             futureList.add(executorService.submit(() -> {
                 for (int j = mt.indices[finalI]; j < mt.indices[finalI + 1]; j++) {
                     PredictionEntry pe = predictions[j];
-                    pe.filterFragments();
+                    pe.preprocessFragments(primaryTypes);
+                    if (pe.auxSpectra != null) {
+                        pe.auxSpectra.preprocessFragments(auxTypes);
+                    }
                     this.put(peptides[j], pe);
                 }
             }));
@@ -82,9 +86,9 @@ public class PredictionEntryHashMap extends ConcurrentHashMap<String, Prediction
         //switch case for spectra, RT, IM, aux
         for (Entry<String, PredictionEntry> entry : this.entrySet()) {
             String peptide = entry.getKey();
-            PredictionEntry pe2 = entry.getValue();
+            PredictionEntry pe2 = entry.getValue(); //library being added
             if (fullLib.containsKey(peptide)) {
-                PredictionEntry pe1 = fullLib.get(peptide);
+                PredictionEntry pe1 = fullLib.get(peptide); //allpreds
                 switch (mode) {
                     //for RT and IM, just replace that
                     case "RT":
@@ -93,23 +97,59 @@ public class PredictionEntryHashMap extends ConcurrentHashMap<String, Prediction
                     case "IM":
                         pe1.setIM(pe2.getIM());
                         break;
-                    //for spectra and aux, probably need two separate vectors to be saved
                     case "spectra":
                         pe1.mzs = pe2.mzs;
                         pe1.intensities = pe2.intensities;
                         pe1.fragNums = pe2.fragNums;
                         pe1.charges = pe2.charges;
                         pe1.fragmentIonTypes = pe2.fragmentIonTypes;
-                        pe1.flags = pe2.flags;
-                        pe1.filtered = pe2.filtered;
                         break;
                     case "auxSpectra":
+                        if (pe1.mzs.length == 0) { //populate missing main spectra
+                            if (Constants.auxSpectraModel.equalsIgnoreCase("unispec")) {
+                                //filter to use only 0 isotopes
+                                ArrayList<Integer> zeroIsotopes = new ArrayList<>();
+                                for (int i = 0; i < pe2.isotopes.length; i++) {
+                                    if (pe2.isotopes[i] == 0) {
+                                        zeroIsotopes.add(i);
+                                    }
+                                }
+
+                                pe1.mzs = new float[zeroIsotopes.size()];
+                                pe1.intensities = new float[zeroIsotopes.size()];
+                                pe1.fragNums = new int[zeroIsotopes.size()];
+                                pe1.charges = new int[zeroIsotopes.size()];
+                                pe1.fragmentIonTypes = new String[zeroIsotopes.size()];
+
+                                int i = 0;
+                                for (int idx : zeroIsotopes) {
+                                    pe1.mzs[i] = pe2.mzs[idx];
+                                    pe1.intensities[i] = pe2.intensities[idx];
+                                    if (pe2.fragNums.length != 0) {
+                                        pe1.fragNums[i] = pe2.fragNums[idx];
+                                    }
+                                    if (pe2.charges.length != 0) {
+                                        pe1.charges[i] = pe2.charges[idx];
+                                    }
+                                    pe1.fragmentIonTypes[i] = pe2.fragmentIonTypes[idx];
+                                    i++;
+                                }
+                            } else { //PredFull
+                                pe1.mzs = pe2.mzs;
+                                pe1.intensities = pe2.intensities;
+                                pe1.fragNums = pe2.fragNums;
+                                pe1.charges = pe2.charges;
+                                pe1.fragmentIonTypes = pe2.fragmentIonTypes;
+                            }
+                        }
+                        pe1.auxSpectra = pe2;
                         break;
                 }
 
                 fullLib.put(peptide, pe1); //entry in library1, but getting property for it from library2
-            } else {
-                fullLib.put(peptide, pe2); //if entry missing in library1, add it from library2
+            } else { //first entry loaded
+                //if running whole workflow, even if one model does not support all peptides, will have empty entry in mgf
+                fullLib.put(peptide, pe2);
             }
         }
 
@@ -176,7 +216,7 @@ public class PredictionEntryHashMap extends ConcurrentHashMap<String, Prediction
                             System.exit(1);
                         }
                     } else { //don't want to worry about calculating all the different NLs
-                        if (klr.property.equals("ms2")) {
+                        if (klr.property.equals("ms2") || klr.property.equals("ms2_aux")) {
                             MassCalculator mc = new MassCalculator(line[0], line[1]);
                             newMZs = new float[oldPred.getMzs().length];
 
@@ -200,17 +240,16 @@ public class PredictionEntryHashMap extends ConcurrentHashMap<String, Prediction
                             newPred.fragNums = new int[]{0};
                             newPred.charges = new int[]{0};
                             newPred.fragmentIonTypes = new String[]{"y"};
-                            newPred.flags = new int[]{1};
                         } else {
-                            if (newMZs.length == 0) {
+                            if (newMZs.length == 0) { //this entry is already in old pred hashmap
                                 newMZs = oldPred.mzs;
                             }
                             if (klr.modelType.contains("unispec") || klr.modelType.contains("predfull")) {
                                 newPred = new PredictionEntry(newMZs, oldPred.intensities, oldPred.fragNums,
-                                        oldPred.charges, oldPred.fragmentIonTypes, oldPred.flags, oldPred.fullAnnotations);
+                                        oldPred.charges, oldPred.fragmentIonTypes, oldPred.fullAnnotations);
                             } else {
                                 newPred = new PredictionEntry(newMZs, oldPred.intensities, oldPred.fragNums,
-                                        oldPred.charges, oldPred.fragmentIonTypes, oldPred.flags);
+                                        oldPred.charges, oldPred.fragmentIonTypes);
                             }
                         }
                         break;
@@ -228,7 +267,27 @@ public class PredictionEntryHashMap extends ConcurrentHashMap<String, Prediction
                             newPred.setIM(oldPred.IM);
                         }
                         break;
-                    case "auxms2":
+                    case "ms2_aux":
+                        PredictionEntry auxPe = new PredictionEntry();
+                        if (skipPeptide) {
+                            auxPe.mzs = new float[]{0};
+                            auxPe.intensities = new float[]{0};
+                            auxPe.fragNums = new int[]{0};
+                            auxPe.charges = new int[]{0};
+                            auxPe.fragmentIonTypes = new String[]{"y"};
+                        } else {
+                            if (newMZs.length == 0) {
+                                newMZs = oldPred.mzs;
+                            }
+                            if (klr.modelType.contains("unispec") || klr.modelType.contains("predfull")) {
+                                auxPe = new PredictionEntry(newMZs, oldPred.intensities, oldPred.fragNums,
+                                        oldPred.charges, oldPred.fragmentIonTypes, oldPred.fullAnnotations);
+                            } else {
+                                auxPe = new PredictionEntry(newMZs, oldPred.intensities, oldPred.fragNums,
+                                        oldPred.charges, oldPred.fragmentIonTypes);
+                            }
+                        }
+                        newPred.auxSpectra = auxPe;
                         break;
                     default:
                         printError(klr.property + " is not supported. Exiting");

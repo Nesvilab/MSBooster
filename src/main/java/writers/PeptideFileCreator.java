@@ -94,24 +94,20 @@ public class PeptideFileCreator {
                             hitsToAdd = pin.createDiannList();
                             break;
                         case "Prosit":
-                            hitsToAdd = pin.createPrositList(mzmlf, pmm);
+                            hitsToAdd = pin.createPrositList();
                             break;
                         case "PrositTMT":
-                            hitsToAdd = pin.createPrositTMTList(mzmlf, pmm);
+                            hitsToAdd = pin.createPrositTMTList();
                             break;
                         case "createFull":
                             hitsToAdd = pin.createFull();
                             break;
-                            //PredFull now in Koina
-//                        case "PredFull":
-//                            hitsToAdd = pin.createPredFullList(mzmlf, pmm);
-//                            break;
                         case "alphapeptdeep":
-                            hitsToAdd = pin.createAlphapeptdeepList(mzmlf, pmm);
+                            hitsToAdd = pin.createAlphapeptdeepList();
                             break;
                     }
                     if (KoinaModels.contains(modelFormat)) {
-                        hitsToAdd = pin.createJSON(mzmlf, pmm, modelFormat);
+                        hitsToAdd = pin.createJSON(modelFormat);
                     }
                     pin.close();
 

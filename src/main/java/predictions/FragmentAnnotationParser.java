@@ -13,7 +13,7 @@ import static utils.NumericUtils.isUppercaseOrDigit;
 //designed to handle output from unispec koina prediction and read in dictionary of unispec allowed fragments
 //TODO: support for c/z ions
 public class FragmentAnnotationParser {
-    public String fullAnnotation;
+    public final String fullAnnotation;
     public int charge = 1;
     public String fragmentIonType;
     public int fragnum = 0;
@@ -22,6 +22,7 @@ public class FragmentAnnotationParser {
     public int isotope = 0;
     public String internalSequence;
     public float neutralLoss = 0f;
+    public ArrayList<String> neutralLossStrings = new ArrayList<>();
 
     public FragmentAnnotationParser(String annotation) throws IOException, URISyntaxException {
         annotation = annotation.split(";")[0]; //if multiple possible annotations (from default fragment assignment), use first
@@ -115,7 +116,15 @@ public class FragmentAnnotationParser {
                 String[] annotationSplit = annotation.split("/");
                 internalSequence = annotationSplit[1];
                 internalStartPosition = Integer.parseInt(annotationSplit[2]);
-                internalExtent = internalSequence.length();
+
+                int plusIndex = internalSequence.indexOf('+');
+                int minusIndex = internalSequence.indexOf('-');
+                int firstIndex = (plusIndex == -1) ? minusIndex : (minusIndex == -1) ? plusIndex : Math.min(plusIndex, minusIndex);
+                if (firstIndex == -1) {
+                    internalExtent = internalSequence.length();
+                } else {
+                    internalExtent = firstIndex;
+                }
             } else { //text based fragment dictionary file
                 String internalString = annotation.substring(3);
                 String[] internalStringSplit = internalString.split(">");
@@ -153,7 +162,6 @@ public class FragmentAnnotationParser {
         String[] annotationSplit = annotation.split("-");
         if (annotationSplit.length != 1) {
             ArrayList<Integer> multipliers = new ArrayList<>();
-            ArrayList<String> nls = new ArrayList<>();
 
             for (int split = 1; split < annotationSplit.length; split++) {
                 String nlString = annotationSplit[split];
@@ -173,7 +181,7 @@ public class FragmentAnnotationParser {
                         break;
                     } else if (currentChar == '+') {
                         if (! nl.isEmpty()) {
-                            nls.add(nl);
+                            neutralLossStrings.add(nl);
                             multipliers.add(multiplier);
                         }
                         nl = "";
@@ -188,14 +196,14 @@ public class FragmentAnnotationParser {
                     }
                 }
                 if (! nl.isEmpty()) {
-                    nls.add(nl);
+                    neutralLossStrings.add(nl);
                     multipliers.add(multiplier);
                 }
             }
 
             //query neutral losses and calculate mass
-            for (int i = 0; i < nls.size(); i++) {
-                neutralLoss += allNeutralLossMasses.get(nls.get(i)) * multipliers.get(i);
+            for (int i = 0; i < neutralLossStrings.size(); i++) {
+                neutralLoss += allNeutralLossMasses.get(neutralLossStrings.get(i)) * multipliers.get(i);
             }
         }
     }

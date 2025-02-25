@@ -18,6 +18,7 @@
 package modelcallers;
 
 import allconstants.Constants;
+import allconstants.FragmentIonConstants;
 import com.google.gson.Gson;
 import com.google.gson.stream.JsonReader;
 import features.spectra.MassCalculator;
@@ -103,7 +104,7 @@ public class KoinaModelCaller {
             AtomicLong waitTime;
             if (klr.property.equals("rt") || klr.property.equals("im")) {
                 waitTime = new AtomicLong(Constants.initialKoinaMillisecondsToWaitRtIm);
-            } else {
+            } else { //ms2 or ms2_aux
                 waitTime = new AtomicLong(Constants.initialKoinaMillisecondsToWaitMs2);
             }
 
@@ -116,8 +117,7 @@ public class KoinaModelCaller {
             long jobStart = System.currentTimeMillis();
 
             for (int i = 0; i < numProcesses; i++) {
-                KoinaTask task = new KoinaTask(filenameArraylist.get(i), klr.property, model,
-                        klr, waitTime);
+                KoinaTask task = new KoinaTask(filenameArraylist.get(i), model, klr, waitTime);
                 tasks[i] = task;
             }
 
@@ -218,8 +218,7 @@ public class KoinaModelCaller {
             }
 
             assignRTs(fileName, parsedResults, klr);
-        }
-        if (property.equalsIgnoreCase("im")) {
+        } else if (property.equalsIgnoreCase("im")) {
             String ims = koinaString.split("data")[2];
             String[] results = ims.substring(3, ims.length() - 4).split(",");
             float[] parsedResults = new float[results.length];
@@ -228,7 +227,7 @@ public class KoinaModelCaller {
             }
 
             assignIMs(fileName, parsedResults, klr);
-        } else if (property.equalsIgnoreCase("ms2")) {
+        } else if (property.equalsIgnoreCase("ms2") || property.equalsIgnoreCase("ms2_aux")) {
             //get indices for processing
             int mzIdx = 0;
             int intIdx = 0;
@@ -371,7 +370,11 @@ public class KoinaModelCaller {
                                         break;
                                     case 'I': //internal or immonium
                                         if (result.startsWith("Int")) {
-                                            fragmentIonTypes.add("int");
+                                            if (NL) {
+                                                fragmentIonTypes.add("int-NL");
+                                            } else {
+                                                fragmentIonTypes.add("int");
+                                            }
                                         } else {
                                             fragmentIonTypes.add("imm");
                                         }
@@ -436,7 +439,12 @@ public class KoinaModelCaller {
                         String peptide = pf.getBaseCharge();
                         String[] pepSplit = peptide.split("\\|");
                         MassCalculator mc = new MassCalculator(pepSplit[0], pepSplit[1]);
-                        String[][] annot_frag = mc.annotateMZs(allMZs[i], "default", true);
+                        String[][] annot_frag;
+                        if (FragmentIonConstants.annotatePredfullLikeUnispec) {
+                            annot_frag = mc.annotateMZs(allMZs[i], "unispec", true);
+                        } else {
+                            annot_frag = mc.annotateMZs(allMZs[i], "default", true);
+                        }
 
                         //assign values
                         //use fragment annotation parser here to get fragnums and charge
@@ -463,6 +471,9 @@ public class KoinaModelCaller {
             } else {
                 assignMS2(fileName, allIntensities, allFragmentIonTypes, allFragNums, allCharges, klr);
             }
+        } else {
+            printError(property + " is not a valid property. Exiting.");
+            System.exit(1);
         }
     }
 
@@ -479,7 +490,7 @@ public class KoinaModelCaller {
                 if (preds.containsKey(peptideCharge)) {
                     pe = preds.get(peptideCharge);
                 } else {
-                    pe = new PredictionEntry();
+                    pe = new PredictionEntry(); //TODO: is this overkill?
                 }
                 pe.setRT(RTs[i]);
                 preds.put(peptideCharge, pe);
@@ -537,7 +548,7 @@ public class KoinaModelCaller {
             }
 
             PredictionEntry pe = new PredictionEntry(mzs, intensities[i], fragNums[i],
-                    charges[i], fragmentIonTypes[i], new int[0]);
+                    charges[i], fragmentIonTypes[i]);
 
             if (preds.containsKey(peptide)) {
                 PredictionEntry oldPe = preds.get(peptide);
@@ -560,7 +571,7 @@ public class KoinaModelCaller {
             String peptide = pf.getBaseCharge();
 
             PredictionEntry pe = new PredictionEntry(mzs[i], intensities[i], fragNums[i],
-                    charges[i], fragmentIonTypes[i], new int[0], fullAnnotations[i]);
+                    charges[i], fragmentIonTypes[i], fullAnnotations[i]);
 
             if (preds.containsKey(peptide)) {
                 PredictionEntry oldPe = preds.get(peptide);

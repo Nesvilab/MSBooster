@@ -17,27 +17,35 @@
 
 package features.spectra;
 
-import static utils.NumericUtils.floatToDouble;
-import static utils.Print.printError;
-
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.LinkedHashSet;
-import java.util.Random;
-
 import allconstants.Constants;
+import allconstants.FragmentIonConstants;
 import mainsteps.PeptideObj;
 import org.apache.commons.math3.distribution.HypergeometricDistribution;
 import org.apache.commons.math3.random.Well19937c;
 import org.apache.commons.math3.stat.correlation.PearsonsCorrelation;
 import org.apache.commons.math3.stat.correlation.SpearmansCorrelation;
 
+import java.io.IOException;
+import java.net.URISyntaxException;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.LinkedHashSet;
+import java.util.Objects;
+import java.util.Random;
+import java.util.TreeSet;
+
+import static allconstants.FragmentIonConstants.fragmentGroups;
+import static utils.NumericUtils.floatToDouble;
+import static utils.Print.printError;
+import static utils.Print.printInfo;
+
 //TODO: also square root intensities? Squaring intensities may help for single cell data
 public class SpectrumComparison {
     float[] predMZs;
     float[] predIntensities;
+    String[] predFragmentIonTypes;
     float[] matchedIntensities;
     float[] unitNormMatchedIntensities;
     float[] unitNormPredIntensities;
@@ -45,8 +53,6 @@ public class SpectrumComparison {
     float[] sum1PredIntensities;
     float[] allMatchedIntensities;
     public HashMap<String, Double> scores = new HashMap<>();
-    int length;
-    int matchedIons;
     public LinkedHashSet<Integer> matchedIdx = new LinkedHashSet<Integer>();
     private static final PearsonsCorrelation pc = new PearsonsCorrelation();
     private static final SpearmansCorrelation sc = new SpearmansCorrelation();
@@ -55,55 +61,38 @@ public class SpectrumComparison {
     public PeptideObj pepObj;
 
     public SpectrumComparison(PeptideObj pepObj, float[] eMZs, float[] eIntensities,
-                              float[] pMZs, float[] pIntensities, int length) {
+                              float[] pMZs, float[] pIntensities, String[] pFragmentIonTypes, boolean separateByFragmentGroup) {
         predMZs = pMZs;
         predIntensities = pIntensities;
-        matchedIntensities = this.getMatchedIntensities(eMZs, eIntensities, predMZs, predIntensities);
-        this.length = length;
-        predMZs = null;
+        predFragmentIonTypes = pFragmentIonTypes;
 
-        this.pepObj = pepObj;
-        if (Constants.features.contains("adjacent") || Constants.features.contains("bestScan")) {
-            MassCalculator mc = new MassCalculator(pepObj.name.split("\\|")[0], pepObj.charge);
-            pepObj.precursorMz = (mc.mass + pepObj.charge * mc.proton) / pepObj.charge;
-        }
-    }
-
-    public SpectrumComparison(PeptideObj pepObj, float[] eMZs, float[] eIntensities,
-                              float[] pMZs, float[] pIntensities, int length, String[] fragmentIonTypes) {
-        predMZs = pMZs;
-        predIntensities = pIntensities;
-
-        if (Constants.divideFragments.equals("0")) {
-            matchedIntensities = this.getMatchedIntensities(eMZs, eIntensities, predMZs, predIntensities);
+        if (fragmentGroups.length == 1 || !separateByFragmentGroup) {
+            matchedIntensities = this.getMatchedIntensities(eMZs, eIntensities, predMZs, pFragmentIonTypes);
         } else {
-            String[] fragmentsSplit = Constants.divideFragments.split(";");
-
             //get fragments that match the allowed
-            for (String fragments : fragmentsSplit) {
-                String[] allowedTypes = fragments.split("_");
-                HashSet<String> allowedTypesSet = new HashSet<String>(Arrays.asList(allowedTypes));
+            for (TreeSet<String> allowedTypesSet : fragmentGroups) {
                 ArrayList<Integer> acceptedIdx = new ArrayList<>();
 
-                for (int i = 0; i < fragmentIonTypes.length; i++) {
-                    String ion = fragmentIonTypes[i];
+                for (int i = 0; i < pFragmentIonTypes.length; i++) {
+                    String ion = pFragmentIonTypes[i];
                     if (allowedTypesSet.contains(ion)) {
                         acceptedIdx.add(i);
                     }
                 }
                 float[] mzs = new float[acceptedIdx.size()];
                 float[] ints = new float[acceptedIdx.size()];
+                String[] fits = new String[acceptedIdx.size()];
                 for (int i = 0; i < acceptedIdx.size(); i++) {
                     mzs[i] = predMZs[acceptedIdx.get(i)];
                     ints[i] = predIntensities[acceptedIdx.get(i)];
+                    fits[i] = predFragmentIonTypes[acceptedIdx.get(i)];
                 }
 
                 //create new spectrumComparison obj and add to list
                 spectrumComparisons.add(new SpectrumComparison(pepObj, eMZs, eIntensities,
-                        mzs, ints, length));
+                        mzs, ints, fits, false));
             }
         }
-        this.length = length;
         predMZs = null;
 
         this.pepObj = pepObj;
@@ -113,32 +102,34 @@ public class SpectrumComparison {
         }
     }
 
-    public SpectrumComparison(PeptideObj peptideObj, float[] eMZs, float[] eIntensities,
-                              float[] pMZs, float[] pIntensities, int length, boolean willReload) {
-        pepObj = peptideObj;
-        predMZs = pMZs;
-        predIntensities = pIntensities;
-
-        matchedIntensities = this.getMatchedIntensities(eMZs, eIntensities, predMZs, predIntensities);
-        this.length = length;
-        if (! willReload) {
-            predMZs = null;
-        }
-    }
+    //TODO: if ever reimplement adjacent similarity, think of solution that does not require another constructor
+//    public SpectrumComparison(PeptideObj peptideObj, float[] eMZs, float[] eIntensities,
+//                              float[] pMZs, float[] pIntensities, String[] pFragmentIonTypes,
+//                              boolean willReload) {
+//        pepObj = peptideObj;
+//        predMZs = pMZs;
+//        predIntensities = pIntensities;
+//        predFragmentIonTypes = pFragmentIonTypes;
+//
+//        matchedIntensities = this.getMatchedIntensities(eMZs, eIntensities, predMZs, pFragmentIonTypes);
+//        if (! willReload) {
+//            predMZs = null;
+//        }
+//    }
     private SpectrumComparison() {}
 
     //get new scan read in
-    public void reload(PeptideObj pobj, float[] eMZs, float[] eIntensities) {
-        pepObj = pobj;
-
-        unitNormMatchedIntensities = null;
-        unitNormPredIntensities = null;
-        sum1MatchedIntensities = null;
-        sum1PredIntensities = null;
-
-        allMatchedIntensities = null;
-        matchedIntensities = getMatchedIntensities(eMZs, eIntensities, predMZs, predIntensities);
-    }
+//    public void reload(PeptideObj pobj, float[] eMZs, float[] eIntensities) {
+//        pepObj = pobj;
+//
+//        unitNormMatchedIntensities = null;
+//        unitNormPredIntensities = null;
+//        sum1MatchedIntensities = null;
+//        sum1PredIntensities = null;
+//
+//        allMatchedIntensities = null;
+//        matchedIntensities = getMatchedIntensities(eMZs, eIntensities, predMZs);
+//    }
 
     //TODO sort
     public SpectrumComparison pickedPredicted() {
@@ -165,29 +156,50 @@ public class SpectrumComparison {
         }
     }
 
+    /* Get best peaks from experimental spectrum that match to predicted peaks.
+           Same experimental peak may match to the multiple predicted peaks,
+              if they're close enough and experimental peak is strong.
+           Unmatched peaks assigned 0
+    */
     private float[] getMatchedIntensities(float[] expMZs, float[] expIntensities,
-                                          float[] predMZs, float[] predIntensities) {
-        if (predIntensities.length == 1) {
-            return predIntensities;
+                                          float[] predMZs, String[] predFragmentIonTypes) {
+        if (predMZs.length == 1) {
+            return predMZs; // I think we can return predMZs here instead of intensities array because a length 1 array will just return score of 1
         }
         int startPos = 0;
         int matchedNum = 0;
         float[] matchedInts = new float[predMZs.length];
-        if (! Constants.matchWithDaltons) {
-            double ppm = Constants.ppmTolerance / 1000000;
 
-        /* Get best peaks from experimental spectrum that match to predicted peaks.
-           Same experimental peak may match to the multiple predicted peaks,
-              if they're close enough and experimental peak is strong.
-           Unmatched peaks assigned 0
-         */
-            for (double mz : predMZs) {
+        //based on fragment ion type, decide if we need to use ppm or Da tolerance
+        boolean[] usePPMs = new boolean[predFragmentIonTypes.length];
+        boolean mwd;
+        for (int i = 0; i < predFragmentIonTypes.length; i++) {
+            if (FragmentIonConstants.primaryFragmentIonTypes.isEmpty()) {
+                mwd = Constants.matchWithDaltonsDefault;
+            } else {
+                if (FragmentIonConstants.primaryFragmentIonTypes.contains(predFragmentIonTypes[i])) {
+                    mwd = Constants.matchWithDaltons;
+                } else { //use aux spectrum model
+                    mwd = Constants.matchWithDaltonsAux;
+                }
+            }
+            usePPMs[i] = !mwd;
+        }
+
+        //matching fragments
+        double ppm = Constants.ppmTolerance / 1000000;
+
+        for (int i = 0; i < predMZs.length; i++) {
+            double mz = predMZs[i];
+            boolean usePPM = usePPMs[i];
+
+            if (usePPM) {
                 //see if any experimental peaks in vicinity
                 //double fragmentError = ppm * mz;
                 double fragmentMin = mz * (1 - ppm);
                 double fragmentMax = mz * (1 + ppm);
 
-                float predInt = 0;
+                float matchedInt = 0;
                 int pastStart = 0;
 
                 while (startPos + pastStart < expMZs.length) {
@@ -203,8 +215,8 @@ public class SpectrumComparison {
 
                         float potentialInt = expIntensities[startPos + pastStart];
 
-                        if (potentialInt > predInt) { //new maximum intensity
-                            predInt = potentialInt;
+                        if (potentialInt > matchedInt) { //new maximum intensity
+                            matchedInt = potentialInt;
                         }
                         pastStart += 1;
                     } else { //outside of fragment tolerance range again
@@ -212,17 +224,15 @@ public class SpectrumComparison {
                     }
                 }
 
-                matchedInts[matchedNum] = predInt;
+                matchedInts[matchedNum] = matchedInt;
                 matchedNum += 1;
-            }
-        } else {
-            for (double mz : predMZs) { //TODO: because fragments besides unknown have correct m/z, is this unnecessary?
+            } else {
                 //see if any experimental peaks in vicinity
                 //double fragmentError = ppm * mz;
                 double fragmentMin = mz - Constants.DaTolerance;
                 double fragmentMax = mz + Constants.DaTolerance;
 
-                float predInt = 0;
+                float matchedInt = 0;
                 int pastStart = 0;
 
                 while (startPos + pastStart < expMZs.length) {
@@ -238,8 +248,8 @@ public class SpectrumComparison {
 
                         float potentialInt = expIntensities[startPos + pastStart];
 
-                        if (potentialInt > predInt) { //new maximum intensity
-                            predInt = potentialInt;
+                        if (potentialInt > matchedInt) { //new maximum intensity
+                            matchedInt = potentialInt;
                         }
                         pastStart += 1;
                     } else { //outside of fragment tolerance range again
@@ -247,33 +257,73 @@ public class SpectrumComparison {
                     }
                 }
 
-                matchedInts[matchedNum] = predInt;
+                matchedInts[matchedNum] = matchedInt;
                 matchedNum += 1;
             }
         }
+
         return matchedInts;
     }
 
     private void getAllMatchedIntensities() {
         if (allMatchedIntensities == null) {
+            //what fragment ion types do we need?
+            HashSet<String> fiontypes = new HashSet<>(Arrays.asList(this.predFragmentIonTypes));
+
+            //calculate mzs of possible fragments
             MassCalculator mc = new MassCalculator(pepObj.name.split("\\|")[0], pepObj.charge);
-            //calculate y and b m/zs
-            float[] mzs = new float[4 * (mc.peptide.length() - 1)];
-            String[] flags = {"y", "b"};
-            int i = 0;
-            for (int num = 1; num < mc.peptide.length(); num++) {
-                for (int charge = 1; charge < 3; charge++) {
-                    for (String flag : flags) {
-                        mzs[i] = mc.calcMass(num, flag, charge, 0);
-                        i += 1;
+            TreeSet<Float> mzsSet = new TreeSet<>();
+            HashMap<Float, String> mzToIontype = new HashMap<>();
+
+            //iterate over fragment ion types
+            for (String fiontype : fiontypes) {
+                if (
+                        (FragmentIonConstants.primaryFragmentIonTypes.contains(fiontype) &&
+                                Constants.spectraModel.equalsIgnoreCase("unispec")) ||
+                                (!FragmentIonConstants.primaryFragmentIonTypes.contains(fiontype) &&
+                                        Constants.auxSpectraModel.equalsIgnoreCase("unispec")) ||
+                                FragmentIonConstants.annotatePredfullLikeUnispec
+                ) {
+                    ArrayList<Float> mzsList = mc.possibleUnispecMzs(fiontype);
+                    mzsSet.addAll(mzsList);
+                    for (float mz : mzsList) {
+                        mzToIontype.put(mz, fiontype);
+                    }
+                } else {
+                    ArrayList<Float> mzsList = mc.possibleFragmentIons(fiontype);
+                    mzsSet.addAll(mzsList);
+                    for (float mz : mzsList) {
+                        mzToIontype.put(mz, fiontype);
                     }
                 }
             }
-            //sort
-            Arrays.sort(mzs);
 
-            allMatchedIntensities = getMatchedIntensities(pepObj.scanNumObj.getExpMZs(), pepObj.scanNumObj.getExpIntensities(),
-                    mzs, new float[mzs.length]);
+            //filter out peaks out of ms2 m/z range
+            HashSet<Float> excludedMzs = new HashSet<>();
+            for (float mz : mzsSet) {
+                if (mz < pepObj.scanNumObj.lowerLimit || mz > pepObj.scanNumObj.upperLimit) {
+                    excludedMzs.add(mz);
+                }
+            }
+            for (Float mz : excludedMzs) {
+                mzsSet.remove(mz);
+            }
+
+            float[] mzs = new float[mzsSet.size()];
+            int i = 0;
+            for (float f : mzsSet) {
+                mzs[i] = f;
+                i++;
+            }
+
+            String[] fragmentIonTypes = new String[mzs.length];
+            for (int j = 0; j < fragmentIonTypes.length; j++) {
+                fragmentIonTypes[j] = mzToIontype.get(mzs[j]);
+            }
+
+            allMatchedIntensities = getMatchedIntensities(
+                    pepObj.scanNumObj.getSavedExpMZs(), pepObj.scanNumObj.getSavedExpIntensities(),
+                    mzs, fragmentIonTypes);
         }
     }
 
@@ -296,7 +346,7 @@ public class SpectrumComparison {
     }
 
     private float[][] filterFragments(int top) {
-        printError("Reimplement filterFragments!");
+        printError("Reimplement preprocessFragments!");
         System.exit(1);
 //        top = Math.min(top, sortedIndicesList.size());
 //
@@ -714,29 +764,113 @@ public class SpectrumComparison {
         return 1 - ( ((2 * spectralEntropy(SabVector)) - spectralEntropy(sum1MatchedIntensities) - spectralEntropy(sum1PredIntensities)) / Math.log(4));
     }
 
+    public double unweightedSpectralEntropy(float[] predicted, float[] matched) {
+        if (predicted.length < 2) {
+            return 0;
+        }
+
+        float[] SabVector = new float[predicted.length];
+        int numFrags = 0;
+        for (float j : matched) {
+            if (j != 0) {
+                numFrags += 1;
+            }
+        }
+
+        if (numFrags < 2) {
+            return 0;
+        } else {
+            for (int i = 0; i < SabVector.length; i++) {
+                SabVector[i] = (predicted[i] + matched[i]) / 2;
+            }
+        }
+
+        return 1 - ( ((2 * spectralEntropy(SabVector)) - spectralEntropy(matched) - spectralEntropy(predicted)) / Math.log(4));
+    }
+
+    public double weightedSpectralEntropy() {
+        double unweighted = unweightedSpectralEntropy();
+        if (unweighted == 0) {
+            return 0;
+        }
+        return unweighted * Math.pow(spectralEntropy(sum1PredIntensities), 0.5);
+    }
+
+    public double heuristicSpectralEntropy() {
+        if (sum1PredIntensities == null) {
+            oneNormalizeIntensities(predIntensities, matchedIntensities);
+        }
+
+        double predEntropy = spectralEntropy(sum1PredIntensities);
+        if (predEntropy < 1.75) {
+            //reweighting
+            double power = predEntropy / 2.75;
+
+            float[] heuristicPred = new float[predIntensities.length];
+            float[] heuristicMatched = new float[matchedIntensities.length];
+
+            for (int i = 0; i < predIntensities.length; i++) {
+                heuristicPred[i] = (float) Math.pow(predIntensities[i], power);
+                heuristicMatched[i] = (float) Math.pow(matchedIntensities[i], power);
+            }
+
+            return unweightedSpectralEntropy(oneNormalize(heuristicPred), oneNormalize(heuristicMatched));
+        } else {
+            return unweightedSpectralEntropy();
+        }
+    }
+
     //top 24
-    public double hyperGeometricProbability() {
+    public double hypergeometricProbability() {
+        if (predIntensities.length <= 1) {
+            return 0;
+        }
         this.getAllMatchedIntensities();
-        matchedIons = 0;
+
+        if (allMatchedIntensities.length == 0) {
+            HashSet<String> ftypes = new HashSet<>(Arrays.asList(predFragmentIonTypes));
+            if (ftypes.size() == 1 && ftypes.contains("unknown")) {
+                return 0; //predictions only include unannotated fragments
+            } else {
+                printInfo(pepObj.name + " contains only fragment ion types " + ftypes);
+            }
+        }
+
+        int matchedIons = 0;
         for (float f : allMatchedIntensities) {
-            if (f != 0) {
+            if (f != 0) { //TODO: consider filtering for values above intensity threshold, same as predIntensity filtering
                 matchedIons += 1;
             }
         }
 
-        HypergeometricDistribution hgd = new HypergeometricDistribution(rng,
-                4 * (length - 1), matchedIons, predIntensities.length);
         int successes = 0;
-        for (float f : matchedIntensities) {
-            if (f != 0) {
-                successes += 1;
+        int possible = 0; //number of predicted fragments that aren't unknown
+        for (int i = 0; i < matchedIntensities.length; i++) {
+            if (!Objects.equals(predFragmentIonTypes[i], "unknown")) {
+                possible++;
+                float f = matchedIntensities[i];
+                if (f != 0) {
+                    successes++;
+                }
             }
         }
+        if (successes > matchedIons) { //sig fig issue
+            successes = matchedIons;
+        }
+
+        HypergeometricDistribution hgd = new HypergeometricDistribution(rng,
+                allMatchedIntensities.length, matchedIons, possible);
+
         return -1 * Math.log10(hgd.upperCumulativeProbability(successes));
     }
 
     //top 12
+    //biased towards longer peptides?
     public double intersection() {
+        if (predIntensities.length <= 1) {
+            return 0;
+        }
+
         //calculate overlap of top predicted mzs and top matched mzs
         HashSet<Float> predSet = new HashSet<>();
         for (float f : matchedIntensities) {
@@ -745,17 +879,21 @@ public class SpectrumComparison {
 
         this.getAllMatchedIntensities();
         float intersection = 0;
-        Arrays.sort(allMatchedIntensities);
+        float[] sortedIntensities = new float[allMatchedIntensities.length];
+        for (int i = 0; i < allMatchedIntensities.length; i++) {
+            sortedIntensities[i] = allMatchedIntensities[i];
+        }
+        Arrays.sort(sortedIntensities);
         float iters = 0;
-        for (int i = allMatchedIntensities.length - 1; i > 0; i--) {
-            if (allMatchedIntensities[i] == 0) {
+        for (int i = sortedIntensities.length - 1; i > 0; i--) {
+            if (sortedIntensities[i] == 0) { //using intensities directly, not m/z, since predicted m/z not saved
                 break;
             }
-            if (predSet.contains(allMatchedIntensities[i])) {
+            if (predSet.contains(sortedIntensities[i])) {
                 intersection += 1;
             }
             iters += 1;
-            if (iters >= Constants.topFragments) {
+            if (iters >= Constants.topFragments) { //do we want to impose a ceiling?
                 break;
             }
         }
@@ -764,14 +902,61 @@ public class SpectrumComparison {
         return intersection;
     }
 
-    public void clearArrays() {
-        predMZs = null;
-        predIntensities = null;
-        matchedIntensities = null;
-        unitNormMatchedIntensities = null;
-        unitNormPredIntensities = null;
-        sum1MatchedIntensities = null;
-        sum1PredIntensities = null;
-        allMatchedIntensities = null;
+    //generic way of getting score
+    public double getScore(String score) throws IOException, URISyntaxException {
+        double returnScore = 0;
+        switch (score) {
+            case "brayCurtis":
+                returnScore = brayCurtis();
+                break;
+            case "cosineSimilarity":
+                returnScore = cosineSimilarity();
+                break;
+            case "spectralContrastAngle":
+                returnScore = spectralContrastAngle();
+                break;
+            case "euclideanDistance":
+                returnScore = euclideanDistance();
+                break;
+            case "pearsonCorr":
+                returnScore = pearsonCorr();
+                break;
+            case "spearmanCorr":
+                returnScore = spearmanCorr();
+                break;
+            case "hypergeometricProbability":
+                returnScore = hypergeometricProbability();
+                break;
+            case "intersection":
+                returnScore = intersection();
+                break;
+            case "dotProduct":
+                returnScore = dotProduct();
+                break;
+            case "unweightedSpectralEntropy":
+                returnScore = unweightedSpectralEntropy();
+                break;
+            case "weightedSpectralEntropy":
+                returnScore = weightedSpectralEntropy();
+                break;
+            case "heuristicSpectralEntropy":
+                returnScore = heuristicSpectralEntropy();
+                break;
+            default:
+                printError("No score called " + score + ". Exiting");
+                System.exit(1);
+        }
+        return returnScore;
+    }
+
+    public static void main(String[] args) {
+        FragmentIonConstants.makeFragmentIonHierarchy();
+        FragmentIonConstants.primaryFragmentIonTypes.add("y");
+        Constants.matchWithDaltons = true;
+        Constants.matchWithDaltonsAux = true;
+        SpectrumComparison sc = new SpectrumComparison(new PeptideObj(),
+                new float[]{10f, 20f, 30f}, new float[]{1f, 1f, 1f},
+                new float[]{9.9997f, 19.9997f, 30.04f}, new float[]{1f, 1f, 1f}, new String[]{"y", "y", "y-NL"}, false);
+        System.out.println(Arrays.toString(sc.matchedIntensities));
     }
 }

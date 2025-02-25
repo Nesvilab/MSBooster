@@ -17,24 +17,24 @@
 
 package writers;
 
-import static allconstants.Constants.camelToUnderscore;
-import static utils.Print.printInfo;
-
 import allconstants.Constants;
+import com.univocity.parsers.tsv.TsvWriter;
+import com.univocity.parsers.tsv.TsvWriterSettings;
 import mainsteps.PeptideObj;
 import mainsteps.PercolatorFormatter;
 import readers.datareaders.MzmlReader;
 import readers.datareaders.PinReader;
-import com.univocity.parsers.tsv.TsvWriter;
-import com.univocity.parsers.tsv.TsvWriterSettings;
 import utils.ProgressReporter;
-import utils.StatMethods;
 
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.HashMap;
+import java.util.TreeSet;
+
+import static allconstants.Constants.camelToUnderscore;
+import static allconstants.FragmentIonConstants.fragmentGroups;
+import static utils.Print.printInfo;
 
 public class PinWriter {
     String newOutfile;
@@ -43,15 +43,13 @@ public class PinWriter {
     MzmlReader mzml;
     TsvWriter writer;
     ArrayList<String> header = new ArrayList<>();
-    HashMap<String, HashMap<Integer, StatMethods>> featureStats;
+    public ArrayList<String> newColumnNames = new ArrayList<>();
 
-    public PinWriter(String newOutfile, PinReader pin, ArrayList<String> featuresList, MzmlReader mzml,
-                     HashMap<String, HashMap<Integer, StatMethods>> featureStats) {
+    public PinWriter(String newOutfile, PinReader pin, ArrayList<String> featuresList, MzmlReader mzml) {
         this.newOutfile = newOutfile;
         this.pin = pin;
         this.featuresList = featuresList;
         this.mzml = mzml;
-        this.featureStats = featureStats;
 
         TsvWriterSettings tws = new TsvWriterSettings();
         tws.setMaxCharsPerColumn(-1);
@@ -60,8 +58,8 @@ public class PinWriter {
 
         //add header to written tsv
         header.addAll(Arrays.asList(pin.header));
+
         //replace column names
-        ArrayList<String> newNames = new ArrayList<>(featuresList.size());
         for (String s : featuresList) {
             String newName = s;
             if (camelToUnderscore.containsKey(s)) {
@@ -69,19 +67,18 @@ public class PinWriter {
             }
             //add columns for spectral features divided by fragment ion type
             if (Constants.spectraFeatures.contains(s)) {
-                if (! Constants.divideFragments.equals("0")) {
-                    String[] divisions = Constants.divideFragments.split(";");
-                    for (String div : divisions) {
-                        newNames.add(newName + "_" + div);
+                if (fragmentGroups.length != 1) {
+                    for (TreeSet<String> fg : fragmentGroups) {
+                        newColumnNames.add(newName + "^" +String.join("_", fg));
                     }
                 } else {
-                    newNames.add(newName);
+                    newColumnNames.add(newName);
                 }
             } else {
-                newNames.add(newName);
+                newColumnNames.add(newName);
             }
         }
-        header.addAll(pin.pepIdx, newNames); //add features before Peptide
+        header.addAll(pin.pepIdx, newColumnNames); //add features before Peptide
         writer.writeHeaders(header);
     }
 
@@ -118,6 +115,7 @@ public class PinWriter {
                 //switch case
                 for (String feature : featuresList) {
                     switch (feature) {
+                        //basic peptide object fields
                         case "deltaRTlinear":
                             formattedWrite("deltaRTlinear", pepObj.deltaRT);
                             break;
@@ -152,142 +150,54 @@ public class PinWriter {
                         case "predictedRT":
                             formattedWrite("predicted_RT", pepObj.RT);
                             break;
+                        case "deltaIMLOESS":
+                            formattedWrite("delta_IM_loess", pepObj.deltaIMLOESS);
+                            break;
+                        case "deltaIMLOESSnormalized":
+                            formattedWrite("delta_IM_loess_normalized", pepObj.deltaIMLOESSnormalized);
+                            break;
+                        case "IMprobabilityUnifPrior":
+                            formattedWrite("IM_probability_unif_prior", pepObj.IMprobabilityUnifPrior);
+                            break;
+                        case "predictedIM":
+                            formattedWrite("predicted_IM", pepObj.IM);
+                            break;
+                        case "ionmobility":
+                            formattedWrite("ion_mobility", pepObj.scanNumObj.IM);
+                            break;
+                        case "peptideCounts":
+                            writer.addValue("peptide_counts", pepObj.peptideCounts);
+                            break;
+
+                        //spectral similarity features
                         case "brayCurtis":
-                            if (pepObj.spectralSimObj.spectrumComparisons.size() == 0) {
-                                double score = pepObj.spectralSimObj.scores.get(feature);
-                                formattedWrite("bray_curtis", score);
-                            } else {
-                                String[] dividedFragments = Constants.divideFragments.split(";");
-                                for (int j = 0; j < dividedFragments.length; j++) {
-                                    double score = pepObj.spectralSimObj.spectrumComparisons.get(j).scores.get(feature);
-                                    formattedWrite("bray_curtis_" + dividedFragments[j], score);
-                                }
-                            }
-                            break;
                         case "cosineSimilarity":
-                            if (pepObj.spectralSimObj.spectrumComparisons.size() == 0) {
-                                double score = pepObj.spectralSimObj.scores.get(feature);
-                                formattedWrite("cosine_similarity", score);
-                            } else {
-                                String[] dividedFragments = Constants.divideFragments.split(";");
-                                for (int j = 0; j < dividedFragments.length; j++) {
-                                    double score = pepObj.spectralSimObj.spectrumComparisons.get(j).scores.get(feature);
-                                    formattedWrite("cosine_similarity_" + dividedFragments[j], score);
-                                }
-                            }
-                            break;
                         case "spectralContrastAngle":
-                            if (pepObj.spectralSimObj.spectrumComparisons.size() == 0) {
-                                double score = pepObj.spectralSimObj.scores.get(feature);
-                                formattedWrite("spectra_contrast_angle", score);
-                            } else {
-                                String[] dividedFragments = Constants.divideFragments.split(";");
-                                for (int j = 0; j < dividedFragments.length; j++) {
-                                    double score = pepObj.spectralSimObj.spectrumComparisons.get(j).scores.get(feature);
-                                    formattedWrite("spectra_contrast_angle_" + dividedFragments[j], score);
-                                }
-                            }
-                            break;
                         case "euclideanDistance":
-                            if (pepObj.spectralSimObj.spectrumComparisons.size() == 0) {
-                                double score = pepObj.spectralSimObj.scores.get(feature);
-                                formattedWrite("euclidean_distance", score);
-                            } else {
-                                String[] dividedFragments = Constants.divideFragments.split(";");
-                                for (int j = 0; j < dividedFragments.length; j++) {
-                                    double score = pepObj.spectralSimObj.spectrumComparisons.get(j).scores.get(feature);
-                                    formattedWrite("euclidean_distance_" + dividedFragments[j], score);
-                                }
-                            }
-                            break;
                         case "pearsonCorr":
-                            if (pepObj.spectralSimObj.spectrumComparisons.size() == 0) {
-                                double score = pepObj.spectralSimObj.scores.get(feature);
-                                formattedWrite("pearson_corr", score);
-                            } else {
-                                String[] dividedFragments = Constants.divideFragments.split(";");
-                                for (int j = 0; j < dividedFragments.length; j++) {
-                                    double score = pepObj.spectralSimObj.spectrumComparisons.get(j).scores.get(feature);
-                                    formattedWrite("pearson_corr_" + dividedFragments[j], score);
-                                }
-                            }
-                            break;
                         case "spearmanCorr":
-                            if (pepObj.spectralSimObj.spectrumComparisons.size() == 0) {
-                                double score = pepObj.spectralSimObj.scores.get(feature);
-                                if (Constants.normalizeScoresByPeptideLength) {
-                                    score *= Math.log(pepObj.length);
-                                }
-                                formattedWrite("spearman_corr", score);
-                            } else {
-                                String[] dividedFragments = Constants.divideFragments.split(";");
-                                for (int j = 0; j < dividedFragments.length; j++) {
-                                    double score = pepObj.spectralSimObj.spectrumComparisons.get(j).scores.get(feature);
-                                    formattedWrite("spearman_corr_" + dividedFragments[j], score);
-                                }
-                            }
-                            break;
                         case "hypergeometricProbability":
-                            if (pepObj.spectralSimObj.spectrumComparisons.size() == 0) {
-                                double score = pepObj.spectralSimObj.scores.get(feature);
-                                if (Constants.normalizeScoresByPeptideLength) {
-                                    score = (score - featureStats.get(feature).get(pepObj.length).getMean())
-                                            / featureStats.get(feature).get(pepObj.length).getStd();
-                                }
-                                formattedWrite("hypergeometric_probability", score);
-                            } else {
-                                String[] dividedFragments = Constants.divideFragments.split(";");
-                                for (int j = 0; j < dividedFragments.length; j++) {
-                                    double score = pepObj.spectralSimObj.spectrumComparisons.get(j).scores.get(feature);
-                                    formattedWrite("hypergeometric_probability_" + dividedFragments[j], score);
-                                }
-                            }
-                            break;
                         case "intersection":
-                            if (pepObj.spectralSimObj.spectrumComparisons.size() == 0) {
-                                double score = pepObj.spectralSimObj.scores.get(feature);
-                                if (Constants.normalizeScoresByPeptideLength) {
-                                    score -= featureStats.get(feature).get(pepObj.length).getMedian();
-                                }
-                                formattedWrite("intersection", score);
-                            } else {
-                                String[] dividedFragments = Constants.divideFragments.split(";");
-                                for (int j = 0; j < dividedFragments.length; j++) {
-                                    double score = pepObj.spectralSimObj.spectrumComparisons.get(j).scores.get(feature);
-                                    formattedWrite("intersection_" + dividedFragments[j], score);
-                                }
-                            }
-                            break;
                         case "dotProduct":
-                            if (pepObj.spectralSimObj.spectrumComparisons.size() == 0) {
-                                double score = pepObj.spectralSimObj.scores.get(feature);
-                                formattedWrite("dot_product", score);
-                            } else {
-                                String[] dividedFragments = Constants.divideFragments.split(";");
-                                for (int j = 0; j < dividedFragments.length; j++) {
-                                    double score = pepObj.spectralSimObj.spectrumComparisons.get(j).scores.get(feature);
-                                    formattedWrite("dot_product_" + dividedFragments[j], score);
-                                }
-                            }
-                            break;
                         case "unweightedSpectralEntropy":
-                            if (pepObj.spectralSimObj.spectrumComparisons.size() == 0) {
+                        case "weightedSpectralEntropy":
+                        case "heuristicSpectralEntropy":
+                            if (pepObj.spectralSimObj.spectrumComparisons.isEmpty()) {
                                 double score = pepObj.spectralSimObj.scores.get(feature);
-                                if (Constants.normalizeScoresByPeptideLength) {
-                                    score -= featureStats.get(feature).get(pepObj.length).getMedian();
-                                }
-                                formattedWrite("unweighted_spectral_entropy", score);
+                                formattedWrite(camelToUnderscore.get(feature), score);
                             } else {
-                                String[] dividedFragments = Constants.divideFragments.split(";");
-                                for (int j = 0; j < dividedFragments.length; j++) {
+                                for (int j = 0; j < fragmentGroups.length; j++) {
                                     double score = pepObj.spectralSimObj.spectrumComparisons.get(j).scores.get(feature);
-                                    formattedWrite("unweighted_spectral_entropy_" + dividedFragments[j], score);
+                                    formattedWrite(camelToUnderscore.get(feature) + "^" +
+                                            String.join("_", fragmentGroups[j]), score);
                                 }
                             }
                             break;
+
+                        //experimental features
                         case "bootstrapSimilarity":
 //                        if (pepObj.spectralSimObj.spectrumComparisons.size() == 0) {
-////                            double score = pepObj.spectralSimObj.scores.get(feature);
+//                            double score = pepObj.spectralSimObj.scores.get(feature);
 //
 //                            SpectrumComparison sc;
 //                            String score = "";
@@ -332,21 +242,8 @@ public class PinWriter {
                             s.deleteCharAt(s.length() - 1);
                             writer.addValue("adjacent_similarity", s.toString());
                             break;
-                        case "deltaIMLOESS":
-                            formattedWrite("delta_IM_loess", pepObj.deltaIMLOESS);
-                            break;
-                        case "deltaIMLOESSnormalized":
-                            formattedWrite("delta_IM_loess_normalized", pepObj.deltaIMLOESSnormalized);
-                            break;
-                        case "IMprobabilityUnifPrior":
-                            formattedWrite("IM_probability_unif_prior", pepObj.IMprobabilityUnifPrior);
-                            break;
-                        case "predictedIM":
-                            formattedWrite("predicted_IM", pepObj.IM);
-                            break;
-                        case "ionmobility":
-                            formattedWrite("ion_mobility", pepObj.scanNumObj.IM);
-                            break;
+
+                        //supplementary fragment intensity features
                         case "y_matched_intensity":
                             formattedWrite("y_matched_intensity", pepObj.matchedIntensities.get("y"));
                             break;
@@ -609,9 +506,6 @@ public class PinWriter {
                             break;
                         case "intensity_distribution_similarity":
                             formattedWrite("intensity_distribution_similarity", pepObj.intensity_distribution_similarity);
-                            break;
-                        case "peptideCounts":
-                            writer.addValue("peptide_counts", pepObj.peptideCounts);
                             break;
                     }
                 }

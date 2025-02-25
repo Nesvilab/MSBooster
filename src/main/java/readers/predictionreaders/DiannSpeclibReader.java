@@ -22,8 +22,6 @@ import peptideptmformatting.PeptideFormatter;
 import predictions.PredictionEntry;
 import predictions.PredictionEntryHashMap;
 
-import static utils.Print.printError;
-
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileInputStream;
@@ -34,11 +32,21 @@ import java.io.InputStream;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.util.ArrayList;
-import java.util.Arrays;
+import java.util.HashMap;
+
+import static utils.Print.printError;
 
 public class DiannSpeclibReader implements LibraryPredictionMapper {
     final ArrayList<String> filenames;
     PredictionEntryHashMap allPreds = new PredictionEntryHashMap();
+
+    private static HashMap<Integer, String> makeFlagTOion() {
+        HashMap<Integer, String> map = new HashMap<>();
+        map.put(0, "b");
+        map.put(1, "y");
+        return map;
+    }
+    private static final HashMap<Integer, String> flagTOion = makeFlagTOion();
 
     //https://stackoverflow.com/questions/46163114/get-bit-values-from-byte-array
     //https://www.geeksforgeeks.org/bitwise-operators-in-java/
@@ -91,7 +99,6 @@ public class DiannSpeclibReader implements LibraryPredictionMapper {
                     float[] mzs = new float[numFrags];
                     float[] intensities = new float[numFrags];
                     int[] fragNums = new int[numFrags];
-                    int[] flags = new int[numFrags];
                     String[] fragmentIonTypes = new String[numFrags];
                     int[] charges = new int[numFrags];
 
@@ -108,21 +115,20 @@ public class DiannSpeclibReader implements LibraryPredictionMapper {
                         int charge = bits(fragInt, 30, 2) + 1; //start from end
 
                         //get fragment m/z
-                        String ionType = MassCalculator.flagTOion.get(flag);
+                        String ionType = flagTOion.get(flag);
                         float fragMZ = mc.calcMass(fragNum, ionType, charge, 0);
 
                         //add to arrays
                         mzs[i] = fragMZ;
                         intensities[i] = intensity;
                         fragNums[i] = fragNum;
-                        flags[i] = flag;
                         fragmentIonTypes[i] = ionType;
                         charges[i] = charge;
                     }
 
                     //add to hashmap
                     PredictionEntry newPred = new PredictionEntry(mzs, intensities,
-                            fragNums, charges, fragmentIonTypes, flags);
+                            fragNums, charges, fragmentIonTypes);
                     newPred.setRT(iRT);
                     newPred.setIM(IM);
                     allPreds.put(mc.fullPeptide, newPred);
@@ -153,13 +159,13 @@ public class DiannSpeclibReader implements LibraryPredictionMapper {
                         MassCalculator mc = new MassCalculator(line[0], line[1]);
                         float[] newMZs = new float[tmp.mzs.length];
                         for (int i = 0; i < newMZs.length; i++) {
-                            newMZs[i] = mc.calcMass(tmp.fragNums[i], MassCalculator.flagTOion.get(tmp.flags[i]),
+                            newMZs[i] = mc.calcMass(tmp.fragNums[i], tmp.fragmentIonTypes[i],
                                     tmp.charges[i], tmp.isotopes[i]);
                         }
 
                         //add to hashmap
                         PredictionEntry newPred = new PredictionEntry(newMZs, tmp.intensities,
-                                tmp.fragNums, tmp.charges, tmp.fragmentIonTypes, tmp.flags);
+                                tmp.fragNums, tmp.charges, tmp.fragmentIonTypes);
                         newPred.setRT(tmp.RT);
                         newPred.setIM(tmp.IM);
                         allPreds.put(mc.fullPeptide, newPred);

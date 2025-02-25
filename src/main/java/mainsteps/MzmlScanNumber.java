@@ -18,6 +18,7 @@
 package mainsteps;
 
 import allconstants.Constants;
+import allconstants.NceConstants;
 import org.apache.commons.lang3.ArrayUtils;
 import peptideptmformatting.PeptideFormatter;
 import peptideptmformatting.PeptideSkipper;
@@ -32,10 +33,11 @@ import java.io.IOException;
 import java.net.URISyntaxException;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.HashMap;
+import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import static utils.NumericUtils.doubleToFloat;
+import static utils.NumericUtils.getRanks;
 import static utils.Print.printError;
 import static utils.Print.printInfo;
 
@@ -45,19 +47,19 @@ public class MzmlScanNumber {
     public double isolationUpper;
     public float[] expMZs;
     public float[] expIntensities;
-    public float[] savedExpMZs;
-    public float[] savedExpIntensities;
+    public final float[] savedExpMZs; //these are not changed
+    public final float[] savedExpIntensities;
     public float RT;
     public int RTbinSize;
     public float normalizedRT;
     public Float IM;
     public int IMbinSize;
-    Double lowerLimit;
-    Double upperLimit;
-    public HashMap<String, Float> NCEs = new HashMap<>();
+    public Double lowerLimit; //TODO: better names to distinguish this from isolationLower
+    public Double upperLimit;
     public ArrayList<PeptideObj> peptideObjects = new ArrayList<>();
     //double[] mzFreqs;
     public static float[] zeroFloatArray = new float[]{0};
+    public static String[] zeroStringArray = new String[]{""};
     public AtomicInteger skippedPSMs = new AtomicInteger(0);
 
     //this version if creating from mzml scan number
@@ -75,8 +77,11 @@ public class MzmlScanNumber {
         if (Constants.removeRankPeaks && (Constants.features.contains("hypergeometricProbability") ||
                 Constants.features.contains("intersection") ||
                 Constants.features.contains("adjacentSimilarity"))) {
-            this.savedExpMZs = this.expMZs;
-            this.savedExpIntensities = this.expIntensities;
+            this.savedExpMZs = Arrays.copyOf(this.expMZs, this.expMZs.length);
+            this.savedExpIntensities = Arrays.copyOf(this.expIntensities, this.expIntensities.length);
+        } else {
+            this.savedExpMZs = new float[0]; //will refer to expMZs instead to save memory
+            this.savedExpIntensities = new float[0];
         }
         this.RT = scan.getRt().floatValue();
         if (Constants.useIM) {
@@ -90,9 +95,7 @@ public class MzmlScanNumber {
         lowerLimit = scan.getScanMzWindowLower();
         upperLimit = scan.getScanMzWindowUpper();
 
-        if (!Constants.NCE.isEmpty() && !Constants.FragmentationType.isEmpty()) {
-            NCEs.put(Constants.FragmentationType, Float.parseFloat(Constants.NCE));
-        } else {
+        if (NceConstants.mzmlNCEs.isEmpty()) {
             try {
                 String[] nceInfo = scan.getFilterString().split("@");
                 if (nceInfo.length > 1) {
@@ -102,32 +105,44 @@ public class MzmlScanNumber {
                         for (int i = 0; i < fragmentationInfo.length(); i++) {
                             char myChar = fragmentationInfo.charAt(i);
                             if (Character.isDigit(myChar)) {
-                                NCEs.put(fragmentationType.toString().toUpperCase(),
-                                        Float.parseFloat(fragmentationInfo.substring(i)));
+                                NceConstants.mzmlNCEs.put(
+                                        fragmentationType.toString().toUpperCase(), fragmentationInfo.substring(i));
                                 break;
                             } else {
                                 fragmentationType.append(myChar);
                             }
                         }
                     }
+                    printInfo("NCE and fragmentation type detected: " + NceConstants.mzmlNCEs);
+                } else {
+                    printInfo("mzml file does not contain filter string. Setting NCE to 25 and FragmentationType to HCD.");
+                    NceConstants.mzmlNCEs.put("HCD", "25");
+                    Constants.FragmentationType = "HCD";
                 }
             } catch (NullPointerException e) { //like in DIA-Umpire, there is no filter string
-                printInfo("mzml file does not contain filter string. Setting NCE to 25 and " +
-                        "FragmentationType to HCD. If other values are desired, please set them in " +
-                        "the parameter file with NCE and FragmentationType.");
-                Constants.NCE = "25";
+                printInfo("mzml file does not contain filter string. Setting NCE to 25 and FragmentationType to HCD.");
+                NceConstants.mzmlNCEs.put("HCD", "25");
                 Constants.FragmentationType = "HCD";
             }
-//            }
         }
     }
 
     //this version if creating from mgf file
+    //TODO: update support
     public MzmlScanNumber(int scanNum, float[] expMZs, float[] expInts, float RT, float IM) {
         this.scanNum = scanNum;
         this.expMZs = expMZs;
         this.expIntensities = expInts;
         sortArrays(this.expMZs, this.expIntensities);
+        if (Constants.removeRankPeaks && (Constants.features.contains("hypergeometricProbability") ||
+                Constants.features.contains("intersection") ||
+                Constants.features.contains("adjacentSimilarity"))) {
+            this.savedExpMZs = Arrays.copyOf(this.expMZs, this.expMZs.length);
+            this.savedExpIntensities = Arrays.copyOf(this.expIntensities, this.expIntensities.length);
+        } else {
+            this.savedExpMZs = new float[0]; //will refer to expMZs instead to save memory
+            this.savedExpIntensities = new float[0];
+        }
         this.RT = RT;
         this.IM = IM;
     }
@@ -154,14 +169,55 @@ public class MzmlScanNumber {
 
     public float[] getExpMZs() { return expMZs; }
     public float[] getExpIntensities() { return expIntensities; }
+    public float[] getSavedExpMZs() {
+        if (savedExpMZs.length == 0) {
+            return expMZs;
+        }
+        return savedExpMZs;
+    }
+    public float[] getSavedExpIntensities() {
+        if (savedExpIntensities.length == 0) {
+            return expIntensities;
+        }
+        return savedExpIntensities;
+    }
 
     public PeptideObj setPeptideObject(PeptideFormatter name, int rank, int targetORdecoy, String escore,
                                        PredictionEntryHashMap allPreds, boolean set) throws IOException, URISyntaxException {
         PredictionEntry predictionEntry = allPreds.get(name.getBaseCharge());
         PeptideObj newPepObj = null;
         try {
-            float[] predMZs = predictionEntry.mzs;
-            float[] predIntensities = predictionEntry.intensities;
+            //merge spectra and aux spectra
+            float[] predMZs;
+            float[] predIntensities;
+            String[] predFragmentIonTypes;
+
+            if (predictionEntry.auxSpectra != null) {
+                List<Integer> rankListMain = new ArrayList<>();
+                List<Integer> rankListAux = new ArrayList<>();
+
+                getRanks(predictionEntry.mzs, predictionEntry.auxSpectra.mzs, rankListMain, rankListAux);
+
+                predMZs = new float[rankListMain.size() + rankListAux.size()];
+                predIntensities = new float[rankListMain.size() + rankListAux.size()];
+                predFragmentIonTypes = new String[rankListMain.size() + rankListAux.size()];
+
+                for (int i = 0; i < rankListMain.size(); i++) {
+                    predMZs[rankListMain.get(i)] = predictionEntry.mzs[i];
+                    predIntensities[rankListMain.get(i)] = predictionEntry.intensities[i];
+                    predFragmentIonTypes[rankListMain.get(i)] = predictionEntry.fragmentIonTypes[i];
+                }
+                for (int i = 0; i < rankListAux.size(); i++) {
+                    predMZs[rankListAux.get(i)] = predictionEntry.auxSpectra.mzs[i];
+                    predIntensities[rankListAux.get(i)] = predictionEntry.auxSpectra.intensities[i];
+                    predFragmentIonTypes[rankListAux.get(i)] = predictionEntry.auxSpectra.fragmentIonTypes[i];
+                }
+            } else {
+                predMZs = predictionEntry.mzs;
+                predIntensities = predictionEntry.intensities;
+                predFragmentIonTypes = predictionEntry.fragmentIonTypes;
+            }
+
             float predRT = predictionEntry.RT;
             float predIM = predictionEntry.IM;
 
@@ -169,30 +225,29 @@ public class MzmlScanNumber {
             //TODO can make this faster by only comparing beginning and end
             ArrayList<Float> tmpMZs = new ArrayList<>();
             ArrayList<Float> tmpIntensities = new ArrayList<>();
+            ArrayList<String> tmpFragmentIonTypes = new ArrayList<>();
             for (int i = 0; i < predMZs.length; i++) {
                 if ((predMZs[i] >= lowerLimit) & (predMZs[i] <= upperLimit)) {
                     tmpMZs.add(predMZs[i]);
                     tmpIntensities.add(predIntensities[i]);
+                    tmpFragmentIonTypes.add(predFragmentIonTypes[i]);
                 }
             }
             predMZs = new float[tmpMZs.size()];
             predIntensities = new float[tmpIntensities.size()];
+            predFragmentIonTypes = new String[tmpFragmentIonTypes.size()];
             for (int i = 0; i < tmpMZs.size(); i++) {
                 predMZs[i] = tmpMZs.get(i);
                 predIntensities[i] = tmpIntensities.get(i);
+                predFragmentIonTypes[i] = tmpFragmentIonTypes.get(i);
             }
 
             if (predMZs.length > 1) {
-                if (Constants.divideFragments.equals("0")) {
-                    newPepObj = new PeptideObj(this, name.getBaseCharge(), rank, targetORdecoy, escore, predMZs,
-                            predIntensities, predRT, predIM);
-                } else {
-                    newPepObj = new PeptideObj(this, name.getBaseCharge(), rank, targetORdecoy, escore, predMZs,
-                            predIntensities, predRT, predIM, predictionEntry.fragmentIonTypes);
-                }
+                newPepObj = new PeptideObj(this, name.getBaseCharge(), rank, targetORdecoy, escore,
+                        predMZs, predIntensities, predFragmentIonTypes, predRT, predIM);
             } else { //only 1 frag to match
-                newPepObj = new PeptideObj(this, name.getBaseCharge(), rank, targetORdecoy, escore, zeroFloatArray,
-                        zeroFloatArray, predRT, predIM);
+                newPepObj = new PeptideObj(this, name.getBaseCharge(), rank, targetORdecoy, escore,
+                        zeroFloatArray, zeroFloatArray, zeroStringArray, predRT, predIM);
             }
             if (set) {
                 peptideObjects.add(newPepObj);
@@ -221,7 +276,7 @@ public class MzmlScanNumber {
             if (PeptideSkipper.skipPeptide(name.getStripped(), name.getCharge(),
                     Constants.spectraModel + Constants.rtModel + Constants.imModel)) {
                 newPepObj = new PeptideObj(this, name.getBaseCharge(), rank, targetORdecoy, escore,
-                        zeroFloatArray, zeroFloatArray, predRT, predIM);
+                        zeroFloatArray, zeroFloatArray, zeroStringArray, predRT, predIM);
                 if (set) {
                     peptideObjects.add(newPepObj);
                 }

@@ -33,8 +33,7 @@ public class PeptideSkipper {
             }
         }
         //length
-        if ((model.contains("ms2pip") || (model.contains("prosit") && model.contains("tmt")))
-                && stripped.length() > 30) {
+        if ((model.contains("ms2pip") || model.contains("prosit")) && stripped.length() > 30) {
             return true;
         }
         if (model.contains("unispec") && stripped.length() > 40) {

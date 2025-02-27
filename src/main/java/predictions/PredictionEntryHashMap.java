@@ -105,7 +105,7 @@ public class PredictionEntryHashMap extends ConcurrentHashMap<String, Prediction
                         pe1.fragmentIonTypes = pe2.fragmentIonTypes;
                         break;
                     case "auxSpectra":
-                        if (pe1.mzs.length == 0) { //populate missing main spectra
+                        if (pe1.mzs.length <= 1) { //populate missing main spectra
                             if (Constants.auxSpectraModel.equalsIgnoreCase("unispec")) {
                                 //filter to use only 0 isotopes
                                 ArrayList<Integer> zeroIsotopes = new ArrayList<>();
@@ -120,6 +120,8 @@ public class PredictionEntryHashMap extends ConcurrentHashMap<String, Prediction
                                 pe1.fragNums = new int[zeroIsotopes.size()];
                                 pe1.charges = new int[zeroIsotopes.size()];
                                 pe1.fragmentIonTypes = new String[zeroIsotopes.size()];
+                                pe1.fullAnnotations = new String[zeroIsotopes.size()];
+                                pe1.isotopes = new int[zeroIsotopes.size()];
 
                                 int i = 0;
                                 for (int idx : zeroIsotopes) {
@@ -131,15 +133,23 @@ public class PredictionEntryHashMap extends ConcurrentHashMap<String, Prediction
                                     if (pe2.charges.length != 0) {
                                         pe1.charges[i] = pe2.charges[idx];
                                     }
+                                    if (pe2.fullAnnotations.length != 0) {
+                                        pe1.fullAnnotations[i] = pe2.fullAnnotations[idx];
+                                    }
+                                    if (pe2.isotopes.length != 0) {
+                                        pe1.isotopes[i] = pe2.isotopes[idx];
+                                    }
                                     pe1.fragmentIonTypes[i] = pe2.fragmentIonTypes[idx];
                                     i++;
                                 }
                             } else { //PredFull
-                                pe1.mzs = pe2.mzs;
+                                pe1.mzs = pe2.mzs; //TODO: fix mzs if matchWithDaltons is false
                                 pe1.intensities = pe2.intensities;
                                 pe1.fragNums = pe2.fragNums;
                                 pe1.charges = pe2.charges;
                                 pe1.fragmentIonTypes = pe2.fragmentIonTypes;
+                                pe1.fullAnnotations = pe2.fullAnnotations;
+                                pe1.isotopes = pe2.isotopes;
                             }
                         }
                         pe1.auxSpectra = pe2;

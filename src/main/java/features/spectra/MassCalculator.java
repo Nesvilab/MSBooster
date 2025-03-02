@@ -289,7 +289,7 @@ public class MassCalculator {
                         mass += modMasses.get(num + 1);
                     }
                     break;
-                case "z":
+                case "zdot":
                     mass = O - N;
                     mass += modMasses.get(this.peptide.length() + 1);
                     for (int i = this.peptide.length() - num; i < this.peptide.length(); i++) {
@@ -300,11 +300,11 @@ public class MassCalculator {
                         mass += modMasses.get(0);
                     }
                     break;
-                case "zdot":
-                    mass = calcMass(num, "z", 1, isotope) - proton - H;
+                case "z":
+                    mass = calcMass(num, "zdot", 1, 0) - proton - H;
                     break;
-                case "cdot":
-                    mass = calcMass(num, "c", 1, isotope) - proton - H;
+                case "cdot": //TODO: is this even a thing?
+                    mass = calcMass(num, "c", 1, 0) - proton - H;
                     break;
             }
         }
@@ -387,7 +387,8 @@ public class MassCalculator {
 
     //in case masses overlap
     private void addToFragmentIons(Float mass, String[] info, ArrayList<Float> mzArrayList) {
-        if (FragmentIonConstants.fragmentIonHierarchySet.contains(info[1])) {
+        if (FragmentIonConstants.fragmentIonHierarchySet.contains(info[1]) ||
+                info[1].equals("p") || info[1].equals("p-NL")) { //want to annotate precursor peaks, even if they are filtered out later
             fragmentIons.merge(mass, info, (a, b) -> new String[]{a[0] + ";" + b[0],
                     a[1] + ";" + b[1]});
             annotationMasses.put(info[0], mass);
@@ -401,80 +402,82 @@ public class MassCalculator {
         ArrayList<Float> returnedMzs = new ArrayList<>();
 
         //calculate precursor isotopic peaks. Will calculate with lower values of charge
-        for (int iCharge = 1; iCharge < charge + 1; iCharge++) {
-            //regular
-            if (fragmentType.equals("p") || fragmentType.isEmpty()) {
-                String ionName = "p^" + iCharge;
-                addToFragmentIons(calcMassPrecursor(0, 0, iCharge),
-                        new String[]{ionName, "p"}, returnedMzs);
-            }
+        for (int isotope = 0; isotope < 2; isotope++) {
+            for (int iCharge = 1; iCharge < charge + 1; iCharge++) {
+                //regular
+                if (fragmentType.equals("p") || fragmentType.isEmpty()) {
+                    String ionName = "p^" + iCharge + "+" + isotope + "i";
+                    addToFragmentIons(calcMassPrecursor(isotope, 0, iCharge),
+                            new String[]{ionName, "p"}, returnedMzs);
+                }
 
-            //neutral loss
-            if (fragmentType.equals("p-NL") || fragmentType.isEmpty()) {
-                for (String nl : selectNeutralLosses) {
-                    String ionName = "p-" + nl + "^" + iCharge;
-                    addToFragmentIons(calcMassPrecursor(0, allNeutralLossMasses.get(nl), iCharge),
-                            new String[]{ionName, "p-NL"}, returnedMzs);
+                //neutral loss
+                if (fragmentType.equals("p-NL") || fragmentType.isEmpty()) {
+                    for (String nl : selectNeutralLosses) {
+                        String ionName = "p-" + nl + "^" + iCharge + "+" + isotope + "i";
+                        addToFragmentIons(calcMassPrecursor(isotope, allNeutralLossMasses.get(nl), iCharge),
+                                new String[]{ionName, "p-NL"}, returnedMzs);
+                    }
                 }
             }
-        }
 
-        //calculate all abcxyz ions
-        String[] ions = new String[]{"a", "b", "c", "x", "y", "z", "zdot", "cdot"};
-        int maxCharge = charge; //max fragment ion charge?
-        for (String ionType : ions) {
-            for (int num = 1; num < this.peptide.length(); num++) {
-                for (int iCharge = 1; iCharge < maxCharge + 1; iCharge++) {
-                    //regular fragment
-                    if (fragmentType.equals(ionType) || fragmentType.isEmpty()) {
-                        String ionName = ionType + num + "^" + iCharge;
-                        addToFragmentIons(calcMass(num, ionType, iCharge, 0), new String[]{ionName, ionType},
-                                returnedMzs);
-                    }
+            //calculate all abcxyz ions
+            String[] ions = new String[]{"a", "b", "c", "x", "y", "z", "zdot", "cdot"};
+            int maxCharge = charge; //max fragment ion charge?
+            for (String ionType : ions) {
+                for (int num = 1; num < this.peptide.length(); num++) {
+                    for (int iCharge = 1; iCharge < maxCharge + 1; iCharge++) {
+                        //regular fragment
+                        if (fragmentType.equals(ionType) || fragmentType.isEmpty()) {
+                            String ionName = ionType + num + "^" + iCharge + "+" + isotope + "i";
+                            addToFragmentIons(calcMass(num, ionType, iCharge, isotope), new String[]{ionName, ionType},
+                                    returnedMzs);
+                        }
 
-                    //neutral loss fragments
-                    if (fragmentType.equals(ionType + "-NL") || fragmentType.isEmpty()) {
-                        if (!ionType.equals("c")) {
-                            for (String nl : selectNeutralLosses) {
-                                String ionName = ionType + num + "-" + nl + "^" + iCharge;
-                                addToFragmentIons(calcMass(num, ionType, iCharge, allNeutralLossMasses.get(nl), 0),
-                                        new String[]{ionName, ionType + "-NL"}, returnedMzs);
+                        //neutral loss fragments
+                        if (fragmentType.equals(ionType + "-NL") || fragmentType.isEmpty()) {
+                            if (!ionType.equals("c")) {
+                                for (String nl : selectNeutralLosses) {
+                                    String ionName = ionType + num + "-" + nl + "^" + iCharge + "+" + isotope + "i";
+                                    addToFragmentIons(calcMass(num, ionType, iCharge, allNeutralLossMasses.get(nl), isotope),
+                                            new String[]{ionName, ionType + "-NL"}, returnedMzs);
+                                }
+                            } else { //c-NH3 is same as b
+                                String ionName = ionType + num + "-H2O^" + iCharge + "+" + isotope + "i";
+                                addToFragmentIons(calcMass(num, ionType, iCharge, allNeutralLossMasses.get("H2O"), isotope),
+                                        new String[]{ionName, "c-NL"}, returnedMzs);
                             }
-                        } else { //c-NH3 is same as b
-                            String ionName = ionType + num + "-H2O^" + iCharge;
-                            addToFragmentIons(calcMass(num, ionType, iCharge, allNeutralLossMasses.get("H2O"), 0),
-                                    new String[]{ionName, "c-NL"}, returnedMzs);
                         }
                     }
                 }
             }
-        }
 
-        //calculate internal fragment ions ay and by
-        //what is the proper notation for these?
-        for (String ionType : internalFragmentTypes) {
-            for (int num1 = 3; num1 < peptide.length(); num1++) {
-                for (int num2 = 2; num2 < peptide.length() - 1; num2++) {
-                    if (num2 >= num1) {
-                        break;
-                    }
+            //calculate internal fragment ions ay and by
+            //what is the proper notation for these?
+            for (String ionType : internalFragmentTypes) {
+                for (int num1 = 3; num1 < peptide.length(); num1++) {
+                    for (int num2 = 2; num2 < peptide.length() - 1; num2++) {
+                        if (num2 >= num1) {
+                            break;
+                        }
 
-                    //getting subsequence
-                    //start position should be peptide.length - num1
-                    int start = peptide.length() - num1;
-                    String subsequence = peptide.substring(start, start + num2);
+                        //getting subsequence
+                        //start position should be peptide.length - num1
+                        int start = peptide.length() - num1;
+                        String subsequence = peptide.substring(start, start + num2);
 
-                    if (fragmentType.equals("int") || fragmentType.isEmpty()) {
-                        String ionName = "Int:y" + num1 + ionType.charAt(0) + num2 + "/" + subsequence;
-                        addToFragmentIons(calcMass(num1, num2, ionType, 0), new String[]{ionName, "int"},
-                                returnedMzs);
-                    }
-                    if (fragmentType.equals("int-NL") || fragmentType.isEmpty()) {
-                        for (String nl : selectNeutralLosses) {
-                            String ionName = "Int:y" + num1 + ionType.charAt(0) + num2 + "-" + nl + "/" + subsequence;
-                            addToFragmentIons(calcMass(num1, num2, ionType,
-                                            allNeutralLossMasses.get(nl), 0), new String[]{ionName, "int-NL"},
+                        if (fragmentType.equals("int") || fragmentType.isEmpty()) {
+                            String ionName = "Int:" + "+" + isotope + "i" + "y" + num1 + ionType.charAt(0) + num2 + "/" + subsequence;
+                            addToFragmentIons(calcMass(num1, num2, ionType, isotope), new String[]{ionName, "int"},
                                     returnedMzs);
+                        }
+                        if (fragmentType.equals("int-NL") || fragmentType.isEmpty()) {
+                            for (String nl : selectNeutralLosses) {
+                                String ionName = "Int:" + "+" + isotope + "i" + "y" + num1 + ionType.charAt(0) + num2 + "-" + nl + "/" + subsequence;
+                                addToFragmentIons(calcMass(num1, num2, ionType,
+                                                allNeutralLossMasses.get(nl), isotope), new String[]{ionName, "int-NL"},
+                                        returnedMzs);
+                            }
                         }
                     }
                 }
@@ -776,6 +779,18 @@ public class MassCalculator {
                     break;
                 }
             }
+            if (sb.toString().isEmpty()) {
+                //handling precursor assignments
+                if (consideredFragmentIons.get(0)[1].equals("p")) {
+                    annotations[i] = consideredFragmentIons.get(0)[0];
+                    fragmentIonTypes[i] = "p";
+                    continue;
+                }
+                if (consideredFragmentIons.get(0)[1].equals("p-NL")) {
+                    annotations[i] = consideredFragmentIons.get(0)[0];
+                    fragmentIonTypes[i] = "p-NL";
+                }
+            }
         }
 
         return new String[][] {annotations, fragmentIonTypes};
@@ -827,6 +842,7 @@ public class MassCalculator {
             case "a":
             case "b":
             case "c":
+            case "cdot":
             case "a-NL":
             case "b-NL":
             case "c-NL":
@@ -840,6 +856,7 @@ public class MassCalculator {
             case "x":
             case "y":
             case "z":
+            case "zdot":
             case "x-NL":
             case "y-NL":
             case "z-NL":
@@ -858,11 +875,11 @@ public class MassCalculator {
     }
 
     public static void main(String[] args) throws IOException, URISyntaxException {
+        Constants.FragmentationType = "ETD";
         FragmentIonConstants.fragmentIonHierarchySet = new HashSet<>();
-        FragmentIonConstants.fragmentIonHierarchySet.add("int");
-        FragmentIonConstants.fragmentIonHierarchySet.add("int-NL");
-        MassCalculator mc = new MassCalculator("APAGVLPELM[15.9949]", 2);
-        mc.possibleUnispecMzs("");
+        FragmentIonConstants.fragmentIonHierarchySet.add("p");
+        MassCalculator mc = new MassCalculator("YVTHETKHF", 3);
+        mc.possibleFragmentIons("p");
         System.out.println(mc.annotationMasses);
     }
 }

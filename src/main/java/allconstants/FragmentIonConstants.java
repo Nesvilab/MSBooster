@@ -90,6 +90,16 @@ public class FragmentIonConstants implements ConstantsInterface {
                     j++;
                 }
                 break;
+            case 5: //break into zdot/z/c/y and unknown, ETD version
+                fg = new TreeSet[2];
+                fg[0] = new TreeSet<>();
+                fg[1] = new TreeSet<>();
+                fg[0].add("zdot");
+                fg[0].add("z");
+                fg[0].add("c");
+                fg[0].add("y");
+                fg[1].add("unknown");
+                break;
             default: //custom
                 printError("Custom fragment groups not yet supported. Exiting");
                 System.exit(1);

@@ -235,6 +235,8 @@ public class MzmlReader {
                     Constants.FragmentationType = "HCD";
                 } else if (NceConstants.mzmlNCEs.containsKey("CID")) {
                     Constants.FragmentationType = "CID";
+                } else if (NceConstants.mzmlNCEs.containsKey("ETD")) {
+                    Constants.FragmentationType = "ETD";
                 } else {
                     printInfo("No fragmentation type detected. Setting fragmentation type to HCD. " +
                             "You can specify this with '--FragmentationType' via the command line " +
@@ -247,6 +249,10 @@ public class MzmlReader {
                         "or 'FragmentationType=' in the param file.");
                 Constants.FragmentationType = "HCD";
             }
+        }
+
+        if (Constants.FragmentationType.equals("HCD") || Constants.FragmentationType.equals("CID")) {} else {
+            FragmentIonConstants.annotatePredfullLikeUnispec = false;
         }
     }
 

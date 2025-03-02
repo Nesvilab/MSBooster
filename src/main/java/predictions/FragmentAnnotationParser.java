@@ -80,6 +80,24 @@ public class FragmentAnnotationParser {
                     fragmentIonType = "imm";
                 }
                 break;
+            case 'c':
+                if (NL) {
+                    fragmentIonType = "c-NL";
+                } else if (annotation.contains("dot")) {
+                    fragmentIonType = "cdot";
+                } else {
+                    fragmentIonType = "c";
+                }
+                break;
+            case 'z':
+                if (NL) {
+                    fragmentIonType = "z-NL";
+                } else if (annotation.contains("dot")) {
+                    fragmentIonType = "zdot";
+                } else {
+                    fragmentIonType = "z";
+                }
+                break;
             case 'u': //unknown
                 fragmentIonType = "unknown";
                 break;

@@ -67,7 +67,7 @@ public class SpectrumComparison {
         predFragmentIonTypes = pFragmentIonTypes;
 
         if (fragmentGroups.length == 1 || !separateByFragmentGroup) {
-            matchedIntensities = this.getMatchedIntensities(eMZs, eIntensities, predMZs, pFragmentIonTypes);
+            matchedIntensities = this.getMatchedIntensities(eMZs, eIntensities, predMZs, pFragmentIonTypes, pepObj);
         } else {
             //get fragments that match the allowed
             for (TreeSet<String> allowedTypesSet : fragmentGroups) {
@@ -162,7 +162,7 @@ public class SpectrumComparison {
            Unmatched peaks assigned 0
     */
     private float[] getMatchedIntensities(float[] expMZs, float[] expIntensities,
-                                          float[] predMZs, String[] predFragmentIonTypes) {
+                                          float[] predMZs, String[] predFragmentIonTypes, PeptideObj pepObj) {
         if (predMZs.length == 1) {
             return predMZs; // I think we can return predMZs here instead of intensities array because a length 1 array will just return score of 1
         }
@@ -174,6 +174,10 @@ public class SpectrumComparison {
         boolean[] usePPMs = new boolean[predFragmentIonTypes.length];
         boolean mwd;
         for (int i = 0; i < predFragmentIonTypes.length; i++) {
+            if (pepObj.daltonMatching) {
+                usePPMs[i] = false;
+                continue;
+            }
             if (FragmentIonConstants.primaryFragmentIonTypes.isEmpty()) {
                 mwd = Constants.matchWithDaltonsDefault;
             } else {
@@ -323,7 +327,7 @@ public class SpectrumComparison {
 
             allMatchedIntensities = getMatchedIntensities(
                     pepObj.scanNumObj.getSavedExpMZs(), pepObj.scanNumObj.getSavedExpIntensities(),
-                    mzs, fragmentIonTypes);
+                    mzs, fragmentIonTypes, pepObj);
         }
     }
 

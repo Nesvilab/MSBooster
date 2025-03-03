@@ -143,13 +143,16 @@ public class PredictionEntryHashMap extends ConcurrentHashMap<String, Prediction
                                     i++;
                                 }
                             } else { //PredFull
-                                pe1.mzs = pe2.mzs; //TODO: fix mzs if matchWithDaltons is false
+                                pe1.mzs = pe2.mzs;
                                 pe1.intensities = pe2.intensities;
                                 pe1.fragNums = pe2.fragNums;
                                 pe1.charges = pe2.charges;
                                 pe1.fragmentIonTypes = pe2.fragmentIonTypes;
                                 pe1.fullAnnotations = pe2.fullAnnotations;
                                 pe1.isotopes = pe2.isotopes;
+
+                                //prediction entry completely from predfull, need to use dalton matching
+                                pe1.daltonMatching = true;
                             }
                         }
                         pe1.auxSpectra = pe2;

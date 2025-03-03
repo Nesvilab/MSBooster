@@ -244,10 +244,10 @@ public class MzmlScanNumber {
 
             if (predMZs.length > 1) {
                 newPepObj = new PeptideObj(this, name.getBaseCharge(), rank, targetORdecoy, escore,
-                        predMZs, predIntensities, predFragmentIonTypes, predRT, predIM);
+                        predMZs, predIntensities, predFragmentIonTypes, predRT, predIM, predictionEntry.daltonMatching);
             } else { //only 1 frag to match
                 newPepObj = new PeptideObj(this, name.getBaseCharge(), rank, targetORdecoy, escore,
-                        zeroFloatArray, zeroFloatArray, zeroStringArray, predRT, predIM);
+                        zeroFloatArray, zeroFloatArray, zeroStringArray, predRT, predIM, predictionEntry.daltonMatching);
             }
             if (set) {
                 peptideObjects.add(newPepObj);
@@ -276,7 +276,7 @@ public class MzmlScanNumber {
             if (PeptideSkipper.skipPeptide(name.getStripped(), name.getCharge(),
                     Constants.spectraModel + Constants.rtModel + Constants.imModel)) {
                 newPepObj = new PeptideObj(this, name.getBaseCharge(), rank, targetORdecoy, escore,
-                        zeroFloatArray, zeroFloatArray, zeroStringArray, predRT, predIM);
+                        zeroFloatArray, zeroFloatArray, zeroStringArray, predRT, predIM, predictionEntry.daltonMatching);
                 if (set) {
                     peptideObjects.add(newPepObj);
                 }

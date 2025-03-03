@@ -41,6 +41,7 @@ public class PredictionEntry {
     public double precursorMz = 0d;
     //public boolean filtered = false; //work with this if filtering step is unnecessarily run multiple times
     private static final float maxIntensity = 1f;
+    public boolean daltonMatching = false;
 
     public PredictionEntry() {}
 

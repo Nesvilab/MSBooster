@@ -79,9 +79,11 @@ public class PeptideObj {
     public SpectrumComparison spectralSimObj;
     public double intensity_distribution_similarity;
 
+    public boolean daltonMatching = false;
+
     public PeptideObj(MzmlScanNumber scanNumObj, String name, int rank, int targetORdecoy, String escore,
                       float[] predMZs, float[] predIntensities, String[] predFragmentIonTypes,
-                      float predRT, Float predIM) throws IOException, URISyntaxException {
+                      float predRT, Float predIM, boolean daltonMatching) throws IOException, URISyntaxException {
         this.name = name;
         this.charge = Integer.parseInt(name.split("\\|")[1]);
         this.rank = rank;
@@ -89,6 +91,7 @@ public class PeptideObj {
         this.scanNum = scanNumObj.scanNum;
         this.targetORdecoy = targetORdecoy;
         this.escore = escore;
+        this.daltonMatching = daltonMatching;
         this.spectralSimObj = new SpectrumComparison(this, scanNumObj.getExpMZs(), scanNumObj.getExpIntensities(),
                 predMZs, predIntensities, predFragmentIonTypes, true);
         this.RT = predRT;

@@ -77,7 +77,7 @@ public class MainClass {
     public static ScheduledThreadPoolExecutor executorService;
     public static void main(String[] args) throws Exception {
         Locale.setDefault(Locale.US);
-        printInfo("MSBooster v1.2.71");
+        printInfo("MSBooster v1.2.72");
 
         try {
             //accept command line inputs

@@ -194,6 +194,10 @@ public class PinWriter {
                             }
                             break;
 
+                        case "bcs":
+                            formattedWrite(camelToUnderscore.get("bcs"), pepObj.spectralSimObj.scores.get("bcs"));
+                            break;
+
                         //experimental features
                         case "bootstrapSimilarity":
 //                        if (pepObj.spectralSimObj.spectrumComparisons.size() == 0) {

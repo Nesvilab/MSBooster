@@ -21,8 +21,11 @@ public class FragmentIonConstants implements ConstantsInterface {
     public static final HashSet<String> allowedFragmentIonTypes = new HashSet<>(Arrays.asList(
             "z", "c", "y", "a", "x", "b", "zdot", "cdot",
             "p", "imm", "int", "int-NL",
-            "z-NL", "c-NL", "y-NL", "a-NL", "x-NL", "b-NL",
+            "zdot", "c-NL", "y-NL", "a-NL", "x-NL", "b-NL",
             "p-NL", "unknown"));
+
+    public static Set<String> leftIons = new HashSet<>(Arrays.asList("a", "b", "c", "cdot"));
+    public static Set<String> rightIons = new HashSet<>(Arrays.asList("x", "y", "z", "zdot"));
 
     //these parameters handle the fragments used, with decreasing priority
     public static String ignoredFragmentIonTypes = ""; //split with commas

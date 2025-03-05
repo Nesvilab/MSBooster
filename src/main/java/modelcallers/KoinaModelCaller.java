@@ -441,9 +441,9 @@ public class KoinaModelCaller {
                         MassCalculator mc = new MassCalculator(pepSplit[0], pepSplit[1]);
                         String[][] annot_frag;
                         if (FragmentIonConstants.annotatePredfullLikeUnispec) {
-                            annot_frag = mc.annotateMZs(allMZs[i], "unispec", true);
+                            annot_frag = mc.annotateMZs(allMZs[i], "unispec", true, new HashSet<>());
                         } else {
-                            annot_frag = mc.annotateMZs(allMZs[i], "default", true);
+                            annot_frag = mc.annotateMZs(allMZs[i], "default", true, new HashSet<>());
                         }
 
                         //assign values

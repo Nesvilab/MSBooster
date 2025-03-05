@@ -41,6 +41,7 @@ import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashSet;
 import java.util.concurrent.ExecutionException;
 import java.util.zip.DataFormatException;
 import java.util.zip.Inflater;
@@ -161,7 +162,7 @@ public class DlibReader implements LibraryPredictionMapper {
                                 pfDecoy.getCharge());
                         PredictionEntry pe = allPreds.get(targetPeptide);
 
-                        String[] annotations = mcTarget.annotateMZs(pe.mzs, "default", false)[0];
+                        String[] annotations = mcTarget.annotateMZs(pe.mzs, "default", false, new HashSet<>())[0];
                         float[] decoyMZs = new float[annotations.length];
                         for (int i = 0; i < annotations.length; i++) {
                             String anno = annotations[i];
@@ -184,7 +185,7 @@ public class DlibReader implements LibraryPredictionMapper {
                         //get predictionEntry
                         PredictionEntry tmp = allPreds.get(pf.getDlib());
                         MassCalculator mc = new MassCalculator(pf.getDlib().split("\\|")[0], pf.getCharge());
-                        String[][] info = mc.annotateMZs(tmp.mzs, "default", false);
+                        String[][] info = mc.annotateMZs(tmp.mzs, "default", false, new HashSet<>());
                         String[] annotations = info[0];
 
                         MassCalculator shiftedMC = new MassCalculator(pf.getBase(), pf.getCharge());

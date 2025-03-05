@@ -26,6 +26,7 @@ import java.io.IOException;
 import java.net.URISyntaxException;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Map;
 
 
@@ -168,7 +169,7 @@ public class PeptideObj {
         }
 
         MassCalculator mc = new MassCalculator(name.split("\\|")[0], charge);
-        String[] expFragmentIonTypes = mc.annotateMZs(expMZs, "default", true)[1];
+        String[] expFragmentIonTypes = mc.annotateMZs(expMZs, "default", true, new HashSet<>())[1];
         String[] predFragmentIonTypes = predTypes1;
 
         for (int i = 0; i < expFragmentIonTypes.length; i++) {

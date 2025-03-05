@@ -98,7 +98,7 @@ public class PredFullSpeclibReader extends MgfFileReader {
             MassCalculator mc = new MassCalculator(peptideToSearch.getBase(), peptideToSearch.getCharge());
             //annotate ion
             //any calculated annotated fragment is considered
-            String[][] info = mc.annotateMZs(pe.mzs, "default", true);
+            String[][] info = mc.annotateMZs(pe.mzs, "default", true, new HashSet<>());
             String[] annotations = info[0];
             String[] fragmentIonTypes = info[1];
 

@@ -173,6 +173,7 @@ public class Constants implements ConstantsInterface {
     public static final Integer mzFreqWindow = 1;
 
     public static Float ppmTolerance = 20f; //ppm tolerance of MS2 scans
+    public static Float dividedPpmTolerance;
     public static Float lowResppmTolerance = 300f;
     public static Float highResppmTolerance = 20f;
     public static Boolean matchWithDaltons = null;
@@ -258,8 +259,7 @@ public class Constants implements ConstantsInterface {
     ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
     //use single string sep by comma delimiter
-    //public static String features = "predRTrealUnits,unweightedSpectralEntropy,deltaRTLOESS,peptideCounts";
-    public static String features = "predRTrealUnits,unweightedSpectralEntropy,deltaRTLOESS";
+    public static String features = "predRTrealUnits,unweightedSpectralEntropy,deltaRTLOESS,bcs";
 
     //don't currently support weighted similarity features
     public static final CaseInsensitiveHashSet detectFeatures = new CaseInsensitiveHashSet(
@@ -273,7 +273,8 @@ public class Constants implements ConstantsInterface {
                     "unweightedSpectralEntropy", "deltaRTlinear", "deltaRTbins", "deltaRTLOESS", "RTzscore", "RTprobability",
                     "RTprobabilityUnifPrior", "deltaRTLOESSnormalized", "calibratedRT", "predictedRT", "numMatchedFragments",
                     "hypergeometricProbability", "intersection", "adjacentSimilarity", "bestScan", "bootstrapSimilarity",
-                    "deltaRTLOESSreal", "predRTrealUnits", "weightedSpectralEntropy", "heuristicSpectralEntropy"});
+                    "deltaRTLOESSreal", "predRTrealUnits", "weightedSpectralEntropy", "heuristicSpectralEntropy",
+                    "intensity_distribution_similarity", "bcs"});
     public static final CaseInsensitiveHashSet spectraFeatures = new CaseInsensitiveHashSet(
             new String[] {
                     "cosineSimilarity", "weightedCosineSimilarity", "spectralContrastAngle", "weightedSpectralContrastAngle",
@@ -340,7 +341,6 @@ public class Constants implements ConstantsInterface {
         hs.addAll(peakCountsFeatures);
         hs.addAll(individualSpectralSimilaritiesFeatures);
         hs.addAll(intensitiesDifferenceFeatures);
-        hs.add("intensity_distribution_similarity");
         hs.add("peptideCounts");
         return hs;
     }
@@ -381,6 +381,7 @@ public class Constants implements ConstantsInterface {
         map.put("bestScan", "best_scan");
         map.put("bootstrapSimilarity", "bootstrap_similarity");
         map.put("peptideCounts", "peptide_counts");
+        map.put("bcs", "bcs");
         return map;
     }
     //////////////////////////////////////////////////////////////////////////////////////////////////////

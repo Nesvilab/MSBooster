@@ -100,6 +100,9 @@ public class SpectrumComparison {
             MassCalculator mc = new MassCalculator(pepObj.name.split("\\|")[0], pepObj.charge);
             pepObj.precursorMz = (mc.mass + pepObj.charge * mc.proton) / pepObj.charge;
         }
+        if (Constants.features.contains("bcs")) {
+            scores.put("bcs", bcs(eMZs, eIntensities));
+        }
     }
 
     //TODO: if ever reimplement adjacent similarity, think of solution that does not require another constructor
@@ -191,7 +194,7 @@ public class SpectrumComparison {
         }
 
         //matching fragments
-        double ppm = Constants.ppmTolerance / 1000000;
+        double ppm = Constants.dividedPpmTolerance;
 
         for (int i = 0; i < predMZs.length; i++) {
             double mz = predMZs[i];
@@ -904,6 +907,94 @@ public class SpectrumComparison {
 
         //return intersection / (matchedI.length + iters - intersection); //this would be jaccard
         return intersection;
+    }
+
+    public double bcs(float[] eMZs, float[] eIntensities) {
+        //filter to top N experimental peaks based on intensity
+        //HLA Astral DIA workflow uses 500, so arbitrarily use that
+        float[] tmpInts = new float[eIntensities.length];
+        System.arraycopy(eIntensities, 0, tmpInts, 0, eIntensities.length);
+
+        float maxInt = 0f;
+        int mzsLength = 0;
+        for (int i = 0; i < 500; i++) {
+            float maxIntIter = tmpInts[0];
+            int index = 0;
+            for (int j = 1; j < tmpInts.length; j++) {
+                float thisInt = tmpInts[j];
+                if (thisInt > maxIntIter) {
+                    maxIntIter = thisInt;
+                    index = j;
+                }
+            }
+            if (i == 0) {
+                maxInt = tmpInts[index];
+            }
+            if (maxInt * 0.01 > maxIntIter) {
+                break; //only want to keep up to 1% of base peak intensity
+            }
+            tmpInts[index] = -1f; //no longer highest intensity peak
+            mzsLength++;
+        }
+
+        float[] filteredMzs = new float[mzsLength];
+        int j = 0;
+        for (int i = 0; i < tmpInts.length; i++) {
+            if (tmpInts[i] == -1) {
+                filteredMzs[j] = eMZs[i];
+                j++;
+            }
+        }
+
+        //annotate these mzs
+        HashSet<String> fragmentsToConsider;
+        if (Constants.auxSpectraModel.isEmpty()) {
+            fragmentsToConsider = FragmentIonConstants.primaryFragmentIonTypes;
+        } else {
+            fragmentsToConsider = FragmentIonConstants.fragmentIonHierarchySet;
+        }
+        MassCalculator mc = new MassCalculator(pepObj.name.split("\\|")[0], pepObj.charge);
+        String[][] annotations = mc.annotateMZs(filteredMzs, "unispec", false,
+                fragmentsToConsider);
+
+        //if allowed fragment ion type, mark cleavage array. Init as 0, then change to 1
+        int[] cleavages = new int[mc.peptide.length() - 1];
+
+        //set cleavages for different fragment ion types
+        //no score for neutral loss, as main peak should already be there. Including could increase decoy scores
+        //immonium and peak ions have no influence
+        for (int i = 0; i < annotations[0].length; i++) {
+            String annotation = annotations[0][i];
+            if (annotation.contains(";")) {
+                continue; //do not consider ambiguous annotations
+            }
+            String fragmentIonType = annotations[1][i];
+            if (FragmentIonConstants.leftIons.contains(fragmentIonType) ||
+                    FragmentIonConstants.rightIons.contains(fragmentIonType)) {
+                int number = Integer.parseInt(annotation.substring(1).split("[+\\-^]")[0]);
+                if (FragmentIonConstants.leftIons.contains(fragmentIonType)) {
+                    cleavages[number - 1] += 1;
+                } else {
+                    cleavages[cleavages.length - number] += 1;
+                }
+            } else if (fragmentIonType.equals("int")) {
+                String peptide = annotation.split("/")[1];
+                peptide = peptide.split("[+\\-^]")[0];
+                int leftCut = mc.peptide.substring(1).indexOf(peptide); //don't consider nterminal AA
+                cleavages[leftCut] += 1;
+                cleavages[leftCut + peptide.length()] += 1;
+            }
+        }
+
+        //sum array and save score
+        int completeCleavages = 0;
+        for (int count : cleavages) {
+            if (count > 1) {
+                completeCleavages++;
+            }
+        }
+        return (double) completeCleavages / (double) cleavages.length;
+        //return (double) NumericUtils.intSum(cleavages);
     }
 
     //generic way of getting score

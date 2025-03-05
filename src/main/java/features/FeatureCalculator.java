@@ -392,6 +392,8 @@ public class FeatureCalculator {
                             }
                             pepObj.intensity_distribution_similarity = value;
                             break;
+                        case "bcs":
+                            break;
                     }
                 }
             }

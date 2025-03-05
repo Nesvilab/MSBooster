@@ -28,11 +28,9 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.net.URISyntaxException;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Objects;
-import java.util.Set;
 import java.util.SortedMap;
 import java.util.TreeMap;
 
@@ -158,8 +156,6 @@ public class MassCalculator {
     }};
 
     private final HashMap<String, double[]> series = new HashMap<>();
-    Set<String> leftIons = new HashSet<>(Arrays.asList("a", "b", "c", "cdot"));
-    Set<String> rightIons = new HashSet<>(Arrays.asList("x", "y", "z", "zdot"));
 
     private MassCalculator() {}
 
@@ -216,7 +212,7 @@ public class MassCalculator {
         double[] mySeries = new double[peptide.length() - 1];
         mySeries[0] = calcMass(1, s, 1, 0) - proton;
 
-        if (leftIons.contains(s)) {
+        if (FragmentIonConstants.leftIons.contains(s)) {
             for (int i = 1; i < peptide.length() - 1; i++) {
                 mySeries[i] = (mySeries[i - 1] + AAmap.get(this.peptide.charAt(i)) + modMasses.get(i + 1));
             }
@@ -688,16 +684,19 @@ public class MassCalculator {
     //usually default is sufficient, just to calculate y and b m/z values
     public String[][] annotateMZs(float[] mzs,
                                   String mode,
-                                  boolean daltonTolerance) {
+                                  boolean daltonTolerance,
+                                  HashSet<String> fragmentIonSet) {
         SortedMap<Float, String[]> mzToAnnotationMap = null;
         if (fragmentIons.isEmpty()) {
-            if (mode.equals("unispec") || FragmentIonConstants.annotatePredfullLikeUnispec) {
-                possibleUnispecMzs("");
-            } else if (mode.equals("default")) {
-                possibleFragmentIons("");
-            } else {
-                printError(mode + " not supported for mz annotation. Exiting");
-                System.exit(1);
+            for (String ionType : fragmentIonSet) {
+                if (mode.equals("unispec") || FragmentIonConstants.annotatePredfullLikeUnispec) {
+                    possibleUnispecMzs(ionType);
+                } else if (mode.equals("default")) {
+                    possibleFragmentIons(ionType);
+                } else {
+                    printError(mode + " not supported for mz annotation. Exiting");
+                    System.exit(1);
+                }
             }
         }
         mzToAnnotationMap = fragmentIons;
@@ -728,8 +727,8 @@ public class MassCalculator {
                 minMZ = mzs[i] - Constants.DaTolerance;
                 maxMZ = mzs[i] + Constants.DaTolerance;
             } else { //ppm tolerance
-                minMZ = mzs[i] * (1 - Constants.ppmTolerance);
-                maxMZ= mzs[i] * (1 + Constants.ppmTolerance);
+                minMZ = mzs[i] * (1 - Constants.dividedPpmTolerance);
+                maxMZ= mzs[i] * (1 + Constants.dividedPpmTolerance);
             }
 
             ArrayList<String[]> consideredFragmentIons = new ArrayList<>();

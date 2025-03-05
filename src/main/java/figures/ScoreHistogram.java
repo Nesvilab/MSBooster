@@ -42,7 +42,9 @@ public class ScoreHistogram {
             "delta_RT_loess", "delta_RT_loess_normalized", "RT_probability_unif_prior",
             "hypergeometric_probability", "delta_IM_loess"
     ));
-    HashSet<String> intScores = new HashSet<>(Set.of("peptide_counts", "intersection")); //TODO: gets crowded for many bins, can consider binning by 10s
+
+    //TODO: peptide counts gets crowded for many bins, can consider binning by 10s
+    HashSet<String> intScores = new HashSet<>(Set.of("peptide_counts", "intersection"));
 
     public ScoreHistogram(PinReader pinReader, ArrayList<String> fs) throws IOException {
         HashMap<String, ArrayList<Double>> targetScores = new HashMap<>();

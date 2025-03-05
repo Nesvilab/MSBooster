@@ -77,7 +77,7 @@ public class MainClass {
     public static ScheduledThreadPoolExecutor executorService;
     public static void main(String[] args) throws Exception {
         Locale.setDefault(Locale.US);
-        printInfo("MSBooster v1.2.72");
+        printInfo("MSBooster vBCS1.2.72");
 
         try {
             //accept command line inputs
@@ -385,6 +385,7 @@ public class MainClass {
 
             //get matched pin files for mzML files
             PinMzmlMatcher pmMatcher = new PinMzmlMatcher(Constants.mzmlDirectory, Constants.pinPepXMLDirectory);
+            Constants.dividedPpmTolerance = Constants.ppmTolerance / 1000000f;
 
             //exit if no models used
             if (!Constants.useSpectra && !Constants.useRT && !Constants.useIM) {

@@ -51,7 +51,7 @@ import static utils.Print.printInfo;
 
 public class NCEcalibrator {
     public static Object[] calibrateNCE(String currentModel,
-                                        KoinaMethods km, String jsonOutFolder)
+                                        KoinaMethods km, String jsonOutFolder, boolean verbose)
             throws IOException, ExecutionException, InterruptedException {
         ArrayList<PeptideFormatter> peptideFormatterArrayList = km.peptideArraylist;
         HashMap<String, LinkedList<Integer>> scanNums = km.scanNums;
@@ -122,7 +122,9 @@ public class NCEcalibrator {
 
             printInfo("Best NCE for " + currentModel + " after calibration is " + bestNCE);
             bestMedianDouble = bestMedian.get();
-            printInfo("Median similarity for " + currentModel + " is " + String.format("%.4f", bestMedianDouble));
+            if (verbose) {
+                printInfo("Median similarity for " + currentModel + " is " + String.format("%.4f", bestMedianDouble));
+            }
             if (bestNCE.get() == NceConstants.minNCE) {
                 printInfo("Consider lowering minNCE below " + NceConstants.minNCE);
             } else if (bestNCE.get() == NceConstants.maxNCE) {

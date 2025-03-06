@@ -520,17 +520,21 @@ public class LoessUtilities {
     }
 
     //finds the best bandwidth and absolute error between all points
-    public static Object[] gridSearchCV(double[][] rts, float[] bandwidths) {
+    public static Object[] gridSearchCV(double[][] rts, float[] bandwidths, boolean verbose) {
         float[] bestBandwidths = new float[Constants.regressionSplits];
 
         //divide into train and test sets
         ArrayList<double[][][]> splits = trainTestSplit(rts);
 
-        System.out.print("Iteration ");
+        if (verbose) {
+            System.out.print("Iteration ");
+        }
         double bestMSE;
         for (int Nsplit = 0; Nsplit < splits.size(); Nsplit++) {
             bestMSE = Double.MAX_VALUE;
-            System.out.print(Nsplit + 1 + "...");
+            if (verbose) {
+                System.out.print(Nsplit + 1 + "...");
+            }
             float bestBandwidth = 1f;
 
             double[][][] split = splits.get(Nsplit);
@@ -559,7 +563,9 @@ public class LoessUtilities {
             }
             bestBandwidths[Nsplit] = bestBandwidth;
         }
-        System.out.println();
+        if (verbose) {
+            System.out.println();
+        }
         float finalBandwidth = Float.parseFloat(String.format("%.4f", mean(bestBandwidths)));
 
         //train one more loess and calculate mse
@@ -577,12 +583,10 @@ public class LoessUtilities {
                 }
                 return new Object[]{finalBandwidth, loess, rtDiffs};
             } catch (Exception e) {
-                //e.printStackTrace();
                 if (finalBandwidth == 1) {
                     return new Object[]{finalBandwidth, loess, (float) bestMSE};
                 }
                 finalBandwidth = Math.min(finalBandwidth * 2, 1);
-                //printInfo("Regression failed, retrying with double the bandwidth: " + finalBandwidth);
             }
         }
     }

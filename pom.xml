@@ -13,7 +13,7 @@
         <maven.compiler.target>11</maven.compiler.target>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
 
-        <ver.batmass.io>1.34.1</ver.batmass.io>
+        <ver.batmass.io>1.34.4</ver.batmass.io>
         <lib.scope>compile</lib.scope>
         <kotlin.version>1.9.0</kotlin.version>
     </properties>

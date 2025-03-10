@@ -9,8 +9,8 @@ public class NceConstants implements ConstantsInterface {
             new String[] {
                     "PredFull", "Prosit", "PrositTMT", "alphapeptdeep", //externally supported
                     "AlphaPept_ms2_generic",
-                    "Prosit_2019_intensity", "Prosit_2023_intensity_timsTOF",
-                    "Prosit_2020_intensity_TMT", "Prosit_2020_intensity_HCD",
+                    "Prosit_2019_intensity", "Prosit_2023_intensity_timsTOF", "Prosit_2020_intensity_TMT",
+                    "Prosit_2020_intensity_HCD", "Prosit_2024_intensity_cit",
                     "UniSpec", "PredFull"});
 
     //these are default NCEs

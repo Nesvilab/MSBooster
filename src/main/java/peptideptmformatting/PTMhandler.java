@@ -47,6 +47,7 @@ public class PTMhandler {
     public static final double pyrogluQMass = -17.0265;
     public static final double pyrogluEMass = -18.01057;
     public static final double pyroCarbamidomethylMass = 39.9950;
+    public static final double citrullinationDeamidationMass = 0.984016;
     public static final int carbamidomethylationUnimod = 4;
     public static final int oxidationUnimod = 35;
     public static final int acetylationUnimod = 1;
@@ -55,6 +56,7 @@ public class PTMhandler {
     public static final int pyrogluQUnimod = 28;
     public static final int pyrogluEUnimod = 27;
     public static final int pyroCarbamidomethylUnimod = 26;
+    public static final int citrullinationDeamidationUnimod = 7;
 
     //models trained on tmt6/10/11 extrapolate well to tmt pro and itraq
     public static final double tmt6_10_11Mass = 229.1629;
@@ -90,6 +92,7 @@ public class PTMhandler {
         unimodToModMass.put(pyrogluQUnimod, pyrogluQMass);
         unimodToModMass.put(pyrogluEUnimod, pyrogluEMass);
         unimodToModMass.put(pyroCarbamidomethylUnimod, pyroCarbamidomethylMass);
+        unimodToModMass.put(citrullinationDeamidationUnimod, citrullinationDeamidationMass);
     }
 
     //TODO: see if methods need AA or not
@@ -115,6 +118,9 @@ public class PTMhandler {
         AAunimodToModMass.put("Q" + pyrogluQUnimod, pyrogluQMass);
         AAunimodToModMass.put("E" + pyrogluEUnimod, pyrogluEMass);
         AAunimodToModMass.put("C" + pyroCarbamidomethylUnimod, pyroCarbamidomethylMass);
+        AAunimodToModMass.put("Q" + citrullinationDeamidationUnimod, citrullinationDeamidationMass);
+        AAunimodToModMass.put("R" + citrullinationDeamidationUnimod, citrullinationDeamidationMass);
+        AAunimodToModMass.put("N" + citrullinationDeamidationUnimod, citrullinationDeamidationMass);
     }
     public static final HashMap<String, Double> AAunimodToModMass = new HashMap<>();
     static {
@@ -536,19 +542,8 @@ public class PTMhandler {
     }
 
     /////////////////////////////////////////////KOINA///////////////////////////////////////////////////////
-    public static final HashSet<String> prositMods = new HashSet<>(
-            Arrays.asList("737", "4", "35"));
-    public static final HashSet<String> unispecMods = new HashSet<>(
-            Arrays.asList("1", "4", "28", "27", "35", "21", "26"));
-    public static final HashSet<String> diannMods = new HashSet<>(
-            Arrays.asList("4", "35", "1", "21", "121", "737"));
-    public static final HashSet<String> ms2pipMods = new HashSet<>(
-            Arrays.asList("35", "4"));
-    public static final HashSet<String> deeplcMods = new HashSet<>(
-            Arrays.asList("35", "4", "21", "1"));
-
     public static final HashSet<String> prositAAMods = new HashSet<>(
-            Arrays.asList("[737", "K737", "C4", "M35"));
+            Arrays.asList("[737", "K737", "C4", "M35", "N7", "Q7", "R7"));
     public static final HashSet<String> unispecAAMods = new HashSet<>(
             Arrays.asList("[1", "C4", "Q28", "E27", "M35", "S21", "T21", "Y21", "C26"));
     public static final HashSet<String> diannAAMods = new HashSet<>(

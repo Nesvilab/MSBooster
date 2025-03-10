@@ -414,6 +414,4 @@ public class Constants implements ConstantsInterface {
 
     /////////////////////////////////////////////////model searching////////////////////////////////////////////////////
     public static Boolean searchTMTmodels = false;
-
-    public static Boolean useMultipleCorrelatedFeatures = false;
 }

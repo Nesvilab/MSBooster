@@ -92,8 +92,10 @@ public class PercolatorFormatter {
 
             if (Constants.spectraModel.equals("PredFull")) {
                 Constants.matchWithDaltons = true; //they report predictions in bins
+                Constants.matchWithDaltonsDefault = true;
             } else if (Constants.matchWithDaltons == null) {
                 Constants.matchWithDaltons = false;
+                Constants.matchWithDaltonsDefault = false;
             }
         }
 

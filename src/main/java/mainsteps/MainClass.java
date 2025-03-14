@@ -285,6 +285,7 @@ public class MainClass {
                     if (ppmToDa) { //read in from msfragger params. Low res tolerance used for all matching
                         Constants.matchWithDaltons = true;
                         Constants.matchWithDaltonsAux = true;
+                        Constants.matchWithDaltonsDefault = true;
                         Constants.DaTolerance = tol;
                         printInfo("Using Dalton tolerance of " + Constants.DaTolerance + " Da");
                     } else {

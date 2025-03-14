@@ -512,9 +512,6 @@ public class PinWriter {
 
                 //flush values to output
                 writer.writeValuesToRow();
-
-                //clear old pep obj
-                pepObj.spectralSimObj = null;
             }
             pin.close();
             writer.close();

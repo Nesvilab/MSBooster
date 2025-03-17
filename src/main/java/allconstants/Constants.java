@@ -262,7 +262,8 @@ public class Constants implements ConstantsInterface {
 
     //use single string sep by comma delimiter
     //public static String features = "predRTrealUnits,unweightedSpectralEntropy,deltaRTLOESS,peptideCounts";
-    public static String features = "predRTrealUnits,unweightedSpectralEntropy,deltaRTLOESS";
+    public static String features = "unweightedSpectralEntropy,weightedSpectralEntropy,hypergeometricProbability,intersection," +
+            "predRTrealUnits,deltaRTLOESS";
 
     //don't currently support weighted similarity features
     public static final CaseInsensitiveHashSet detectFeatures = new CaseInsensitiveHashSet(

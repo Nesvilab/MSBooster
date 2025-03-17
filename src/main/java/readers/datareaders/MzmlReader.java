@@ -852,7 +852,7 @@ public class MzmlReader {
                 }
 
                 //find best bandwidth if enough datapoints
-                Object[] gridSearchResults = gridSearchCV(rts, floatBandwidths);
+                Object[] gridSearchResults = gridSearchCV(rts, floatBandwidths, true);
                 float finalBandwidth = (float) gridSearchResults[0];
 
                 printInfo("Best average bandwidth for mass " + mass + " from grid search of " +
@@ -922,7 +922,7 @@ public class MzmlReader {
                     }
 
                     //find best bandwidth if enough datapoints
-                    Object[] gridSearchResults = gridSearchCV(ims, floatBandwidths);
+                    Object[] gridSearchResults = gridSearchCV(ims, floatBandwidths, true);
                     float finalBandwidth = (float) gridSearchResults[0];
 
                     printInfo("Best average bandwidth for mass " + mass + " from grid search of " +

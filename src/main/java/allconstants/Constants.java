@@ -140,6 +140,9 @@ public class Constants implements ConstantsInterface {
     public static String imSearchModelsString = "DIA-NN,AlphaPept_ccs_generic";
     public static final CaseInsensitiveHashSet ms2SearchModelsTMT = new CaseInsensitiveHashSet(
             new String[] {"DIA-NN", "Prosit_2020_intensity_TMT"});
+    public static String rtBestModelSearchMetric = "top";
+    public static String imBestModelSearchMetric = "top";
+    public static String spectraBestModelSearchMetric = "median";
     public static Integer numKoinaAttempts = 3;
     public static Integer initialKoinaMillisecondsToWaitRtIm = 30000;
     public static Integer initialKoinaMillisecondsToWaitMs2 = 60000;

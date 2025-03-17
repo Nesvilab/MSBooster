@@ -290,13 +290,16 @@ public class StatMethods {
             alist.add(f);
         }
 
-        Collections.sort(alist);
-        double median;
-        if (alist.size() % 2 == 0)
-            median = (alist.get(alist.size() / 2 - 1) + alist.get(alist.size() / 2)) / 2;
-        else
-            median = alist.get(alist.size() / 2);
-        return median;
+        return medianDouble(alist);
+    }
+
+    public static float median(float[] array) {
+        ArrayList<Float> alist = new ArrayList<>();
+        for (float f : array) {
+            alist.add(f);
+        }
+
+        return median(alist);
     }
 
     public static double medianDouble(ArrayList<Double> alist) {

@@ -303,8 +303,17 @@ public class MassCalculator {
                 case "z":
                     mass = calcMass(num, "zdot", 1, 0) - proton - H;
                     break;
-                case "cdot": //TODO: is this even a thing?
+                case "cdot":
                     mass = calcMass(num, "c", 1, 0) - proton - H;
+                    break;
+                case "zprime":
+                    mass = calcMass(num, "zdot", 1, 0) - proton + H;
+                    break;
+                case "x+1":
+                    mass = calcMass(num, "x", 1, 0) - proton + H;
+                    break;
+                case "a+1":
+                    mass = calcMass(num, "a", 1, 0) - proton + H;
                     break;
             }
         }

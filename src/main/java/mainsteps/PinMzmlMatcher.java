@@ -51,11 +51,14 @@ public class PinMzmlMatcher {
         ArrayList<String> pinFileList = new ArrayList<>();
         ArrayList<String> editedPinFileList = new ArrayList<>();
         for (String directory : allPinDirectories) {
-            if (directory.substring(directory.length() - 3).equalsIgnoreCase("pin")) { //single file
-                if (! directory.contains("_" + Constants.editedPinSuffix)) {
-                    pinFileList.add(directory);
-                } else {
-                    editedPinFileList.add(directory);
+            File f = new File(directory);
+            if (f.isFile()) {
+                if (directory.substring(directory.length() - 3).equalsIgnoreCase("pin")) { //single file
+                    if (!directory.contains("_" + Constants.editedPinSuffix)) {
+                        pinFileList.add(directory);
+                    } else {
+                        editedPinFileList.add(directory);
+                    }
                 }
             } else { //directory, but not recursive
                 List<File> pinFilesCollection = Files.list(Paths.get(directory))

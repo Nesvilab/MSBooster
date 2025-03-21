@@ -305,7 +305,7 @@ public class SpectrumComparison {
             //filter out peaks out of ms2 m/z range
             HashSet<Float> excludedMzs = new HashSet<>();
             for (float mz : mzsSet) {
-                if (mz < pepObj.scanNumObj.lowerLimit || mz > pepObj.scanNumObj.upperLimit) {
+                if (mz < pepObj.scanNumObj.ms2LowerLimit || mz > pepObj.scanNumObj.ms2UpperLimit) {
                     excludedMzs.add(mz);
                 }
             }
@@ -860,6 +860,13 @@ public class SpectrumComparison {
         }
         if (successes > matchedIons) { //sig fig issue
             successes = matchedIons;
+        }
+
+        //when considering predicted mzs for predfull, a fragment's reported mz may be above the scan lower limit
+        //however, it may be a rounding issue where its actual mz is below the scan lower limit
+        //allMatchedIntensities accounts for this but possible doesn't, so we default to allMatchedIntensities length
+        if (possible > allMatchedIntensities.length) {
+            possible = allMatchedIntensities.length;
         }
 
         HypergeometricDistribution hgd = new HypergeometricDistribution(rng,

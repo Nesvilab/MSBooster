@@ -43,8 +43,8 @@ import static utils.Print.printInfo;
 
 public class MzmlScanNumber {
     final int scanNum;
-    public double isolationLower;
-    public double isolationUpper;
+    public double ms1IsolationLowerLimit;
+    public double ms1IsolationUpperLimit;
     public float[] expMZs;
     public float[] expIntensities;
     public final float[] savedExpMZs; //these are not changed
@@ -54,8 +54,8 @@ public class MzmlScanNumber {
     public float normalizedRT;
     public Float IM;
     public int IMbinSize;
-    public Double lowerLimit; //TODO: better names to distinguish this from isolationLower
-    public Double upperLimit;
+    public Double ms2LowerLimit;
+    public Double ms2UpperLimit;
     public ArrayList<PeptideObj> peptideObjects = new ArrayList<>();
     //double[] mzFreqs;
     public static float[] zeroFloatArray = new float[]{0};
@@ -67,8 +67,8 @@ public class MzmlScanNumber {
         this.scanNum = scan.getNum();
         PrecursorInfo pi = scan.getPrecursor();
         if (pi.getMzRangeStart() != null) {
-            this.isolationLower = pi.getMzRangeStart() == 0 ? Double.NaN : pi.getMzRangeStart();
-            this.isolationUpper = pi.getMzRangeEnd() == 0 ? Double.NaN : pi.getMzRangeEnd();
+            this.ms1IsolationLowerLimit = pi.getMzRangeStart() == 0 ? Double.NaN : pi.getMzRangeStart();
+            this.ms1IsolationUpperLimit = pi.getMzRangeEnd() == 0 ? Double.NaN : pi.getMzRangeEnd();
         }
         ISpectrum spectrum = scan.fetchSpectrum();
         this.expMZs = doubleToFloat(spectrum.getMZs());
@@ -92,8 +92,8 @@ public class MzmlScanNumber {
                 Constants.useIM = false;
             }
         }
-        lowerLimit = scan.getScanMzWindowLower();
-        upperLimit = scan.getScanMzWindowUpper();
+        ms2LowerLimit = scan.getScanMzWindowLower();
+        ms2UpperLimit = scan.getScanMzWindowUpper();
 
         if (NceConstants.mzmlNCEs.isEmpty()) {
             try {
@@ -227,7 +227,7 @@ public class MzmlScanNumber {
             ArrayList<Float> tmpIntensities = new ArrayList<>();
             ArrayList<String> tmpFragmentIonTypes = new ArrayList<>();
             for (int i = 0; i < predMZs.length; i++) {
-                if ((predMZs[i] >= lowerLimit) & (predMZs[i] <= upperLimit)) {
+                if ((predMZs[i] >= ms2LowerLimit) & (predMZs[i] <= ms2UpperLimit)) {
                     tmpMZs.add(predMZs[i]);
                     tmpIntensities.add(predIntensities[i]);
                     tmpFragmentIonTypes.add(predFragmentIonTypes[i]);

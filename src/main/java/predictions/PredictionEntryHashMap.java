@@ -55,9 +55,9 @@ public class PredictionEntryHashMap extends ConcurrentHashMap<String, Prediction
             futureList.add(executorService.submit(() -> {
                 for (int j = mt.indices[finalI]; j < mt.indices[finalI + 1]; j++) {
                     PredictionEntry pe = predictions[j];
-                    pe.preprocessFragments(primaryTypes);
+                    pe.preprocessFragments(primaryTypes, Constants.topFragments);
                     if (pe.auxSpectra != null) {
-                        pe.auxSpectra.preprocessFragments(auxTypes);
+                        pe.auxSpectra.preprocessFragments(auxTypes, Constants.topFragments + 10);
                     }
                     this.put(peptides[j], pe);
                 }

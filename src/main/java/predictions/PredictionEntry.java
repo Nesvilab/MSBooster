@@ -105,7 +105,7 @@ public class PredictionEntry {
         setFullAnnotations(fullAnnotations, sortedIndices);
     }
 
-    public void preprocessFragments(HashSet<String> fragmentIonTypesSet) {
+    public void preprocessFragments(HashSet<String> fragmentIonTypesSet, int numTopFragments) {
         if (intensities.length != 0) {
             mergeCloseMzs();
 
@@ -158,11 +158,11 @@ public class PredictionEntry {
             }
 
             //only use N top fragments
-            if ((potentialFragments > Constants.topFragments) && Constants.useTopFragments) {
-                potentialFragments = Constants.topFragments;
+            if ((potentialFragments > numTopFragments) && Constants.useTopFragments) {
+                potentialFragments = numTopFragments;
 
                 //setting highest intensities to -1
-                for (int i = 0; i < Constants.topFragments; i++) {
+                for (int i = 0; i < numTopFragments; i++) {
                     maxInt = tmpInts[0];
                     int index = 0;
                     for (int j = 1; j < tmpInts.length; j++) {

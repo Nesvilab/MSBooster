@@ -82,17 +82,17 @@ public class InstrumentUtils {
                         return "ThermoTOF";
                     }
                 }
-                printInfo("Could not detect instrument type. Setting to Lumos. " +
+                printInfo("Could not detect instrument type. Setting to QE. " +
                         "If a different instrument was used, specify using '--instrument' via the command line " +
                         "or 'instrument=' in the param file.");
-                Constants.instrument = "Lumos";
-                return "Lumos"; //default if nothing found
+                Constants.instrument = "QE";
+                return "QE"; //default if nothing found
             } catch (NullPointerException e) {
-                printInfo("Could not detect instrument type. Setting to Lumos. " +
+                printInfo("Could not detect instrument type. Setting to QE. " +
                         "If a different instrument was used, specify using '--instrument' via the command line " +
                         "or 'instrument=' in the param file.");
-                Constants.instrument = "Lumos";
-                return "Lumos"; //default if nothing found
+                Constants.instrument = "QE";
+                return "QE"; //default if nothing found
             } catch (FileParsingException e) {
                 e.printStackTrace();
                 System.exit(1);

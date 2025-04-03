@@ -115,21 +115,9 @@ public class KoinaMethods {
             HashSet<String> allHits, String model, int NCE, String folder, String fulltsv) {
         ScheduledThreadPoolExecutor executorService = new ScheduledThreadPoolExecutor(1);
 
-        //instrument restriction for unispec QE charge 1
-        boolean charge1none = false;
-        if (Constants.instrument.equals("QE") && model.contains("UniSpec")) {
-            charge1none = true;
-        }
-
         HashSet<String> hits = new HashSet<>();
         for (String s : allHits) { //s is peptide,charge
-            String instrument = Constants.instrument;
-            if (model.contains("UniSpec")) {
-                instrument = mapInstrumentToModelSpecific("unispec");
-            }
-            if (charge1none && s.split(",")[1].equals("1")) {
-                instrument = "NONE";
-            }
+            String instrument = mapInstrumentToModelSpecific(model, s.split(",")[1]);
             hits.add(s + "," + NCE + "," + instrument + "," + Constants.FragmentationType);
         }
 

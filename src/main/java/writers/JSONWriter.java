@@ -276,6 +276,8 @@ public class JSONWriter {
                             instrumentObject.put("data", instrumentData);
                             inputsArray.put(instrumentObject);
                         }
+
+                        //fragmentation types
                         if (TMT || model.equals("predfull") || url.equals("Prosit_2024_intensity_cit")) {
                             JSONObject fragmentationObject = new JSONObject();
                             fragmentationObject.put("name", "fragmentation_types");

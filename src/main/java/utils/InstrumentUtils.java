@@ -26,6 +26,7 @@ import java.util.Arrays;
 import java.util.HashSet;
 import java.util.List;
 
+import static utils.Print.printError;
 import static utils.Print.printInfo;
 
 public class InstrumentUtils {
@@ -39,7 +40,17 @@ public class InstrumentUtils {
     static HashSet<String> ThermoTOFKeys = new HashSet<>(List.of("Astral"));
 
     //supported instruments by each model
-    static HashSet<String> unispecModels = new HashSet<>(Arrays.asList("Lumos", "QE", "QEHFX", "ELITE", "VELOS", "NONE"));
+    static HashSet<String> unispecInstruments = new HashSet<>(Arrays.asList(
+            "LUMOS", "QE", "QEHFX", "ELITE", "VELOS", "NONE"));
+    static HashSet<String> alphapeptdeepInstruments = new HashSet<>(Arrays.asList(
+            "QE", "LUMOS", "TIMSTOF", "SCIEXTOF"));
+//    static HashSet<String> allInstruments = makeAllInstruments();
+//    private static HashSet<String> makeAllInstruments() {
+//        HashSet<String> allInstruments = new HashSet<>();
+//        allInstruments.addAll(unispecInstruments);
+//        allInstruments.addAll(alphapeptdeepInstruments);
+//        return allInstruments;
+//    }
 
     public static String getInstrument(ScanCollectionDefault scans) {
         if (Constants.instrument.isEmpty()) {
@@ -103,16 +114,27 @@ public class InstrumentUtils {
         }
     }
 
-    public static String mapInstrumentToModelSpecific(String model) {
+    public static String mapInstrumentToModelSpecific(String model, String charge) {
         model = model.toLowerCase();
-        switch(model){
-            case "unispec":
-                if (!unispecModels.contains(Constants.instrument)) {
-                    return "NONE";
-                }
-                return Constants.instrument;
-            default:
-                return Constants.instrument;
+        String instrument = Constants.instrument;
+
+        if (model.contains("unispec")) {
+            if (!unispecInstruments.contains(instrument)) {
+                instrument = "NONE";
+            } else if ((instrument.equals("QE") || instrument.equals("QEHFX")) &&
+                    charge.equals("1")) {
+                instrument = "NONE";
+            }
+        } else if (model.contains("alphapept")) {
+            if (instrument.equals("QEHFX")) {
+                instrument = "QE";
+            } else if (!unispecInstruments.contains(instrument)) {
+                printError(Constants.instrument + " is not a valid instrument for AlphaPeptDeep. " +
+                        "Please use one of the following: " + alphapeptdeepInstruments);
+                System.exit(1);
+            }
         }
+
+        return instrument;
     }
 }

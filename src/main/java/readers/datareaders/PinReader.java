@@ -359,28 +359,16 @@ public class PinReader {
         return peps.toArray(new String[0]);
     }
 
-    public String[] createJSON(String modelFormat)
-            throws IOException, InterruptedException, ExecutionException, FileParsingException {
+    public String[] createJSON(String modelFormat) throws IOException {
         ArrayList<String> peps = new ArrayList<String>();
 
-        //instrument restriction for unispec QE charge 1
-        boolean charge1none = false;
-        if (Constants.instrument.equals("QE") && modelFormat.contains("UniSpec")) {
-            charge1none = true;
-        }
         while (next(true)) {
             PeptideFormatter pf = getPep();
             if (PeptideSkipper.skipPeptide(pf.getStripped(), pf.getCharge(), modelFormat)) {
                 continue;
             }
 
-            String instrument = Constants.instrument;
-            if (modelFormat.contains("UniSpec")) {
-                instrument = mapInstrumentToModelSpecific("unispec");
-            }
-            if (charge1none && pf.getCharge().equals("1")) {
-                instrument = "NONE";
-            }
+            String instrument = mapInstrumentToModelSpecific(modelFormat, pf.getCharge());
             String pep = pf.getModel(modelFormat);
             String sb = pep + "," + pf.getCharge() + "," + NceConstants.getCalibratedNCE(modelFormat) + "," +
                     instrument + "," + Constants.FragmentationType + "," + pf.getStripped().length();

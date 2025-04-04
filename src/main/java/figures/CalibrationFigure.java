@@ -167,7 +167,7 @@ public class CalibrationFigure {
                 List<Color> colorList = new ArrayList<>();
                 List<String> nameList = new ArrayList<>();
                 for (int j = 0; j < ix.size(); j++) {
-                    nameList.add("scatterMods - " + mass);
+                    nameList.add("scatter mods - " + mass);
                     colorList.add(new Color(
                             65 * (colorI + 1) % 255, 105 * (colorI + 1) % 255, 225 * (colorI + 1) % 255,
                             (int) (Math.min(opacity * 2, 1) * 255f)));
@@ -218,10 +218,10 @@ public class CalibrationFigure {
                 y1Data.add(y);
             }
             XYSeries series1;
-            if (mass.isEmpty()) {
+            if (mass.isEmpty() || mass.equals("others")) {
                 series1 = chart.addSeries("regression", x1Data, y1Data);
             } else {
-                series1 = chart.addSeries("regression - " + mass, x1Data, y1Data);
+                series1 = chart.addSeries("regression mods - " + mass, x1Data, y1Data);
             }
             series1.setMarkerColor(new Color(255, 50 * j % 255, 0));
             j++;

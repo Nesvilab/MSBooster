@@ -22,6 +22,7 @@ import allconstants.FragmentIonConstants;
 import com.google.gson.Gson;
 import com.google.gson.stream.JsonReader;
 import features.spectra.MassCalculator;
+import koinaclasses.KoinaOutputParsingMethods;
 import koinaclasses.KoinaTask;
 import org.knowm.xchart.XYChart;
 import org.knowm.xchart.XYChartBuilder;
@@ -55,7 +56,7 @@ import static utils.Print.printError;
 import static utils.Print.printInfo;
 
 public class KoinaModelCaller {
-    private static final int AlphaPeptDeepMzIdx = 1;
+    private static final int AlphaPeptDeepMzIdx = 1; //multifrag same as this
     private static final int AlphaPeptDeepIntIdx = 0;
     private static final int AlphaPeptDeepFragIdx = 2;
     private static final int PrositMzIdx = 1;
@@ -232,7 +233,8 @@ public class KoinaModelCaller {
             int mzIdx = 0;
             int intIdx = 0;
             int fragIdx = 0;
-            if (model.contains("AlphaPept")) {
+            //TODO: organize this
+            if (model.contains("AlphaPept") || model.equals("Prosit_2025_intensity_MultiFrag")) {
                 mzIdx = AlphaPeptDeepMzIdx;
                 intIdx = AlphaPeptDeepIntIdx;
                 fragIdx = AlphaPeptDeepFragIdx;
@@ -328,79 +330,10 @@ public class KoinaModelCaller {
                         String result = results[j];
                         result = result.substring(1, result.length() - 1);
                         if (acceptedIdx[i].contains(j)) {
-                            //TODO: this part can be turned into method
                             if (model.contains("UniSpec")) {
-                                fullAnnotation.add(result);
-                                //charge
-                                String[] info = result.split("\\^");
-                                if (info.length > 1) {
-                                    charges.add(Integer.parseInt(info[1].substring(0, 1)));
-                                } else {
-                                    charges.add(1);
-                                }
-
-                                //fragment ion type
-                                boolean NL = result.contains("-"); //neutral loss
-                                char first = result.charAt(0);
-                                switch (first) {
-                                    case 'y':
-                                        if (NL) {
-                                            fragmentIonTypes.add("y-NL");
-                                        } else {
-                                            fragmentIonTypes.add("y");
-                                        }
-                                        break;
-                                    case 'b':
-                                        if (NL) {
-                                            fragmentIonTypes.add("b-NL");
-                                        } else {
-                                            fragmentIonTypes.add("b");
-                                        }
-                                        break;
-                                    case 'a':
-                                        if (NL) {
-                                            fragmentIonTypes.add("a-NL");
-                                        } else {
-                                            fragmentIonTypes.add("a");
-                                        }
-                                        break;
-
-                                    case 'p':
-                                        fragmentIonTypes.add("p");
-                                        break;
-                                    case 'I': //internal or immonium
-                                        if (result.startsWith("Int")) {
-                                            if (NL) {
-                                                fragmentIonTypes.add("int-NL");
-                                            } else {
-                                                fragmentIonTypes.add("int");
-                                            }
-                                        } else {
-                                            fragmentIonTypes.add("imm");
-                                        }
-                                        break;
-                                }
-
-                                //fragment number
-                                switch (first) {
-                                    case 'y':
-                                    case 'b':
-                                    case 'a':
-                                        String num = "";
-                                        for (int cidx = 1; cidx < result.length(); cidx++) {
-                                            char c = result.charAt(cidx);
-                                            if (Character.isDigit(c)) {
-                                                num += c;
-                                            } else {
-                                                break;
-                                            }
-                                        }
-                                        fragNums.add(Integer.parseInt(num));
-                                        break;
-                                    default:
-                                        fragNums.add(0); //set as 0 if it's a more complicated fragment. Will need some full annotation here
-                                        break;
-                                }
+                                KoinaOutputParsingMethods.parseUnispec(result, fullAnnotation, charges, fragmentIonTypes, fragNums);
+                            } else if (model.equals("Prosit_2025_intensity_MultiFrag")) {
+                                KoinaOutputParsingMethods.parsePrositMultifrag();
                             } else {
                                 //this version for other models
                                 //calculate mzs ourselves later, in case we do not trust those from model
@@ -429,6 +362,10 @@ public class KoinaModelCaller {
                     if (klr.useFullAnnotation) {
                         allFullAnnotations[i] = fullAnnotationArray;
                     }
+                    System.out.println(Arrays.toString(fragmentIonTypesArray));
+                    System.out.println(Arrays.toString(fragNumsArray));
+                    System.out.println(Arrays.toString(chargesArray));
+                    System.exit(1);
                 }
             } else { //for predfull, calculate what fragments these are
                 String[] peptides = readJSON(fileName, numPeptides);

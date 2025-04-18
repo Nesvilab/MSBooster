@@ -94,37 +94,6 @@ public class MzmlScanNumber {
         }
         ms2LowerLimit = scan.getScanMzWindowLower();
         ms2UpperLimit = scan.getScanMzWindowUpper();
-
-        if (NceConstants.mzmlNCEs.isEmpty()) {
-            try {
-                String[] nceInfo = scan.getFilterString().split("@");
-                if (nceInfo.length > 1) {
-                    for (String s : Arrays.copyOfRange(nceInfo, 1, nceInfo.length)) {
-                        String fragmentationInfo = s.split(" ")[0];
-                        StringBuilder fragmentationType = new StringBuilder();
-                        for (int i = 0; i < fragmentationInfo.length(); i++) {
-                            char myChar = fragmentationInfo.charAt(i);
-                            if (Character.isDigit(myChar)) {
-                                NceConstants.mzmlNCEs.put(
-                                        fragmentationType.toString().toUpperCase(), fragmentationInfo.substring(i));
-                                break;
-                            } else {
-                                fragmentationType.append(myChar);
-                            }
-                        }
-                    }
-                    printInfo("NCE and fragmentation type detected: " + NceConstants.mzmlNCEs);
-                } else {
-                    printInfo("mzml file does not contain filter string. Setting NCE to 25 and FragmentationType to HCD.");
-                    NceConstants.mzmlNCEs.put("HCD", "25");
-                    Constants.FragmentationType = "HCD";
-                }
-            } catch (NullPointerException e) { //like in DIA-Umpire, there is no filter string
-                printInfo("mzml file does not contain filter string. Setting NCE to 25 and FragmentationType to HCD.");
-                NceConstants.mzmlNCEs.put("HCD", "25");
-                Constants.FragmentationType = "HCD";
-            }
-        }
     }
 
     //this version if creating from mgf file

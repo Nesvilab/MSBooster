@@ -21,6 +21,7 @@ public class NceConstants implements ConstantsInterface {
         return mzmlNCEs.get(Constants.FragmentationType); //this is the default
     }
 
+    public static Integer NCE = 25; //generic value used
     public static Integer minNCE = 20;
     public static Integer maxNCE = 40;
     public static Boolean calibrateNCE = true;

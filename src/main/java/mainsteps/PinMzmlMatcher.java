@@ -23,6 +23,7 @@ import readers.datareaders.PinReader;
 import umich.ms.datatypes.LCMSDataSubset;
 import umich.ms.datatypes.scan.IScan;
 import umich.ms.fileio.exceptions.FileParsingException;
+import utils.InstrumentUtils;
 
 import java.io.File;
 import java.io.IOException;
@@ -155,9 +156,9 @@ public class PinMzmlMatcher {
 
         mzmlReaders = new MzmlReader[mzmlFiles.length];
         loadMzmlReaders();
+        InstrumentUtils.getInstrument(mzmlReaders[0].scans);
         mzmlReaders[0].detectMassSpecType();
-        mzmlReaders[0].setFragmentationType();
-        mzmlReaders[0].setNCE();
+        mzmlReaders[0].setFragmentationTypeAndNCE();
     }
 
     private void loadMzmlReaders() throws IOException, FileParsingException, ExecutionException, InterruptedException {

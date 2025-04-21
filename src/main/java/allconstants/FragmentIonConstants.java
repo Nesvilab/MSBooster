@@ -155,16 +155,20 @@ public class FragmentIonConstants implements ConstantsInterface {
                         "y-NL", "b-NL", "a-NL", "int", "int-NL", "unknown"};
                 break;
             case "ECD":
-                fragmentIonHierarchy = new String[]{"c", "zdot", "zprime", "y", "cdot", "b", "a+1", "unknown"};
+                fragmentIonHierarchy = new String[]{"c", "zdot", "zprime", "y", "cdot", "b", "a+1",
+                        "c", "x+1", "a", "x", "unknown"};
                 break;
             case "EID":
-                fragmentIonHierarchy = new String[]{"y", "b", "a", "zdot", "c", "a+1", "x+1", "unknown"};
+                fragmentIonHierarchy = new String[]{"y", "b", "a", "zdot", "c", "a+1", "x+1",
+                        "zprime", "cdot", "x", "unknown"};
                 break;
             case "UVPD":
-                fragmentIonHierarchy = new String[]{"y", "b", "a", "a+1", "zdot", "c", "unknown"};
+                fragmentIonHierarchy = new String[]{"y", "b", "a", "a+1", "zdot", "c",
+                        "x+1", "zprime", "cdot", "x", "unknown"};
                 break;
             case "ETCID":
-                fragmentIonHierarchy = new String[]{"cdot", "zdot", "zprime", "y", "b", "unknown"};
+                fragmentIonHierarchy = new String[]{"cdot", "zdot", "zprime", "y", "b",
+                        "a+1", "c", "x+1", "a", "x", "unknown"};
                 break;
             default:  //everything else
                 fragmentIonHierarchy = new String[]{"imm", "y", "b", "a",

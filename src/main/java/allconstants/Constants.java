@@ -18,16 +18,21 @@
 package allconstants;
 
 import features.detectability.FastaReader;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import utils.CaseInsensitiveHashSet;
 import utils.MyFileUtils;
+import utils.Print;
 
 import java.io.File;
 import java.io.IOException;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.concurrent.ConcurrentHashMap;
 
 public class Constants implements ConstantsInterface {
+    private static final Logger log = LoggerFactory.getLogger(Constants.class);
     //file input
     public static String paramsList = null;
     public static String fragger = null;
@@ -394,15 +399,23 @@ public class Constants implements ConstantsInterface {
     ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
     //methods
-    public void updateOutputDirectory() throws IOException {
+    public void updateOutputDirectory() {
         if (outputDirectory == null) {
-            String firstFile = pinPepXMLDirectory.split(" ")[0];
-            File newFile = new File(firstFile);
+            String[] pinFiles = pinPepXMLDirectory.split(" ");
+            String output;
+            if (pinFiles.length == 1) {
+                output = pinFiles[0];
+            } else {
+                output = MyFileUtils.findDeepestCommonDirectory(pinFiles);
+            }
+
+            File newFile = new File(output);
             if (newFile.isDirectory()) {
-                outputDirectory = firstFile + File.separator + "MSBooster";
+                outputDirectory = output + File.separator + "MSBooster";
             } else { //file
                 outputDirectory = newFile.getAbsoluteFile().getParent() + File.separator + "MSBooster";
             }
+            Print.printInfo("Creating output folder at " + outputDirectory);
             MyFileUtils.createWholeDirectory(outputDirectory);
         }
         figureDirectory = outputDirectory + File.separator + "MSBooster_plots";

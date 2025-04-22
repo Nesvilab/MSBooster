@@ -251,7 +251,7 @@ public class Constants implements ConstantsInterface {
     public static ConcurrentHashMap<String, HashSet<String>> peptideCounter = new ConcurrentHashMap<>();
 
     //support for PredFull and Prosit
-    public static String FragmentationType = "";
+    public static String FragmentationType = "auto";
     public static String instrument = "";
     public static Integer maxPredictedFragmentCharge = 100;
     public static Integer minPredictedFragmentNum = 0;

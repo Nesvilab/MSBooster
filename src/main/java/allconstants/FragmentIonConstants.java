@@ -16,6 +16,7 @@ import java.util.Set;
 import java.util.TreeSet;
 
 import static utils.Print.printError;
+import static utils.Print.printInfo;
 
 public class FragmentIonConstants implements ConstantsInterface {
     public static final HashSet<String> allowedFragmentIonTypes = new HashSet<>(Arrays.asList(
@@ -171,6 +172,7 @@ public class FragmentIonConstants implements ConstantsInterface {
                         "a+1", "c", "x+1", "a", "x", "unknown"};
                 break;
             default:  //everything else
+                printInfo(Constants.FragmentationType + " not recognized. Setting fragment ion hierarchy to default.");
                 fragmentIonHierarchy = new String[]{"imm", "y", "b", "a",
                         "y-NL", "b-NL", "a-NL", "int", "int-NL", "unknown"};
                 break;

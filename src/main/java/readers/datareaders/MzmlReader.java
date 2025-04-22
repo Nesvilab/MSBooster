@@ -229,7 +229,8 @@ public class MzmlReader {
 
     //TODO: for now, assume 1 fragmentation type only
     public void setFragmentationTypeAndNCE() {
-        if (Constants.FragmentationType.isEmpty()) {
+        //set auto to empty
+        if (Constants.FragmentationType.equalsIgnoreCase("auto")) {
             try {
                 IScan scan = scans.getScanByNum(getScanNums().first());
                 String[] nceInfo = scan.getFilterString().split("@");

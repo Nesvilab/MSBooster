@@ -110,6 +110,7 @@ public class Constants implements ConstantsInterface {
                     "UniSpec", "PredFull",
                     "Prosit_2019_intensity", "Prosit_2020_intensity_CID", "Prosit_2020_intensity_TMT",
                     "Prosit_2020_intensity_HCD", "Prosit_2023_intensity_timsTOF", "Prosit_2024_intensity_cit",
+                    "Prosit_2025_intensity_MultiFrag",
                     "AlphaPept_ccs_generic"});
     public static CaseInsensitiveHashSet KoinaRTmodels = new CaseInsensitiveHashSet(
             new String[] {
@@ -123,6 +124,7 @@ public class Constants implements ConstantsInterface {
                     "AlphaPept_ms2_generic",
                     "Prosit_2019_intensity", "Prosit_2020_intensity_CID", "Prosit_2020_intensity_TMT",
                     "Prosit_2020_intensity_HCD", "Prosit_2023_intensity_timsTOF", "Prosit_2024_intensity_cit",
+                    "Prosit_2025_intensity_MultiFrag",
                     "UniSpec", "PredFull"});
     public static CaseInsensitiveHashSet KoinaIMmodels = new CaseInsensitiveHashSet(
             new String[] {"AlphaPept_ccs_generic"});
@@ -249,7 +251,7 @@ public class Constants implements ConstantsInterface {
     public static ConcurrentHashMap<String, HashSet<String>> peptideCounter = new ConcurrentHashMap<>();
 
     //support for PredFull and Prosit
-    public static String FragmentationType = "";
+    public static String FragmentationType = "auto";
     public static String instrument = "";
     public static Integer maxPredictedFragmentCharge = 100;
     public static Integer minPredictedFragmentNum = 0;

@@ -303,8 +303,17 @@ public class MassCalculator {
                 case "z":
                     mass = calcMass(num, "zdot", 1, 0) - proton - H;
                     break;
-                case "cdot": //TODO: is this even a thing?
+                case "cdot":
                     mass = calcMass(num, "c", 1, 0) - proton - H;
+                    break;
+                case "zprime":
+                    mass = calcMass(num, "zdot", 1, 0) - proton + H;
+                    break;
+                case "x+1":
+                    mass = calcMass(num, "x", 1, 0) - proton + H;
+                    break;
+                case "a+1":
+                    mass = calcMass(num, "a", 1, 0) - proton + H;
                     break;
             }
         }
@@ -846,6 +855,7 @@ public class MassCalculator {
             case "a-NL":
             case "b-NL":
             case "c-NL":
+            case "a+1":
                 newSum = sum(modMasses.subList(0, fragNum + 1));
                 oldSum = sum(oldMc.modMasses.subList(0, fragNum + 1));
                 if (this.peptide.length() == fragNum) {
@@ -860,6 +870,8 @@ public class MassCalculator {
             case "x-NL":
             case "y-NL":
             case "z-NL":
+            case "zprime":
+            case "x+1":
                 newSum = sum(modMasses.subList(this.peptide.length() - fragNum + 1, this.peptide.length() + 2));
                 oldSum = sum(oldMc.modMasses.subList(this.peptide.length() - fragNum + 1, this.peptide.length() + 2));
                 if (this.peptide.length() == fragNum) {

@@ -16,10 +16,11 @@ import java.util.Set;
 import java.util.TreeSet;
 
 import static utils.Print.printError;
+import static utils.Print.printInfo;
 
 public class FragmentIonConstants implements ConstantsInterface {
     public static final HashSet<String> allowedFragmentIonTypes = new HashSet<>(Arrays.asList(
-            "z", "c", "y", "a", "x", "b", "zdot", "cdot",
+            "z", "c", "y", "a", "x", "b", "zdot", "cdot", "zprime", "x+1", "a+1",
             "p", "imm", "int", "int-NL",
             "z-NL", "c-NL", "y-NL", "a-NL", "x-NL", "b-NL",
             "p-NL", "unknown"));
@@ -138,9 +139,12 @@ public class FragmentIonConstants implements ConstantsInterface {
 //            }
 
     //TODO: allow defining fragment ion hierarchy
+    public static final HashSet<String> allowedFragmentationTypes = new HashSet<>(Arrays.asList(
+            "HCD", "ETD", "ETHCD", "ECD", "EID", "UVPD", "ETCID"));
     public static void makeFragmentIonHierarchy() {
-        switch (Constants.FragmentationType) {
+        switch (Constants.FragmentationType.toUpperCase()) {
             case "HCD":
+            case "CID":
                 fragmentIonHierarchy = new String[]{"imm", "y", "b", "a",
                         "y-NL", "b-NL", "a-NL", "int", "int-NL", "unknown"};
                 break;
@@ -151,7 +155,24 @@ public class FragmentIonConstants implements ConstantsInterface {
                 fragmentIonHierarchy = new String[]{"imm", "y", "b", "a", "zdot", "c", "z", "cdot",
                         "y-NL", "b-NL", "a-NL", "int", "int-NL", "unknown"};
                 break;
-            default:  //everything else, like CID
+            case "ECD":
+                fragmentIonHierarchy = new String[]{"c", "zdot", "zprime", "y", "cdot", "b", "a+1",
+                        "c", "x+1", "a", "x", "unknown"};
+                break;
+            case "EID":
+                fragmentIonHierarchy = new String[]{"y", "b", "a", "zdot", "c", "a+1", "x+1",
+                        "zprime", "cdot", "x", "unknown"};
+                break;
+            case "UVPD":
+                fragmentIonHierarchy = new String[]{"y", "b", "a", "a+1", "zdot", "c",
+                        "x+1", "zprime", "cdot", "x", "unknown"};
+                break;
+            case "ETCID":
+                fragmentIonHierarchy = new String[]{"cdot", "zdot", "zprime", "y", "b",
+                        "a+1", "c", "x+1", "a", "x", "unknown"};
+                break;
+            default:  //everything else
+                printInfo(Constants.FragmentationType + " not recognized. Setting fragment ion hierarchy to default.");
                 fragmentIonHierarchy = new String[]{"imm", "y", "b", "a",
                         "y-NL", "b-NL", "a-NL", "int", "int-NL", "unknown"};
                 break;

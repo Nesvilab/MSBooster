@@ -71,8 +71,9 @@ public class JSONWriter {
         if (Constants.KoinaTMTmodels.contains(url)) {
             TMT = true;
         }
-        switch (model) {
-            case "unispec":
+        switch (url) {
+            case "UniSpec":
+            case "Prosit_2025_intensity_MultiFrag":
                 maxJsonLength = 100;
                 break;
             default:
@@ -240,7 +241,8 @@ public class JSONWriter {
                         inputsArray.put(chargeObject);
 
                         //collision energies
-                        if (!url.equals("Prosit_2020_intensity_CID") && !url.contains("ms2pip")) {
+                        if (!url.equals("Prosit_2020_intensity_CID") && !url.contains("ms2pip") &&
+                                !url.contains("Prosit_2025_intensity_MultiFrag")) {
                             JSONObject nceObject = new JSONObject();
                             nceObject.put("name", "collision_energies");
                             nceObject.put("shape", new JSONArray("[" + peptides.length + ",1]"));
@@ -277,8 +279,9 @@ public class JSONWriter {
                             inputsArray.put(instrumentObject);
                         }
 
-                        //fragmentation types
-                        if (TMT || model.equals("predfull") || url.equals("Prosit_2024_intensity_cit")) {
+                        //fragmentation type
+                        if (TMT || model.equals("predfull") || url.equals("Prosit_2024_intensity_cit") ||
+                                url.equals("Prosit_2025_intensity_MultiFrag")) {
                             JSONObject fragmentationObject = new JSONObject();
                             fragmentationObject.put("name", "fragmentation_types");
                             fragmentationObject.put("shape", new JSONArray("[" + peptides.length + ",1]"));

@@ -22,6 +22,7 @@ import allconstants.FragmentIonConstants;
 import com.google.gson.Gson;
 import com.google.gson.stream.JsonReader;
 import features.spectra.MassCalculator;
+import koinaclasses.KoinaOutputParsingMethods;
 import koinaclasses.KoinaTask;
 import org.knowm.xchart.XYChart;
 import org.knowm.xchart.XYChartBuilder;
@@ -55,7 +56,7 @@ import static utils.Print.printError;
 import static utils.Print.printInfo;
 
 public class KoinaModelCaller {
-    private static final int AlphaPeptDeepMzIdx = 1;
+    private static final int AlphaPeptDeepMzIdx = 1; //multifrag same as this
     private static final int AlphaPeptDeepIntIdx = 0;
     private static final int AlphaPeptDeepFragIdx = 2;
     private static final int PrositMzIdx = 1;
@@ -232,7 +233,8 @@ public class KoinaModelCaller {
             int mzIdx = 0;
             int intIdx = 0;
             int fragIdx = 0;
-            if (model.contains("AlphaPept")) {
+            //TODO: organize this
+            if (model.contains("AlphaPept") || model.equals("Prosit_2025_intensity_MultiFrag")) {
                 mzIdx = AlphaPeptDeepMzIdx;
                 intIdx = AlphaPeptDeepIntIdx;
                 fragIdx = AlphaPeptDeepFragIdx;
@@ -260,49 +262,47 @@ public class KoinaModelCaller {
             msInfo = msInfo.substring(3, msInfo.length() - 3);
             String[] dataResults = msInfo.split("},");
 
-            //intensities
+            //intensities and mzs
             msInfo = dataResults[intIdx].split("data\":\\[")[1];
             msInfo = msInfo.substring(0, msInfo.length() - 1);
             String[] results = msInfo.split(",");
+
+            String msInfoMz = dataResults[mzIdx].split("data\":\\[")[1];
+            msInfoMz = msInfoMz.substring(0, msInfoMz.length() - 1);
+            String[] resultsMz = msInfoMz.split(",");
+
             int vectorLength = results.length / numPeptides;
             HashSet<Integer>[] acceptedIdx = new HashSet[numPeptides]; //dealing with -1 values
             float[][] allIntensities = new float[numPeptides][];
+            float[][] allMZs = new float[numPeptides][];
+
             for (int i = 0; i < numPeptides; i++) {
                 ArrayList<Float> intensities = new ArrayList<>();
+                ArrayList<Float> mzs = new ArrayList<>();
                 HashSet<Integer> accepted = new HashSet<>();
                 for (int j = i * vectorLength; j < (i + 1) * vectorLength; j++) {
                     String result = results[j];
                     float intensity = Float.parseFloat(result);
-                    if (intensity > 0) {
+                    String resultMz = resultsMz[j];
+                    float mz = Float.parseFloat(resultMz);
+                    if (intensity > 0 && mz > 0) { //dealing with -1 values
                         intensities.add(intensity);
+                        mzs.add(mz);
                         accepted.add(j);
                     }
                 }
+                acceptedIdx[i] = accepted;
+
                 float[] intensitiesArray = new float[intensities.size()];
                 for (int j = 0; j < intensities.size(); j++) {
                     intensitiesArray[j] = intensities.get(j);
                 }
                 allIntensities[i] = intensitiesArray;
-                acceptedIdx[i] = accepted;
-            }
 
-            //mz
-            float[][] allMZs = new float[numPeptides][];
-            if (klr.useFullAnnotation) {
-                msInfo = dataResults[mzIdx].split("data\":\\[")[1];
-                msInfo = msInfo.substring(0, msInfo.length() - 1);
-                results = msInfo.split(",");
-                for (int i = 0; i < numPeptides; i++) {
-                    ArrayList<Float> mz = new ArrayList<>();
-                    for (int j = i * vectorLength; j < (i + 1) * vectorLength; j++) {
-                        String result = results[j];
-                        if (acceptedIdx[i].contains(j)) {
-                            mz.add(Float.parseFloat(result));
-                        }
-                    }
-                    float[] mzArray = new float[mz.size()];
-                    for (int j = 0; j < mz.size(); j++) {
-                        mzArray[j] = mz.get(j);
+                if (klr.useFullAnnotation) {
+                    float[] mzArray = new float[mzs.size()];
+                    for (int j = 0; j < mzs.size(); j++) {
+                        mzArray[j] = mzs.get(j);
                     }
                     allMZs[i] = mzArray;
                 }
@@ -328,79 +328,12 @@ public class KoinaModelCaller {
                         String result = results[j];
                         result = result.substring(1, result.length() - 1);
                         if (acceptedIdx[i].contains(j)) {
-                            //TODO: this part can be turned into method
                             if (model.contains("UniSpec")) {
-                                fullAnnotation.add(result);
-                                //charge
-                                String[] info = result.split("\\^");
-                                if (info.length > 1) {
-                                    charges.add(Integer.parseInt(info[1].substring(0, 1)));
-                                } else {
-                                    charges.add(1);
-                                }
-
-                                //fragment ion type
-                                boolean NL = result.contains("-"); //neutral loss
-                                char first = result.charAt(0);
-                                switch (first) {
-                                    case 'y':
-                                        if (NL) {
-                                            fragmentIonTypes.add("y-NL");
-                                        } else {
-                                            fragmentIonTypes.add("y");
-                                        }
-                                        break;
-                                    case 'b':
-                                        if (NL) {
-                                            fragmentIonTypes.add("b-NL");
-                                        } else {
-                                            fragmentIonTypes.add("b");
-                                        }
-                                        break;
-                                    case 'a':
-                                        if (NL) {
-                                            fragmentIonTypes.add("a-NL");
-                                        } else {
-                                            fragmentIonTypes.add("a");
-                                        }
-                                        break;
-
-                                    case 'p':
-                                        fragmentIonTypes.add("p");
-                                        break;
-                                    case 'I': //internal or immonium
-                                        if (result.startsWith("Int")) {
-                                            if (NL) {
-                                                fragmentIonTypes.add("int-NL");
-                                            } else {
-                                                fragmentIonTypes.add("int");
-                                            }
-                                        } else {
-                                            fragmentIonTypes.add("imm");
-                                        }
-                                        break;
-                                }
-
-                                //fragment number
-                                switch (first) {
-                                    case 'y':
-                                    case 'b':
-                                    case 'a':
-                                        String num = "";
-                                        for (int cidx = 1; cidx < result.length(); cidx++) {
-                                            char c = result.charAt(cidx);
-                                            if (Character.isDigit(c)) {
-                                                num += c;
-                                            } else {
-                                                break;
-                                            }
-                                        }
-                                        fragNums.add(Integer.parseInt(num));
-                                        break;
-                                    default:
-                                        fragNums.add(0); //set as 0 if it's a more complicated fragment. Will need some full annotation here
-                                        break;
-                                }
+                                KoinaOutputParsingMethods.parseUnispec(
+                                        result, fullAnnotation, charges, fragmentIonTypes, fragNums);
+                            } else if (model.equals("Prosit_2025_intensity_MultiFrag")) {
+                                KoinaOutputParsingMethods.parsePrositMultifrag(
+                                        result, charges, fragmentIonTypes, fragNums);
                             } else {
                                 //this version for other models
                                 //calculate mzs ourselves later, in case we do not trust those from model
@@ -541,6 +474,7 @@ public class KoinaModelCaller {
 
             //problem with Koina not including PTM mass in m/z. Need to calculate here
             String[] pepSplit = peptide.split("\\|");
+//            System.out.println(peptide);
             MassCalculator mc = new MassCalculator(pepSplit[0], pepSplit[1]);
             float[] mzs = new float[intensities[i].length];
             for (int j = 0; j < intensities[i].length; j++) {

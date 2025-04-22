@@ -60,6 +60,7 @@ import java.util.concurrent.Future;
 
 import static allconstants.Constants.minLinearRegressionSize;
 import static allconstants.Constants.minLoessRegressionSize;
+import static allconstants.FragmentIonConstants.allowedFragmentationTypes;
 import static features.rtandim.LoessUtilities.LOESS;
 import static features.rtandim.LoessUtilities.gridSearchCV;
 import static utils.Print.printInfo;
@@ -102,7 +103,6 @@ public class MzmlReader {
         scans.setDataSource(source);
         source.setNumThreadsForParsing(Constants.numThreads);
 
-        InstrumentUtils.getInstrument(scans);
         //this.getMzFreq(); only if we end up using weights
     }
 
@@ -228,37 +228,55 @@ public class MzmlReader {
     }
 
     //TODO: for now, assume 1 fragmentation type only
-    public void setFragmentationType() {
-        if (Constants.FragmentationType.isEmpty()) {
+    public void setFragmentationTypeAndNCE() {
+        //set auto to empty
+        if (Constants.FragmentationType.equalsIgnoreCase("auto")) {
             try {
-                if (NceConstants.mzmlNCEs.containsKey("HCD")) {
-                    Constants.FragmentationType = "HCD";
-                } else if (NceConstants.mzmlNCEs.containsKey("CID")) {
-                    Constants.FragmentationType = "CID";
-                } else if (NceConstants.mzmlNCEs.containsKey("ETD")) {
-                    Constants.FragmentationType = "ETD";
+                IScan scan = scans.getScanByNum(getScanNums().first());
+                String[] nceInfo = scan.getFilterString().split("@");
+                if (nceInfo.length > 1) {
+                    for (String s : Arrays.copyOfRange(nceInfo, 1, nceInfo.length)) {
+                        String fragmentationInfo = s.split(" ")[0];
+                        StringBuilder fragmentationType = new StringBuilder();
+                        for (int i = 0; i < fragmentationInfo.length(); i++) {
+                            char myChar = fragmentationInfo.charAt(i);
+                            if (Character.isDigit(myChar)) {
+                                if (allowedFragmentationTypes.contains(fragmentationType.toString().toUpperCase())) {
+                                    NceConstants.mzmlNCEs.put(
+                                            fragmentationType.toString().toUpperCase(), fragmentationInfo.substring(i));
+                                } else {
+                                    printInfo(fragmentationType.toString().toUpperCase() + " is not an allowed fragmentation type. Setting to default.");
+                                    printInfo("Allowed fragmentation types are: " + allowedFragmentationTypes);
+                                    NceConstants.mzmlNCEs.put("HCD", String.valueOf(NceConstants.NCE));
+                                }
+                                break;
+                            } else {
+                                fragmentationType.append(myChar);
+                            }
+                        }
+                    }
                 } else {
-                    printInfo("No fragmentation type detected. Setting fragmentation type to HCD. " +
-                            "You can specify this with '--FragmentationType' via the command line " +
-                            "or 'FragmentationType=' in the param file.");
-                    Constants.FragmentationType = "HCD";
+                    printInfo("mzml file does not contain filter string. Setting to default.");
+                    NceConstants.mzmlNCEs.put("HCD", String.valueOf(NceConstants.NCE));
                 }
-            } catch (Exception e) {
-                printInfo("No fragmentation type detected. Setting fragmentation type to HCD. " +
-                        "You can specify this with '--FragmentationType' via the command line " +
-                        "or 'FragmentationType=' in the param file.");
-                Constants.FragmentationType = "HCD";
+            } catch (NullPointerException e) { //like in DIA-Umpire, there is no filter string
+                printInfo("mzml file does not contain filter string. Setting to default.");
+                NceConstants.mzmlNCEs.put("HCD", String.valueOf(NceConstants.NCE));
+            }
+        } else {
+            if (allowedFragmentationTypes.contains(Constants.FragmentationType.toUpperCase())) {
+                NceConstants.mzmlNCEs.put(Constants.FragmentationType.toUpperCase(), String.valueOf(NceConstants.NCE));
+            } else {
+                printInfo(Constants.FragmentationType.toUpperCase() + " is not an allowed fragmentation type. Setting to default.");
+                printInfo("Allowed fragmentation types are: " + allowedFragmentationTypes);
+                NceConstants.mzmlNCEs.put("HCD", String.valueOf(NceConstants.NCE));
             }
         }
+        printInfo("NCE and fragmentation type detected: " + NceConstants.mzmlNCEs);
+        Constants.FragmentationType = NceConstants.mzmlNCEs.keySet().iterator().next();
 
         if (Constants.FragmentationType.equals("HCD") || Constants.FragmentationType.equals("CID")) {} else {
             FragmentIonConstants.annotatePredfullLikeUnispec = false;
-        }
-    }
-
-    public void setNCE() throws FileParsingException {
-        if (NceConstants.mzmlNCEs.isEmpty()) {
-            getScanNumObject(getScanNums().first());
         }
     }
 

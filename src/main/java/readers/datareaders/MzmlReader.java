@@ -25,6 +25,7 @@ import features.rtandim.LinearEquation;
 import features.rtandim.LoessUtilities;
 import features.rtandim.RTFunctions;
 import kotlin.jvm.functions.Function1;
+import mainsteps.MainClass;
 import mainsteps.MzmlScanNumber;
 import mainsteps.PeptideObj;
 import peptideptmformatting.PeptideFormatter;
@@ -42,6 +43,7 @@ import utils.Multithreader;
 import utils.ProgressReporter;
 import utils.StatMethods;
 
+import java.io.File;
 import java.io.IOException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -186,15 +188,28 @@ public class MzmlReader {
 //        }
 //    }
 
-    public void createScanNumObjects() throws FileParsingException {
+    public void createScanNumObjects() throws FileParsingException, ExecutionException, InterruptedException {
         printInfo("Processing " + pathStr);
         scans.loadData(LCMSDataSubset.MS2_WITH_SPECTRA);
         ProgressReporter pr = new ProgressReporter(scans.getMapNum2scan().values().size());
-        for (IScan scan : scans.getMapNum2scan().values()) {
-            if (scan.getMsLevel() != 1) {
-                scanNumberObjects.put(scan.getNum(), new MzmlScanNumber(scan));
-            }
-            pr.progress();
+        futureList.clear();
+
+        for (IScan scan : scans.getMapNum2scan().values()) { //TODO speed up?
+            futureList.add(MainClass.executorService.submit(() -> {
+                if (scan.getMsLevel() != 1) {
+                    try {
+                        scanNumberObjects.put(scan.getNum(), new MzmlScanNumber(scan));
+                    } catch (FileParsingException e) {
+                        throw new RuntimeException(e);
+                    }
+                }
+
+                pr.progress();
+            }));
+        }
+
+        for (Future future : futureList) {
+            future.get();
         }
     }
 

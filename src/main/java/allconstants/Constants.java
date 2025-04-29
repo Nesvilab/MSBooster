@@ -18,21 +18,16 @@
 package allconstants;
 
 import features.detectability.FastaReader;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import utils.CaseInsensitiveHashSet;
 import utils.MyFileUtils;
 import utils.Print;
 
 import java.io.File;
-import java.io.IOException;
-import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.concurrent.ConcurrentHashMap;
 
 public class Constants implements ConstantsInterface {
-    private static final Logger log = LoggerFactory.getLogger(Constants.class);
     //file input
     public static String paramsList = null;
     public static String fragger = null;

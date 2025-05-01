@@ -22,6 +22,7 @@ import umich.ms.datatypes.LCMSDataSubset;
 import umich.ms.datatypes.scancollection.impl.ScanCollectionDefault;
 import umich.ms.fileio.exceptions.FileParsingException;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.List;
@@ -40,9 +41,9 @@ public class InstrumentUtils {
     static HashSet<String> ThermoTOFKeys = new HashSet<>(List.of("Astral"));
 
     //supported instruments by each model
-    static HashSet<String> unispecInstruments = new HashSet<>(Arrays.asList(
+    static CaseInsensitiveHashSet unispecInstruments = new CaseInsensitiveHashSet(Arrays.asList(
             "LUMOS", "QE", "QEHFX", "ELITE", "VELOS", "NONE"));
-    static HashSet<String> alphapeptdeepInstruments = new HashSet<>(Arrays.asList(
+    static CaseInsensitiveHashSet alphapeptdeepInstruments = new CaseInsensitiveHashSet(Arrays.asList(
             "QE", "LUMOS", "TIMSTOF", "SCIEXTOF"));
 //    static HashSet<String> allInstruments = makeAllInstruments();
 //    private static HashSet<String> makeAllInstruments() {
@@ -60,9 +61,9 @@ public class InstrumentUtils {
                 String analyzer = scans.getRunInfo().getDefaultInstrument().getAnalyzer();
                 for (String k : LumosKeys) {
                     if (model.contains(k) || analyzer.contains(k)) {
-                        printInfo("Instrument detected: Lumos");
-                        Constants.instrument = "Lumos";
-                        return "Lumos";
+                        printInfo("Instrument detected: LUMOS");
+                        Constants.instrument = "LUMOS";
+                        return "LUMOS";
                     }
                 }
                 for (String k : QEKeys) {
@@ -74,23 +75,23 @@ public class InstrumentUtils {
                 }
                 for (String k : SciexTOFKeys) {
                     if (model.contains(k) || analyzer.contains(k)) {
-                        printInfo("Instrument detected: SciexTOF");
-                        Constants.instrument = "SciexTOF";
-                        return "SciexTOF";
+                        printInfo("Instrument detected: SCIEXTOF");
+                        Constants.instrument = "SCIEXTOF";
+                        return "SCIEXTOF";
                     }
                 }
                 for (String k : timsTOFKeys) {
                     if (model.contains(k) || analyzer.contains(k)) {
-                        printInfo("Instrument detected: timsTOF");
-                        Constants.instrument = "timsTOF";
-                        return "timsTOF";
+                        printInfo("Instrument detected: TIMSTOF");
+                        Constants.instrument = "TIMSTOF";
+                        return "TIMSTOF";
                     }
                 }
                 for (String k : ThermoTOFKeys) {
                     if (model.contains(k) || analyzer.contains(k)) {
-                        printInfo("Instrument detected: ThermoTOF");
-                        Constants.instrument = "ThermoTOF";
-                        return "ThermoTOF";
+                        printInfo("Instrument detected: THERMOTOF");
+                        Constants.instrument = "THERMOTOF";
+                        return "THERMOTOF";
                     }
                 }
                 printInfo("Could not detect instrument type. Setting to QE. " +

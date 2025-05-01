@@ -140,7 +140,7 @@ public class LoessUtilities {
             getPSMs(mzml, expValues, predValues, eScores, peptides, pepIdx, 0.01f, mode, charge);
         }
 
-        //remove duplicate PSMs from same peptide
+        //remove duplicate PSMs from same peptide //TODO run this before previous step
         ArrayList<Integer> PSMtoRemove = new ArrayList<>();
         for (Map.Entry<String, ArrayList<Integer>> entry : pepIdx.entrySet()) {
             if (entry.getValue().size() == 1) {

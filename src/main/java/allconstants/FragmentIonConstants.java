@@ -140,7 +140,7 @@ public class FragmentIonConstants implements ConstantsInterface {
 
     //TODO: allow defining fragment ion hierarchy
     public static final HashSet<String> allowedFragmentationTypes = new HashSet<>(Arrays.asList(
-            "HCD", "ETD", "ETHCD", "ECD", "EID", "UVPD", "ETCID"));
+            "HCD", "CID", "ETD", "ETHCD", "ECD", "EID", "UVPD", "ETCID"));
     public static void makeFragmentIonHierarchy() {
         switch (Constants.FragmentationType.toUpperCase()) {
             case "HCD":

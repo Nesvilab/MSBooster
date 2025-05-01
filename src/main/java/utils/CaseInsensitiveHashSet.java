@@ -17,12 +17,17 @@
 
 package utils;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashSet;
+import java.util.List;
 
 public class CaseInsensitiveHashSet extends HashSet<String> {
     public CaseInsensitiveHashSet(String[] elements) {
         super(Arrays.asList(elements));
+    }
+    public CaseInsensitiveHashSet(List<String> elements) {
+        super(elements);
     }
 
     @Override

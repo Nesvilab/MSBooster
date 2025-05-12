@@ -130,9 +130,6 @@ public class InstrumentUtils {
             if (instrument.equals("QEHFX")) {
                 instrument = "QE";
             } else if (!alphapeptdeepInstruments.contains(instrument)) {
-                printInfo(Constants.instrument + " is not a valid instrument for AlphaPeptDeep. " +
-                        "Please use one of the following: " + alphapeptdeepInstruments);
-                printInfo("Setting to QE for now.");
                 instrument = "QE";
             }
         }

@@ -191,7 +191,7 @@ public class SpectrumComparison {
         }
 
         //matching fragments
-        double ppm = Constants.ppmTolerance / 1000000;
+        double ppm = Constants.ppmTolerance;
 
         for (int i = 0; i < predMZs.length; i++) {
             double mz = predMZs[i];

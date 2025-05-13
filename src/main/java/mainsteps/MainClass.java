@@ -75,7 +75,7 @@ public class MainClass {
     public static ScheduledThreadPoolExecutor executorService;
     public static void main(String[] args) throws Exception {
         Locale.setDefault(Locale.US);
-        printInfo("MSBooster v1.3.11");
+        printInfo("MSBooster v1.3.12");
 
         try {
             //accept command line inputs
@@ -328,6 +328,9 @@ public class MainClass {
                 } else if (fields.contains(key)) {
                     Field field = Constants.class.getField(key);
                     updateField(field, entry.getValue(), c);
+                    if (key.equals("ppmTolerance")) {
+                        updateField(field, String.valueOf(Float.parseFloat(entry.getValue()) / 1000000f), c);
+                    }
                 } else if (fieldsFragmentIon.contains(key)) {
                     Field field = FragmentIonConstants.class.getField(key);
                     updateField(field, entry.getValue(), fic);

@@ -438,7 +438,7 @@ public class SpectrumComparison {
     //and calculate metric for both.
     //If percolatorFormatter gets multiple values back, then write them separately
     public double cosineSimilarity() {
-        if (predIntensities.length < 2) {
+        if (predIntensities.length < Constants.minFragments) {
             return 0;
         }
         //numerator
@@ -465,7 +465,7 @@ public class SpectrumComparison {
 
     //https://stats.stackexchange.com/questions/384419/weighted-cosine-similarity
     public double weightedCosineSimilarity(double[] weights) {
-        if (predIntensities.length < 2) {
+        if (predIntensities.length < Constants.minFragments) {
             return 0;
         }
         //numerator
@@ -491,7 +491,7 @@ public class SpectrumComparison {
     }
 
     public double spectralContrastAngle() {
-        if (predIntensities.length < 2) {
+        if (predIntensities.length < Constants.minFragments) {
             return 0;
         }
         double cosSim = this.cosineSimilarity();
@@ -499,7 +499,7 @@ public class SpectrumComparison {
     }
 
     public double weightedSpectralContrastAngle(double[] weights) {
-        if (predIntensities.length < 2) {
+        if (predIntensities.length < Constants.minFragments) {
             return 0;
         }
         double cosSim = this.weightedCosineSimilarity(weights);
@@ -507,7 +507,7 @@ public class SpectrumComparison {
     }
 
     public double euclideanDistance() {
-        if (predIntensities.length < 2) {
+        if (predIntensities.length < Constants.minFragments) {
             return 0;
         }
         if (unitNormPredIntensities == null) {
@@ -533,7 +533,7 @@ public class SpectrumComparison {
     }
 
     public double weightedEuclideanDistance(double[] weights) {
-        if (predIntensities.length < 2) {
+        if (predIntensities.length < Constants.minFragments) {
             return 0;
         }
         if (unitNormPredIntensities == null) {
@@ -570,7 +570,7 @@ public class SpectrumComparison {
     }
 
     public double brayCurtis() {
-        if (predIntensities.length < 2) {
+        if (predIntensities.length < Constants.minFragments) {
             return 0;
         }
         if (unitNormPredIntensities == null) {
@@ -599,7 +599,7 @@ public class SpectrumComparison {
     }
 
     public double weightedBrayCurtis(double[] weights) {
-        if (predIntensities.length < 2) {
+        if (predIntensities.length < Constants.minFragments) {
             return 0;
         }
         if (unitNormPredIntensities == null) {
@@ -628,7 +628,7 @@ public class SpectrumComparison {
     }
 
     public double pearsonCorr() {
-        if (predIntensities.length < 2) {
+        if (predIntensities.length < Constants.minFragments) {
             return -1;
         }
         if (Arrays.stream(floatToDouble(matchedIntensities)).sum() == 0 || matchedIntensities.length == 1) {
@@ -641,7 +641,7 @@ public class SpectrumComparison {
 
     //top 36
     public double spearmanCorr() {
-        if (predIntensities.length < 2) {
+        if (predIntensities.length < Constants.minFragments) {
             return -1;
         }
 
@@ -654,7 +654,7 @@ public class SpectrumComparison {
     }
 
     public double weightedPearsonCorr(double[] weights) {
-        if (predIntensities.length < 2) {
+        if (predIntensities.length < Constants.minFragments) {
             return 0;
         }
         if (Arrays.stream(floatToDouble(matchedIntensities)).sum() == 0) {
@@ -672,7 +672,7 @@ public class SpectrumComparison {
     }
 
     public double dotProduct() {
-        if (predIntensities.length < 2) {
+        if (predIntensities.length < Constants.minFragments) {
             return 0;
         }
         if (unitNormPredIntensities == null) {
@@ -699,7 +699,7 @@ public class SpectrumComparison {
     }
 
     public double weightedDotProduct(double[] weights) {
-        if (predIntensities.length < 2) {
+        if (predIntensities.length < Constants.minFragments) {
             return 0;
         }
         float floatSum = 0.0f;
@@ -741,7 +741,7 @@ public class SpectrumComparison {
 
     //top 12
     public double unweightedSpectralEntropy() { //from https://www.nature.com/articles/s41592-021-01331-z
-        if (predIntensities.length < 2) {
+        if (predIntensities.length < Constants.minFragments) {
             return 0;
         }
 
@@ -757,7 +757,7 @@ public class SpectrumComparison {
             }
         }
 
-        if (numFrags < 2) {
+        if (numFrags < Constants.minFragments) {
             return 0;
         } else {
             for (int i = 0; i < SabVector.length; i++) {
@@ -769,7 +769,7 @@ public class SpectrumComparison {
     }
 
     public double unweightedSpectralEntropy(float[] predicted, float[] matched) {
-        if (predicted.length < 2) {
+        if (predicted.length < Constants.minFragments) {
             return 0;
         }
 
@@ -781,7 +781,7 @@ public class SpectrumComparison {
             }
         }
 
-        if (numFrags < 2) {
+        if (numFrags < Constants.minFragments) {
             return 0;
         } else {
             for (int i = 0; i < SabVector.length; i++) {
@@ -961,13 +961,5 @@ public class SpectrumComparison {
     }
 
     public static void main(String[] args) {
-        FragmentIonConstants.makeFragmentIonHierarchy();
-        FragmentIonConstants.primaryFragmentIonTypes.add("y");
-        Constants.matchWithDaltons = true;
-        Constants.matchWithDaltonsAux = true;
-        SpectrumComparison sc = new SpectrumComparison(new PeptideObj(),
-                new float[]{10f, 20f, 30f}, new float[]{1f, 1f, 1f},
-                new float[]{9.9997f, 19.9997f, 30.04f}, new float[]{1f, 1f, 1f}, new String[]{"y", "y", "y-NL"}, false);
-        System.out.println(Arrays.toString(sc.matchedIntensities));
     }
 }

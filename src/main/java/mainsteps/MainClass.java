@@ -40,12 +40,7 @@ import utils.NumericUtils;
 import writers.MgfFileWriter;
 import writers.PeptideFileCreator;
 
-import java.io.BufferedReader;
-import java.io.BufferedWriter;
-import java.io.File;
-import java.io.FileReader;
-import java.io.FileWriter;
-import java.io.IOException;
+import java.io.*;
 import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Modifier;
@@ -73,29 +68,193 @@ import static utils.Print.*;
 //this is what I use in the java jar file
 public class MainClass {
     public static ScheduledThreadPoolExecutor executorService;
+    public static HashMap<String, String> params = new HashMap<String, String>();
+
+    private static void printHelpMessage() {
+        System.out.println("Usage: java -jar MSBooster-1.2.57.jar [flags]");
+        System.out.println("Usage: java -jar MSBooster-1.2.57.jar --paramsList {*.txt}");
+        System.out.println("A tool for annotating PSM pin files with deep learning-based features. " +
+                "This has been tested on MSFragger pin files and may generalize to pin files from any tool," +
+                " although this has not been specifically tested. ");
+        System.out.println("For more information on required and optional parameters, please refer to the " +
+                "MSBooster Github at https://github.com/Nesvilab/MSBooster");
+        System.out.println("Printing example paramsList to exampleParams.txt. It will be a bit verbose, so " +
+                "please delete any parameters not relevant to your analysis.");
+        printParams(".");
+        System.exit(0);
+    }
+
+    private static void readFraggerParams() throws IOException {
+        String line;
+        boolean ppmToDa = false; //set Da tolernace once all parameters read in. No guarantee which param is read first
+        BufferedReader reader = new BufferedReader(new FileReader(params.get("fragger")));
+        while ((line = reader.readLine()) != null) {
+            String[] lineSplit = line.split("#")[0].split("=");
+            if (lineSplit.length != 2) {
+                continue;
+            }
+            String key = lineSplit[0].trim();
+            String val = lineSplit[1].trim();
+            switch (key) {
+                case "fragment_mass_tolerance":
+                    params.put("ppmTolerance", val);
+                    break;
+                case "fragment_mass_units":
+                    if (val.equals("0")) {
+                        ppmToDa = true;
+                    }
+                    break;
+                case "decoy_prefix":
+                    params.put("decoyPrefix", ">" + val);
+                    break;
+                case "search_enzyme_cutafter":
+                    params.put("cutAfter", val);
+                    break;
+                case "search_enzyme_butnotafter":
+                    params.put("butNotAfter", val);
+                    break;
+                case "digest_min_length":
+                    params.put("digestMinLength", val);
+                    break;
+                case "digest_max_length":
+                    params.put("digestMaxLength", val);
+                    break;
+                case "digest_mass_range":
+                    String[] vals = val.split(" ");
+                    params.put("digestMinMass", vals[0]);
+                    params.put("digestMaxMass", vals[1]);
+                    break;
+                case "database_name":
+                    params.put("fasta", val);
+                    break;
+                case "precursor_charge":
+                    vals = val.split(" ");
+                    params.put("minPrecursorCharge",
+                            String.valueOf(Math.min(Integer.parseInt(vals[0]),
+                                    Constants.minPrecursorCharge)));
+                    params.put("maxPrecursorCharge",
+                            String.valueOf(Math.max(Integer.parseInt(vals[1]),
+                                    Constants.maxPrecursorCharge)));
+                    break;
+                case "mass_offsets":
+                    if (!val.isEmpty()) {
+                        vals = val.split("/");
+                        String final_vals = "";
+                        for (String v : vals) {
+                            float fv = Float.parseFloat(v);
+                            if (fv != 0) {
+                                if (!final_vals.isEmpty()) {
+                                    final_vals += "&";
+                                }
+                                final_vals += String.format("%.4f", fv);
+                            }
+                        }
+                        params.put("massOffsets", final_vals);
+                    }
+                    break;
+                case "mass_offsets_detailed":
+                    if (!val.isEmpty()) {
+                        vals = val.split(";");
+                        String final_vals = "";
+                        for (String v : vals) {
+                            v = v.split("\\(")[0];
+                            float fv = Float.parseFloat(v);
+                            if (fv != 0) {
+                                if (!final_vals.isEmpty()) {
+                                    final_vals += "&";
+                                }
+                                final_vals += v;
+                            }
+                        }
+                        params.put("massOffsetsDetailed", final_vals);
+                    }
+                    break;
+                case "mass_diff_to_variable_mod":
+                    params.put("massDiffToVariableMod", val);
+                    break;
+                case "add_B_user_amino_acid":
+                    if (! val.equals("0.0")) {
+                        MassCalculator.AAmap.put('B', Float.valueOf(val));
+                    }
+                    break;
+                case "add_J_user_amino_acid":
+                    if (! val.equals("0.0")) {
+                        MassCalculator.AAmap.put('J', Float.valueOf(val));
+                    }
+                    break;
+                case "add_O_user_amino_acid":
+                    if (! val.equals("0.0")) {
+                        MassCalculator.AAmap.put('O', Float.valueOf(val));
+                    }
+                    break;
+                case "add_U_user_amino_acid":
+                    if (! val.equals("0.0")) {
+                        MassCalculator.AAmap.put('U', Float.valueOf(val));
+                    }
+                    break;
+                case "add_Z_user_amino_acid":
+                    if (! val.equals("0.0")) {
+                        MassCalculator.AAmap.put('Z', Float.valueOf(val));
+                    }
+                    break;
+                case "add_X_user_amino_acid":
+                    if (! val.equals("0.0")) {
+                        MassCalculator.AAmap.put('X', Float.valueOf(val));
+                    }
+                    break;
+                default:
+                    if (key.startsWith("variable_mod_")) { //reading in TMT/iTraq values when variable
+                        Double varmod = Double.valueOf(val.trim().split(" ")[0]);
+                        for (double potentialTmtMass : tmtMasses) {
+                            if (NumericUtils.massesCloseEnough(varmod, potentialTmtMass)) {
+                                printInfo("TMT/iTRAQ mass detected in fragger.params as variable modification: " +
+                                        potentialTmtMass);
+                                PTMhandler.setTmtMass(potentialTmtMass);
+                                Constants.searchTMTmodels = true;
+                                break;
+                            }
+                        }
+                    } else if (key.startsWith("add_")) { //reading in TMT/iTraq values when fixed mode
+                        for (double potentialTmtMass : tmtMasses) {
+                            double fixedMod = Double.parseDouble(val);
+                            if (NumericUtils.massesCloseEnough(fixedMod, potentialTmtMass)) {
+                                printInfo("TMT/iTRAQ mass detected in fragger.params as fixed modification: " +
+                                        potentialTmtMass);
+                                PTMhandler.setTmtMass(potentialTmtMass);
+                                Constants.searchTMTmodels = true;
+                                break;
+                            }
+                        }
+                    }
+            }
+        }
+
+        float tol = Float.parseFloat(params.get("ppmTolerance"));
+        if (ppmToDa) { //read in from msfragger params. Low res tolerance used for all matching
+            Constants.matchWithDaltons = true;
+            Constants.matchWithDaltonsAux = true;
+            Constants.matchWithDaltonsDefault = true;
+            Constants.DaTolerance = tol;
+            printInfo("Using Dalton tolerance of " + Constants.DaTolerance + " Da");
+        } else {
+            if (tol >= 100f) {
+                params.put("lowResppmTolerance", String.valueOf(tol));
+            } else {
+                params.put("highResppmTolerance", String.valueOf(tol));
+            }
+        }
+    }
+
     public static void main(String[] args) throws Exception {
         Locale.setDefault(Locale.US);
         printInfo("MSBooster v1.3.12");
 
         try {
             //accept command line inputs
-            HashMap<String, String> params = new HashMap<String, String>();
-
-            //setting new values
             for (int i = 0; i < args.length; i++) {
                 String key = args[i].substring(2); //remove --
                 if (key.equals("help")) { //help message
-                    System.out.println("Usage: java -jar MSBooster-1.2.57.jar [flags]");
-                    System.out.println("Usage: java -jar MSBooster-1.2.57.jar --paramsList {*.txt}");
-                    System.out.println("A tool for annotating PSM pin files with deep learning-based features. " +
-                            "This has been tested on MSFragger pin files and may generalize to pin files from any tool," +
-                            " although this has not been specifically tested. ");
-                    System.out.println("For more information on required and optional parameters, please refer to the " +
-                            "MSBooster Github at https://github.com/Nesvilab/MSBooster");
-                    System.out.println("Printing example paramsList to exampleParams.txt. It will be a bit verbose, so " +
-                            "please delete any parameters not relevant to your analysis.");
-                    printParams(".");
-                    System.exit(0);
+                    printHelpMessage();
                 }
                 i++;
                 StringBuilder sb = new StringBuilder(args[i]);
@@ -133,167 +292,9 @@ public class MainClass {
                 reader.close();
             }
 
-            if (params.containsKey("fragger")) { //upload fasta digestion params from fragger file. Does not use PTM info. Will override paramsList
+            if (params.containsKey("fragger")) { //Will override paramsList
                 if (!params.get("fragger").equals("null")) {
-                    String line;
-                    boolean ppmToDa = false; //set Da tolernace once all parameters read in. No guarantee which param is read first
-                    BufferedReader reader = new BufferedReader(new FileReader(params.get("fragger")));
-                    while ((line = reader.readLine()) != null) {
-                        String[] lineSplit = line.split("#")[0].split("=");
-                        if (lineSplit.length != 2) {
-                            continue;
-                        }
-                        String key = lineSplit[0].trim();
-                        String val = lineSplit[1].trim();
-                        switch (key) {
-                            case "fragment_mass_tolerance":
-                                params.put("ppmTolerance", val);
-                                break;
-                            case "fragment_mass_units":
-                                if (val.equals("0")) {
-                                    ppmToDa = true;
-                                }
-                                break;
-                            case "decoy_prefix":
-                                params.put("decoyPrefix", ">" + val);
-                                break;
-                            case "search_enzyme_cutafter":
-                                params.put("cutAfter", val);
-                                break;
-                            case "search_enzyme_butnotafter":
-                                params.put("butNotAfter", val);
-                                break;
-                            case "digest_min_length":
-                                params.put("digestMinLength", val);
-                                break;
-                            case "digest_max_length":
-                                params.put("digestMaxLength", val);
-                                break;
-                            case "digest_mass_range":
-                                String[] vals = val.split(" ");
-                                params.put("digestMinMass", vals[0]);
-                                params.put("digestMaxMass", vals[1]);
-                                break;
-                            case "database_name":
-                                params.put("fasta", val);
-                                break;
-                            case "precursor_charge":
-                                vals = val.split(" ");
-                                params.put("minPrecursorCharge",
-                                        String.valueOf(Math.min(Integer.parseInt(vals[0]),
-                                                Constants.minPrecursorCharge)));
-                                params.put("maxPrecursorCharge",
-                                        String.valueOf(Math.max(Integer.parseInt(vals[1]),
-                                                Constants.maxPrecursorCharge)));
-                                break;
-                            case "mass_offsets":
-                                if (!val.isEmpty()) {
-                                    vals = val.split("/");
-                                    String final_vals = "";
-                                    for (String v : vals) {
-                                        float fv = Float.parseFloat(v);
-                                        if (fv != 0) {
-                                            if (!final_vals.isEmpty()) {
-                                                final_vals += "&";
-                                            }
-                                            final_vals += String.format("%.4f", fv);
-                                        }
-                                    }
-                                    params.put("massOffsets", final_vals);
-                                }
-                                break;
-                            case "mass_offsets_detailed":
-                                if (!val.isEmpty()) {
-                                    vals = val.split(";");
-                                    String final_vals = "";
-                                    for (String v : vals) {
-                                        v = v.split("\\(")[0];
-                                        float fv = Float.parseFloat(v);
-                                        if (fv != 0) {
-                                            if (!final_vals.isEmpty()) {
-                                                final_vals += "&";
-                                            }
-                                            final_vals += v;
-                                        }
-                                    }
-                                    params.put("massOffsetsDetailed", final_vals);
-                                }
-                                break;
-                            case "mass_diff_to_variable_mod":
-                                params.put("massDiffToVariableMod", val);
-                                break;
-                            case "add_B_user_amino_acid":
-                                if (! val.equals("0.0")) {
-                                    MassCalculator.AAmap.put('B', Float.valueOf(val));
-                                }
-                                break;
-                            case "add_J_user_amino_acid":
-                                if (! val.equals("0.0")) {
-                                    MassCalculator.AAmap.put('J', Float.valueOf(val));
-                                }
-                                break;
-                            case "add_O_user_amino_acid":
-                                if (! val.equals("0.0")) {
-                                    MassCalculator.AAmap.put('O', Float.valueOf(val));
-                                }
-                                break;
-                            case "add_U_user_amino_acid":
-                                if (! val.equals("0.0")) {
-                                    MassCalculator.AAmap.put('U', Float.valueOf(val));
-                                }
-                                break;
-                            case "add_Z_user_amino_acid":
-                                if (! val.equals("0.0")) {
-                                    MassCalculator.AAmap.put('Z', Float.valueOf(val));
-                                }
-                                break;
-                            case "add_X_user_amino_acid":
-                                if (! val.equals("0.0")) {
-                                    MassCalculator.AAmap.put('X', Float.valueOf(val));
-                                }
-                                break;
-                            default:
-                                if (key.startsWith("variable_mod_")) { //reading in TMT/iTraq values when variable
-                                    Double varmod = Double.valueOf(val.trim().split(" ")[0]);
-                                    for (double potentialTmtMass : tmtMasses) {
-                                        if (NumericUtils.massesCloseEnough(varmod, potentialTmtMass)) {
-                                            printInfo("TMT/iTRAQ mass detected in fragger.params as variable modification: " +
-                                                    potentialTmtMass);
-                                            PTMhandler.setTmtMass(potentialTmtMass);
-                                            Constants.searchTMTmodels = true;
-                                            break;
-                                        }
-                                    }
-                                } else if (key.startsWith("add_")) { //reading in TMT/iTraq values when fixed mode
-                                    for (double potentialTmtMass : tmtMasses) {
-                                        double fixedMod = Double.parseDouble(val);
-                                        if (NumericUtils.massesCloseEnough(fixedMod, potentialTmtMass)) {
-                                            printInfo("TMT/iTRAQ mass detected in fragger.params as fixed modification: " +
-                                                    potentialTmtMass);
-                                            PTMhandler.setTmtMass(potentialTmtMass);
-                                            Constants.searchTMTmodels = true;
-                                            break;
-                                        }
-                                    }
-                                }
-                        }
-                    }
-
-                    float tol = Float.parseFloat(params.get("ppmTolerance"));
-                    if (ppmToDa) { //read in from msfragger params. Low res tolerance used for all matching
-                        Constants.matchWithDaltons = true;
-                        Constants.matchWithDaltonsAux = true;
-                        Constants.matchWithDaltonsDefault = true;
-                        Constants.DaTolerance = tol;
-                        printInfo("Using Dalton tolerance of " + Constants.DaTolerance + " Da");
-                    } else {
-                        if (tol >= 100f) {
-                            params.put("lowResppmTolerance", String.valueOf(tol));
-                        } else {
-                            params.put("highResppmTolerance", String.valueOf(tol));
-                        }
-                        Constants.ppmTolerance = Constants.highResppmTolerance;
-                    }
+                    readFraggerParams();
                 }
             }
 
@@ -328,9 +329,6 @@ public class MainClass {
                 } else if (fields.contains(key)) {
                     Field field = Constants.class.getField(key);
                     updateField(field, entry.getValue(), c);
-                    if (key.equals("ppmTolerance")) {
-                        updateField(field, String.valueOf(Float.parseFloat(entry.getValue()) / 1000000f), c);
-                    }
                 } else if (fieldsFragmentIon.contains(key)) {
                     Field field = FragmentIonConstants.class.getField(key);
                     updateField(field, entry.getValue(), fic);
@@ -340,6 +338,14 @@ public class MainClass {
                 }
             }
             c.updateOutputDirectory();
+
+            //calculate actual parts per million
+            if (Constants.ppmTolerance <= 0f) { //not manually set
+                Constants.ppmTolerance = Constants.highResppmTolerance;
+            }
+            Constants.lowResppmTolerance = Constants.lowResppmTolerance / 1000000f;
+            Constants.highResppmTolerance = Constants.highResppmTolerance / 1000000f;
+            Constants.ppmTolerance = Constants.ppmTolerance / 1000000f;
 
             //checking constants are appropriate
             //robust to if url has / or not

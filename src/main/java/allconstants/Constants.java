@@ -177,7 +177,7 @@ public class Constants implements ConstantsInterface {
     public static final Integer binwidth = 1;
     public static final Integer mzFreqWindow = 1;
 
-    public static Float ppmTolerance = 20f; //ppm tolerance of MS2 scans
+    public static Float ppmTolerance = 0f; //ppm tolerance of MS2 scans
     public static Float lowResppmTolerance = 300f;
     public static Float highResppmTolerance = 20f;
     public static Boolean matchWithDaltons = null;

@@ -38,12 +38,10 @@ import umich.ms.datatypes.scancollection.impl.ScanCollectionDefault;
 import umich.ms.fileio.exceptions.FileParsingException;
 import umich.ms.fileio.filetypes.mzml.MZMLFile;
 import umontreal.ssj.probdist.EmpiricalDist;
-import utils.InstrumentUtils;
 import utils.Multithreader;
 import utils.ProgressReporter;
 import utils.StatMethods;
 
-import java.io.File;
 import java.io.IOException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -101,7 +99,7 @@ public class MzmlReader {
         source.setExcludeEmptyScans(true);
 
         scans = new ScanCollectionDefault(true);
-        scans.setDefaultStorageStrategy(StorageStrategy.STRONG);
+        scans.setDefaultStorageStrategy(StorageStrategy.SOFT);
         scans.setDataSource(source);
         source.setNumThreadsForParsing(Constants.numThreads);
 
@@ -191,7 +189,7 @@ public class MzmlReader {
     public void createScanNumObjects() throws FileParsingException, ExecutionException, InterruptedException {
         printInfo("Processing " + pathStr);
         scans.loadData(LCMSDataSubset.MS2_WITH_SPECTRA);
-        ProgressReporter pr = new ProgressReporter(scans.getMapNum2scan().values().size());
+        ProgressReporter pr = new ProgressReporter(scans.getMapNum2scan().size());
         futureList.clear();
 
         for (IScan scan : scans.getMapNum2scan().values()) { //TODO speed up?
@@ -211,6 +209,7 @@ public class MzmlReader {
         for (Future future : futureList) {
             future.get();
         }
+        scans.reset();
     }
 
     public MzmlScanNumber getScanNumObject(int scanNum) throws FileParsingException {
@@ -1123,6 +1122,5 @@ public class MzmlReader {
 
     public void clear() {
         scanNumberObjects.clear();
-        scans.reset();
     }
 }

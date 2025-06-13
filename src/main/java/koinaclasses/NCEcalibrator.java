@@ -77,8 +77,6 @@ public class NCEcalibrator {
             ConcurrentHashMap<Integer, ArrayList<Double>> concurrentSimilarities = new ConcurrentHashMap<>();
             AtomicDouble bestMedian = new AtomicDouble(0);
             AtomicInteger bestNCE = new AtomicInteger();
-            boolean old = Constants.removeRankPeaks;
-            Constants.removeRankPeaks = false;
             ProgressReporter pr = new ProgressReporter(NceConstants.maxNCE - NceConstants.minNCE + 1);
 
             List<Future> futureList = new ArrayList<>(Constants.numThreads);
@@ -118,7 +116,6 @@ public class NCEcalibrator {
                 future.get();
             }
             similarities = new TreeMap<>(concurrentSimilarities);
-            Constants.removeRankPeaks = old;
 
             printInfo("Best NCE for " + currentModel + " after calibration is " + bestNCE);
             bestMedianDouble = bestMedian.get();

@@ -47,8 +47,6 @@ public class MzmlScanNumber {
     public double ms1IsolationUpperLimit;
     public float[] expMZs;
     public float[] expIntensities;
-    public final float[] savedExpMZs; //these are not changed
-    public final float[] savedExpIntensities;
     public float RT;
     public int RTbinSize;
     public float normalizedRT;
@@ -74,15 +72,6 @@ public class MzmlScanNumber {
         this.expMZs = doubleToFloat(spectrum.getMZs());
         this.expIntensities = doubleToFloat(spectrum.getIntensities());
         sortArrays(this.expMZs, this.expIntensities);
-        if (Constants.removeRankPeaks && (Constants.features.contains("hypergeometricProbability") ||
-                Constants.features.contains("intersection") ||
-                Constants.features.contains("adjacentSimilarity"))) {
-            this.savedExpMZs = Arrays.copyOf(this.expMZs, this.expMZs.length);
-            this.savedExpIntensities = Arrays.copyOf(this.expIntensities, this.expIntensities.length);
-        } else {
-            this.savedExpMZs = new float[0]; //will refer to expMZs instead to save memory
-            this.savedExpIntensities = new float[0];
-        }
         this.RT = scan.getRt().floatValue();
         if (Constants.useIM) {
             try {
@@ -103,15 +92,6 @@ public class MzmlScanNumber {
         this.expMZs = expMZs;
         this.expIntensities = expInts;
         sortArrays(this.expMZs, this.expIntensities);
-        if (Constants.removeRankPeaks && (Constants.features.contains("hypergeometricProbability") ||
-                Constants.features.contains("intersection") ||
-                Constants.features.contains("adjacentSimilarity"))) {
-            this.savedExpMZs = Arrays.copyOf(this.expMZs, this.expMZs.length);
-            this.savedExpIntensities = Arrays.copyOf(this.expIntensities, this.expIntensities.length);
-        } else {
-            this.savedExpMZs = new float[0]; //will refer to expMZs instead to save memory
-            this.savedExpIntensities = new float[0];
-        }
         this.RT = RT;
         this.IM = IM;
     }
@@ -138,18 +118,6 @@ public class MzmlScanNumber {
 
     public float[] getExpMZs() { return expMZs; }
     public float[] getExpIntensities() { return expIntensities; }
-    public float[] getSavedExpMZs() {
-        if (savedExpMZs.length == 0) {
-            return expMZs;
-        }
-        return savedExpMZs;
-    }
-    public float[] getSavedExpIntensities() {
-        if (savedExpIntensities.length == 0) {
-            return expIntensities;
-        }
-        return savedExpIntensities;
-    }
 
     public PeptideObj setPeptideObject(PeptideFormatter name, int rank, int targetORdecoy, String escore,
                                        PredictionEntryHashMap allPreds, boolean set) throws IOException, URISyntaxException {
@@ -221,16 +189,6 @@ public class MzmlScanNumber {
             if (set) {
                 peptideObjects.add(newPepObj);
             }
-
-            //remove higher ranked peaks
-            //TODO: base off fragger.params topN?
-            if (Constants.removeRankPeaks && set) {
-                for (int i = newPepObj.spectralSimObj.matchedIdx.size() - 1; i > -1; i--) {
-                    expMZs = ArrayUtils.remove(expMZs, i);
-                    expIntensities = ArrayUtils.remove(expIntensities, i);
-                }
-            }
-            newPepObj.spectralSimObj.matchedIdx.clear();
         } catch (Exception e) { //TODO: percolator imputation
             float predRT = 0f;
             float predIM = 0f;

@@ -192,7 +192,6 @@ public class Constants implements ConstantsInterface {
     public static Integer topFragments = 20;
     public static Integer minFragments = 2;
     public static Boolean adaptiveFragmentNum = false; //TODO: automatically find best number of fragments to use
-    public static Boolean removeRankPeaks = true; //whether to remove peaks from higher ranks
     public static Boolean useBasePeak = true;
     public static Float percentBasePeak = 1f;
     //public static Boolean sqrtPredIntensities = false;

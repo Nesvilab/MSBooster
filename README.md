@@ -118,8 +118,6 @@ location here
   <li><code>useTopFragments (boolean)</code>: whether to filter spectral prediction to the N highest intensity peaks (default true)
   <li><code>topFragments (int)</code>: up to how many predicted fragments should be used for feature calculation (default 20). Only 
 applied if useTopFragments is true
-  <li><code>removeRankPeaks (boolean)</code>: Set to true by default, which filters out fragments from the experimental spectra once 
-matched. If false, experimental fragments can be matched by multiple PSMs from the same scan
   <li><code>useBasePeak (boolean)</code>: whether a lower limit should be applied to MS2 predictions to only use fragments with higher
 intensity (default true)
   <li><code>percentBasePeak (float)</code>: percent at which fragment with intensity of some percent of base peak intensity is included

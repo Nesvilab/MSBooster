@@ -53,7 +53,6 @@ public class SpectrumComparison {
     float[] sum1PredIntensities;
     float[] allMatchedIntensities;
     public HashMap<String, Double> scores = new HashMap<>();
-    public LinkedHashSet<Integer> matchedIdx = new LinkedHashSet<Integer>();
     private static final PearsonsCorrelation pc = new PearsonsCorrelation();
     private static final SpearmansCorrelation sc = new SpearmansCorrelation();
     public ArrayList<SpectrumComparison> spectrumComparisons = new ArrayList<>();
@@ -212,11 +211,6 @@ public class SpectrumComparison {
                     if (startMass < fragmentMin) { //yet to reach peak within fragment tolerance
                         startPos += 1;
                     } else if (startMass <= fragmentMax) { //peak within fragment tolerance
-                        //only for use when removing peaks from lower ranks
-                        if (Constants.removeRankPeaks) {
-                            matchedIdx.add(startPos + pastStart);
-                        }
-
                         float potentialInt = expIntensities[startPos + pastStart];
 
                         if (potentialInt > matchedInt) { //new maximum intensity
@@ -245,11 +239,6 @@ public class SpectrumComparison {
                     if (startMass < fragmentMin) { //yet to reach peak within fragment tolerance
                         startPos += 1;
                     } else if (startMass <= fragmentMax) { //peak within fragment tolerance
-                        //only for use when removing peaks from lower ranks
-                        if (Constants.removeRankPeaks) {
-                            matchedIdx.add(startPos + pastStart);
-                        }
-
                         float potentialInt = expIntensities[startPos + pastStart];
 
                         if (potentialInt > matchedInt) { //new maximum intensity
@@ -326,7 +315,7 @@ public class SpectrumComparison {
             }
 
             allMatchedIntensities = getMatchedIntensities(
-                    pepObj.scanNumObj.getSavedExpMZs(), pepObj.scanNumObj.getSavedExpIntensities(),
+                    pepObj.scanNumObj.getExpMZs(), pepObj.scanNumObj.getExpIntensities(),
                     mzs, fragmentIonTypes, pepObj);
         }
     }

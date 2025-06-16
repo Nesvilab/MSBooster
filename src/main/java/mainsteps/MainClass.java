@@ -247,7 +247,7 @@ public class MainClass {
 
     public static void main(String[] args) throws Exception {
         Locale.setDefault(Locale.US);
-        printInfo("MSBooster v1.3.13");
+        printInfo("MSBooster v1.3.14");
 
         try {
             //accept command line inputs

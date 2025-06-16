@@ -89,7 +89,7 @@ public class InstrumentUtils {
                 }
                 for (String k : ThermoTOFKeys) {
                     if (model.contains(k) || analyzer.contains(k)) {
-                        printInfo("Instrument detected: THERMOTOF");
+                        printInfo("Instrument detected: Astral");
                         Constants.instrument = "THERMOTOF";
                         return "THERMOTOF";
                     }

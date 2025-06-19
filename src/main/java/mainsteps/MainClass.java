@@ -23,6 +23,7 @@ import allconstants.FragmentIonConstants;
 import allconstants.LowercaseModelMapper;
 import allconstants.NceConstants;
 import bestmodelsearch.BestModelSearcher;
+import citations.KoinaYamlParser;
 import features.spectra.MassCalculator;
 import koinaclasses.KoinaMethods;
 import koinaclasses.NCEcalibrator;
@@ -247,7 +248,7 @@ public class MainClass {
 
     public static void main(String[] args) throws Exception {
         Locale.setDefault(Locale.US);
-        printInfo("MSBooster v1.3.14");
+        printInfo("MSBooster v1.3.15");
 
         try {
             //accept command line inputs
@@ -1320,6 +1321,14 @@ public class MainClass {
             try {
                 // Read all lines from the file into a list
                 List<String> lines = Files.readAllLines(Paths.get(Constants.paramsList));
+
+                //remove specific lines that should not be repeated
+                for (int l = lines.size() - 1; l > -1; l--) {
+                    if (lines.get(l).startsWith("#CITATIONS")) {
+                        lines.remove(l);
+                    }
+                }
+
                 AtomicBoolean spectrafound = new AtomicBoolean(false);
                 AtomicBoolean rtfound = new AtomicBoolean(false);
                 AtomicBoolean imfound = new AtomicBoolean(false);
@@ -1372,6 +1381,13 @@ public class MainClass {
             long duration = (end - start);
             printInfo("Feature calculation, edited pin writing, and QC plot generation done in " +
                     duration / 1000000 + " ms");
+
+            //write citations of models used
+            if (!Constants.KoinaURL.isEmpty()) {
+                KoinaYamlParser kyp = new KoinaYamlParser();
+                kyp.writeCitations(models);
+            }
+
             System.exit(0);
         } catch (Exception e) {
             e.printStackTrace();

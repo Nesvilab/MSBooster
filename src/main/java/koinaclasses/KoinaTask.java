@@ -27,8 +27,8 @@ import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.OutputStream;
-import java.net.ConnectException;
 import java.net.HttpURLConnection;
+import java.net.SocketException;
 import java.net.URL;
 import java.nio.charset.StandardCharsets;
 import java.util.Timer;
@@ -96,7 +96,7 @@ public class KoinaTask implements Callable<Boolean> {
                 byte[] input = jsonInputString.getBytes(StandardCharsets.UTF_8);
                 os.write(input, 0, input.length);
                 break;
-            } catch (ConnectException e) {
+            } catch (SocketException e) {
                 if (numAttempts >= numKoinaAttempts) {
                     printError("Koina server is busy. Please retry later, or use DIA-NN for prediction. Exiting");
                     System.exit(1);

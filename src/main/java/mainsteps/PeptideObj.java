@@ -92,8 +92,10 @@ public class PeptideObj {
         this.targetORdecoy = targetORdecoy;
         this.escore = escore;
         this.daltonMatching = daltonMatching;
-        this.spectralSimObj = new SpectrumComparison(this, scanNumObj.getExpMZs(), scanNumObj.getExpIntensities(),
-                predMZs, predIntensities, predFragmentIonTypes, true);
+        if (Constants.useSpectra) {
+            this.spectralSimObj = new SpectrumComparison(this, scanNumObj.getExpMZs(), scanNumObj.getExpIntensities(),
+                    predMZs, predIntensities, predFragmentIonTypes, true);
+        }
         this.RT = predRT;
         this.IM = predIM;
 //        if (Constants.useMatchedIntensities || Constants.usePeakCounts || Constants.useIntensitiesDifference ||

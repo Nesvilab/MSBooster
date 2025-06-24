@@ -93,55 +93,6 @@ public class Constants implements ConstantsInterface {
     public static Boolean findBestImModel = false;
     public static Boolean foundBest = false;
     public static String KoinaURL = ""; //https://koina.proteomicsdb.org/v2/models/ or https://koina.wilhelmlab.org:443/v2/models/
-    //TODO ms2pip tmt and itraq phospho models need to be corrected on koina
-    public static CaseInsensitiveHashSet KoinaModels = new CaseInsensitiveHashSet(
-            new String[] {
-                    "AlphaPept_rt_generic",
-                    "Prosit_2019_irt", "Prosit_2020_irt_TMT", "Prosit_2024_irt_cit",
-                    "Deeplc_hela_hf",
-                    "ms2pip_2021_HCD", "ms2pip_timsTOF2024", "ms2pip_CID_TMT", "ms2pip_TTOF5600", "ms2pip_Immuno_HCD",
-                    "ms2pip_iTRAQphospho",
-                    "AlphaPept_ms2_generic",
-                    "UniSpec", "PredFull",
-                    "Prosit_2019_intensity", "Prosit_2020_intensity_CID", "Prosit_2020_intensity_TMT",
-                    "Prosit_2020_intensity_HCD", "Prosit_2023_intensity_timsTOF", "Prosit_2024_intensity_cit",
-                    "Prosit_2025_intensity_MultiFrag",
-                    "AlphaPept_ccs_generic"});
-    public static CaseInsensitiveHashSet KoinaRTmodels = new CaseInsensitiveHashSet(
-            new String[] {
-                    "AlphaPept_rt_generic",
-                    "Prosit_2019_irt", "Prosit_2020_irt_TMT", "Prosit_2024_irt_cit",
-                    "Deeplc_hela_hf"});
-    public static CaseInsensitiveHashSet KoinaMS2models = new CaseInsensitiveHashSet(
-            new String[] {
-                    "ms2pip_2021_HCD", "ms2pip_timsTOF2024", "ms2pip_CID_TMT", "ms2pip_TTOF5600",
-                    "ms2pip_Immuno_HCD", "ms2pip_iTRAQphospho",
-                    "AlphaPept_ms2_generic",
-                    "Prosit_2019_intensity", "Prosit_2020_intensity_CID", "Prosit_2020_intensity_TMT",
-                    "Prosit_2020_intensity_HCD", "Prosit_2023_intensity_timsTOF", "Prosit_2024_intensity_cit",
-                    "Prosit_2025_intensity_MultiFrag",
-                    "UniSpec", "PredFull"});
-    public static CaseInsensitiveHashSet KoinaIMmodels = new CaseInsensitiveHashSet(
-            new String[] {"AlphaPept_ccs_generic"});
-    public static CaseInsensitiveHashSet KoinaTMTmodels = new CaseInsensitiveHashSet(
-            new String[] {
-                    "Prosit_2020_irt_TMT",
-                    "Prosit_2020_intensity_TMT",
-                    "ms2pip_CID_TMT"});
-    public static CaseInsensitiveHashSet KoinaCCSmodels = new CaseInsensitiveHashSet(
-            new String[] {"AlphaPept_ccs_generic"});
-    public static String rtSearchModelsString = "DIA-NN,AlphaPept_rt_generic,Prosit_2019_irt,Deeplc_hela_hf";
-    public static final CaseInsensitiveHashSet rtSearchModelsTMT = new CaseInsensitiveHashSet(
-            new String[] {"DIA-NN", "Prosit_2020_irt_TMT"});
-    public static String ms2SearchModelsString =
-            "DIA-NN," +
-            "ms2pip_2021_HCD,ms2pip_timsTOF2024,ms2pip_TTOF5600,ms2pip_Immuno_HCD," +
-            "AlphaPept_ms2_generic," +
-            "Prosit_2020_intensity_CID,Prosit_2020_intensity_HCD,Prosit_2023_intensity_timsTOF," +
-            "UniSpec";
-    public static String imSearchModelsString = "DIA-NN,AlphaPept_ccs_generic";
-    public static final CaseInsensitiveHashSet ms2SearchModelsTMT = new CaseInsensitiveHashSet(
-            new String[] {"DIA-NN", "Prosit_2020_intensity_TMT"});
     public static String rtBestModelSearchMetric = "top";
     public static String imBestModelSearchMetric = "top";
     public static String spectraBestModelSearchMetric = "median";
@@ -426,8 +377,6 @@ public class Constants implements ConstantsInterface {
         }
     }
 
-    /////////////////////////////////////////////////model searching////////////////////////////////////////////////////
-    public static Boolean searchTMTmodels = false;
-
-    public static Boolean useMultipleCorrelatedFeatures = false; //deprecated, but keeping in for older FragPipe versions
+    //////////////////deprecated/////////////////////////
+    public static Boolean useMultipleCorrelatedFeatures = false;
 }

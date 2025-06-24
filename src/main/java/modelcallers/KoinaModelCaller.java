@@ -19,6 +19,7 @@ package modelcallers;
 
 import allconstants.Constants;
 import allconstants.FragmentIonConstants;
+import allconstants.ModelCollections;
 import com.google.gson.Gson;
 import com.google.gson.stream.JsonReader;
 import features.spectra.MassCalculator;
@@ -449,7 +450,7 @@ public class KoinaModelCaller {
                 pe = new PredictionEntry();
             }
             float im = IMs[i];
-            if (Constants.KoinaCCSmodels.contains(klr.finalModel)) {
+            if (ModelCollections.KoinaCCSmodels.contains(klr.finalModel)) {
                 //convert from ccs to 1/K0
                 //Mason Schampp according to https://github.com/MannLabs/alphabase/blob/bbaecc380ae157d0f4cc87fffec097ecb7a8ceca/alphabase/peptide/mobility.py#L18
                 MassCalculator mc = new MassCalculator(pf.getBase(), peptideSplit[1]);

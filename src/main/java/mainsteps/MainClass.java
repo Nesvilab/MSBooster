@@ -17,12 +17,9 @@
 
 package mainsteps;
 
-import allconstants.Constants;
-import allconstants.ConstantsInterface;
-import allconstants.FragmentIonConstants;
-import allconstants.LowercaseModelMapper;
-import allconstants.NceConstants;
+import allconstants.*;
 import bestmodelsearch.BestModelSearcher;
+import bestmodelsearch.ModelCollectionDecider;
 import citations.KoinaYamlParser;
 import features.spectra.MassCalculator;
 import koinaclasses.KoinaMethods;
@@ -62,6 +59,7 @@ import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.stream.Collectors;
 
+import static bestmodelsearch.ModelCollectionDecider.decideCollection;
 import static features.rtandim.LoessUtilities.gridSearchCV;
 import static peptideptmformatting.PTMhandler.tmtMasses;
 import static utils.Print.*;
@@ -211,7 +209,8 @@ public class MainClass {
                                 printInfo("TMT/iTRAQ mass detected in fragger.params as variable modification: " +
                                         potentialTmtMass);
                                 PTMhandler.setTmtMass(potentialTmtMass);
-                                Constants.searchTMTmodels = true;
+                                ModelCollections.rtCollection = "isolabel";
+                                ModelCollections.ms2Collection = "isolabel";
                                 break;
                             }
                         }
@@ -222,7 +221,8 @@ public class MainClass {
                                 printInfo("TMT/iTRAQ mass detected in fragger.params as fixed modification: " +
                                         potentialTmtMass);
                                 PTMhandler.setTmtMass(potentialTmtMass);
-                                Constants.searchTMTmodels = true;
+                                ModelCollections.rtCollection = "isolabel";
+                                ModelCollections.ms2Collection = "isolabel";
                                 break;
                             }
                         }
@@ -317,6 +317,12 @@ public class MainClass {
             }
             NceConstants nc = new NceConstants();
 
+            HashSet<String> fieldsModelCollections = new HashSet<>();
+            for (Field f : ModelCollections.class.getDeclaredFields()) {
+                fieldsModelCollections.add(f.getName());
+            }
+            ModelCollections mc = new ModelCollections();
+
             for (Map.Entry<String, String> entry : params.entrySet()) {
                 String key = entry.getKey();
                 if (key.charAt(0) == '#') { //comment
@@ -325,7 +331,8 @@ public class MainClass {
                 if (key.charAt(0) == '/') { //comment
                     continue;
                 }
-                if (!fields.contains(key) && !fieldsFragmentIon.contains(key) && !fieldsNCE.contains(key)) {
+                if (!fields.contains(key) && !fieldsFragmentIon.contains(key) &&
+                        !fieldsNCE.contains(key) && !fieldsModelCollections.contains(key)) {
                     throw new Exception(entry.getKey() + " is not a valid parameter");
                 } else if (fields.contains(key)) {
                     Field field = Constants.class.getField(key);
@@ -333,9 +340,12 @@ public class MainClass {
                 } else if (fieldsFragmentIon.contains(key)) {
                     Field field = FragmentIonConstants.class.getField(key);
                     updateField(field, entry.getValue(), fic);
-                } else {
+                } else if (fieldsNCE.contains(key)) {
                     Field field = NceConstants.class.getField(key);
                     updateField(field, entry.getValue(), nc);
+                } else {
+                    Field field = ModelCollections.class.getField(key);
+                    updateField(field, entry.getValue(), mc);
                 }
             }
             c.updateOutputDirectory();
@@ -411,7 +421,8 @@ public class MainClass {
             }
 
             //make models properly uppercased, or throw error if not right
-            HashMap<String, String> modelMapper = LowercaseModelMapper.lowercaseToModel;
+            LowercaseModelMapper lmm = new LowercaseModelMapper();
+            HashMap<String, String> modelMapper = lmm.getLowercaseToModel();
             if (modelMapper.containsKey(Constants.spectraModel.toLowerCase())) {
                 Constants.spectraModel = modelMapper.get(Constants.spectraModel.toLowerCase());
             } else {
@@ -441,9 +452,9 @@ public class MainClass {
             //TODO: could also make a new koinamethods object for decoys
             KoinaMethods km = new KoinaMethods(pmMatcher);
             if (Constants.findBestRtModel || Constants.findBestSpectraModel || Constants.findBestImModel ||
-                    Constants.KoinaMS2models.contains(Constants.spectraModel) ||
-                    Constants.KoinaRTmodels.contains(Constants.rtModel) ||
-                    Constants.KoinaIMmodels.contains(Constants.imModel) ||
+                    ModelCollections.KoinaMS2models.contains(Constants.spectraModel) ||
+                    ModelCollections.KoinaRTmodels.contains(Constants.rtModel) ||
+                    ModelCollections.KoinaIMmodels.contains(Constants.imModel) ||
                     ! Constants.auxSpectraModel.isEmpty()
             ) {
                 km.getTopPeptides();
@@ -454,22 +465,7 @@ public class MainClass {
             if (Constants.useRT) {
                 //here, look for best rt model
                 if (Constants.findBestRtModel) {
-                    printInfo("Searching for best RT model for your data");
-                    ArrayList<String> consideredModels = new ArrayList<>();
-                    if (Constants.searchTMTmodels) {
-                        consideredModels.addAll(Constants.rtSearchModelsTMT);
-                    } else {
-                        String[] rtSearchModels = Constants.rtSearchModelsString.split(",");
-                        for (String model : rtSearchModels) {
-                            if (modelMapper.containsKey(model.toLowerCase())) {
-                                consideredModels.add(modelMapper.get(model.toLowerCase()));
-                            } else {
-                                printError("No RT model called " + model + ". Exiting.");
-                                System.exit(0);
-                            }
-                        }
-                    }
-                    printInfo("Searching the following models: " + consideredModels);
+                    ArrayList<String> consideredModels = decideCollection("RT");
 
                     String jsonOutFolder = Constants.outputDirectory + File.separator + "best_model";
                     MyFileUtils.createWholeDirectory(jsonOutFolder);
@@ -576,7 +572,7 @@ public class MainClass {
                 if (Constants.rtModel.isEmpty()) {
                     Constants.rtModel = "DIA-NN";
                 }
-                for (String model : Constants.KoinaRTmodels) {
+                for (String model : ModelCollections.KoinaRTmodels) {
                     if (model.equalsIgnoreCase(Constants.rtModel)) {
                         Constants.rtModel = model;
                     }
@@ -588,18 +584,7 @@ public class MainClass {
             HashMap<String, float[]> datapointsIM = new HashMap<>();
             if (Constants.useIM) {
                 if (Constants.findBestImModel) {
-                    printInfo("Searching for best IM model for your data");
-                    ArrayList<String> consideredModels = new ArrayList<>();
-                    String[] imSearchModels = Constants.imSearchModelsString.split(",");
-                    for (String model : imSearchModels) {
-                        if (modelMapper.containsKey(model.toLowerCase())) {
-                            consideredModels.add(modelMapper.get(model.toLowerCase()));
-                        } else {
-                            printError("No IM model called " + model + ". Exiting.");
-                            System.exit(0);
-                        }
-                    }
-                    printInfo("Searching the following models: " + consideredModels);
+                    ArrayList<String> consideredModels = decideCollection("IM");
 
                     String jsonOutFolder = Constants.outputDirectory + File.separator + "best_model";
                     MyFileUtils.createWholeDirectory(jsonOutFolder);
@@ -707,7 +692,7 @@ public class MainClass {
                 if (Constants.imModel.isEmpty()) {
                     Constants.imModel = "DIA-NN";
                 }
-                for (String model : Constants.KoinaIMmodels) {
+                for (String model : ModelCollections.KoinaIMmodels) {
                     if (model.equalsIgnoreCase(Constants.imModel)) {
                         Constants.imModel = model;
                     }
@@ -719,22 +704,7 @@ public class MainClass {
             if (Constants.useSpectra) {
                 //here, look for best spectra model
                 if (Constants.findBestSpectraModel) {
-                    printInfo("Searching for best spectra model for your data");
-                    ArrayList<String> consideredModels = new ArrayList<>();
-                    if (Constants.searchTMTmodels) {
-                        consideredModels.addAll(Constants.ms2SearchModelsTMT);
-                    } else {
-                        String[] ms2SearchModels = Constants.ms2SearchModelsString.split(",");
-                        for (String model : ms2SearchModels) {
-                            if (modelMapper.containsKey(model.toLowerCase())) {
-                                consideredModels.add(modelMapper.get(model.toLowerCase()));
-                            } else {
-                                printError("No spectra model called " + model + ". Exiting.");
-                                System.exit(0);
-                            }
-                        }
-                    }
-                    printInfo("Searching the following models: " + consideredModels);
+                    ArrayList<String> consideredModels = decideCollection("MS2");
 
                     String jsonOutFolder = Constants.outputDirectory + File.separator + "best_model";
                     MyFileUtils.createWholeDirectory(jsonOutFolder);
@@ -876,7 +846,7 @@ public class MainClass {
                 if (Constants.spectraModel.isEmpty()) {
                     Constants.spectraModel = "DIA-NN";
                 }
-                for (String model : Constants.KoinaMS2models) {
+                for (String model : ModelCollections.KoinaMS2models) {
                     if (model.equalsIgnoreCase(Constants.spectraModel)) {
                         Constants.spectraModel = model;
                     }
@@ -1059,9 +1029,9 @@ public class MainClass {
             c.updateInputPaths(); //setting null paths
 
             //set useKoina based on model
-            if (Constants.KoinaRTmodels.contains(Constants.rtModel) ||
-                    Constants.KoinaMS2models.contains(Constants.spectraModel) ||
-                    Constants.KoinaIMmodels.contains(Constants.imModel)) {
+            if (ModelCollections.KoinaRTmodels.contains(Constants.rtModel) ||
+                    ModelCollections.KoinaMS2models.contains(Constants.spectraModel) ||
+                    ModelCollections.KoinaIMmodels.contains(Constants.imModel)) {
                 Constants.useKoina = true;
             }
 
@@ -1098,7 +1068,7 @@ public class MainClass {
                 HashSet<String> modelsRan = new HashSet<>();
                 for (String currentModel : models) {
                     if (! modelsRan.contains(currentModel)) { //do not rerun (e.g. spectra and RT same model)
-                        if (Constants.KoinaModels.contains(currentModel)) {
+                        if (ModelCollections.KoinaModels.contains(currentModel)) {
                             if (NceConstants.nceModels.contains(currentModel) && NceConstants.calibrateNCE &&
                                     ! NceConstants.calibratedModels.containsKey(currentModel)) {
                                 //set matching with Da or not
@@ -1184,7 +1154,7 @@ public class MainClass {
                 boolean ranKoina = false;
                 for (String currentModel : models) {
                     KoinaModelCaller kmc = new KoinaModelCaller();
-                    if (Constants.KoinaModels.contains(currentModel)) {
+                    if (ModelCollections.KoinaModels.contains(currentModel)) {
                         KoinaLibReader klr = new KoinaLibReader(currentModel);
                         kmc.callModel(currentModel, klr, Constants.JsonDirectory, executorService,
                                 true, true);

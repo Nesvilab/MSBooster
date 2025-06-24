@@ -18,6 +18,7 @@
 package writers;
 
 import allconstants.Constants;
+import allconstants.ModelCollections;
 import org.json.JSONArray;
 import org.json.JSONObject;
 import utils.Multithreader;
@@ -59,16 +60,16 @@ public class JSONWriter {
     public JSONWriter(String url, HashSet<String> entries, boolean fullSet) {
         this.url = url;
         this.model = url.toLowerCase().split("_")[0];
-        if (Constants.KoinaRTmodels.contains(url)) {
+        if (ModelCollections.KoinaRTmodels.contains(url)) {
             property = "rt";
         } else if (Constants.auxSpectraModel.equals(url)) {
             property = "ms2_aux";
-        } else if (Constants.KoinaMS2models.contains(url)) {
+        } else if (ModelCollections.KoinaMS2models.contains(url)) {
             property = "ms2";
-        } else if (Constants.KoinaIMmodels.contains(url)) {
+        } else if (ModelCollections.KoinaIMmodels.contains(url)) {
             property = "im";
         }
-        if (Constants.KoinaTMTmodels.contains(url)) {
+        if (ModelCollections.KoinaIsoLabelmodels.contains(url)) {
             TMT = true;
         }
         switch (url) {
@@ -135,16 +136,16 @@ public class JSONWriter {
         int start = iteration * maxJsonLength;
         this.url = parent.url;
         this.model = url.toLowerCase().split("_")[0];
-        if (Constants.KoinaRTmodels.contains(url)) {
+        if (ModelCollections.KoinaRTmodels.contains(url)) {
             property = "rt";
         } else if (Constants.auxSpectraModel.equals(url)) {
             property = "ms2_aux";
-        } else if (Constants.KoinaMS2models.contains(url)) {
+        } else if (ModelCollections.KoinaMS2models.contains(url)) {
             property = "ms2";
-        } else if (Constants.KoinaIMmodels.contains(url)) {
+        } else if (ModelCollections.KoinaIMmodels.contains(url)) {
             property = "im";
         }
-        if (Constants.KoinaTMTmodels.contains(url)) {
+        if (ModelCollections.KoinaIsoLabelmodels.contains(url)) {
             TMT = true;
         }
 

@@ -1,6 +1,7 @@
 package citations;
 
 import allconstants.Constants;
+import allconstants.ModelCollections;
 import org.yaml.snakeyaml.Yaml;
 import utils.Print;
 
@@ -44,7 +45,7 @@ public class KoinaYamlParser {
     public void writeCitations(ArrayList<String> models) throws IOException {
         HashSet<String> citations = new HashSet<>();
         for (String model : models) {
-            if (Constants.KoinaModels.contains(model)) {
+            if (ModelCollections.KoinaModels.contains(model)) {
                 String citation = getCitation(model);
                 citations.add(citation);
             }

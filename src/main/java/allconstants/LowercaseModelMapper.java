@@ -20,14 +20,17 @@ package allconstants;
 import java.util.HashMap;
 
 public class LowercaseModelMapper {
-    public static HashMap<String, String> lowercaseToModel = new HashMap<>();
-    static {
+    private static HashMap<String, String> lowercaseToModel = new HashMap<>();
+    public LowercaseModelMapper() {
         lowercaseToModel.put("", "");
         lowercaseToModel.put("dia-nn", "DIA-NN");
 
-        for (String model : Constants.KoinaModels) {
+        for (String model : ModelCollections.KoinaModels) {
             lowercaseToModel.put(model.toLowerCase(), model);
         }
     }
-    public LowercaseModelMapper() {}
+
+    public HashMap<String, String> getLowercaseToModel() {
+        return lowercaseToModel;
+    }
 }

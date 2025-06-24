@@ -18,6 +18,7 @@
 package readers.predictionreaders;
 
 import allconstants.Constants;
+import allconstants.ModelCollections;
 import predictions.PredictionEntryHashMap;
 
 import static utils.Print.printError;
@@ -42,15 +43,15 @@ public class KoinaLibReader implements LibraryPredictionMapper {
         }
 
         //decide if this is RT or MS2 model
-        if (Constants.KoinaRTmodels.contains(model)) {
+        if (ModelCollections.KoinaRTmodels.contains(model)) {
             property = "rt";
-        } else if (Constants.KoinaMS2models.contains(model)) {
+        } else if (ModelCollections.KoinaMS2models.contains(model)) {
             if (Constants.auxSpectraModel.equals(model)) {
                 property = "ms2_aux";
             } else {
                 property = "ms2";
             }
-        } else if (Constants.KoinaIMmodels.contains(model)) {
+        } else if (ModelCollections.KoinaIMmodels.contains(model)) {
             property = "im";
         } else {
             printError(model + " not in Koina models");

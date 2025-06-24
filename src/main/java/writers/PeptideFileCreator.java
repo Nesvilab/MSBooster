@@ -38,7 +38,7 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Future;
 
-import static allconstants.Constants.KoinaModels;
+import static allconstants.ModelCollections.KoinaModels;
 import static utils.Print.printError;
 import static utils.Print.printInfo;
 

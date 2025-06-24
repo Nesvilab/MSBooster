@@ -29,6 +29,7 @@ public class CaseInsensitiveHashSet extends HashSet<String> {
     public CaseInsensitiveHashSet(List<String> elements) {
         super(elements);
     }
+    public CaseInsensitiveHashSet() {};
 
     @Override
     public boolean contains(Object o) {

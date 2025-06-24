@@ -49,6 +49,7 @@ import java.util.concurrent.ExecutorService;
 
 import static allconstants.Constants.figureDirectory;
 import static allconstants.FragmentIonConstants.createFragmentGroups;
+import static utils.Print.printError;
 import static utils.Print.printInfo;
 
 public class PercolatorFormatter {
@@ -74,6 +75,23 @@ public class PercolatorFormatter {
         ArrayList<String> libraryFilePaths = new ArrayList<>();
         ArrayList<LibraryPredictionMapper> libraries = new ArrayList<>();
         HashMap<String, String> allProperties = new HashMap<>(); //key: property, value: library file path
+
+        //check that all needed files are here
+        if (Constants.useSpectra && Constants.spectraPredFile == null) {
+            printError("Spectral prediction file is missing. " +
+                    "Please specify its path with the --spectraPredFile parameter. Exiting");
+            System.exit(1);
+        }
+        if (Constants.useRT && Constants.RTPredFile == null) {
+            printError("RT prediction file is missing. " +
+                    "Please specify its path with the --RTPredFile parameter. Exiting");
+            System.exit(1);
+        }
+        if (Constants.useIM && Constants.IMPredFile == null) {
+            printError("IM prediction file is missing. " +
+                    "Please specify its path with the --IMPredFile parameter. Exiting");
+            System.exit(1);
+        }
 
         //could use aux spectra if primary spectra missing
         if (Constants.spectraPredFile != null) {

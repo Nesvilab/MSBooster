@@ -217,6 +217,7 @@ public class PercolatorFormatter {
 
                 if (featuresList.contains("deltaRTLOESS") || featuresList.contains("deltaRTLOESSnormalized")) {
                     mzml.setLOESS(Constants.rtLoessRegressionSize, Constants.loessBandwidth, Constants.robustIters, "RT");
+                    mzml.setInverseLoess(executorService);
                     mzml.predictRTLOESS(executorService); //potentially only invoke once if normalized included
 
                     //generate calibration figure, need mzml and loess
@@ -400,7 +401,6 @@ public class PercolatorFormatter {
                     }
                 }
 
-                //TODO: multithread?
                 printInfo("Calculating features");
                 FeatureCalculator fc = new FeatureCalculator(pin, featuresList, mzml);
                 fc.calculate(executorService);

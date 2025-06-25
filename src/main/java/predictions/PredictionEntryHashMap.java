@@ -69,7 +69,7 @@ public class PredictionEntryHashMap extends ConcurrentHashMap<String, Prediction
     }
 
     public float getMaxPredRT() {
-        float maxRT = 0f;
+        float maxRT = Float.MIN_VALUE;
         for (PredictionEntry entry : this.values()) {
             if (entry.RT > maxRT) {
                 maxRT = entry.RT;

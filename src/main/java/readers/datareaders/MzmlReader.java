@@ -45,14 +45,7 @@ import utils.StatMethods;
 import java.io.IOException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.NavigableSet;
-import java.util.Objects;
+import java.util.*;
 import java.util.concurrent.ConcurrentSkipListMap;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
@@ -78,7 +71,7 @@ public class MzmlReader {
     public ArrayList<Float>[] RTbins = null;
     public float[][] RTbinStats;
     public HashMap<String, Function1<Double, Double>> RTLOESS = new HashMap<>();
-    public HashMap<String, Function1<Double, Double>> RTLOESS_realUnits = new HashMap<>();
+    public HashMap<String, ConcurrentSkipListMap<Double, Double>> irtToMinutes = new HashMap<>();
     public int unifPriorSize;
     public float unifProb;
     public int[] unifPriorSizeIM;
@@ -186,14 +179,15 @@ public class MzmlReader {
 //        }
 //    }
 
-    public void createScanNumObjects() throws FileParsingException, ExecutionException, InterruptedException {
+    public void createScanNumObjects(ExecutorService executorService)
+            throws FileParsingException, ExecutionException, InterruptedException {
         printInfo("Processing " + pathStr);
         scans.loadData(LCMSDataSubset.MS2_WITH_SPECTRA);
         ProgressReporter pr = new ProgressReporter(scans.getMapNum2scan().size());
         futureList.clear();
 
         for (IScan scan : scans.getMapNum2scan().values()) { //TODO speed up?
-            futureList.add(MainClass.executorService.submit(() -> {
+            futureList.add(executorService.submit(() -> {
                 if (scan.getMsLevel() != 1) {
                     try {
                         scanNumberObjects.put(scan.getNum(), new MzmlScanNumber(scan));
@@ -382,7 +376,7 @@ public class MzmlReader {
                 FragmentIonConstants.primaryFragmentIonTypes, FragmentIonConstants.auxFragmentIonTypes);
         ProgressReporter pr = new ProgressReporter(pin.getLength());
         futureList.clear();
-        createScanNumObjects();
+        createScanNumObjects(executorService);
 
         String currentScanNum = "-1";
         setScanNumPepObj task = null;
@@ -858,7 +852,6 @@ public class MzmlReader {
                 //continue if insufficient PSMs
                 if (rts == null) {
                     RTLOESS.put(mass, null);
-                    RTLOESS_realUnits.put(mass, null);
                     continue;
                 }
 
@@ -876,10 +869,8 @@ public class MzmlReader {
 
                         //now do in opposite direction
                         parameters = StatMethods.linearRegression(rts[1], rts[0]);
-                        RTLOESS_realUnitsentry = new LinearEquation(parameters[1], parameters[0]).invoke();
                     }
                     RTLOESS.put(mass, RTLOESSentry);
-                    RTLOESS_realUnits.put(mass, RTLOESS_realUnitsentry);
                     continue;
                 }
 
@@ -894,16 +885,11 @@ public class MzmlReader {
                 while (true) {
                     try {
                         RTLOESS.put(mass, LOESS(rts, finalBandwidth, robustIters));
-                        double[][] reverseRts = new double[2][];
-                        reverseRts[0] = rts[1];
-                        reverseRts[1] = rts[0];
-                        RTLOESS_realUnits.put(mass, LOESS(reverseRts, finalBandwidth, robustIters));
                         break;
                     } catch (Exception e) {
                         if (finalBandwidth == 1) {
                             printInfo("Regression still not possible with bandwidth 1. Setting RT score to 0");
                             RTLOESS.put(mass, null);
-                            RTLOESS_realUnits.put(mass, null);
                             break;
                         }
                         finalBandwidth = Math.min(finalBandwidth * 2, 1);
@@ -984,7 +970,38 @@ public class MzmlReader {
         }
     }
 
-    //this assumes min delta RT is the best method, but could also be average across mass calibratioin curves
+    public void setInverseLoess(ExecutorService executorService) throws ExecutionException, InterruptedException {
+        int numIncrements = 10000;
+        futureList.clear();
+        float minExpRT = scanNumberObjects.firstEntry().getValue().RT;
+        float maxExpRT = scanNumberObjects.lastEntry().getValue().RT;
+        float increment = (maxExpRT - minExpRT) / (float) numIncrements;
+
+        for (Map.Entry<String, Function1<Double, Double>> entry : RTLOESS.entrySet()) {
+            String mass = entry.getKey();
+            Function1<Double, Double> function = entry.getValue();
+            ConcurrentSkipListMap<Double, Double> map = new ConcurrentSkipListMap<>();
+
+            Multithreader mt = new Multithreader(numIncrements, Constants.numThreads);
+            for (int i = 0; i < Constants.numThreads; i++) {
+                int finalI = i;
+                futureList.add(executorService.submit(() -> {
+                    double x = minExpRT + mt.indices[finalI] * increment;
+                    for (int j = mt.indices[finalI]; j < mt.indices[finalI + 1]; j++) {
+                        double y = function.invoke(x);
+                        map.put(y, x);
+                        x += increment;
+                    }
+                }));
+            }
+            for (Future future : futureList) {
+                future.get();
+            }
+            irtToMinutes.put(mass, map);
+        }
+    }
+
+    //this assumes min delta RT is the best method, but could also be average across mass calibration curves
     public void predictRTLOESS(ExecutorService executorService) throws ExecutionException, InterruptedException {
         futureList.clear();
 
@@ -1028,7 +1045,7 @@ public class MzmlReader {
                                     if (delta < finalDelta) {
                                         finalDelta = delta;
                                         pep.calibratedRT = rt;
-                                        pep.predRTrealUnits = RTLOESS_realUnits.get(mass).invoke((double) pep.RT);
+                                        pep.predRTrealUnits = StatMethods.lookupInverse(irtToMinutes.get(mass), pep.RT);
                                         pep.deltaRTLOESS_real = Math.abs(msn.RT - pep.predRTrealUnits);
                                     }
                                 }
@@ -1041,7 +1058,7 @@ public class MzmlReader {
                             } else {
                                 pep.calibratedRT = LOESSRT.get("others");
                                 finalDelta = Math.abs(pep.calibratedRT - pep.RT);
-                                pep.predRTrealUnits = RTLOESS_realUnits.get("others").invoke((double) pep.RT);
+                                pep.predRTrealUnits = StatMethods.lookupInverse(irtToMinutes.get("others"), pep.RT);
                                 pep.deltaRTLOESS_real = Math.abs(msn.RT - pep.predRTrealUnits);
                             }
                         }

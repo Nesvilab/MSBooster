@@ -27,6 +27,7 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.Map;
 import java.util.TreeMap;
+import java.util.concurrent.ConcurrentSkipListMap;
 
 
 public class StatMethods {
@@ -347,5 +348,21 @@ public class StatMethods {
             mse += Math.pow(value, 2);
         }
         return (float) (mse / a.length);
+    }
+
+    //written by ChatGPT
+    public static double lookupInverse(ConcurrentSkipListMap<Double, Double> yToX, double yTarget) {
+        Map.Entry<Double, Double> lower = yToX.floorEntry(yTarget);
+        Map.Entry<Double, Double> upper = yToX.ceilingEntry(yTarget);
+
+        if (lower == null) return upper.getValue();
+        if (upper == null) return lower.getValue();
+
+        double y0 = lower.getKey(), x0 = lower.getValue();
+        double y1 = upper.getKey(), x1 = upper.getValue();
+
+        // Linear interpolation
+        double ratio = (yTarget - y0) / (y1 - y0);
+        return x0 + ratio * (x1 - x0);
     }
 }

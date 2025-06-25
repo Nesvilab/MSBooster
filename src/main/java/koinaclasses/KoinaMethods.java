@@ -46,6 +46,7 @@ import java.util.concurrent.ScheduledThreadPoolExecutor;
 import static utils.InstrumentUtils.mapInstrumentToModelSpecific;
 import static utils.Print.printInfo;
 
+//TODO: could also make a new koinamethods object for decoys
 public class KoinaMethods {
     //these fields are shared regardless of which model is called
     public PinMzmlMatcher pmMatcher;

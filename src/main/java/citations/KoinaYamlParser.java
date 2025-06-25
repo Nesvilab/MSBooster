@@ -3,6 +3,7 @@ package citations;
 import allconstants.Constants;
 import allconstants.ModelCollections;
 import org.yaml.snakeyaml.Yaml;
+import utils.Model;
 import utils.Print;
 
 import java.io.IOException;
@@ -42,11 +43,12 @@ public class KoinaYamlParser {
         return description;
     }
 
-    public void writeCitations(ArrayList<String> models) throws IOException {
+    public void writeCitations(ArrayList<Model> models) throws IOException {
         HashSet<String> citations = new HashSet<>();
-        for (String model : models) {
-            if (ModelCollections.KoinaModels.contains(model)) {
-                String citation = getCitation(model);
+        for (Model model : models) {
+            String modelName = model.name;
+            if (ModelCollections.KoinaModels.contains(modelName)) {
+                String citation = getCitation(modelName);
                 citations.add(citation);
             }
         }

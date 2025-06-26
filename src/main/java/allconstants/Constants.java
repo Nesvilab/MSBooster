@@ -215,7 +215,8 @@ public class Constants implements ConstantsInterface {
 
     //use single string sep by comma delimiter
     //public static String features = "predRTrealUnits,unweightedSpectralEntropy,deltaRTLOESS,peptideCounts";
-    public static String features = "unweightedSpectralEntropy,weightedSpectralEntropy,hypergeometricProbability,intersection," +
+    public static String features = "unweightedSpectralEntropy,weightedSpectralEntropy," +
+            "hypergeometricProbability,intersection,top6matchedIntensity," +
             "deltaRTLOESS,deltaRTLOESSreal";
 
     //don't currently support weighted similarity features
@@ -230,14 +231,16 @@ public class Constants implements ConstantsInterface {
                     "unweightedSpectralEntropy", "deltaRTlinear", "deltaRTbins", "deltaRTLOESS", "RTzscore", "RTprobability",
                     "RTprobabilityUnifPrior", "deltaRTLOESSnormalized", "calibratedRT", "predictedRT", "numMatchedFragments",
                     "hypergeometricProbability", "intersection", "adjacentSimilarity", "bestScan", "bootstrapSimilarity",
-                    "deltaRTLOESSreal", "predRTrealUnits", "weightedSpectralEntropy", "heuristicSpectralEntropy"});
+                    "deltaRTLOESSreal", "predRTrealUnits", "weightedSpectralEntropy", "heuristicSpectralEntropy",
+                    "top6matchedIntensity"});
     public static final CaseInsensitiveHashSet spectraFeatures = new CaseInsensitiveHashSet(
             new String[] {
                     "cosineSimilarity", "weightedCosineSimilarity", "spectralContrastAngle", "weightedSpectralContrastAngle",
                     "euclideanDistance", "weightedEuclideanDistance", "brayCurtis", "weightedBrayCurtis",
                     "unweightedSpectralEntropy", "pearsonCorr", "weightedPearsonCorr", "spearmanCorr", "dotProduct",
                     "weightedDotProduct", "numMatchedFragments", "hypergeometricProbability", "intersection",
-                    "adjacentSimilarity", "bestScan", "bootstrapSimilarity", "weightedSpectralEntropy", "heuristicSpectralEntropy"});
+                    "adjacentSimilarity", "bestScan", "bootstrapSimilarity", "weightedSpectralEntropy", "heuristicSpectralEntropy",
+                    "top6matchedIntensity"});
     public static final CaseInsensitiveHashSet rtFeatures = new CaseInsensitiveHashSet(
             new String[] {
             "deltaRTlinear", "deltaRTbins", "deltaRTLOESS", "RTzscore", "RTprobability", "RTprobabilityUnifPrior",
@@ -338,6 +341,7 @@ public class Constants implements ConstantsInterface {
         map.put("bestScan", "best_scan");
         map.put("bootstrapSimilarity", "bootstrap_similarity");
         map.put("peptideCounts", "peptide_counts");
+        map.put("top6matchedIntensity", "top6_matched_intensity");
         return map;
     }
     //////////////////////////////////////////////////////////////////////////////////////////////////////

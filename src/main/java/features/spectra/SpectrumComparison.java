@@ -38,8 +38,10 @@ import java.util.TreeSet;
 
 import static allconstants.FragmentIonConstants.fragmentGroups;
 import static utils.NumericUtils.floatToDouble;
+import static utils.NumericUtils.sum;
 import static utils.Print.printError;
 import static utils.Print.printInfo;
+import static utils.StatMethods.mean;
 
 //TODO: also square root intensities? Squaring intensities may help for single cell data
 public class SpectrumComparison {
@@ -902,6 +904,52 @@ public class SpectrumComparison {
         return intersection;
     }
 
+    //based off ideas from DIA-NN and Kai Li
+    public double top6matchedIntensity() {
+        if (predIntensities.length < Constants.minFragments) {
+            return 0;
+        }
+
+        //setting highest intensities to -1
+        float[] tmpInts = new float[predIntensities.length];
+        for (int i = 0; i < predIntensities.length; i++) {
+            tmpInts[i] = predIntensities[i];
+        }
+
+        float maxInt;
+        int fragmentsUsed = Math.min(6, predIntensities.length);
+        for (int i = 0; i < fragmentsUsed; i++) {
+            maxInt = tmpInts[0];
+            int index = 0;
+            for (int j = 1; j < tmpInts.length; j++) {
+                float thisInt = tmpInts[j];
+                if (thisInt > maxInt) {
+                    maxInt = thisInt;
+                    index = j;
+                }
+            }
+            tmpInts[index] = -1f; //no longer highest intensity peak
+        }
+
+        double score = 0f;
+        for (int i = 0; i < tmpInts.length; i++) {
+            if (tmpInts[i] == -1f) {
+                score += Math.log(matchedIntensities[i] + 1); //+1 so all scores are positive
+            }
+        }
+
+        //normalize by total spectrum intensity
+        float intThreshold = mean(pepObj.scanNumObj.expIntensities);
+        float denominator = 0f;
+        for (float f : pepObj.scanNumObj.expIntensities) {
+            if (f > intThreshold) {
+                denominator += (float) Math.log(f + 1);
+            }
+        }
+
+        return score / denominator;
+    }
+
     //generic way of getting score
     public double getScore(String score) throws IOException, URISyntaxException {
         double returnScore = 0;
@@ -941,6 +989,9 @@ public class SpectrumComparison {
                 break;
             case "heuristicSpectralEntropy":
                 returnScore = heuristicSpectralEntropy();
+                break;
+            case "top6matchedIntensity":
+                returnScore = top6matchedIntensity();
                 break;
             default:
                 printError("No score called " + score + ". Exiting");

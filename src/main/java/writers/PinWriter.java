@@ -182,6 +182,7 @@ public class PinWriter {
                         case "unweightedSpectralEntropy":
                         case "weightedSpectralEntropy":
                         case "heuristicSpectralEntropy":
+                        case "top6matchedIntensity":
                             if (pepObj.spectralSimObj.spectrumComparisons.isEmpty()) {
                                 double score = pepObj.spectralSimObj.scores.get(feature);
                                 formattedWrite(camelToUnderscore.get(feature), score);

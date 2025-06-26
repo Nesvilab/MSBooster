@@ -133,6 +133,7 @@ public class FeatureCalculator {
                         case "unweightedSpectralEntropy":
                         case "weightedSpectralEntropy":
                         case "heuristicSpectralEntropy":
+                        case "top6matchedIntensity":
                             if (pepObj.spectralSimObj.spectrumComparisons.isEmpty()) {
                                 try {
                                     pepObj.spectralSimObj.scores.put(feature, pepObj.spectralSimObj.getScore(feature));

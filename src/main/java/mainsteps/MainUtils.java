@@ -286,8 +286,18 @@ public class MainUtils {
 
                 HashMap<String, TreeMap<Integer, ArrayList<Double>>> similarities = new HashMap<>();
                 HashMap<String, float[]> datapointsSpectra = new HashMap<>();
+
+                String defaultFrag = Constants.FragmentationType;
                 for (String model : consideredModels) {
+                    Constants.FragmentationType = defaultFrag;
                     Constants.spectraModel = model;
+                    if (ModelCollections.allowedFragmentationTypes.containsKey(model)) {
+                        if (! ModelCollections.allowedFragmentationTypes.get(model).contains(Constants.FragmentationType)) {
+                            printInfo(model + " does not support fragmentation method " + Constants.FragmentationType);
+                            printInfo("Temporarily switching to HCD");
+                            Constants.FragmentationType = "HCD";
+                        }
+                    }
 
                     //set matching with Da or not
                     //if matchWithDaltons are true, also accept that (e.g. from reading it from fragger.params)
@@ -388,6 +398,7 @@ public class MainUtils {
                         }
                     }
                 }
+                Constants.FragmentationType = defaultFrag;
 
                 //get best model
                 BestModelSearcher bms = new BestModelSearcher();
@@ -424,6 +435,16 @@ public class MainUtils {
             for (String model : ModelCollections.KoinaMS2models) {
                 if (model.equalsIgnoreCase(Constants.spectraModel)) {
                     Constants.spectraModel = model;
+                }
+            }
+
+            if (ModelCollections.allowedFragmentationTypes.containsKey(Constants.spectraModel)) {
+                if (! ModelCollections.allowedFragmentationTypes.get(Constants.spectraModel)
+                        .contains(Constants.FragmentationType)) {
+                    printInfo(Constants.spectraModel + " does not support fragmentation method " +
+                            Constants.FragmentationType);
+                    printInfo("Permanently switching to HCD");
+                    Constants.FragmentationType = "HCD";
                 }
             }
 

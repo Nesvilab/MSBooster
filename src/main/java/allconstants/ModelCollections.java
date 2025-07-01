@@ -3,8 +3,7 @@ package allconstants;
 import utils.CaseInsensitiveHashSet;
 import utils.Print;
 
-import java.util.ArrayList;
-import java.util.List;
+import java.util.*;
 
 //TODO ms2pip tmt and itraq phospho models need to be corrected on koina
 public class ModelCollections implements ConstantsInterface {
@@ -102,4 +101,13 @@ public class ModelCollections implements ConstantsInterface {
     public static String rtSearchModelsString = "";
     public static String ms2SearchModelsString = "";
     public static String imSearchModelsString = "";
+
+    ////////////allowed fragmentation types for models that require it/////////////
+    public static HashMap<String, HashSet<String>> allowedFragmentationTypes = new HashMap<>();
+    static {
+        allowedFragmentationTypes.put("Prosit_2020_intensity_TMT", new HashSet<>(Arrays.asList("HCD", "CID")));
+        allowedFragmentationTypes.put("Prosit_2024_intensity_cit", new HashSet<>(Arrays.asList("HCD", "CID")));
+        allowedFragmentationTypes.put("Prosit_2025_intensity_MultiFrag",
+                new HashSet<>(Arrays.asList("HCD", "ECD", "EID", "UVPD", "ETciD")));
+    }
 }

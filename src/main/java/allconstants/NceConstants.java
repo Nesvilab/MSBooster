@@ -1,10 +1,13 @@
 package allconstants;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import utils.CaseInsensitiveHashSet;
 
 import java.util.HashMap;
 
 public class NceConstants implements ConstantsInterface {
+    private static final Logger log = LoggerFactory.getLogger(NceConstants.class);
     public static CaseInsensitiveHashSet nceModels = new CaseInsensitiveHashSet(
             new String[] {
                     "PredFull", "Prosit", "PrositTMT", "alphapeptdeep", //externally supported
@@ -18,7 +21,12 @@ public class NceConstants implements ConstantsInterface {
     //TODO: revisit when using mzmls with multiple fragmentation types
     public static HashMap<String, String> mzmlNCEs = new HashMap<>(); //key: fragmentation type, value: NCE
     public static String getNCE() {
-        return mzmlNCEs.get(Constants.FragmentationType); //this is the default
+        String NCE = mzmlNCEs.get(Constants.FragmentationType);
+        if (NCE == null) { //Fragmentation type had to be switched
+            String frag = mzmlNCEs.keySet().iterator().next();
+            return mzmlNCEs.get(frag);
+        }
+        return NCE; //this is the default
     }
 
     public static Integer NCE = 25; //generic value used

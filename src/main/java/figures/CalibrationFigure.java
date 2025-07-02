@@ -37,14 +37,19 @@ import java.util.Map;
 
 import static allconstants.Constants.figureDirectory;
 import static figures.ExtensionPlotter.plot;
+import static java.util.Collections.max;
+import static java.util.Collections.min;
 
 public class CalibrationFigure {
     public String folderString;
     String mode;
     String charge;
+    public HashMap<String, List<Float>[]> curves;
+    String yaxislabel = "predicted";
+    String regressionLabel = "regression";
     public CalibrationFigure() {}
 
-    public void plotFigure(MzmlReader mzml, String outFile, float opacity,
+    public HashMap<String, List<Float>[]> plotFigure(MzmlReader mzml, String outFile, float opacity,
                            HashMap<String, double[][]> massToData,
                            HashMap<String, Function1<Double, Double>> loessFunctions) throws IOException {
         String pinName = new File(outFile).getName();
@@ -64,7 +69,7 @@ public class CalibrationFigure {
         chart.getStyler().setChartTitleVisible(true);
         chart.setTitle(mzml.pathStr);
         chart.setXAxisTitle("experimental " + mode);
-        chart.setYAxisTitle("predicted " + mode);
+        chart.setYAxisTitle(yaxislabel + " " + mode);
         chart.getStyler().setMarkerSize(8);
         chart.getStyler().setYAxisGroupPosition(0, Styler.YAxisPosition.Right);
         chart.getStyler().setLegendVisible(true);
@@ -87,7 +92,6 @@ public class CalibrationFigure {
         }
 
         //set y lim
-        int modIdx = 0;
         float minVal = Float.MAX_VALUE;
         float maxVal = Float.MIN_VALUE;
         for (Map.Entry<String, double[][]> entry : massToData.entrySet()) {
@@ -119,7 +123,6 @@ public class CalibrationFigure {
                         yDataMod.get(entry.getKey()).add((float) d);
                     }
                 } catch (Exception ignored) {}
-                modIdx++;
             }
         }
 
@@ -192,7 +195,7 @@ public class CalibrationFigure {
                 showInLegend = true;
                 includedSeries.add(seriesName);
             } else {
-                seriesName = String.valueOf(i);
+                seriesName = String.valueOf(i); //number assigned for file name
             }
 
             XYSeries series = chart.addSeries(seriesName,
@@ -201,6 +204,9 @@ public class CalibrationFigure {
             series.setMarker(SeriesMarkers.CIRCLE);
             series.setShowInLegend(showInLegend);
         }
+
+        //hashmap to hold regression curves
+        HashMap<String, List<Float>[]> curves = new HashMap<>();
 
         //loess regression
         // generates Log data
@@ -212,23 +218,46 @@ public class CalibrationFigure {
 
             List<Float> x1Data = new ArrayList<Float>();
             List<Double> y1Data = new ArrayList<Double>();
+
+            //for cumulative plotting
+            float minX;
+            float maxX;
+            if (mass.isEmpty() || mass.equals("others")) {
+                minX = min(xData);
+                maxX = max(xData);
+            } else {
+                minX = min(xDataMod.get(mass));
+                maxX = max(xDataMod.get(mass));
+            }
+            List<Float> x1Cumlative = new ArrayList<Float>();
+            List<Double> y1Cumlative = new ArrayList<Double>();
+
             for (float i = minVal; i < maxVal; i = i + (maxVal - minVal) / 1000f) {
                 x1Data.add(i);
                 double y = loessFunctions.get(mass).invoke((double) i);
                 y1Data.add(y);
+
+                if (i >= minX && i <= maxX) {
+                    x1Cumlative.add(i);
+                    y1Cumlative.add(y);
+                }
             }
             XYSeries series1;
             if (mass.isEmpty() || mass.equals("others")) {
-                series1 = chart.addSeries("regression", x1Data, y1Data);
+                series1 = chart.addSeries(regressionLabel, x1Data, y1Data);
             } else {
-                series1 = chart.addSeries("regression mods - " + mass, x1Data, y1Data);
+                series1 = chart.addSeries(regressionLabel + " mods - " + mass, x1Data, y1Data);
             }
             series1.setMarkerColor(new Color(255, 50 * j % 255, 0));
             j++;
+
+            curves.put(mass, new List[]{x1Cumlative, y1Cumlative});
         }
 
         plot(chart, figureDirectory + File.separator + folderString +
                 File.separator + pinName.substring(0, pinName.length() - 4));
+
+        return curves;
     }
 
     //mixes series so that they appear evenly dispersed in plot

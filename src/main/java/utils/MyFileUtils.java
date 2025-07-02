@@ -41,7 +41,6 @@ public class MyFileUtils {
     }
 
     public static void createWholeDirectory(String directory) {
-        //deleteWholeDirectory(directory);
         if (! new File(directory).exists()) {
             new File(directory).mkdirs();
         }

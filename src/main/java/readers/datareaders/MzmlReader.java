@@ -80,6 +80,7 @@ public class MzmlReader {
     public float[][][] IMbinStats = new float[IMFunctions.numCharges][2 * Constants.IMbinMultiplier + 1][3];
     public ArrayList<HashMap<String, Function1<Double, Double>>> IMLOESS = new ArrayList<>();
     public HashMap<String, double[][]> expAndPredRTs;
+    public HashMap<String, double[][]> expAndPredRTsMinutes = new HashMap<>();
     public HashMap<Integer, HashMap<String, double[][]>> expAndPredIMsHashMap = new HashMap<>();
     public HashMap<String, ArrayList<String>> RTpeptides;
     public HashMap<String, ArrayList<String>> IMpeptides = new HashMap<>();
@@ -998,6 +999,21 @@ public class MzmlReader {
                 future.get();
             }
             irtToMinutes.put(mass, map);
+        }
+    }
+
+    public void getBestCalibratedRTs() {
+        for (Map.Entry<String, double[][]> entry : expAndPredRTs.entrySet()) {
+            String mass = entry.getKey();
+            double[][] RTs = entry.getValue();
+            double[] calibratedRTs = new double[RTs[1].length];
+            for (int i = 0; i < RTs[0].length; i++) {
+                calibratedRTs[i] = StatMethods.lookupInverse(irtToMinutes.get(mass), RTs[1][i]);
+            }
+            double[][] newValue = new double[2][];
+            newValue[0] = RTs[0];
+            newValue[1] = calibratedRTs;
+            expAndPredRTsMinutes.put(mass, newValue);
         }
     }
 

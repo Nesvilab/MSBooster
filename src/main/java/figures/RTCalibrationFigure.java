@@ -34,6 +34,30 @@ public class RTCalibrationFigure extends CalibrationFigure {
         super();
         super.folderString = FOLDER_STRING;
         super.mode = MODE;
-        plotFigure(mzml, outFile, opacity, massToData, loessFunctions);
+        curves = plotFigure(mzml, outFile, opacity, massToData, loessFunctions);
+    }
+
+    //this version is calibrated
+    public RTCalibrationFigure(MzmlReader mzml, String outFile, float opacity,
+                               HashMap<String, double[][]> massToData) throws IOException {
+        super();
+        super.folderString = FOLDER_STRING;
+        super.mode = MODE;
+        super.yaxislabel = "calibrated";
+        super.regressionLabel = "y = x";
+
+        //return y = x
+        HashMap<String, Function1<Double, Double>> identityFunctions = new HashMap<>();
+        for (String key : massToData.keySet()) {
+            identityFunctions.put(key, identityFunction());
+        }
+        plotFigure(mzml, outFile.substring(0, outFile.length() - 4) + "_calibrated.pin", opacity,
+                massToData, identityFunctions);
+    }
+
+    private static Function1<Double, Double> identityFunction() {
+        return x -> {
+            return x;  // y = x
+        };
     }
 }

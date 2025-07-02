@@ -22,11 +22,7 @@ import umontreal.ssj.probdist.EmpiricalDist;
 import umontreal.ssj.probdist.NormalDist;
 import umontreal.ssj.randvar.KernelDensityGen;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.Map;
-import java.util.TreeMap;
+import java.util.*;
 import java.util.concurrent.ConcurrentSkipListMap;
 
 
@@ -212,6 +208,17 @@ public class StatMethods {
         return newStats;
     }
 
+    public static double[] movingAverage(double[] array, int windowSize) {
+        int bl = array.length;
+        double[] newStats = new double[bl];
+
+        for (int i = 0; i < bl; i++) {
+            double[] bin = Arrays.copyOfRange(array, Math.max(i - windowSize, 0), i + windowSize + 1);
+            newStats[i] = mean(bin);
+        }
+        return newStats;
+    }
+
     //get means and standard devs and interquartile ranges
     public static float[][] characterizebins(ArrayList<Float>[] bins, float IQR) {
         float[][] binStats = new float[bins.length][3]; //index by expRT, then mean or standard deviation
@@ -278,6 +285,16 @@ public class StatMethods {
     public static float median(ArrayList<Float> alist) {
         Collections.sort(alist);
         float median;
+        if (alist.size() % 2 == 0)
+            median = (alist.get(alist.size() / 2 - 1) + alist.get(alist.size() / 2)) / 2;
+        else
+            median = alist.get(alist.size() / 2);
+        return median;
+    }
+
+    public static double median(List<Double> alist) {
+        Collections.sort(alist);
+        double median;
         if (alist.size() % 2 == 0)
             median = (alist.get(alist.size() / 2 - 1) + alist.get(alist.size() / 2)) / 2;
         else

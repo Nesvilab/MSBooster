@@ -21,6 +21,7 @@ import allconstants.Constants;
 import allconstants.FragmentIonConstants;
 import features.spectra.SpectrumComparison;
 import mainsteps.PeptideObj;
+import mainsteps.PercolatorFormatter;
 import org.apache.commons.math3.stat.correlation.PearsonsCorrelation;
 import peptideptmformatting.PeptideFormatter;
 import readers.datareaders.MzmlReader;
@@ -35,6 +36,7 @@ import java.io.IOException;
 import java.net.URISyntaxException;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.List;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -46,11 +48,16 @@ public class FeatureCalculator {
     PinReader pin;
     ArrayList<String> featuresList;
     MzmlReader mzml;
+    public List<Double> ms2Scores;
 
     public FeatureCalculator(PinReader pin, ArrayList<String> featuresList, MzmlReader mzml) {
         this.pin = pin;
         this.featuresList = featuresList;
         this.mzml = mzml;
+        if (Constants.useSpectra) {
+            List<Double> ms2ScoresUnsync = new ArrayList<>();
+            ms2Scores = Collections.synchronizedList(ms2ScoresUnsync);
+        }
     }
 
     class calcFeat implements Runnable {
@@ -121,6 +128,29 @@ public class FeatureCalculator {
                             pepObj.peptideCounts = Constants.peptideCounter.get(stripped).size();
                             break;
 
+                        case "unweightedSpectralEntropy":
+                            if (pepObj.spectralSimObj.spectrumComparisons.isEmpty()) {
+                                try {
+                                    double score = pepObj.spectralSimObj.getScore(feature);
+                                    pepObj.spectralSimObj.scores.put(feature, score);
+                                    if (Float.parseFloat(pepObj.escore) < Constants.loessEscoreCutoff) {
+                                        ms2Scores.add(score);
+                                    }
+                                } catch (IOException | URISyntaxException e) {
+                                    throw new RuntimeException(e);
+                                }
+                            } else {
+                                for (int j = 0; j < fragmentGroups.length; j++) {
+                                    try {
+                                        pepObj.spectralSimObj.spectrumComparisons.get(j).scores.put(feature,
+                                                pepObj.spectralSimObj.spectrumComparisons.get(j).getScore(feature));
+                                    } catch (IOException | URISyntaxException e) {
+                                        throw new RuntimeException(e);
+                                    }
+                                }
+                            }
+                            break;
+
                         case "brayCurtis":
                         case "cosineSimilarity":
                         case "spectralContrastAngle":
@@ -130,7 +160,6 @@ public class FeatureCalculator {
                         case "hypergeometricProbability":
                         case "intersection":
                         case "dotProduct":
-                        case "unweightedSpectralEntropy":
                         case "weightedSpectralEntropy":
                         case "heuristicSpectralEntropy":
                         case "top6matchedIntensity":
@@ -174,44 +203,6 @@ public class FeatureCalculator {
                             }
                             break;
                         case "adjacentSimilarity":
-//                        double score = 0;
-//                        int divisor = 0;
-//                        ArrayList<Double> scores = new ArrayList<>();
-//
-//                        int previous = pepObj.previousScan;
-//                        if (previous != 0) {
-//                            MzmlScanNumber msn = mzml.scanNumberObjects.get(previous);
-//                            PredictionEntry pe = PercolatorFormatter.allPreds.get(pep);
-//                            SpectrumComparison sc = new SpectrumComparison(msn.getExpMZs(), msn.getExpIntensities(),
-//                                    pe.mzs, pe.intensities, pepObj.length,
-//                                    Constants.useTopFragments, Constants.useBasePeak, false);
-//                            score += sc.unweightedSpectralEntropy();
-//                            scores.add(sc.unweightedSpectralEntropy());
-//                            divisor += 1;
-//                        }
-//
-//                        int next = pepObj.nextScan;
-//                        if (next != 0) {
-//                            MzmlScanNumber msn = mzml.scanNumberObjects.get(next);
-//                            PredictionEntry pe = PercolatorFormatter.allPreds.get(pep);
-//                            SpectrumComparison sc = new SpectrumComparison(msn.getExpMZs(), msn.getExpIntensities(),
-//                                    pe.mzs, pe.intensities, pepObj.length,
-//                                    Constants.useTopFragments, Constants.useBasePeak, false);
-//                            score += sc.unweightedSpectralEntropy();
-//                            scores.add(sc.unweightedSpectralEntropy());
-//                            divisor += 1;
-//                        }
-//
-//                        if (divisor == 0) { //TODO: why are they missing so deep into RT?
-//                            pepObj.spectralSimObj.scores.put(feature, 0d);
-//                        } else {
-//                            //pepObj.spectralSimObj.scores.put(feature, score / divisor);
-//                            pepObj.spectralSimObj.scores.put(feature, Collections.max(scores));
-//                        }
-
-//                        for (PeptideObj pobj : msn.peptideObjects) {
-//                            allPreds.get(pobj.name).times.add(allMatchedScans.get(pobj.precursorMz).indexOf(msn.scanNum));
-//                        }
                             break;
                         case "bestScan":
 //                        pepObj.spectralSimObj.scores.put(feature,

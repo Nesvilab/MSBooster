@@ -40,7 +40,7 @@ import static figures.ExtensionPlotter.plot;
 public class ScoreHistogram {
     HashSet<String> logScaleFeatures = new HashSet<>(Set.of(
             "delta_RT_loess", "delta_RT_loess_normalized", "RT_probability_unif_prior",
-            "hypergeometric_probability", "delta_IM_loess"
+            "hypergeometric_probability", "delta_IM_loess", "delta_RT_loess_real"
     ));
     HashSet<String> intScores = new HashSet<>(Set.of("peptide_counts", "intersection")); //TODO: gets crowded for many bins, can consider binning by 10s
 

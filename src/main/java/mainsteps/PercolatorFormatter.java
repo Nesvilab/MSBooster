@@ -19,14 +19,9 @@ package mainsteps;
 
 import allconstants.Constants;
 import allconstants.FragmentIonConstants;
-import com.google.common.collect.RangeMap;
-import com.google.common.collect.TreeRangeMap;
 import features.FeatureCalculator;
 import features.rtandim.IMFunctions;
-import figures.CalibrationFigure;
-import figures.IMCalibrationFigure;
-import figures.RTCalibrationFigure;
-import figures.ScoreHistogram;
+import figures.*;
 import kotlin.jvm.functions.Function1;
 import predictions.PredictionEntry;
 import predictions.PredictionEntryHashMap;
@@ -34,17 +29,14 @@ import readers.MgfFileReader;
 import readers.datareaders.MzmlReader;
 import readers.datareaders.PinReader;
 import readers.predictionreaders.LibraryPredictionMapper;
+import utils.MyFileUtils;
 import writers.PinWriter;
 
 import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Map;
+import java.util.*;
 import java.util.concurrent.ExecutorService;
 
 import static allconstants.Constants.figureDirectory;
@@ -55,7 +47,9 @@ import static utils.Print.printInfo;
 public class PercolatorFormatter {
 
     public static PredictionEntryHashMap allPreds = new PredictionEntryHashMap();
-    static RangeMap<Double, ArrayList<Integer>> allMatchedScans = TreeRangeMap.create();
+    static HashMap<String, TreeMap<String, List<Float>[]>> RTregressionCurves = new HashMap<>(); //<mass, <mzml name, [x, y]>>
+    public static HashMap<String, List<Double>> scoreDescriptors = new HashMap<>(); //<mzml, scores for PSMs below evalue>
+    public static HashMap<String, HashMap<String, double[][]>> absDeltaRTs = new HashMap<>();
 
     public static void editPin(PinMzmlMatcher pmMatcher, String[] features, String outfile,
                                ExecutorService executorService) throws Exception {
@@ -215,10 +209,12 @@ public class PercolatorFormatter {
                 //Special preparations dependent on features we require
                 mzml.setPinEntries(pin, allPreds, executorService);
 
-                if (featuresList.contains("deltaRTLOESS") || featuresList.contains("deltaRTLOESSnormalized")) {
+                if (featuresList.contains("deltaRTLOESS") || featuresList.contains("deltaRTLOESSnormalized") ||
+                        featuresList.contains("deltaRTLOESSreal")) {
                     mzml.setLOESS(Constants.rtLoessRegressionSize, Constants.loessBandwidth, Constants.robustIters, "RT");
                     mzml.setInverseLoess(executorService);
                     mzml.predictRTLOESS(executorService); //potentially only invoke once if normalized included
+                    mzml.getBestCalibratedRTs();
 
                     //generate calibration figure, need mzml and loess
                     boolean plot = false;
@@ -229,8 +225,26 @@ public class PercolatorFormatter {
                         }
                     }
                     if (plot) {
-                        CalibrationFigure cf = new RTCalibrationFigure(mzml, pinFiles[i].getCanonicalPath(), Constants.loessScatterOpacity,
-                                mzml.expAndPredRTs, mzml.RTLOESS);
+                        CalibrationFigure cf = new RTCalibrationFigure(mzml, pinFiles[i].getCanonicalPath(),
+                                Constants.loessScatterOpacity, mzml.expAndPredRTs, mzml.RTLOESS);
+
+                        //save curve for final plot
+                        for (Map.Entry<String, List<Float>[]> entry : cf.curves.entrySet()) {
+                            TreeMap<String, List<Float>[]> newMap = new TreeMap<>();
+                            String name = new File(mzml.pathStr).getName();
+                            name = name.substring(0, name.length() - 5);
+                            newMap.put(name, entry.getValue());
+
+                            TreeMap<String, List<Float>[]> totalMap;
+                            if (RTregressionCurves.containsKey(entry.getKey())) {
+                                totalMap = RTregressionCurves.get(entry.getKey());
+                                totalMap.put(name, entry.getValue());
+                            } else {
+                                totalMap = newMap;
+                            }
+
+                            RTregressionCurves.put(entry.getKey(), totalMap);
+                        }
 
                         File f = new File(pinFiles[i].getCanonicalPath());
                         String calibrationPeptideFilePathBase =
@@ -238,23 +252,56 @@ public class PercolatorFormatter {
                                         File.separator + f.getName().substring(0, f.getName().length() - 4) +
                                         "_RTcalibrationPeptides";
 
+                        //figure in real units
+                        new RTCalibrationFigure(mzml, pinFiles[i].getCanonicalPath(),
+                                Constants.loessScatterOpacity, mzml.expAndPredRTsMinutes);
+
+                        //save absolute delta RTs
+                        for (Map.Entry<String, double[][]> entry : mzml.expAndPredRTsMinutes.entrySet()) {
+                            double[][] absDeltaRT = new double[2][entry.getValue()[0].length];
+                            for (int j = 0; j < entry.getValue()[0].length; j++) {
+                                absDeltaRT[1][j] = entry.getValue()[1][j] - entry.getValue()[0][j];
+                            }
+                            absDeltaRT[0] = entry.getValue()[0];
+
+                            String mzmlname = new File(mzml.pathStr).getName();
+                            if (absDeltaRTs.containsKey(entry.getKey())) {
+                                HashMap<String, double[][]> oldMap = absDeltaRTs.get(entry.getKey());
+                                oldMap.put(mzmlname.substring(0, mzmlname.length() - 5), absDeltaRT);
+                                absDeltaRTs.put(entry.getKey(), oldMap);
+                            } else {
+                                HashMap<String, double[][]> newMap = new HashMap<>();
+                                newMap.put(mzmlname.substring(0, mzmlname.length() - 5), absDeltaRT);
+                                absDeltaRTs.put(entry.getKey(), newMap);
+                            }
+                        }
+
                         //individual figures by mass
                         //separate figures
-                        int massI = 1;
                         for (String mass : mzml.expAndPredRTs.keySet()) {
                             if (!mass.isEmpty()) {
+                                //path name
+                                String massName = mass.split("&")[0];
+
                                 HashMap<String, double[][]> miniMassToData = new HashMap<>();
                                 miniMassToData.put(mass, mzml.expAndPredRTs.get(mass));
                                 HashMap<String, Function1<Double, Double>> miniLoessFunctions = new HashMap<>();
                                 miniLoessFunctions.put(mass, mzml.RTLOESS.get(mass));
                                 new RTCalibrationFigure(mzml,
                                         pinFiles[i].getCanonicalPath().substring(0,
-                                                pinFiles[i].getCanonicalPath().length() - 4) + "_" + massI + ".pin",
+                                                pinFiles[i].getCanonicalPath().length() - 4) + "_" + massName + ".pin",
                                         Constants.loessScatterOpacity, miniMassToData, miniLoessFunctions);
+
+                                miniMassToData = new HashMap<>();
+                                miniMassToData.put(mass, mzml.expAndPredRTsMinutes.get(mass));
+                                new RTCalibrationFigure(mzml,
+                                        pinFiles[i].getCanonicalPath().substring(0,
+                                                pinFiles[i].getCanonicalPath().length() - 4) + "_" + massName + ".pin",
+                                        Constants.loessScatterOpacity, miniMassToData);
 
                                 //write peptides used
                                 String calibrationPeptideFilePath = calibrationPeptideFilePathBase;
-                                calibrationPeptideFilePath += "_" + massI;
+                                calibrationPeptideFilePath += "_" + massName;
                                 try (BufferedWriter writer = new BufferedWriter(
                                         new FileWriter(calibrationPeptideFilePath + ".txt"))) {
                                     ArrayList<String> RTpeptides = mzml.RTpeptides.get(mass);
@@ -266,8 +313,6 @@ public class PercolatorFormatter {
                                     e.printStackTrace();
                                     System.exit(1);
                                 }
-
-                                massI++;
                             }
                         }
                     }
@@ -336,22 +381,23 @@ public class PercolatorFormatter {
 
                             //individual figures by mass
                             //separate figures
-                            int massI = 1;
                             for (String mass : mzml.expAndPredIMsHashMap.get(charge).keySet()) {
                                 if (!mass.isEmpty()) {
+                                    String massName = mass.split("&")[0];
+
                                     HashMap<String, double[][]> miniMassToData = new HashMap<>();
                                     miniMassToData.put(mass, mzml.expAndPredIMsHashMap.get(charge).get(mass));
                                     HashMap<String, Function1<Double, Double>> miniLoessFunctions = new HashMap<>();
                                     miniLoessFunctions.put(mass, mzml.IMLOESS.get(charge - 1).get(mass));
                                     new IMCalibrationFigure(mzml,
                                             pinFiles[i].getCanonicalPath().substring(0,
-                                                    pinFiles[i].getCanonicalPath().length() - 4) + "_" + massI + ".pin",
+                                                    pinFiles[i].getCanonicalPath().length() - 4) + "_" + massName + ".pin",
                                             Constants.loessScatterOpacity, miniMassToData, miniLoessFunctions, charge);
 
                                     //write peptides used
                                     if (!writtenMasses.contains(mass)) {
                                         String calibrationPeptideFilePath = calibrationPeptideFilePathBase;
-                                        calibrationPeptideFilePath += "_" + massI;
+                                        calibrationPeptideFilePath += "_" + massName;
 
                                         try (BufferedWriter writer = new BufferedWriter(
                                                 new FileWriter(calibrationPeptideFilePath + ".txt"))) {
@@ -366,8 +412,6 @@ public class PercolatorFormatter {
                                             System.exit(1);
                                         }
                                     }
-
-                                    massI++;
                                 }
                             }
                         }
@@ -404,6 +448,10 @@ public class PercolatorFormatter {
                 printInfo("Calculating features");
                 FeatureCalculator fc = new FeatureCalculator(pin, featuresList, mzml);
                 fc.calculate(executorService);
+                if (!fc.ms2Scores.isEmpty()) {
+                    String name = new File(mzml.pathStr).getName();
+                    scoreDescriptors.put(name.substring(0, name.length() - 5), fc.ms2Scores);
+                }
 
                 printInfo("Writing features");
                 PinWriter pw = new PinWriter(newOutfile, pin, featuresList, mzml);
@@ -428,6 +476,26 @@ public class PercolatorFormatter {
             executorService.shutdown();
             e.printStackTrace();
             System.exit(1);
+        }
+
+        //cumulative plots
+        if (pmMatcher.pinFiles.length > 1) {
+            MyFileUtils.createWholeDirectory(figureDirectory + File.separator + "cumulativeQC");
+
+            //RT plot
+            for (Map.Entry<String, TreeMap<String, List<Float>[]>> entry : RTregressionCurves.entrySet()) {
+                new CumulativeCurves(entry.getKey(), entry.getValue(), "RT");
+            }
+
+            //delta RT plot
+            if (!absDeltaRTs.isEmpty()) {
+                new CumulativeAbsDeltaLinePlots(absDeltaRTs);
+            }
+
+            //spectra plot
+            if (!scoreDescriptors.isEmpty()) {
+                new CumulativeMS2LinePlots(scoreDescriptors);
+            }
         }
     }
 }

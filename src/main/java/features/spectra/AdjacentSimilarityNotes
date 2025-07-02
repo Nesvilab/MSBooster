@@ -1,3 +1,4 @@
+//static RangeMap<Double, ArrayList<Integer>> allMatchedScans = TreeRangeMap.create();
 //used right after mzml.setPinEntries(pin, allPreds, executorService);
 
 //                if (featuresList.contains("adjacentSimilarity")) {
@@ -232,3 +233,43 @@
 //                        future.get();
 //                    }
 //                }
+
+//feature calculator
+//                        double score = 0;
+//                        int divisor = 0;
+//                        ArrayList<Double> scores = new ArrayList<>();
+//
+//                        int previous = pepObj.previousScan;
+//                        if (previous != 0) {
+//                            MzmlScanNumber msn = mzml.scanNumberObjects.get(previous);
+//                            PredictionEntry pe = PercolatorFormatter.allPreds.get(pep);
+//                            SpectrumComparison sc = new SpectrumComparison(msn.getExpMZs(), msn.getExpIntensities(),
+//                                    pe.mzs, pe.intensities, pepObj.length,
+//                                    Constants.useTopFragments, Constants.useBasePeak, false);
+//                            score += sc.unweightedSpectralEntropy();
+//                            scores.add(sc.unweightedSpectralEntropy());
+//                            divisor += 1;
+//                        }
+//
+//                        int next = pepObj.nextScan;
+//                        if (next != 0) {
+//                            MzmlScanNumber msn = mzml.scanNumberObjects.get(next);
+//                            PredictionEntry pe = PercolatorFormatter.allPreds.get(pep);
+//                            SpectrumComparison sc = new SpectrumComparison(msn.getExpMZs(), msn.getExpIntensities(),
+//                                    pe.mzs, pe.intensities, pepObj.length,
+//                                    Constants.useTopFragments, Constants.useBasePeak, false);
+//                            score += sc.unweightedSpectralEntropy();
+//                            scores.add(sc.unweightedSpectralEntropy());
+//                            divisor += 1;
+//                        }
+//
+//                        if (divisor == 0) { //TODO: why are they missing so deep into RT?
+//                            pepObj.spectralSimObj.scores.put(feature, 0d);
+//                        } else {
+//                            //pepObj.spectralSimObj.scores.put(feature, score / divisor);
+//                            pepObj.spectralSimObj.scores.put(feature, Collections.max(scores));
+//                        }
+
+//                        for (PeptideObj pobj : msn.peptideObjects) {
+//                            allPreds.get(pobj.name).times.add(allMatchedScans.get(pobj.precursorMz).indexOf(msn.scanNum));
+//                        }

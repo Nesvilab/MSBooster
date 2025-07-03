@@ -34,6 +34,7 @@ import static utils.Print.printError;
 import static utils.Print.printInfo;
 
 public class DiannModelCaller {
+    static boolean retry = false;
     public static String callModel(String inputFile, boolean verbose) {
         long startTime = System.nanoTime();
         String predFileString = null;
@@ -156,6 +157,15 @@ public class DiannModelCaller {
                             "parameter until successfully predicted.");
                     System.exit(1);
                 }
+                if (DIANNtermination == -1073741819) {
+                    if (retry) {
+                        retry = false;
+                        printError("Encountered segmentation fault/access violation.");
+                        System.exit(1);
+                    }
+                    printError("Encountered segmentation fault/access violation. Retrying.");
+                    return callModelRetry(inputFile, verbose);
+                }
                 if (DIANNtermination != 0) {
                     printError("Abnormal DIANN termination: " + DIANNtermination + ", please run the " +
                             "following command from the command line for more information\n" +
@@ -217,5 +227,12 @@ public class DiannModelCaller {
         }
         
         return predFileString;
+    }
+
+    private static String callModelRetry(String inputFile, boolean verbose) {
+        retry = true;
+        String result = callModel(inputFile, verbose);
+        retry = false;
+        return result;
     }
 }

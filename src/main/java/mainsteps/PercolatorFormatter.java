@@ -483,18 +483,30 @@ public class PercolatorFormatter {
             MyFileUtils.createWholeDirectory(figureDirectory + File.separator + "cumulativeQC");
 
             //RT plot
-            for (Map.Entry<String, TreeMap<String, List<Float>[]>> entry : RTregressionCurves.entrySet()) {
-                new CumulativeCurves(entry.getKey(), entry.getValue(), "RT");
+            try {
+                for (Map.Entry<String, TreeMap<String, List<Float>[]>> entry : RTregressionCurves.entrySet()) {
+                    new CumulativeCurves(entry.getKey(), entry.getValue(), "RT");
+                }
+            } catch (Exception e) {
+                e.printStackTrace();
             }
 
             //delta RT plot
-            if (!absDeltaRTs.isEmpty()) {
-                new CumulativeAbsDeltaLinePlots(absDeltaRTs);
+            try {
+                if (!absDeltaRTs.isEmpty()) {
+                    new CumulativeAbsDeltaLinePlots(absDeltaRTs);
+                }
+            } catch (Exception e) {
+                e.printStackTrace();
             }
 
             //spectra plot
-            if (!scoreDescriptors.isEmpty()) {
-                new CumulativeMS2LinePlots(scoreDescriptors);
+            try {
+                if (!scoreDescriptors.isEmpty()) {
+                    new CumulativeMS2LinePlots(scoreDescriptors);
+                }
+            } catch (Exception e) {
+                e.printStackTrace();
             }
         }
     }

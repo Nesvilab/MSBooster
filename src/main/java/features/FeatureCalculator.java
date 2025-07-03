@@ -48,7 +48,7 @@ public class FeatureCalculator {
     PinReader pin;
     ArrayList<String> featuresList;
     MzmlReader mzml;
-    public List<Double> ms2Scores;
+    public List<Double> ms2Scores = new ArrayList<>();
 
     public FeatureCalculator(PinReader pin, ArrayList<String> featuresList, MzmlReader mzml) {
         this.pin = pin;

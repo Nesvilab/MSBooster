@@ -62,10 +62,12 @@ public class PTMhandler {
     public static final double tmt6_10_11Mass = 229.1629;
     public static final double tmtproMass = 304.20715;
     public static final double itraqMass = 144.102063;
+    public static final double itraq8Mass = 304.20535;
     public static final int tmt6_10_11Unimod = 737;
     public static final int tmtproUnimod = 2016;
     public static final int itraqUnimod = 214;
-    public static final double[] tmtMasses = {tmt6_10_11Mass, tmtproMass, itraqMass};
+    public static final int itraq8Unimod = 730;
+    public static final double[] tmtMasses = {tmt6_10_11Mass, tmtproMass, itraqMass, itraq8Mass};
     private static double tmtMass = tmt6_10_11Mass;
     public static int tmtUnimod = tmt6_10_11Unimod;
 

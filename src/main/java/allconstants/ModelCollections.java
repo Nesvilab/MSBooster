@@ -39,13 +39,13 @@ public class ModelCollections implements ConstantsInterface {
     public static ArrayList<String> generalRTmodels = new ArrayList<>(
             List.of("DIA-NN", "AlphaPept_rt_generic", "Prosit_2019_irt", "Deeplc_hela_hf"));
     public static ArrayList<String> isolabelRTmodels = new ArrayList<>(
-            List.of("DIA-NN", "Prosit_2020_irt_TMT"));
+            List.of("DIA-NN", "Prosit_2020_irt_TMT", "AlphaPept_rt_generic", "Deeplc_hela_hf"));
 
     public static ArrayList<String> generalMS2models = new ArrayList<>(
             List.of("DIA-NN", "ms2pip_2021_HCD", "ms2pip_TTOF5600", "AlphaPept_ms2_generic",
                     "Prosit_2020_intensity_CID", "Prosit_2020_intensity_HCD"));
     public static ArrayList<String> isolabelMS2models = new ArrayList<>(
-            List.of("DIA-NN", "Prosit_2020_intensity_TMT"));
+            List.of("DIA-NN", "Prosit_2020_intensity_TMT", "ms2pip_CID_TMT", "ms2pip_iTRAQphospho"));
     public static ArrayList<String> hlaMS2models = new ArrayList<>(
             List.of("DIA-NN", "ms2pip_Immuno_HCD", "AlphaPept_ms2_generic",
                     "Prosit_2020_intensity_CID", "Prosit_2020_intensity_HCD"));

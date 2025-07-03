@@ -55,10 +55,14 @@ public class KoinaYamlParser {
 
         if (!citations.isEmpty()) {
             String starter = "If using models from Koina, please cite the following:";
+            String koinaCitation = "Lautenbacher L, Yang KL, et al. " +
+                    "Koina: Democratizing machine learning for proteomics research. " +
+                    "bioRxiv. (2024) doi:10.1101/2024.06.01.596953";
             String comment = "#CITATIONS: ";
 
             //write to output
             Print.printInfo(starter);
+            Print.printInfo(koinaCitation);
             for (String citation : citations) {
                 Print.printInfo(citation);
             }
@@ -66,6 +70,7 @@ public class KoinaYamlParser {
             //write to msbooster parameter file
             ArrayList<String> citationList = new ArrayList<>();
             citationList.add(comment + starter);
+            citationList.add(comment + koinaCitation);
             for (String citation : citations) {
                 citationList.add(comment + citation);
             }

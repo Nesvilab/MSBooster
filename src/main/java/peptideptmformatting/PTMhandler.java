@@ -97,8 +97,6 @@ public class PTMhandler {
         unimodToModMassLimited.put(citrullinationDeamidationUnimod, citrullinationDeamidationMass);
     }
 
-    //TODO: see if methods need AA or not
-    //TODO: what models are AA restrictive? Do we need to go check on github?
     private static void updateAAUnimodToModMassLimited() {
         AAunimodToModMassLimited.clear();
         AAunimodToModMassLimited.put("C" + carbamidomethylationUnimod, carbamidomethylationMass);

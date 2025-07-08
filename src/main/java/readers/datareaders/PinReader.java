@@ -41,7 +41,6 @@ import java.util.concurrent.ExecutionException;
 import static utils.InstrumentUtils.mapInstrumentToModelSpecific;
 import static utils.Print.printInfo;
 
-//TODO: which of these tools allows O abd U amino acids?
 public class PinReader {
     public String name; //used for resetting
     BufferedReader in;

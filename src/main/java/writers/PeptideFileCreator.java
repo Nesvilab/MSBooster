@@ -44,7 +44,6 @@ import static utils.Print.printInfo;
 
 public class PeptideFileCreator {
 
-    //TODO: remove psmFormat
     public static void createPeptideFile(PinMzmlMatcher pmm, String outfile, String modelFormat)
             throws IOException, InterruptedException, ExecutionException, FileParsingException { //pepXML or pin
         //diff versions based on submitting File[] or pinReader
@@ -160,7 +159,6 @@ public class PeptideFileCreator {
                             MainClass.executorService);
                 }
             } else {
-                //TODO: outfile name with prediction model in name
                 FileWriter myWriter = new FileWriter(outfile);
                 switch (modelFormat) {
                     case "pDeep2":

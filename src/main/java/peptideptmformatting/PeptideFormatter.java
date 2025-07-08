@@ -590,7 +590,6 @@ public class PeptideFormatter {
             case "predfull":
                 return getPredfullKoina();
             default:
-                //TODO implement all
                 return "";
         }
     }

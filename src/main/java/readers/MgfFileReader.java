@@ -254,7 +254,6 @@ public class MgfFileReader implements LibraryPredictionMapper {
                                     start += returnAdd('\n', finalData, start) + 1;
                                     break;
                                 case 'R': //RTINSECONDS
-                                    //TODO convert to minutes?
                                     if (finalData[start + 1] == 'T') {
                                         if (finalData[start + 4] == 'S') {
                                             start += 12;

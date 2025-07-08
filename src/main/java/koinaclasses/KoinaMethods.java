@@ -185,27 +185,6 @@ public class KoinaMethods {
         return peptideObjs;
     }
 
-    //use nested hashmap to make sure correct version of model is assigned for given fragmentation type
-    //uses Constants information (FragmentationType and current spectraModel) to correct spectraModel
-    //solution: use composite key fragmentationtype + "." + modelType, where modelType is a HashMap of
-    //exact model name and more general type (i.e. Prosit models, APD models, etc)
-    //if hashset contains exact model name, return that general type
-    //returns true if model changed
-    public static boolean switchModel() {
-        //correct to CID model
-        //TODO do in opposite direction. Or more general method to get right fragmentation model
-        if (Constants.autoSwitchFragmentation && generalModels.containsKey(Constants.spectraModel)) {
-            String genModel = generalModels.get(Constants.spectraModel);
-            String newModel = modelConversion.get(Constants.FragmentationType + "." + genModel);
-            if (!newModel.equals(Constants.spectraModel)) {
-                printInfo("Switching from " + Constants.spectraModel + " to " + newModel);
-                Constants.spectraModel = newModel;
-                return true;
-            }
-        }
-        return false;
-    }
-
     public static HashSet<String> createPartialKoinaSet(String currentModel, ArrayList<PeptideFormatter> peptideFormatters) {
         HashSet<String> allHits = new HashSet<>();
         for (PeptideFormatter pf : peptideFormatters) {

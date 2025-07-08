@@ -71,7 +71,7 @@ public class KoinaModelCaller {
     private static final int unispecFragIdx = 2;
     private static final int predfullMzIdx = 1;
     private static final int predfullIntIdx = 0;
-    private static final int predfullFragIdx = 2; //TODO
+    private static final int predfullFragIdx = 2;
     private static AtomicBoolean emptyUrl = new AtomicBoolean(false);
 
     public KoinaModelCaller(){}
@@ -234,7 +234,6 @@ public class KoinaModelCaller {
             int mzIdx = 0;
             int intIdx = 0;
             int fragIdx = 0;
-            //TODO: organize this
             if (model.contains("AlphaPept") || model.equals("Prosit_2025_intensity_MultiFrag")) {
                 mzIdx = AlphaPeptDeepMzIdx;
                 intIdx = AlphaPeptDeepIntIdx;

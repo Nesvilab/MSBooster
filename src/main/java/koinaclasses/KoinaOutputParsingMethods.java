@@ -78,8 +78,7 @@ public class KoinaOutputParsingMethods {
         }
     }
 
-    //TODO
-    //Do not need full annotation
+    //TODO: Do not need full annotation
     public static void parsePrositMultifrag(String result, ArrayList<Integer> charges,
                                             ArrayList<String> fragmentIonTypes, ArrayList<Integer> fragNums) {
         //charge

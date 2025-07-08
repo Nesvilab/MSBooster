@@ -50,7 +50,7 @@ public class Constants implements ConstantsInterface {
     public static String spectraPredFilePDV = null; //for PDV visualization
     public static String RTPredFile = null;
     public static String IMPredFile = null;
-    public static String auxSpectraPredFile = null; //TODO support this
+    public static String auxSpectraPredFile = null;
     public static String detectPredFile = null;
     public static Boolean deletePreds = false;
     public static Integer loadingPercent = 10;
@@ -158,7 +158,6 @@ public class Constants implements ConstantsInterface {
     //these constants for RT features
     public static Boolean useRT = true;
 
-    //TODO review how this works
     public static Double uniformPriorPercentile = 10d;
     public static Integer RTbinMultiplier = 1;
     public static Float RTIQR = 50f;
@@ -248,7 +247,7 @@ public class Constants implements ConstantsInterface {
     public static final CaseInsensitiveHashSet imFeatures = new CaseInsensitiveHashSet(
             new String[] {"deltaIMLOESS", "deltaIMLOESSnormalized", "IMprobabilityUnifPrior",
                     "predictedIM", "ionmobility"});
-    //TODO: add to features list
+
     public static HashSet<String> matchedIntensitiesFeatures = null;
     public static HashSet<String> makeMatchedIntensitiesFeatures() {
         HashSet<String> set = new HashSet<>();

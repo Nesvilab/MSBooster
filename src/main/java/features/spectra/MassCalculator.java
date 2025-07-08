@@ -634,7 +634,7 @@ public class MassCalculator {
                     return false;
                 }
                 break;
-            case "imm": //TODO: can IKF actually occur (arginine peak from lysine)?
+            case "imm":
                 String AA = String.valueOf(fap.fullAnnotation.charAt(1));
                 if (! peptide.contains(AA)) {
                     return false;

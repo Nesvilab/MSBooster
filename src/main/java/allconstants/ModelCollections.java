@@ -5,7 +5,6 @@ import utils.Print;
 
 import java.util.*;
 
-//TODO ms2pip tmt and itraq phospho models need to be corrected on koina
 public class ModelCollections implements ConstantsInterface {
     ////////////all Koina models/////////////
     public static CaseInsensitiveHashSet KoinaRTmodels = new CaseInsensitiveHashSet(

@@ -187,7 +187,7 @@ public class MzmlReader {
         ProgressReporter pr = new ProgressReporter(scans.getMapNum2scan().size());
         futureList.clear();
 
-        for (IScan scan : scans.getMapNum2scan().values()) { //TODO speed up?
+        for (IScan scan : scans.getMapNum2scan().values()) {
             futureList.add(executorService.submit(() -> {
                 if (scan.getMsLevel() != 1) {
                     try {

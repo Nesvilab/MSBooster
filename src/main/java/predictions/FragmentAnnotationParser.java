@@ -11,7 +11,7 @@ import static utils.NumericUtils.isUppercaseOrDigit;
 
 //class to parse annotations for unispec and predfull
 //designed to handle output from unispec koina prediction and read in dictionary of unispec allowed fragments
-//TODO: support for c/z ions
+
 public class FragmentAnnotationParser {
     public final String fullAnnotation;
     public int charge = 1;

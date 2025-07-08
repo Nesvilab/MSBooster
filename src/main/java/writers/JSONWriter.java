@@ -201,6 +201,7 @@ public class JSONWriter {
                 case "deeplc":
                 case "unispec":
                 case "predfull":
+                case "im2deep":
                     // Create the JSON data structure
                     JSONObject jsonData = new JSONObject();
                     jsonData.put("id", "0");

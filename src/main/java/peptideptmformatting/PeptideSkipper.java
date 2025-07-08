@@ -25,7 +25,7 @@ public class PeptideSkipper {
         model = model.toLowerCase();
         //letters
         if (model.contains("prosit") || model.contains("ms2pip") || model.contains("deeplc") ||
-                model.contains("unispec") || model.contains("predfull")) {
+                model.contains("unispec") || model.contains("predfull") || model.contains("im2deep")) {
             for (char c : "OUBZJX".toCharArray()) {
                 if (stripped.indexOf(c) != -1) {
                     return true;
@@ -39,7 +39,7 @@ public class PeptideSkipper {
         if (model.contains("unispec") && stripped.length() > 40) {
             return true;
         }
-        if (model.contains("deeplc") && stripped.length() > 60) {
+        if ((model.contains("deeplc") || model.contains("im2deep")) && stripped.length() > 60) {
             return true;
         }
         //charge

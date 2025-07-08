@@ -204,6 +204,7 @@ public class PredictionEntryHashMap extends ConcurrentHashMap<String, Prediction
                         case "alphapept":
                         case "ms2pip":
                         case "deeplc":
+                        case "im2deep":
                         case "unispec":
                         case "prosit":
                         case "prosittmt":

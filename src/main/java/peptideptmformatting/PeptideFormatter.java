@@ -462,6 +462,7 @@ public class PeptideFormatter {
                 koinaTObase(peptide);
                 break;
             case "deeplc":
+            case "im2deep":
                 deeplc = peptide;
                 koinaTObase(peptide);
                 break;
@@ -584,6 +585,7 @@ public class PeptideFormatter {
             case "ms2pip":
                 return getMs2pip();
             case "deeplc":
+            case "im2deep":
                 return getDeeplc();
             case "alphapept":
                 return getAlphapept();

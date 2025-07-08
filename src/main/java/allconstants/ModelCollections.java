@@ -23,9 +23,9 @@ public class ModelCollections implements ConstantsInterface {
                     "Prosit_2025_intensity_MultiFrag",
                     "UniSpec", "PredFull"});
     public static CaseInsensitiveHashSet KoinaIMmodels = new CaseInsensitiveHashSet(
-            new String[] {"AlphaPept_ccs_generic"});
+            new String[] {"AlphaPept_ccs_generic", "IM2Deep"});
     public static CaseInsensitiveHashSet KoinaCCSmodels = new CaseInsensitiveHashSet(
-            new String[] {"AlphaPept_ccs_generic"}); // convert from ccs to 1/K0
+            new String[] {"AlphaPept_ccs_generic", "IM2Deep"}); // convert from ccs to 1/K0
     public static CaseInsensitiveHashSet KoinaModels = new CaseInsensitiveHashSet();
     static {
         KoinaModels.addAll(KoinaRTmodels);
@@ -53,7 +53,7 @@ public class ModelCollections implements ConstantsInterface {
             List.of("DIA-NN", "ms2pip_timsTOF2024", "AlphaPept_ms2_generic", "Prosit_2023_intensity_timsTOF"));
 
     public static ArrayList<String> generalIMmodels = new ArrayList<>(
-            List.of("DIA-NN", "AlphaPept_ccs_generic"));
+            List.of("DIA-NN", "AlphaPept_ccs_generic", "IM2Deep"));
 
     public static String rtCollection = "general";
     public static String ms2Collection = "general";

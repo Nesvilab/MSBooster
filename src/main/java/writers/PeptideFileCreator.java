@@ -127,9 +127,9 @@ public class PeptideFileCreator {
         HashSet<String> hSetHits = new HashSet<>(allHits.keySet());
         printInfo(hSetHits.size() + " PSMs for prediction");
 
-        //TODO: expland to deeplc and im2deep?
-        if ((KoinaModels.contains(modelFormat)) &&
-                (modelFormat.contains("AlphaPept"))) {
+        if (modelFormat.toLowerCase().contains("alphapept") ||
+                modelFormat.toLowerCase().contains("deeplc") ||
+                modelFormat.toLowerCase().contains("im2deep")) {
             //want to see what unimods were assigned
             HashSet<String> unimodCodes = new HashSet<>();
             for (String hit : hSetHits) {
@@ -141,7 +141,7 @@ public class PeptideFileCreator {
                     }
                 }
             }
-            printInfo("AlphaPept using UniMod codes " + unimodCodes);
+            printInfo(modelFormat + " using UniMod codes " + unimodCodes);
         }
 
         //write to file

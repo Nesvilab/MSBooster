@@ -18,7 +18,9 @@
 package peptideptmformatting;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Map;
 
 import static peptideptmformatting.PTMhandler.*;
 import static utils.Print.printError;
@@ -86,14 +88,10 @@ public class PeptideFormatter {
 
     private void diannTObase(String peptide) {
         peptide = peptide.replace("[TMT]", "[" + PTMhandler.tmtUnimod + "]");
-        base = PTMhandler.formatPeptideSpecificToBase(peptide, unimodToModMass);
+        base = PTMhandler.formatPeptideSpecificToBase(peptide, unimodToModMassLimited);
     }
-    private void koinaTObase(String peptide) {
-        base = PTMhandler.formatPeptideSpecificToBase(peptide, unimodToModMass);
-    }
-
-    private void alphapeptTObase(String peptide) {
-        base = PTMhandler.formatPeptideSpecificToBase(peptide, unimodToModMassAlphaPeptDeep);
+    private void koinaTObase(String peptide, Map<Integer, Double> unimodToMassMap) {
+        base = PTMhandler.formatPeptideSpecificToBase(peptide, unimodToModMassLimited);
     }
 
     private void unimodoboTObase(String peptide) {
@@ -443,32 +441,32 @@ public class PeptideFormatter {
             case "predfull":
                 predfull = peptide;
                 predfullTObase(peptide); //this version is for standalone
-                koinaTObase(peptide); //this version for koina
+                koinaTObase(peptide, unimodToModMassLimited); //this version for koina
                 break;
             case "unispec":
                 unispec = peptide;
-                koinaTObase(peptide);
+                koinaTObase(peptide, unimodToModMassLimited);
                 break;
             case "prosit":
                 prosit = peptide;
-                koinaTObase(peptide);
+                koinaTObase(peptide, unimodToModMassLimited);
                 break;
             case "prosittmt":
                 prositTMT = peptide;
-                koinaTObase(peptide);
+                koinaTObase(peptide, unimodToModMassLimited);
                 break;
             case "ms2pip":
                 ms2pip = peptide;
-                koinaTObase(peptide);
+                koinaTObase(peptide, unimodToModMassLimited);
                 break;
             case "deeplc":
             case "im2deep":
                 deeplc = peptide;
-                koinaTObase(peptide);
+                koinaTObase(peptide, unimodToModMassAll);
                 break;
             case "alphapept":
                 alphapept = peptide;
-                alphapeptTObase(peptide);
+                koinaTObase(peptide, unimodToModMassAll);
                 break;
             case "msp":
                 mspTObase(peptide);

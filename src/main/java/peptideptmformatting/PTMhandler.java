@@ -73,64 +73,64 @@ public class PTMhandler {
 
     public static void setTmtMass(double mass) {
         tmtMass = mass;
-        updateUnimodToModMass();
-        updateAAUnimodToModMass();
+        updateUnimodToModMassLimited();
+        updateAAUnimodToModMassLimited();
     }
     public static double getTmtMass() { return tmtMass; }
 
-    public static HashMap<Integer, Double> unimodToModMass = new HashMap<>();
+    public static HashMap<Integer, Double> unimodToModMassLimited = new HashMap<>();
     static {
-        updateUnimodToModMass();
+        updateUnimodToModMassLimited();
     }
 
-    private static void updateUnimodToModMass() {
-        unimodToModMass.clear();
-        unimodToModMass.put(carbamidomethylationUnimod, carbamidomethylationMass);
-        unimodToModMass.put(oxidationUnimod, oxidationMass);
-        unimodToModMass.put(acetylationUnimod, acetylationMass);
-        unimodToModMass.put(phosphorylationUnimod, phosphorylationMass);
-        unimodToModMass.put(glyglyUnimod, glyglyMass);
-        unimodToModMass.put(tmtUnimod, tmtMass);
-        unimodToModMass.put(pyrogluQUnimod, pyrogluQMass);
-        unimodToModMass.put(pyrogluEUnimod, pyrogluEMass);
-        unimodToModMass.put(pyroCarbamidomethylUnimod, pyroCarbamidomethylMass);
-        unimodToModMass.put(citrullinationDeamidationUnimod, citrullinationDeamidationMass);
+    private static void updateUnimodToModMassLimited() {
+        unimodToModMassLimited.clear();
+        unimodToModMassLimited.put(carbamidomethylationUnimod, carbamidomethylationMass);
+        unimodToModMassLimited.put(oxidationUnimod, oxidationMass);
+        unimodToModMassLimited.put(acetylationUnimod, acetylationMass);
+        unimodToModMassLimited.put(phosphorylationUnimod, phosphorylationMass);
+        unimodToModMassLimited.put(glyglyUnimod, glyglyMass);
+        unimodToModMassLimited.put(tmtUnimod, tmtMass);
+        unimodToModMassLimited.put(pyrogluQUnimod, pyrogluQMass);
+        unimodToModMassLimited.put(pyrogluEUnimod, pyrogluEMass);
+        unimodToModMassLimited.put(pyroCarbamidomethylUnimod, pyroCarbamidomethylMass);
+        unimodToModMassLimited.put(citrullinationDeamidationUnimod, citrullinationDeamidationMass);
     }
 
     //TODO: see if methods need AA or not
     //TODO: what models are AA restrictive? Do we need to go check on github?
-    private static void updateAAUnimodToModMass() {
-        AAunimodToModMass.clear();
-        AAunimodToModMass.put("C" + carbamidomethylationUnimod, carbamidomethylationMass);
-        AAunimodToModMass.put("M" + oxidationUnimod, oxidationMass);
-        AAunimodToModMass.put("[" + acetylationUnimod, acetylationMass);
-        AAunimodToModMass.put("S" + phosphorylationUnimod, phosphorylationMass);
-        AAunimodToModMass.put("T" + phosphorylationUnimod, phosphorylationMass);
-        AAunimodToModMass.put("Y" + phosphorylationUnimod, phosphorylationMass);
-        AAunimodToModMass.put("[" + glyglyUnimod, glyglyMass);
-        AAunimodToModMass.put("K" + glyglyUnimod, glyglyMass);
-        AAunimodToModMass.put("T" + glyglyUnimod, glyglyMass);
-        AAunimodToModMass.put("C" + glyglyUnimod, glyglyMass);
-        AAunimodToModMass.put("S" + glyglyUnimod, glyglyMass);
-        AAunimodToModMass.put("K" + tmtUnimod, tmtMass);
-        AAunimodToModMass.put("S" + tmtUnimod, tmtMass);
-        AAunimodToModMass.put("T" + tmtUnimod, tmtMass);
-        AAunimodToModMass.put("H" + tmtUnimod, tmtMass);
-        AAunimodToModMass.put("[" + tmtUnimod, tmtMass);
-        AAunimodToModMass.put("Q" + pyrogluQUnimod, pyrogluQMass);
-        AAunimodToModMass.put("E" + pyrogluEUnimod, pyrogluEMass);
-        AAunimodToModMass.put("C" + pyroCarbamidomethylUnimod, pyroCarbamidomethylMass);
-        AAunimodToModMass.put("Q" + citrullinationDeamidationUnimod, citrullinationDeamidationMass);
-        AAunimodToModMass.put("R" + citrullinationDeamidationUnimod, citrullinationDeamidationMass);
-        AAunimodToModMass.put("N" + citrullinationDeamidationUnimod, citrullinationDeamidationMass);
+    private static void updateAAUnimodToModMassLimited() {
+        AAunimodToModMassLimited.clear();
+        AAunimodToModMassLimited.put("C" + carbamidomethylationUnimod, carbamidomethylationMass);
+        AAunimodToModMassLimited.put("M" + oxidationUnimod, oxidationMass);
+        AAunimodToModMassLimited.put("[" + acetylationUnimod, acetylationMass);
+        AAunimodToModMassLimited.put("S" + phosphorylationUnimod, phosphorylationMass);
+        AAunimodToModMassLimited.put("T" + phosphorylationUnimod, phosphorylationMass);
+        AAunimodToModMassLimited.put("Y" + phosphorylationUnimod, phosphorylationMass);
+        AAunimodToModMassLimited.put("[" + glyglyUnimod, glyglyMass);
+        AAunimodToModMassLimited.put("K" + glyglyUnimod, glyglyMass);
+        AAunimodToModMassLimited.put("T" + glyglyUnimod, glyglyMass);
+        AAunimodToModMassLimited.put("C" + glyglyUnimod, glyglyMass);
+        AAunimodToModMassLimited.put("S" + glyglyUnimod, glyglyMass);
+        AAunimodToModMassLimited.put("K" + tmtUnimod, tmtMass);
+        AAunimodToModMassLimited.put("S" + tmtUnimod, tmtMass);
+        AAunimodToModMassLimited.put("T" + tmtUnimod, tmtMass);
+        AAunimodToModMassLimited.put("H" + tmtUnimod, tmtMass);
+        AAunimodToModMassLimited.put("[" + tmtUnimod, tmtMass);
+        AAunimodToModMassLimited.put("Q" + pyrogluQUnimod, pyrogluQMass);
+        AAunimodToModMassLimited.put("E" + pyrogluEUnimod, pyrogluEMass);
+        AAunimodToModMassLimited.put("C" + pyroCarbamidomethylUnimod, pyroCarbamidomethylMass);
+        AAunimodToModMassLimited.put("Q" + citrullinationDeamidationUnimod, citrullinationDeamidationMass);
+        AAunimodToModMassLimited.put("R" + citrullinationDeamidationUnimod, citrullinationDeamidationMass);
+        AAunimodToModMassLimited.put("N" + citrullinationDeamidationUnimod, citrullinationDeamidationMass);
     }
-    public static final HashMap<String, Double> AAunimodToModMass = new HashMap<>();
+    public static final HashMap<String, Double> AAunimodToModMassLimited = new HashMap<>();
     static {
-        updateAAUnimodToModMass();
+        updateAAUnimodToModMassLimited();
     }
 
     @SuppressWarnings("unchecked")
-    private static <T> Map<T, Double> makeUnimodToModMassAlphaPeptDeep(boolean includeAA) throws IOException {
+    private static <T> Map<T, Double> makeUnimodToModMassAll(boolean includeAA) throws IOException {
         ArrayList<String> modPaths = new ArrayList<>();
         modPaths.add("/ptm_resources/alphapept_koina.csv");
         if (!Constants.additionalMods.isEmpty()) {
@@ -161,21 +161,21 @@ public class PTMhandler {
         }
         return map;
     }
-    public static final Map<Integer, Double> unimodToModMassAlphaPeptDeep;
+    public static final Map<Integer, Double> unimodToModMassAll;
 
     static {
         try {
-            unimodToModMassAlphaPeptDeep = makeUnimodToModMassAlphaPeptDeep(false);
+            unimodToModMassAll = makeUnimodToModMassAll(false);
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
     }
 
-    public static final Map<String, Double> AAunimodToModMassAlphaPeptDeep;
+    public static final Map<String, Double> AAunimodToModMassAll;
 
     static {
         try {
-            AAunimodToModMassAlphaPeptDeep = makeUnimodToModMassAlphaPeptDeep(true);
+            AAunimodToModMassAll = makeUnimodToModMassAll(true);
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
@@ -230,11 +230,9 @@ public class PTMhandler {
             case "ms2pip":
                 modelAllowedUnimods = ms2pipAAMods;
                 break;
-            case "deeplc":
-                modelAllowedUnimods = deeplcAAMods;
-                break;
             case "alphapept":
-                modelAllowedUnimods.addAll(AAunimodToModMassAlphaPeptDeep.keySet());
+            case "deeplc":
+                modelAllowedUnimods.addAll(AAunimodToModMassAll.keySet());
                 break;
             case "predfull":
                 modelAllowedUnimods = predfullAAMods;
@@ -266,10 +264,10 @@ public class PTMhandler {
 
         //all unimod codes allowed
         Map<String, Double> modMap;
-        if (model.equals("alphapept")) {
-            modMap = AAunimodToModMassAlphaPeptDeep;
+        if (model.equals("alphapept") || model.equals("deeplc")) {
+            modMap = AAunimodToModMassAll;
         } else {
-            modMap = AAunimodToModMass;
+            modMap = AAunimodToModMassLimited;
         }
 
         double reportedMass = Double.parseDouble(peptide.substring(start + 1, end));
@@ -553,8 +551,6 @@ public class PTMhandler {
                     "[737", "K737", "S737"));
     public static final HashSet<String> ms2pipAAMods = new HashSet<>(
             Arrays.asList("M35", "C4"));
-    public static final HashSet<String> deeplcAAMods = new HashSet<>(
-            Arrays.asList("M35", "C4", "S21", "T21", "Y21", "[1"));
     public static final HashSet<String> predfullAAMods = new HashSet<>(
             Arrays.asList("M35", "C4"));
 }

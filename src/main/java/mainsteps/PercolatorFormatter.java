@@ -48,7 +48,8 @@ public class PercolatorFormatter {
 
     public static PredictionEntryHashMap allPreds = new PredictionEntryHashMap();
     static HashMap<String, TreeMap<String, List<Float>[]>> RTregressionCurves = new HashMap<>(); //<mass, <mzml name, [x, y]>>
-    public static HashMap<String, List<Double>> scoreDescriptors = new HashMap<>(); //<mzml, scores for PSMs below evalue>
+    public static HashMap<String, List<Double>> ms2ScoreDescriptors = new HashMap<>(); //<mzml, scores for PSMs below evalue>
+    public static HashMap<String, List<Double>> deltaRTScoreDescriptors = new HashMap<>(); //<mzml, scores for PSMs below evalue>
     public static HashMap<String, HashMap<String, double[][]>> absDeltaRTs = new HashMap<>();
 
     public static void editPin(PinMzmlMatcher pmMatcher, String[] features, String outfile,
@@ -450,7 +451,11 @@ public class PercolatorFormatter {
                 fc.calculate(executorService);
                 if (!fc.ms2Scores.isEmpty()) {
                     String name = new File(mzml.pathStr).getName();
-                    scoreDescriptors.put(name.substring(0, name.length() - 5), fc.ms2Scores);
+                    ms2ScoreDescriptors.put(name.substring(0, name.length() - 5), fc.ms2Scores);
+                }
+                if (!fc.rtScores.isEmpty()) {
+                    String name = new File(mzml.pathStr).getName();
+                    deltaRTScoreDescriptors.put(name.substring(0, name.length() - 5), fc.rtScores);
                 }
 
                 printInfo("Writing features");
@@ -500,10 +505,20 @@ public class PercolatorFormatter {
                 e.printStackTrace();
             }
 
+            try {
+                if (!deltaRTScoreDescriptors.isEmpty()) {
+                    new CumulativeLinePlots(deltaRTScoreDescriptors, false,
+                            "deltaRT", "delta RT Score (minutes)");
+                }
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+
             //spectra plot
             try {
-                if (!scoreDescriptors.isEmpty()) {
-                    new CumulativeMS2LinePlots(scoreDescriptors);
+                if (!ms2ScoreDescriptors.isEmpty()) {
+                    new CumulativeLinePlots(ms2ScoreDescriptors, true,
+                            "MS2", "Unweighted Spectral Entropy Similarity Score");
                 }
             } catch (Exception e) {
                 e.printStackTrace();

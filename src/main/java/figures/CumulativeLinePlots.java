@@ -10,8 +10,10 @@ import java.util.*;
 import static allconstants.Constants.figureDirectory;
 import static figures.ExtensionPlotter.plot;
 
-public class CumulativeMS2LinePlots {
-    public CumulativeMS2LinePlots(HashMap<String, List<Double>> scoreDescriptors) throws IOException {
+public class CumulativeLinePlots {
+    public CumulativeLinePlots(HashMap<String, List<Double>> scoreDescriptors, boolean descending,
+                               String scoreType, String scoreName)
+            throws IOException {
         class MzmlScores implements Comparable<MzmlScores>{
             final int size;
             final double median;
@@ -47,7 +49,13 @@ public class CumulativeMS2LinePlots {
         }
 
         // Sort by median
-        sortedEntries.sort(Comparator.comparingDouble((Map.Entry<String, MzmlScores> e) -> e.getValue().median).reversed());
+        if (descending) {
+            sortedEntries.sort(Comparator.comparingDouble((Map.Entry<String, MzmlScores> e) ->
+                    e.getValue().median).reversed());
+        } else {
+            sortedEntries.sort(Comparator.comparingDouble((Map.Entry<String, MzmlScores> e) ->
+                    e.getValue().median));
+        }
 
         ArrayList<Double> medians = new ArrayList<>();
         ArrayList<Double> lowerQuartiles = new ArrayList<>();
@@ -61,16 +69,16 @@ public class CumulativeMS2LinePlots {
             upperQuartiles.add(entry.getValue().upperQuartile);
             lowerFifths.add(entry.getValue().lower5th);
             upperNinetyfifths.add(entry.getValue().upper95th);
-            fileNames.add(entry.getKey());
+            fileNames.add(entry.getKey() + "(n=" + entry.getValue().size + ")");
         }
 
         //plot
         CategoryChart chart = new CategoryChartBuilder()
                 .width(1500)
                 .height(1000)
-                .title("Cumulative MS/MS Similarity Score QC")
+                .title("Cumulative " + scoreType + " Similarity Score QC")
                 .xAxisTitle("mzML files")
-                .yAxisTitle("Unweighted Spectral Entropy Similarity Score")
+                .yAxisTitle(scoreName)
                 .build();
 
         chart.getStyler().setDefaultSeriesRenderStyle(CategorySeries.CategorySeriesRenderStyle.Line);
@@ -85,6 +93,6 @@ public class CumulativeMS2LinePlots {
         chart.addSeries("95th percentile", fileNames, upperNinetyfifths);
 
         plot(chart, figureDirectory + File.separator + "cumulativeQC" +
-                File.separator + "cumulative_MS2_lineplot");
+                File.separator + "cumulative_" + scoreType + "_lineplot");
     }
 }

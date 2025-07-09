@@ -49,6 +49,7 @@ public class FeatureCalculator {
     ArrayList<String> featuresList;
     MzmlReader mzml;
     public List<Double> ms2Scores = new ArrayList<>();
+    public List<Double> rtScores = new ArrayList<>();
 
     public FeatureCalculator(PinReader pin, ArrayList<String> featuresList, MzmlReader mzml) {
         this.pin = pin;
@@ -57,6 +58,10 @@ public class FeatureCalculator {
         if (Constants.useSpectra) {
             List<Double> ms2ScoresUnsync = new ArrayList<>();
             ms2Scores = Collections.synchronizedList(ms2ScoresUnsync);
+        }
+        if (Constants.useRT) {
+            List<Double> rtScoresUnsync = new ArrayList<>();
+            rtScores = Collections.synchronizedList(rtScoresUnsync);
         }
     }
 
@@ -100,7 +105,6 @@ public class FeatureCalculator {
                         case "deltaRTlinear":
                         case "deltaRTbins":
                         case "deltaRTLOESS":
-                        case "deltaRTLOESSreal":
                         case "deltaRTLOESSnormalized":
                         case "RTzscore":
                         case "RTprobability":
@@ -111,6 +115,12 @@ public class FeatureCalculator {
                         case "deltaIMLOESSnormalized":
                         case "predictedIM":
                         case "ionmobility":
+                            break;
+
+                        case "deltaRTLOESSreal":
+                            if (Float.parseFloat(pepObj.escore) < Constants.loessEscoreCutoff) {
+                                rtScores.add(pepObj.deltaRTLOESS_real);
+                            }
                             break;
 
                         case "RTprobabilityUnifPrior":

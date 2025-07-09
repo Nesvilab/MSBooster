@@ -111,7 +111,7 @@ public class CumulativeAbsDeltaLinePlots {
                     .height(1000)
                     .title(title)
                     .xAxisTitle("Experimental RT")
-                    .yAxisTitle("Calibrated RT - Experimental RT")
+                    .yAxisTitle("Calibrated RT - Experimental RT (minutes)")
                     .build();
 
             chart.getStyler().setMarkerSize(6);

@@ -91,7 +91,7 @@ public class PeptideFormatter {
         base = PTMhandler.formatPeptideSpecificToBase(peptide, unimodToModMassLimited);
     }
     private void koinaTObase(String peptide, Map<Integer, Double> unimodToMassMap) {
-        base = PTMhandler.formatPeptideSpecificToBase(peptide, unimodToModMassLimited);
+        base = PTMhandler.formatPeptideSpecificToBase(peptide, unimodToMassMap);
     }
 
     private void unimodoboTObase(String peptide) {

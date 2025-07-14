@@ -485,7 +485,6 @@ public class KoinaModelCaller {
 
             //problem with Koina not including PTM mass in m/z. Need to calculate here
             String[] pepSplit = peptide.split("\\|");
-//            System.out.println(peptide);
             MassCalculator mc = new MassCalculator(pepSplit[0], pepSplit[1]);
             float[] mzs = new float[intensities[i].length];
             for (int j = 0; j < intensities[i].length; j++) {

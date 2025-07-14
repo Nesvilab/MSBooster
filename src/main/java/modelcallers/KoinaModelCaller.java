@@ -52,6 +52,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 
 import static allconstants.Constants.figureDirectory;
+import static allconstants.Constants.outputDirectory;
 import static figures.ExtensionPlotter.plot;
 import static utils.Print.printError;
 import static utils.Print.printInfo;
@@ -125,6 +126,7 @@ public class KoinaModelCaller {
 
             AtomicInteger finishedJobs = new AtomicInteger(1);
             AtomicInteger attemptedJobs = new AtomicInteger(0);
+            AtomicInteger jobsSinceLastFailed = new AtomicInteger(0);
 
             int allowedFailedAttempts = 0; //finish all tasks that have not been attempted before going to ones that have failed once, etc
 
@@ -132,10 +134,10 @@ public class KoinaModelCaller {
                 for (int i = 0; i < tasks.length; i++) {
                     KoinaTask task = tasks[i];
                     if (needsToBeRun[i] && task.failedAttempts == allowedFailedAttempts) {
-                        //0.01 seconds between submissions
-                        long delay = Math.max(10L - (System.currentTimeMillis() - nextAllowedSubmissionTime.get()), 0);
+                        //0.02 seconds between submissions
+                        long delay = Math.max(20L - (System.currentTimeMillis() - nextAllowedSubmissionTime.get()), 0);
                         futureList[i] = executorService.schedule(task, delay, TimeUnit.MILLISECONDS);
-                        nextAllowedSubmissionTime.set(System.currentTimeMillis() + delay + 10L);
+                        nextAllowedSubmissionTime.set(System.currentTimeMillis() + delay + 20L);
 
                         needsToBeRun[i] = false;
                         attemptedJobs.incrementAndGet();
@@ -151,11 +153,20 @@ public class KoinaModelCaller {
                                 }
                                 completionTimes.put(finishedJobs.getAndIncrement(), System.currentTimeMillis() - jobStart);
                                 task.completed = true;
+                                int jobs = jobsSinceLastFailed.incrementAndGet();
+                                if (jobs >= Constants.numThreads) {
+                                    executorService.setCorePoolSize(Math.min(Constants.numThreads,
+                                            (int) Math.ceil(((double) executorService.getCorePoolSize() * 1.05d))));
+                                    jobsSinceLastFailed.set(0);
+                                }
                             } else {
+                                executorService.setCorePoolSize((int) Math.max(Math.ceil((double) Constants.numThreads / 5d),
+                                        (int) Math.floor((double) executorService.getCorePoolSize() * 0.9d)));
                                 waitTime.addAndGet(5000);
                                 needsToBeRun[i] = true;
                                 futureList[i] = null;
                                 task.failedAttempts++;
+                                jobsSinceLastFailed.set(0);
                             }
                             attemptedJobs.decrementAndGet();
                         }

@@ -96,7 +96,7 @@ public class Constants implements ConstantsInterface {
     public static String rtBestModelSearchMetric = "top";
     public static String imBestModelSearchMetric = "top";
     public static String spectraBestModelSearchMetric = "median";
-    public static Integer numKoinaAttempts = 3;
+    public static Integer numKoinaAttempts = 5;
     public static Integer initialKoinaMillisecondsToWaitRtIm = 30000;
     public static Integer initialKoinaMillisecondsToWaitMs2 = 60000;
     public static Integer numPSMsToCalibrate = 1000;

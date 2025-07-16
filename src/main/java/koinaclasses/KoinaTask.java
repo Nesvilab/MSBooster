@@ -134,7 +134,7 @@ public class KoinaTask implements Callable<Boolean> {
             KoinaModelCaller.parseKoinaOutput(jsonFilePath, response.toString(), property, model, klr);
             long timeDiff = System.currentTimeMillis() - start;
             long currentWaitTime = waitTime.get();
-            waitTime.set(currentWaitTime + ((3 * timeDiff - currentWaitTime) / 30));
+            waitTime.set(Math.min(60000, currentWaitTime + ((3 * timeDiff - currentWaitTime) / 30))); //don't wait longer than minute
             return true;
         } catch (Exception e) {
             try {

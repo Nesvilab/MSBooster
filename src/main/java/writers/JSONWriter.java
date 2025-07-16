@@ -77,6 +77,9 @@ public class JSONWriter {
             case "Prosit_2025_intensity_MultiFrag":
                 maxJsonLength = 100;
                 break;
+            case "AlphaPept_ms2_generic":
+                maxJsonLength = 500;
+                break;
             default:
                 maxJsonLength = 1000;
         }

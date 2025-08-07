@@ -573,7 +573,17 @@ public class PeptideFormatter {
                 return getDiann();
             case "prosit":
                 if (model.contains("TMT")) {
+                    if (!prositAAMods.contains("[737")) {
+                        prositAAMods.add("[737");
+                        prositAAMods.add("K737");
+                    }
                     return getPrositTMT();
+                } else if (model.contains("_cit")) {
+                    if (!prositAAMods.contains("N7")) {
+                        prositAAMods.add("N7");
+                        prositAAMods.add("Q7");
+                        prositAAMods.add("R7");
+                    }
                 }
                 return getProsit();
             case "prosittmt":

@@ -540,8 +540,8 @@ public class PTMhandler {
     }
 
     /////////////////////////////////////////////KOINA///////////////////////////////////////////////////////
-    public static final HashSet<String> prositAAMods = new HashSet<>(
-            Arrays.asList("[737", "K737", "C4", "M35", "N7", "Q7", "R7"));
+    public static HashSet<String> prositAAMods = new HashSet<>(
+            Arrays.asList("C4", "M35"));
     public static final HashSet<String> unispecAAMods = new HashSet<>(
             Arrays.asList("[1", "C4", "Q28", "E27", "M35", "S21", "T21", "Y21", "C26"));
     public static final HashSet<String> diannAAMods = new HashSet<>(

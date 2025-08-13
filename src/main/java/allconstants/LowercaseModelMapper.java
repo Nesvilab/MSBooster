@@ -24,6 +24,7 @@ public class LowercaseModelMapper {
     public LowercaseModelMapper() {
         lowercaseToModel.put("", "");
         lowercaseToModel.put("dia-nn", "DIA-NN");
+        lowercaseToModel.put("alphapeptdeep", "alphapeptdeep");
 
         for (String model : ModelCollections.KoinaModels) {
             lowercaseToModel.put(model.toLowerCase(), model);

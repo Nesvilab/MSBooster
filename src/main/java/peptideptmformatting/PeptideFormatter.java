@@ -18,9 +18,9 @@
 package peptideptmformatting;
 
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
 import static peptideptmformatting.PTMhandler.*;
 import static utils.Print.printError;
@@ -41,6 +41,7 @@ public class PeptideFormatter {
     private String dlib;
     private String mods = "";
     private String alphapeptdeepMods = "";
+    private static ConcurrentHashMap<String, Integer> alphapeptdeepModsSet = new ConcurrentHashMap<>();
     private String modPositions = "";
 
     private ArrayList<Integer> starts = new ArrayList<>();
@@ -386,9 +387,6 @@ public class PeptideFormatter {
             }
 
             String modinfo = position + "," + modName + "[" + aa + "]" + ";";
-//            if (aa.equals("ProteinN-term")) {
-//                aa = "Protein N-term";
-//            }
 
             //check that the ptmName@aa is accepted by alphapeptdeep
             ArrayList<String> ptmSubstitutes = PTMhandler.sameMass.get(String.format("%.4f", doubleModMass));
@@ -410,14 +408,23 @@ public class PeptideFormatter {
 
             mods = mods + modinfo;
             alphapeptdeepMods = alphapeptdeepMods + alphapeptdeepModinfo;
+            alphapeptdeepModsSet.put(alphapeptdeepModinfo, 0);
             modPositions = modPositions + position + ";";
         }
-        if (! mods.equals("")) {
+        if (!mods.isEmpty()) {
             mods = mods.substring(0, mods.length() - 1);
             alphapeptdeepMods = alphapeptdeepMods.substring(0, alphapeptdeepMods.length() - 1);
             modPositions = modPositions.substring(0, modPositions.length() - 1);
         }
     }
+
+    public HashSet<String> getAlphapeptdeepModsSet() {
+        HashSet<String> keys = new HashSet<>(alphapeptdeepModsSet.keySet());
+        return keys;
+    }
+
+    //this version just to get access to fields
+    public PeptideFormatter() {}
 
     //only sets base and basecharge
     public PeptideFormatter(String peptide, Object c, String format) {
@@ -620,7 +627,7 @@ public class PeptideFormatter {
     }
 
     public String getAlphapeptdeepMods() {
-        if (alphapeptdeepMods == null) {
+        if (alphapeptdeepMods.isEmpty()) {
             baseToMods();
         }
         return alphapeptdeepMods;

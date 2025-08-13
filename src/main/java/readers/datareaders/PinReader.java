@@ -316,7 +316,7 @@ public class PinReader {
     }
 
     public String[] createAlphapeptdeepList()
-            throws IOException, InterruptedException, ExecutionException, FileParsingException {
+            throws IOException {
         ArrayList<String> peps = new ArrayList<String>();
         while (next(true)) {
             PeptideFormatter pf = getPep();

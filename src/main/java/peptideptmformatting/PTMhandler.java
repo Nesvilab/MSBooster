@@ -27,13 +27,7 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.nio.file.Files;
 import java.nio.file.Paths;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Map;
-import java.util.Objects;
-import java.util.Set;
+import java.util.*;
 
 import static utils.Print.printError;
 
@@ -456,10 +450,9 @@ public class PTMhandler {
     /////////////////////////////////////////////////////ALPHAPEPTDEEP////////////////////////////////////////////////////
     public static HashSet<String> alphapeptdeepModNames = new HashSet<String>();
     public static HashMap<String, String> writeOutAlphapeptdeepModNames = new HashMap<>();
-    public static HashMap<String, ArrayList<String>> sameMass = new HashMap<>();
 
-    private static HashMap<String, String> makeModAAmassToAlphapeptdeep() throws IOException {
-        HashMap<String, String> map = new HashMap<>();
+    private static TreeMap<Double, HashSet<String>> makeModAAmassToAlphapeptdeep() throws IOException {
+        TreeMap<Double, HashSet<String>> map = new TreeMap<>();
 
         ArrayList<String> modPaths = new ArrayList<>();
         modPaths.add("/ptm_resources/modification_alphapeptdeep.tsv");
@@ -484,23 +477,23 @@ public class PTMhandler {
                     continue;
                 }
                 String ptmName = lineSplit[0].split("@")[0];
-                String mass = String.format("%.4f", Math.round(Double.parseDouble(lineSplit[1]) * 10000.0) / 10000.0);
-                map.put(mass, ptmName);
+                Double mass = Double.parseDouble(lineSplit[1]);
+                HashSet<String> stringMap = map.get(mass);
+                if (stringMap == null) {
+                    stringMap = new HashSet<>();
+                }
+                stringMap.add(ptmName);
+                map.put(mass, stringMap);
                 alphapeptdeepModNames.add(lineSplit[0].split("\\^")[0]);
                 writeOutAlphapeptdeepModNames.put(lineSplit[0].split("\\^")[0], lineSplit[0]);
-                ArrayList<String> stringList = sameMass.get(mass);
-                if (stringList == null) {
-                    stringList = new ArrayList<>();
-                }
-                stringList.add(ptmName);
-                sameMass.put(mass, stringList);
+
             }
             ptmFile.close();
         }
 
         return map;
     }
-    public static HashMap<String, String> aamassToAlphapeptdeep = null;
+    public static TreeMap<Double, HashSet<String>> aamassToAlphapeptdeep = null;
 
     static {
         try {

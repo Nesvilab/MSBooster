@@ -40,7 +40,7 @@ public class MainClass {
 
     public static void main(String[] args) throws Exception {
         Locale.setDefault(Locale.US);
-        printInfo("MSBooster v1.3.24");
+        printInfo("MSBooster v1.3.25");
 
         try {
             HashMap<String, String> params = new HashMap<>();

@@ -17,6 +17,8 @@
 
 package peptideptmformatting;
 
+import utils.NumericUtils;
+
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.Map;
@@ -359,19 +361,26 @@ public class PeptideFormatter {
         for (int i = 0; i < numMods; i++) {
             String modMass = base.substring(starts.get(i) + 1, ends.get(i));
             double doubleModMass = Double.parseDouble(modMass);
-            String modName = PTMhandler.aamassToAlphapeptdeep.get(modMass);
-            if (modName == null) {
-                doubleModMass -= 0.0001;
-                modName = PTMhandler.aamassToAlphapeptdeep.get(String.format("%.4f", doubleModMass));
-            }
-            if (modName == null) {
-                doubleModMass += 0.0002;
-                modName = PTMhandler.aamassToAlphapeptdeep.get(String.format("%.4f", doubleModMass));
-            }
-            if (modName == null) { //can try checking if it's a combo of fixed and var mod
-                printError("There is an unknown modification with mass " + doubleModMass +
-                        ". Please provide PTM info via additionalMods param in --paramsList.");
-                System.exit(1);
+            HashSet<String> possibleMods = PTMhandler.aamassToAlphapeptdeep.get(doubleModMass);
+            if (possibleMods == null) {
+                possibleMods = new HashSet<>();
+                Map.Entry<Double, HashSet<String>> lower = PTMhandler.aamassToAlphapeptdeep.lowerEntry(doubleModMass);
+                Map.Entry<Double, HashSet<String>> higher = PTMhandler.aamassToAlphapeptdeep.higherEntry(doubleModMass);
+
+                if (NumericUtils.massesCloseEnough(lower.getKey(), doubleModMass)) {
+                    possibleMods.addAll(lower.getValue());
+                }
+                if (NumericUtils.massesCloseEnough(higher.getKey(), doubleModMass)) {
+                    possibleMods.addAll(higher.getValue());
+                }
+                if (possibleMods.isEmpty()) {
+                    printError("There is an unknown modification with mass " + doubleModMass +
+                            ". Please provide PTM info via additionalMods param in --paramsList.");
+                    System.exit(1);
+                }
+
+                //add exact mass to not encounter this same issue
+                PTMhandler.aamassToAlphapeptdeep.put(doubleModMass, possibleMods);
             }
 
             int position = starts.get(i) - newEnds.get(i) + positions.get(i);
@@ -381,35 +390,24 @@ public class PeptideFormatter {
             positions.add(position);
             String aa;
             if (position == 0) {
-                aa = "Any N-term"; //might need to change
+                aa = "Any_N-term"; //might need to change
             } else {
                 aa = stripped.substring(position - 1, position);
             }
 
-            String modinfo = position + "," + modName + "[" + aa + "]" + ";";
-
             //check that the ptmName@aa is accepted by alphapeptdeep
-            ArrayList<String> ptmSubstitutes = PTMhandler.sameMass.get(String.format("%.4f", doubleModMass));
-            while (! PTMhandler.alphapeptdeepModNames.contains(modName + "@" + aa)) {
-                if (ptmSubstitutes == null) { //just until the search is right
+            for (String name : possibleMods) {
+                if (PTMhandler.alphapeptdeepModNames.contains(name + "@" + aa)) {
+                    String modinfo = position + "," + name + "[" + aa + "]" + ";";
+                    String alphapeptdeepModinfo = PTMhandler.writeOutAlphapeptdeepModNames.get(name + "@" + aa) + ";";
+
+                    mods = mods + modinfo;
+                    alphapeptdeepMods = alphapeptdeepMods + alphapeptdeepModinfo;
+                    alphapeptdeepModsSet.put(alphapeptdeepModinfo, 0);
+                    modPositions = modPositions + position + ";";
                     break;
                 }
-                if (ptmSubstitutes.size() == 1) {
-                    printError("This PTM is not supported with mass " + doubleModMass +
-                            ": " + modName + "@" + aa + "\n" +
-                            "Please provide PTM info via additional_mods param in --paramsList.");
-                    System.exit(1);
-                }
-                ptmSubstitutes.remove(modName);
-                modName = ptmSubstitutes.get(0);
-                PTMhandler.aamassToAlphapeptdeep.put(String.format("%.4f", doubleModMass), modName);
             }
-            String alphapeptdeepModinfo = PTMhandler.writeOutAlphapeptdeepModNames.get(modName + "@" + aa) + ";";
-
-            mods = mods + modinfo;
-            alphapeptdeepMods = alphapeptdeepMods + alphapeptdeepModinfo;
-            alphapeptdeepModsSet.put(alphapeptdeepModinfo, 0);
-            modPositions = modPositions + position + ";";
         }
         if (!mods.isEmpty()) {
             mods = mods.substring(0, mods.length() - 1);

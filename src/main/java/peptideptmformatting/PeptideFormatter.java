@@ -268,7 +268,7 @@ public class PeptideFormatter {
             String[] peptideUnimod = PTMhandler.formatPeptideBaseToSpecific(
                     predfull, start, end, "predfull", foundUnimods, attemptCterm);
             attemptCterm = false;
-            predfull = peptideUnimod[0];
+            predfull = peptideUnimod[0].replace("[UNIMOD:4]", "");
             if (!peptideUnimod[1].isEmpty()) {
                 foundUnimods.add(peptideUnimod[1]);
             }

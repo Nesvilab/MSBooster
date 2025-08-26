@@ -224,6 +224,7 @@ public class PTMhandler {
                 break;
             case "alphapept":
             case "deeplc":
+            case "im2deep":
                 modelAllowedUnimods.addAll(AAunimodToModMassAll.keySet());
                 break;
             case "predfull":
@@ -256,7 +257,7 @@ public class PTMhandler {
 
         //all unimod codes allowed
         Map<String, Double> modMap;
-        if (model.equals("alphapept") || model.equals("deeplc")) {
+        if (model.equals("alphapept") || model.equals("deeplc") || model.equals("im2deep")) {
             modMap = AAunimodToModMassAll;
         } else {
             modMap = AAunimodToModMassLimited;
@@ -290,9 +291,6 @@ public class PTMhandler {
         if (cterm && unimod.startsWith("[")) {
             peptide = peptide.substring(0, start) + "-" + peptide.substring(start);
         }
-
-        //predfull assumes all Cs are carbamidomethylated
-        peptide = peptide.replace("[UNIMOD:4]", "");
 
         return new String[]{peptide, unimod}; //unimod is accepted unimod, or ""
     }

@@ -179,9 +179,14 @@ public class PeptideFormatter {
         //special TMT formatting
         diann = diann.replaceAll("UniMod:" + PTMhandler.tmtUnimod, "TMT");
 
-        //nterm acetyl and TMT on AA1 not allowed
-        if (diann.startsWith("[UniMod") && diann.startsWith("TMT", 12)) {
-            diann = diann.substring(10);
+        //nterm mod and TMT on AA1 not allowed
+        if (diann.startsWith("[")) {
+            String[] diannsplit = diann.split("]");
+            if (diannsplit.length > 2) {
+                if (diannsplit[1].substring(1).startsWith("[TMT")) {
+                    diann = diann.substring(diann.indexOf("]") + 1);
+                }
+            }
         }
     }
 

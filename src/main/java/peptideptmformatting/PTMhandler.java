@@ -243,7 +243,7 @@ public class PTMhandler {
                 break;
         }
 
-        //are is nterm mod followed by "-"?
+        //is nterm mod followed by "-"?
         String ntermSuffix = "";
         switch(model) {
             case "diann":
@@ -252,6 +252,15 @@ public class PTMhandler {
                 break;
             default:
                 ntermSuffix = "-";
+                break;
+        }
+        //is cterm mod preceded by "-"?
+        String ctermSuffix = "";
+        switch(model) {
+            case "alphapept":
+                ctermSuffix = "-";
+                break;
+            default:
                 break;
         }
 
@@ -287,9 +296,8 @@ public class PTMhandler {
         }
 
         //cterm
-        //currently only seen AlphaPeptDeep support cterm mods, may need to update this
         if (cterm && unimod.startsWith("[")) {
-            peptide = peptide.substring(0, start) + "-" + peptide.substring(start);
+            peptide = peptide.substring(0, start) + ctermSuffix + peptide.substring(start);
         }
 
         return new String[]{peptide, unimod}; //unimod is accepted unimod, or ""

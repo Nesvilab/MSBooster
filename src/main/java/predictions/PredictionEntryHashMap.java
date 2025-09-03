@@ -222,7 +222,7 @@ public class PredictionEntryHashMap extends ConcurrentHashMap<String, Prediction
 
                     if (oldPred == null) {
                         //check if missing
-                        if (PeptideSkipper.skipPeptide(pf.getStripped(), pf.getCharge(), klr.modelType)) {
+                        if (PeptideSkipper.skipPeptide(pf, klr.modelType)) {
                             skipPeptide = true;
                         } else {
                             printError("Missing peptide to transfer prediction onto " + l + ": " + modelSpecificBaseCharge);

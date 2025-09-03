@@ -242,7 +242,7 @@ public class PeptideFileCreator {
         FileWriter myWriter = new FileWriter(filePath);
 
         for (PeptideFormatter pf : peptideFormatters) {
-            if (PeptideSkipper.skipPeptide(pf.getStripped(), pf.getCharge(), currentModel)) {
+            if (PeptideSkipper.skipPeptide(pf, currentModel)) {
                 continue;
             }
 

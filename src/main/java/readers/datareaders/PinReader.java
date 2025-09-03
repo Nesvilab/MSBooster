@@ -363,7 +363,7 @@ public class PinReader {
 
         while (next(true)) {
             PeptideFormatter pf = getPep();
-            if (PeptideSkipper.skipPeptide(pf.getStripped(), pf.getCharge(), modelFormat)) {
+            if (PeptideSkipper.skipPeptide(pf, modelFormat)) {
                 continue;
             }
 

@@ -90,7 +90,7 @@ public class PredFullSpeclibReader extends MgfFileReader {
             PredictionEntry pe = this.allPredsHashMap.get(peptideToSearch.getBaseCharge());
 
             if (pe == null) { //valid reasons to be empty
-                if (PeptideSkipper.skipPeptide(peptideToSearch.getStripped(), peptideToSearch.getCharge(), "predfull")) {
+                if (PeptideSkipper.skipPeptide(peptideToSearch, "predfull")) {
                     continue;
                 }
             }

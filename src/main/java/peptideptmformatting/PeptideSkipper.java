@@ -21,8 +21,17 @@ import allconstants.Constants;
 
 public class PeptideSkipper {
     //provide peptide and see if it may be problematic
-    public static boolean skipPeptide(String stripped, String charge, String model) {
+    //TODO: also require string argument fullpeptide in their language, to check if deeplc fullpeptide is longer than 60AA
+    public static boolean skipPeptide(PeptideFormatter pf, String model) {
         model = model.toLowerCase();
+
+        String stripped = pf.getStripped();
+        String charge = pf.getCharge();
+        String unimodName = "";
+        if (model.contains("deeplc")) {
+            unimodName = pf.getModel(model);
+        }
+
         //letters
         if (model.contains("prosit") || model.contains("ms2pip") || model.contains("deeplc") ||
                 model.contains("unispec") || model.contains("predfull") || model.contains("im2deep")) {
@@ -49,6 +58,12 @@ public class PeptideSkipper {
         }
         if (model.contains("prosit") && chargeInt > 6) { //predfull can handle charge up to 30
             return true;
+        }
+        //string length
+        if (model.contains("deeplc")) {
+            if (unimodName.length() > 60) {
+                return true;
+            }
         }
 
         //library tsv is more lenient, let anything be missing

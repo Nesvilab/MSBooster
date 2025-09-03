@@ -188,7 +188,7 @@ public class KoinaMethods {
     public static HashSet<String> createPartialKoinaSet(String currentModel, ArrayList<PeptideFormatter> peptideFormatters) {
         HashSet<String> allHits = new HashSet<>();
         for (PeptideFormatter pf : peptideFormatters) {
-            if (PeptideSkipper.skipPeptide(pf.getStripped(), pf.getCharge(), currentModel)) {
+            if (PeptideSkipper.skipPeptide(pf, currentModel)) {
                 continue;
             }
 

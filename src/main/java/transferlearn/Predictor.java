@@ -1,11 +1,8 @@
 package transferlearn;
 
-import com.google.gson.Gson;
-import com.google.gson.reflect.TypeToken;
+import utils.Print;
 
-import javax.net.ssl.HttpsURLConnection;
 import java.io.*;
-import java.lang.reflect.Type;
 import java.net.HttpURLConnection;
 import java.net.URL;
 import java.nio.charset.StandardCharsets;
@@ -13,40 +10,28 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
 
-public class LibraryUploader {
+import static transferlearn.Helpers.readJsonResponse;
+import static transferlearn.Helpers.setUpConnection;
+
+public class Predictor {
     static Long waitTime = 15000L;
-    
-    private static HttpURLConnection setUpConnection(String serverString, URL serverURL) throws IOException {
-        //set up connection
-        HttpURLConnection connection;
-        if (serverString.startsWith("http:")) {
-            connection = (HttpURLConnection) serverURL.openConnection();
-        } else { //https:
-            connection = (HttpsURLConnection) serverURL.openConnection();
-        }
-        return connection;
-    }
-
-    private static HashMap<String, Object> readJsonResponse(InputStream stream) throws IOException {
-        try (InputStreamReader reader = new InputStreamReader(stream, StandardCharsets.UTF_8)) {
-            Gson gson = new Gson();
-
-            // Use Object for values so nested objects are deserialized as Maps
-            Type type = new TypeToken<HashMap<String, Object>>() {}.getType();
-
-            return gson.fromJson(reader, type);
-        }
-    }
 
     public static void main(String[] args) throws IOException, InterruptedException {
         //parse arguments
-        if (args.length != 2) {
-            System.out.println("Usage: java -cp MSBooster.jar src.main.java.transferlearn.LibraryUploader " +
-                    "<server url, e.g. http://localhost:8000> <path/to/librarytsv>");
+        if (args.length != 3) {
+            Print.printError("Usage: java -cp MSBooster.jar src.main.java.transferlearn.Predictor " +
+                    "<server url, e.g. http://localhost:8001> <path/to/peptide/input/file> <path/to/model/weights>");
             System.exit(1);
         }
+
         URL uploadUrl = new URL(args[0] + "/upload");
-        File librarytsv = new File(args[1]);
+        File inputFile = new File(args[1]);
+        File modelZip = new File(args[2]);
+        if (modelZip.getName().contains("_")) {
+            Print.printError(modelZip.getName() + " cannot contain the underscore character. " +
+                    "Please replace them with dashes and try again.");
+            System.exit(1);
+        }
 
         HttpURLConnection connection = setUpConnection(args[0], uploadUrl);
         connection.setRequestMethod("POST");
@@ -58,17 +43,29 @@ public class LibraryUploader {
         //send request
         try (OutputStream os = connection.getOutputStream();
              PrintWriter writer = new PrintWriter(new OutputStreamWriter(os, StandardCharsets.UTF_8), true);
-             FileInputStream fis = new FileInputStream(librarytsv)) {
+             FileInputStream fis = new FileInputStream(inputFile)) {
 
             // Start multipart
             writer.append("--").append(boundary).append("\r\n");
-            writer.append("Content-Disposition: form-data; name=\"file\"; filename=\"")
-                    .append(librarytsv.getName()).append("\"\r\n");
+            writer.append("Content-Disposition: form-data; name=\"input_file\"; filename=\"")
+                    .append(inputFile.getName()).append("\"\r\n");
             writer.append("Content-Type: text/tab-separated-values\r\n\r\n");
             writer.flush();
 
             byte[] buffer = new byte[4096];
             int bytesRead;
+            while ((bytesRead = fis.read(buffer)) != -1) {
+                os.write(buffer, 0, bytesRead);
+            }
+            os.flush();
+
+            writer.append("--").append(boundary).append("\r\n");
+            writer.append("Content-Disposition: form-data; name=\"model_zip\"; filename=\"")
+                    .append(modelZip.getName()).append("\"\r\n");
+            writer.append("Content-Type: text/tab-separated-values\r\n\r\n");
+            writer.flush();
+
+            buffer = new byte[4096];
             while ((bytesRead = fis.read(buffer)) != -1) {
                 os.write(buffer, 0, bytesRead);
             }
@@ -91,11 +88,11 @@ public class LibraryUploader {
                 HashMap<String, Object> map = readJsonResponse(responseStream);
                 jobId = map.get("job_id").toString();
             } catch (Exception e) { //success that we don't handle yet
-                System.out.println(e);
+                Print.printError(String.valueOf(e));
                 BufferedReader in = new BufferedReader(new InputStreamReader(responseStream));
                 String line;
                 while ((line = in.readLine()) != null) {
-                    System.out.println(line);
+                    Print.printError(line);
                 }
                 System.exit(1);
             }
@@ -105,13 +102,13 @@ public class LibraryUploader {
             BufferedReader in = new BufferedReader(new InputStreamReader(responseStream));
             String line;
             while ((line = in.readLine()) != null) {
-                System.out.println(line);
+                Print.printError(line);
             }
             System.exit(1);
         }
 
         //check status of job id
-        System.out.println("Job ID: " + jobId);
+        Print.printInfo("Job ID: " + jobId);
         URL statusUrl = new URL(args[0] + "/status/" + jobId);
 
         HashSet<String> nonResults = new HashSet<>(Arrays.asList("PENDING", "RECEIVED", "STARTED"));
@@ -127,7 +124,7 @@ public class LibraryUploader {
         }
 
         //download
-        File downloadPath = new File(librarytsv.getParent(), jobId + ".zip");
+        File downloadPath = new File(inputFile.getParent(), jobId + ".mgf");
 
         if (status.equals("SUCCESS")) {
             URL downloadUrl = new URL(args[0] + "/download/" + jobId);
@@ -150,10 +147,10 @@ public class LibraryUploader {
                 }
             }
 
-            System.out.println("File downloaded to: " + downloadPath);
+            Print.printInfo("File downloaded to: " + downloadPath);
         } else {
-            System.out.println(map);
-            System.out.println(connection.getResponseMessage());
+            Print.printError(String.valueOf(map));
+            Print.printError(connection.getResponseMessage());
         }
     }
 }

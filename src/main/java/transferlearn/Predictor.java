@@ -18,14 +18,17 @@ public class Predictor {
 
     public static void main(String[] args) throws IOException, InterruptedException {
         //parse arguments
-        if (args.length != 3 && args.length != 6) {
+        if (args.length != 3 && args.length != 6 && args.length != 7) {
             Print.printError("Usage: java -cp MSBooster.jar src.main.java.transferlearn.Predictor " +
                     "<server url> <path/to/peptide/input/file> <path/to/model/weights> " +
-                    "<predict ms2> <predict rt> <predict ccs>");
+                    "optional: <predict ms2> <predict rt> <predict ccs> <output base name>");
             Print.printError("Example: java -cp MSBooster.jar src.main.java.transferlearn.Predictor " +
                     "http://localhost:8001 input.csv model.zip true true false");
             Print.printError("Example: java -cp MSBooster.jar src.main.java.transferlearn.Predictor " +
                     "http://localhost:8001 input.csv model.zip (all properties set to true)");
+            Print.printError("Example: java -cp MSBooster.jar src.main.java.transferlearn.Predictor " +
+                    "http://localhost:8001 input.csv model.zip true true true predictions " +
+                    "(returns predictions.mgf instead of default mymodel.mgf)");
             System.exit(1);
         }
         URL uploadUrl = new URL(args[0] + "/upload");
@@ -39,10 +42,20 @@ public class Predictor {
         String ms2 = "true";
         String rt = "true";
         String ccs = "true";
-        if (args.length == 6) {
+        if (args.length >= 6) {
             ms2 = args[3];
             rt = args[4];
             ccs = args[5];
+        }
+        String outputBaseName;
+        if (args.length == 7) {
+            outputBaseName = args[6];
+        } else {
+            String zipName = modelZip.getName();
+            int lastIndex = zipName.lastIndexOf(".zip");
+            outputBaseName = (lastIndex != -1)
+                    ? zipName.substring(0, lastIndex)
+                    : zipName;
         }
 
         HttpURLConnection connection = setUpConnection(args[0], uploadUrl);
@@ -154,7 +167,7 @@ public class Predictor {
         }
 
         //download
-        File downloadPath = new File(inputFile.getParent(), jobId + ".mgf");
+        File downloadPath = new File(inputFile.getParent(), outputBaseName + ".mgf");
 
         if (status.equals("SUCCESS")) {
             URL downloadUrl = new URL(args[0] + "/download/" + jobId);

@@ -48,11 +48,6 @@ public class MainClass {
             //accept command line inputs
             processCommandLineInputs(args, params);
 
-            //adding parameter list
-            if (params.containsKey("paramsList")) { //override previous params input
-                processParameterList(params);
-            }
-
             //read in MSFragger parameters
             if (params.containsKey("fragger")) { //Will override paramsList
                 if (!params.get("fragger").equals("null")) {

@@ -36,7 +36,7 @@ public class ParameterUtils {
         System.exit(0);
     }
 
-    static void processCommandLineInputs(String[] args, HashMap<String, String> params) {
+    static void processCommandLineInputs(String[] args, HashMap<String, String> params) throws IOException {
         for (int i = 0; i < args.length; i++) {
             String key = args[i].substring(2); //remove --
             if (key.equals("help")) { //help message
@@ -56,6 +56,9 @@ public class ParameterUtils {
                     }
                 }
                 params.put(key, sb.toString());
+            }
+            if (key.equals("paramsList")) {
+                processParameterList(params);
             }
         }
     }

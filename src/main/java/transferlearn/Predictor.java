@@ -1,5 +1,7 @@
 package transferlearn;
 
+import allconstants.Constants;
+import mainsteps.MainClass;
 import utils.Print;
 
 import java.io.*;
@@ -18,28 +20,30 @@ public class Predictor {
 
     private static void errorMessage() {
         Print.printError("Usage: java -cp MSBooster.jar src.main.java.transferlearn.Predictor " +
-                "--url <server url> --input <path/to/peptide/input/file> --model <path/to/model/weights> " +
+                "--paramsList <msbooster parameters> " +
+                "--url <server url> --model <path/to/model/weights> " +
                 "optional: --ms2 <predict ms2> --rt <predict rt> --im <predict ccs> --basename <output base name>");
         Print.printError("Example: java -cp MSBooster.jar src.main.java.transferlearn.Predictor " +
-                "--url http://localhost:8001 --input input.csv --model model.zip " +
+                "--paramsList msbooster_params.txt --url http://localhost:8001 --model model.zip " +
                 "--ms2 true --rt true --im false");
         Print.printError("Example: java -cp MSBooster.jar src.main.java.transferlearn.Predictor " +
-                "--url http://localhost:8001 --input input.csv --model model.zip (all properties set to true)");
+                "--paramsList msbooster_params.txt --url http://localhost:8001 --model model.zip " +
+                "(all properties set to true)");
         Print.printError("Example: java -cp MSBooster.jar src.main.java.transferlearn.Predictor " +
-                "--url http://localhost:8001 --input input.csv --model model.zip " +
+                "--paramsList msbooster_params.txt --url http://localhost:8001 --model model.zip " +
                 "--basename predictions " +
                 "(returns predictions.mgf instead of default mymodel.mgf)");
         System.exit(1);
     }
 
-    public static void main(String[] args) throws IOException, InterruptedException {
+    public static void main(String[] args) throws Exception {
         //parse arguments
         if (args.length % 2 != 0) {
             errorMessage();
         }
 
+        String params = "";
         String url = "";
-        String input = "";
         String model = "";
         String ms2 = "true";
         String rt = "true";
@@ -48,11 +52,11 @@ public class Predictor {
 
         for (int i = 0; i < args.length; i++) {
             switch (args[i]) {
+                case "--paramsList":
+                    params =  args[i + 1];
+                    break;
                 case "--url":
                     url =  args[i + 1];
-                    break;
-                case "--input":
-                    input =  args[i + 1];
                     break;
                 case "--model":
                     model =  args[i + 1];
@@ -72,12 +76,16 @@ public class Predictor {
             }
         }
 
-        if (url.isEmpty() || input.isEmpty() || model.isEmpty()) {
+        if (params.isEmpty() || url.isEmpty() || model.isEmpty()) {
             errorMessage();
         }
 
+        //create pred file only
+        MainClass.main(new String[]{"--paramsList", params});
+        File inputFile = new File(Constants.spectraRTPrefix + ".csv");
+
+        //prediction
         URL uploadUrl = new URL(url + "/upload");
-        File inputFile = new File(input);
         File modelZip = new File(model);
         if (modelZip.getName().contains("_")) {
             Print.printError(modelZip.getName() + " cannot contain the underscore character. " +

@@ -217,7 +217,7 @@ public class MainClass {
                 makeInputFiles(pmMatcher, models, km);
                 if (Constants.createPredFileOnly) {
                     printInfo("Successfully created input file for prediction model. Stopping here");
-                    System.exit(0);
+                    return;
                 }
             }
 

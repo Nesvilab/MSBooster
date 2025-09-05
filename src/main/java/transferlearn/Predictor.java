@@ -85,6 +85,7 @@ public class Predictor {
         File inputFile = new File(Constants.spectraRTPrefix + ".csv");
 
         //prediction
+        Print.printInfo("Generating predictions");
         URL uploadUrl = new URL(url + "/upload");
         File modelZip = new File(model);
         if (modelZip.getName().contains("_")) {
@@ -234,9 +235,11 @@ public class Predictor {
             }
 
             Print.printInfo("File downloaded to: " + downloadPath);
+            System.exit(0);
         } else {
             Print.printError(String.valueOf(map));
             Print.printError(connection.getResponseMessage());
+            System.exit(1);
         }
     }
 }

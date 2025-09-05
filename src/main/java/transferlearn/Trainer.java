@@ -29,6 +29,9 @@ public class Trainer {
     }
 
     public static void main(String[] args) throws IOException, InterruptedException {
+        train(args);
+    }
+    public static String train(String[] args) throws IOException, InterruptedException {
         //parse arguments
         if (args.length != 4 && args.length != 6) {
             errorMessage();
@@ -56,6 +59,7 @@ public class Trainer {
             errorMessage();
         }
 
+        Print.printInfo("Transfer learning started");
         URL uploadUrl = new URL(url + "/upload");
         File librarytsv = new File(library);
         String outputBaseName;
@@ -169,9 +173,11 @@ public class Trainer {
             }
 
             Print.printInfo("File downloaded to: " + downloadPath);
+            return downloadPath.getAbsolutePath();
         } else {
             Print.printError(String.valueOf(map));
             Print.printError(connection.getResponseMessage());
+            return "";
         }
     }
 }

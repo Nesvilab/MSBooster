@@ -17,28 +17,56 @@ import static transferlearn.Helpers.setUpConnection;
 public class Trainer {
     static Long waitTime = 15000L;
 
+    private static void errorMessage() {
+        Print.printError("Usage: java -cp MSBooster.jar src.main.java.transferlearn.Trainer " +
+                "--url <server url> --library <path/to/librarytsv> " +
+                "optional: --basename <output base name>");
+        Print.printError("Example: java -cp MSBooster.jar src.main.java.transferlearn.Trainer " +
+                "--url http://localhost:8000 --library library.tsv --basename weights (returns weights.zip)");
+        Print.printError("Example: java -cp MSBooster.jar src.main.java.transferlearn.Trainer " +
+                "--url http://localhost:8000 --library library.tsv (returns weights-<datetime>.zip)");
+        System.exit(1);
+    }
+
     public static void main(String[] args) throws IOException, InterruptedException {
         //parse arguments
-        if (args.length != 2 && args.length != 3) {
-            Print.printError("Usage: java -cp MSBooster.jar src.main.java.transferlearn.Trainer " +
-                    "<server url> <path/to/librarytsv> optional: <output base name>");
-            Print.printError("Example: java -cp MSBooster.jar src.main.java.transferlearn.Trainer " +
-                    "http://localhost:8000 library.tsv weights (returns weights.zip)");
-            Print.printError("Example: java -cp MSBooster.jar src.main.java.transferlearn.Trainer " +
-                    "http://localhost:8000 library.tsv (returns weights-<datetime>.zip)");
-            System.exit(1);
+        if (args.length != 4 && args.length != 6) {
+            errorMessage();
         }
-        URL uploadUrl = new URL(args[0] + "/upload");
-        File librarytsv = new File(args[1]);
+
+        String url = "";
+        String library = "";
+        String basename = "";
+
+        for (int i = 0; i < args.length; i++) {
+            switch (args[i]) {
+                case "--url":
+                    url =  args[i + 1];
+                    break;
+                case "--library":
+                    library =  args[i + 1];
+                    break;
+                case "--basename":
+                    basename =  args[i + 1];
+                    break;
+            }
+        }
+
+        if (url.isEmpty() || library.isEmpty()) {
+            errorMessage();
+        }
+
+        URL uploadUrl = new URL(url + "/upload");
+        File librarytsv = new File(library);
         String outputBaseName;
-        if (args.length == 3) {
-            outputBaseName = args[2];
+        if (! basename.isEmpty()) {
+            outputBaseName = basename;
         } else {
             String datetime = String.valueOf(LocalDateTime.now());
             outputBaseName = "weights-" + datetime.split("\\.")[0].replace(":", "-");
         }
 
-        HttpURLConnection connection = setUpConnection(args[0], uploadUrl);
+        HttpURLConnection connection = setUpConnection(url, uploadUrl);
         connection.setRequestMethod("POST");
         connection.setDoOutput(true);
 
@@ -102,7 +130,7 @@ public class Trainer {
 
         //check status of job id
         Print.printInfo("Job ID: " + jobId);
-        URL statusUrl = new URL(args[0] + "/status/" + jobId);
+        URL statusUrl = new URL(url + "/status/" + jobId);
 
         HashSet<String> nonResults = new HashSet<>(Arrays.asList("PENDING", "RECEIVED", "STARTED"));
         String status = "PENDING";
@@ -110,7 +138,7 @@ public class Trainer {
         while (nonResults.contains(status.toUpperCase())) {
             Thread.sleep(waitTime);
 
-            connection = setUpConnection(args[0], statusUrl);
+            connection = setUpConnection(url, statusUrl);
             responseStream = connection.getInputStream();
             map = readJsonResponse(responseStream);
             status = map.get("status").toString();
@@ -120,8 +148,8 @@ public class Trainer {
         File downloadPath = new File(librarytsv.getParent(), outputBaseName + ".zip");
 
         if (status.equals("SUCCESS")) {
-            URL downloadUrl = new URL(args[0] + "/download/" + jobId);
-            connection = setUpConnection(args[0], downloadUrl);
+            URL downloadUrl = new URL(url + "/download/" + jobId);
+            connection = setUpConnection(url, downloadUrl);
             connection.setRequestMethod("GET");
 
             responseCode = connection.getResponseCode();

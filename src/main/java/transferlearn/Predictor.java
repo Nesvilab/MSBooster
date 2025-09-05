@@ -16,49 +16,84 @@ import static transferlearn.Helpers.setUpConnection;
 public class Predictor {
     static Long waitTime = 15000L;
 
+    private static void errorMessage() {
+        Print.printError("Usage: java -cp MSBooster.jar src.main.java.transferlearn.Predictor " +
+                "--url <server url> --input <path/to/peptide/input/file> --model <path/to/model/weights> " +
+                "optional: --ms2 <predict ms2> --rt <predict rt> --im <predict ccs> --basename <output base name>");
+        Print.printError("Example: java -cp MSBooster.jar src.main.java.transferlearn.Predictor " +
+                "--url http://localhost:8001 --input input.csv --model model.zip " +
+                "--ms2 true --rt true --im false");
+        Print.printError("Example: java -cp MSBooster.jar src.main.java.transferlearn.Predictor " +
+                "--url http://localhost:8001 --input input.csv --model model.zip (all properties set to true)");
+        Print.printError("Example: java -cp MSBooster.jar src.main.java.transferlearn.Predictor " +
+                "--url http://localhost:8001 --input input.csv --model model.zip " +
+                "--basename predictions " +
+                "(returns predictions.mgf instead of default mymodel.mgf)");
+        System.exit(1);
+    }
+
     public static void main(String[] args) throws IOException, InterruptedException {
         //parse arguments
-        if (args.length != 3 && args.length != 6 && args.length != 7) {
-            Print.printError("Usage: java -cp MSBooster.jar src.main.java.transferlearn.Predictor " +
-                    "<server url> <path/to/peptide/input/file> <path/to/model/weights> " +
-                    "optional: <predict ms2> <predict rt> <predict ccs> <output base name>");
-            Print.printError("Example: java -cp MSBooster.jar src.main.java.transferlearn.Predictor " +
-                    "http://localhost:8001 input.csv model.zip true true false");
-            Print.printError("Example: java -cp MSBooster.jar src.main.java.transferlearn.Predictor " +
-                    "http://localhost:8001 input.csv model.zip (all properties set to true)");
-            Print.printError("Example: java -cp MSBooster.jar src.main.java.transferlearn.Predictor " +
-                    "http://localhost:8001 input.csv model.zip true true true predictions " +
-                    "(returns predictions.mgf instead of default mymodel.mgf)");
-            System.exit(1);
+        if (args.length % 2 != 0) {
+            errorMessage();
         }
-        URL uploadUrl = new URL(args[0] + "/upload");
-        File inputFile = new File(args[1]);
-        File modelZip = new File(args[2]);
+
+        String url = "";
+        String input = "";
+        String model = "";
+        String ms2 = "true";
+        String rt = "true";
+        String im = "true";
+        String basename = "";
+
+        for (int i = 0; i < args.length; i++) {
+            switch (args[i]) {
+                case "--url":
+                    url =  args[i + 1];
+                    break;
+                case "--input":
+                    input =  args[i + 1];
+                    break;
+                case "--model":
+                    model =  args[i + 1];
+                    break;
+                case "--ms2":
+                    ms2 = args[i + 1];
+                    break;
+                case "--rt":
+                    rt = args[i + 1];
+                    break;
+                case "--im":
+                    im = args[i + 1];
+                    break;
+                case "--basename":
+                    basename =  args[i + 1];
+                    break;
+            }
+        }
+
+        if (url.isEmpty() || input.isEmpty() || model.isEmpty()) {
+            errorMessage();
+        }
+
+        URL uploadUrl = new URL(url + "/upload");
+        File inputFile = new File(input);
+        File modelZip = new File(model);
         if (modelZip.getName().contains("_")) {
             Print.printError(modelZip.getName() + " cannot contain the underscore character. " +
                     "Please replace them with dashes and try again.");
             System.exit(1);
         }
-        String ms2 = "true";
-        String rt = "true";
-        String ccs = "true";
-        if (args.length >= 6) {
-            ms2 = args[3];
-            rt = args[4];
-            ccs = args[5];
-        }
-        String outputBaseName;
-        if (args.length == 7) {
-            outputBaseName = args[6];
-        } else {
+
+        if (basename.isEmpty()) {
             String zipName = modelZip.getName();
             int lastIndex = zipName.lastIndexOf(".zip");
-            outputBaseName = (lastIndex != -1)
+            basename = (lastIndex != -1)
                     ? zipName.substring(0, lastIndex)
                     : zipName;
         }
 
-        HttpURLConnection connection = setUpConnection(args[0], uploadUrl);
+        HttpURLConnection connection = setUpConnection(url, uploadUrl);
         connection.setRequestMethod("POST");
         connection.setDoOutput(true);
 
@@ -113,7 +148,7 @@ public class Predictor {
             // ccs
             writer.append("--").append(boundary).append("\r\n");
             writer.append("Content-Disposition: form-data; name=\"ccs\"\r\n\r\n");
-            writer.append(ccs).append("\r\n");
+            writer.append(im).append("\r\n");
 
             // end of multipart
             writer.append("--").append(boundary).append("--").append("\r\n");
@@ -152,7 +187,7 @@ public class Predictor {
 
         //check status of job id
         Print.printInfo("Job ID: " + jobId);
-        URL statusUrl = new URL(args[0] + "/status/" + jobId);
+        URL statusUrl = new URL(url + "/status/" + jobId);
 
         HashSet<String> nonResults = new HashSet<>(Arrays.asList("PENDING", "RECEIVED", "STARTED"));
         String status = "PENDING";
@@ -160,18 +195,18 @@ public class Predictor {
         while (nonResults.contains(status.toUpperCase())) {
             Thread.sleep(waitTime);
 
-            connection = setUpConnection(args[0], statusUrl);
+            connection = setUpConnection(url, statusUrl);
             responseStream = connection.getInputStream();
             map = readJsonResponse(responseStream);
             status = map.get("status").toString();
         }
 
         //download
-        File downloadPath = new File(inputFile.getParent(), outputBaseName + ".mgf");
+        File downloadPath = new File(inputFile.getParent(), basename + ".mgf");
 
         if (status.equals("SUCCESS")) {
-            URL downloadUrl = new URL(args[0] + "/download/" + jobId);
-            connection = setUpConnection(args[0], downloadUrl);
+            URL downloadUrl = new URL(url + "/download/" + jobId);
+            connection = setUpConnection(url, downloadUrl);
             connection.setRequestMethod("GET");
 
             responseCode = connection.getResponseCode();

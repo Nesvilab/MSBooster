@@ -84,6 +84,11 @@ public class Predictor {
         MainClass.main(new String[]{"--paramsList", params});
         File inputFile = new File(Constants.spectraRTPrefix + ".csv");
 
+        //convert input to parquet
+        String parquetPath = Constants.spectraRTPrefix + ".parquet";
+        Helpers.convertCsvToParquet(inputFile.getPath(), parquetPath);
+        inputFile = new File(parquetPath);
+
         //prediction
         Print.printInfo("Generating predictions");
         URL uploadUrl = new URL(url + "/upload");
@@ -119,7 +124,7 @@ public class Predictor {
             writer.append("--").append(boundary).append("\r\n");
             writer.append("Content-Disposition: form-data; name=\"input_file\"; filename=\"")
                     .append(inputFile.getName()).append("\"\r\n");
-            writer.append("Content-Type: text/tab-separated-values\r\n\r\n");
+            writer.append("Content-Type: application/vnd.apache.parquet\r\n\r\n");
             writer.flush();
 
             byte[] buffer = new byte[4096];

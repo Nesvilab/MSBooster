@@ -59,9 +59,14 @@ public class Trainer {
             errorMessage();
         }
 
+        //convert library to parquet
+        String parquetPath = library.substring(0, library.length() - 3) + "parquet";
+        Helpers.convertCsvToParquet(library, parquetPath);
+        library = parquetPath;
+
         Print.printInfo("Transfer learning started");
         URL uploadUrl = new URL(url + "/upload");
-        File librarytsv = new File(library);
+        File libraryparquet = new File(library);
         String outputBaseName;
         if (! basename.isEmpty()) {
             outputBaseName = basename;
@@ -80,13 +85,13 @@ public class Trainer {
         //send request
         try (OutputStream os = connection.getOutputStream();
              PrintWriter writer = new PrintWriter(new OutputStreamWriter(os, StandardCharsets.UTF_8), true);
-             FileInputStream fis = new FileInputStream(librarytsv)) {
+             FileInputStream fis = new FileInputStream(libraryparquet)) {
 
             // Start multipart
             writer.append("--").append(boundary).append("\r\n");
             writer.append("Content-Disposition: form-data; name=\"file\"; filename=\"")
-                    .append(librarytsv.getName()).append("\"\r\n");
-            writer.append("Content-Type: text/tab-separated-values\r\n\r\n");
+                    .append(libraryparquet.getName()).append("\"\r\n");
+            writer.append("Content-Type: application/vnd.apache.parquet\r\n\r\n");
             writer.flush();
 
             byte[] buffer = new byte[4096];
@@ -149,7 +154,7 @@ public class Trainer {
         }
 
         //download
-        File downloadPath = new File(librarytsv.getParent(), outputBaseName + ".zip");
+        File downloadPath = new File(libraryparquet.getParent(), outputBaseName + ".zip");
 
         if (status.equals("SUCCESS")) {
             URL downloadUrl = new URL(url + "/download/" + jobId);

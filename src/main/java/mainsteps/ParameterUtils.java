@@ -336,6 +336,10 @@ public class ParameterUtils {
         c.updateInputPaths(); //setting null paths
     }
 
+    public static void finalizeParameterFile() throws IOException {
+        finalizeParameterFile(new ArrayList<>());
+    }
+
     static void finalizeParameterFile(ArrayList<Model> models) throws IOException {
         //modify parameter file with updated info
         // Read all lines from the file into a list

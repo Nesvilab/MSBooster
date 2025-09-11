@@ -2,6 +2,7 @@ package transferlearn;
 
 import allconstants.Constants;
 import mainsteps.MainClass;
+import mainsteps.ParameterUtils;
 import utils.Print;
 
 import java.io.*;
@@ -32,7 +33,7 @@ public class Predictor {
         Print.printError("Example: java -cp MSBooster.jar src.main.java.transferlearn.Predictor " +
                 "--paramsList msbooster_params.txt --url http://localhost:8001 --model model.zip " +
                 "--basename predictions " +
-                "(returns predictions.mgf instead of default mymodel.mgf)");
+                "(returns predictions.mgf instead of default model.mgf)");
         System.exit(1);
     }
 
@@ -79,6 +80,14 @@ public class Predictor {
         if (params.isEmpty() || url.isEmpty() || model.isEmpty()) {
             errorMessage();
         }
+
+        //set models to alphapeptdeep
+        Constants.spectraModel = "alphapeptdeep";
+        Constants.rtModel = "alphapeptdeep";
+        Constants.imModel = "alphapeptdeep";
+        Constants.paramsList = params;
+        Constants.createPredFileOnly = true;
+        ParameterUtils.finalizeParameterFile();
 
         //create pred file only
         MainClass.main(new String[]{"--paramsList", params});

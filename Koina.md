@@ -1,5 +1,5 @@
 # Using Koina with MSBooster
-Last updated: 9/24/2024
+Last updated: 9/15/2025
 
 ## Why use Koina?
 [Koina](https://koina.proteomicsdb.org/) (described in 
@@ -9,19 +9,24 @@ retention time (RT), and ion mobility (IM) models, thereby democratizing deep le
 more specific to your use case than the default prediction model, DIA-NN. As a result, predictions may be more accurate,
 resulting in increased peptide identifications. The following models are currently supported by MSBooster:
 
-| RT models            | MS2 models     | IM models  | 
-|----------------------|---|---|
-| Deeplc_hela_hf       | ms2pip_2021_HCD  | AlphaPept_ccs_generic  |
-| AlphaPept_rt_generic | AlphaPept_ms2_generic  |   |
-| Prosit_2019_irt      | Prosit_2019_intensity  |   |
-| Prosit_2020_irt_TMT  | Prosit_2023_intensity_timsTOF  |   |
-|                      | Prosit_2020_intensity_CID                               |   |
-|                      | Prosit_2020_intensity_TMT                               |   |
-|                      | Prosit_2020_intensity_HCD                               |   |
-|                      | ms2pip_timsTOF2024                                                        |   |
-|                      | ms2pip_TTOF5600                                                        |   |
-|                      | ms2pip_Immuno_HCD                                                        |   |
-|                      | UniSpec                                                                         |   |
+| RT models            | MS2 models | IM models  | 
+|----------------------|-|---|
+|AlphaPept_rt_generic| AlphaPept_ms2_generic | AlphaPept_ccs_generic  |
+| Deeplc_hela_hf |Prosit_2019_intensity|IM2Deep|
+| Prosit_2019_irt      |Prosit_2020_intensity_HCD|   |
+| Prosit_2020_irt_TMT  |Prosit_2020_intensity_CID|   |
+| Prosit_2024_irt_cit |Prosit_2020_intensity_TMT |   |
+|                      |Prosit_2023_intensity_timsTOF |   |
+|                      |Prosit_2024_intensity_cit |   |
+|                      |Prosit_2025_intensity_MultiFrag|   |
+|                      |ms2pip_2021_HCD|   |
+|                      |ms2pip_Immuno_HCD |   |
+|                      |ms2pip_TTOF5600|   |
+|                      |ms2pip_timsTOF2024|   |
+|                      |ms2pip_CID_TMT|   |
+|                      |ms2pip_iTRAQphospho|   |
+|                      |UniSpec|   |
+|                      |PredFull|   |
 
 You can mix and match models, or even use `DIA-NN` for one of them and a Koina model for the other.
 

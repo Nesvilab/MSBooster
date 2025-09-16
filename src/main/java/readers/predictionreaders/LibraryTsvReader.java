@@ -15,7 +15,7 @@
  * along with MSBooster. If not, see <https://www.gnu.org/licenses/>.
  */
 
-package readers;
+package readers.predictionreaders;
 
 import allconstants.Constants;
 import allconstants.FragmentIonConstants;
@@ -23,15 +23,14 @@ import com.google.common.collect.Multimap;
 import peptideptmformatting.PeptideFormatter;
 import predictions.PredictionEntry;
 import predictions.PredictionEntryHashMap;
-import readers.predictionreaders.LibraryPredictionMapper;
 import umich.ms.fileio.filetypes.library.LibraryTsv;
 import umich.ms.fileio.filetypes.library.Transition;
 
 import java.nio.file.Paths;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
+
+import static peptideptmformatting.PTMhandler.setUnimodObo;
+import static peptideptmformatting.PTMhandler.unimodOboToModMass;
 
 public class LibraryTsvReader implements LibraryPredictionMapper {
 
@@ -41,6 +40,7 @@ public class LibraryTsvReader implements LibraryPredictionMapper {
 
     public LibraryTsvReader(String file, String format) throws Exception {
         filenames.add(file);
+        setUnimodObo();
         LibraryTsv libraryTsv = new LibraryTsv(Constants.numThreads, Constants.unimodObo);
         Multimap<String, Transition> transitions = libraryTsv.read(Paths.get(file));
 
@@ -50,22 +50,28 @@ public class LibraryTsvReader implements LibraryPredictionMapper {
             for (String k : transitions.keySet()) {
                 Collection<Transition> tt = transitions.get(k);
                 for (Transition t : tt) {
-                    String peptide = t.peptide.getUnimodPeptide(false, libraryTsv.massSiteUnimodTable, null, null, null, '[', ']').replaceFirst("^n", "");
+                    String peptide = t.peptide.getUnimodPeptide(false, libraryTsv.massSiteUnimodTable,
+                            null, null, null, '[', ']')
+                            .replaceFirst("^n", "");
                     String charge = t.peptideCharge + "";
-                    String basePep = new PeptideFormatter(peptide, charge, format).getBaseCharge();
+                    String basePep = new PeptideFormatter(peptide, charge, format).getBaseCharge(); //format is unimod.obo
 
                     float[] mzArray = new float[t.fragments.length];
                     float[] intArray = new float[t.fragments.length];
                     String[] fragmentIonTypes = new String[t.fragments.length];
+                    int[] fragNums = new int[t.fragments.length];
+                    int[] fragCharges = new int[t.fragments.length];
                     for (int i = 0; i < t.fragments.length; i++) { //might need to decrease array length if removing some fragments
                         if (!ignoredFragmentIonTypesSet.contains(t.fragments[i].type + "")) {
                             mzArray[i] = t.fragments[i].mz;
                             intArray[i] = t.fragments[i].intensity;
                             fragmentIonTypes[i] = t.fragments[i].type + "";
+                            fragNums[i] = t.fragments[i].ordinal;
+                            fragCharges[i] =  t.fragments[i].charge;
                         }
                     }
 
-                    PredictionEntry newPred = new PredictionEntry(mzArray, intArray, new int[0], new int[0], fragmentIonTypes);
+                    PredictionEntry newPred = new PredictionEntry(mzArray, intArray, fragNums, fragCharges, fragmentIonTypes);
                     newPred.setRT(t.normalizedRetentionTime);
                     newPred.setIM(t.precursorIonMobility);
                     allPreds.put(basePep, newPred);

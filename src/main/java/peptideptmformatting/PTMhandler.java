@@ -18,6 +18,7 @@
 package peptideptmformatting;
 
 import allconstants.Constants;
+import readers.predictionreaders.LibraryTsvReader;
 import umich.ms.fileio.filetypes.unimod.UnimodOboReader;
 import utils.NumericUtils;
 
@@ -175,21 +176,12 @@ public class PTMhandler {
 
     public static Map<Integer, Double> unimodOboToModMass;
 
-    static {
+    public static void setUnimodObo() {
         try { //only do this when library tsv predicted library is specified
-            if ((Constants.spectraPredFile != null && Constants.spectraPredFile.endsWith(".tsv")) ||
-                    (Constants.RTPredFile != null && Constants.RTPredFile.endsWith(".tsv")) ||
-                    (Constants.IMPredFile != null && Constants.IMPredFile.endsWith(".tsv")) ||
-                    (Constants.auxSpectraPredFile != null && Constants.auxSpectraPredFile.endsWith(".tsv"))) {
-                if (Constants.unimodObo == null) {
-                    printError("Parameter 'unimodObo' must be specified if loading a predicted library in library.tsv format. Exiting");
-                    System.exit(1);
-                }
-                unimodOboToModMass = new HashMap<>();
-                UnimodOboReader uobo = new UnimodOboReader(Paths.get(Constants.unimodObo));
-                for (Map.Entry<String, Float> entry : uobo.unimodMassMap.entrySet()) {
-                    unimodOboToModMass.put(Integer.parseInt(entry.getKey().split(":")[1]), Double.valueOf(entry.getValue()));
-                }
+            unimodOboToModMass = new HashMap<>();
+            UnimodOboReader uobo = new UnimodOboReader(Paths.get(Constants.unimodObo));
+            for (Map.Entry<String, Float> entry : uobo.unimodMassMap.entrySet()) {
+                unimodOboToModMass.put(Integer.parseInt(entry.getKey().split(":")[1]), Double.valueOf(entry.getValue()));
             }
         } catch (Exception e) {
             throw new RuntimeException(e);
@@ -367,7 +359,7 @@ public class PTMhandler {
         for (int i = newStarts.size() - 1; i > -1; i--) {
             int unimod = Integer.parseInt(newpeptide.substring(newStarts.get(i) + 1, newEnds.get(i)));
             try {
-                String modMass = String.format("%.4f", modmap.get(unimod)); //TODO: will this be an issue? Working directly with strings
+                String modMass = String.format("%.4f", modmap.get(unimod));
                 newpeptide = newpeptide.substring(0, newStarts.get(i) + 1) + modMass + newpeptide.substring(newEnds.get(i));
             } catch (Exception ignored) {
                 printError("Did not recognize unimod " + unimod + " in peptide " + peptide + ". Exiting");

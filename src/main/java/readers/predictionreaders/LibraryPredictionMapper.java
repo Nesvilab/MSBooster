@@ -18,7 +18,6 @@
 package readers.predictionreaders;
 
 import predictions.PredictionEntryHashMap;
-import readers.LibraryTsvReader;
 import readers.MgfFileReader;
 
 import java.io.File;

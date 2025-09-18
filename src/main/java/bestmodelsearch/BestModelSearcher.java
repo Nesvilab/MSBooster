@@ -20,22 +20,28 @@ public class BestModelSearcher {
     public BestModelSearcher() {}
 
     private void makeSameLength(HashMap<String, float[]> scores, boolean biggerIsBetter) {
-        int numEntries = Integer.MAX_VALUE;
+        int numEntries = 0;
         for (float[] diffs : scores.values()) {
-            if (diffs.length < numEntries) {
+            if (diffs.length > numEntries) {
                 numEntries = diffs.length;
             }
         }
 
+        //TODO: anything that is based on mean is screwed
         for (Map.Entry<String, float[]> entry : scores.entrySet()) {
             float[] array = entry.getValue();
-            Arrays.sort(array);
-            float[] newArray;
+            float[] newArray = new float[numEntries];
             if (biggerIsBetter) {
-                newArray = Arrays.copyOfRange(array, array.length - numEntries, array.length);
+                for (int i = 0; i < numEntries; i++) {
+                    newArray[i] = -1 * Float.MAX_VALUE;
+                }
             } else {
-                newArray = Arrays.copyOfRange(array, 0, numEntries);
+                for (int i = 0; i < numEntries; i++) {
+                    newArray[i] = Float.MAX_VALUE;
+                }
             }
+            System.arraycopy(array, 0, newArray, 0, array.length);
+            Arrays.sort(newArray);
             scoreMap.put(entry.getKey(), newArray);
         }
     }

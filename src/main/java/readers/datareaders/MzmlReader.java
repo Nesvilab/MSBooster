@@ -284,7 +284,7 @@ public class MzmlReader {
         printInfo("NCE and fragmentation type detected: " + NceConstants.mzmlNCEs);
         Constants.FragmentationType = NceConstants.mzmlNCEs.keySet().iterator().next();
 
-        if (Constants.FragmentationType.equals("HCD") || Constants.FragmentationType.equals("CID")) {} else {
+        if (!Constants.FragmentationType.equals("HCD") && !Constants.FragmentationType.equals("CID")) {
             FragmentIonConstants.annotatePredfullLikeUnispec = false;
         }
     }

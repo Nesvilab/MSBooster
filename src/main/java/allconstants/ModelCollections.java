@@ -107,6 +107,6 @@ public class ModelCollections implements ConstantsInterface {
         allowedFragmentationTypes.put("Prosit_2020_intensity_TMT", new HashSet<>(Arrays.asList("HCD", "CID")));
         allowedFragmentationTypes.put("Prosit_2024_intensity_cit", new HashSet<>(Arrays.asList("HCD", "CID")));
         allowedFragmentationTypes.put("Prosit_2025_intensity_MultiFrag",
-                new HashSet<>(Arrays.asList("HCD", "ECD", "EID", "UVPD", "ETciD")));
+                new HashSet<>(Arrays.asList("HCD", "ECD", "EID", "UVPD", "ETCID")));
     }
 }

@@ -431,7 +431,7 @@ public class MassCalculator {
             }
 
             //calculate all abcxyz ions
-            String[] ions = new String[]{"a", "b", "c", "x", "y", "z", "zdot", "cdot"};
+            String[] ions = new String[]{"a", "b", "c", "x", "y", "z", "zdot", "cdot", "zprime", "x+1", "a+1"};
             int maxCharge = charge; //max fragment ion charge?
             for (String ionType : ions) {
                 for (int num = 1; num < this.peptide.length(); num++) {

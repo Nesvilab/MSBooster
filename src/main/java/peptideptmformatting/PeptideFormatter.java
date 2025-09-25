@@ -22,6 +22,7 @@ import utils.NumericUtils;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
 import static peptideptmformatting.PTMhandler.*;
@@ -366,26 +367,17 @@ public class PeptideFormatter {
         for (int i = 0; i < numMods; i++) {
             String modMass = base.substring(starts.get(i) + 1, ends.get(i));
             double doubleModMass = Double.parseDouble(modMass);
-            HashSet<String> possibleMods = PTMhandler.aamassToAlphapeptdeep.get(doubleModMass);
-            if (possibleMods == null) {
-                possibleMods = new HashSet<>();
-                Map.Entry<Double, HashSet<String>> lower = PTMhandler.aamassToAlphapeptdeep.lowerEntry(doubleModMass);
-                Map.Entry<Double, HashSet<String>> higher = PTMhandler.aamassToAlphapeptdeep.higherEntry(doubleModMass);
+            HashSet<String> possibleMods = new HashSet<>();
+            Map<Double, HashSet<String>> tt = PTMhandler.aamassToAlphapeptdeep.subMap(doubleModMass - 0.0001, false, doubleModMass + 0.0001, false);
 
-                if (NumericUtils.massesCloseEnough(lower.getKey(), doubleModMass)) {
-                    possibleMods.addAll(lower.getValue());
-                }
-                if (NumericUtils.massesCloseEnough(higher.getKey(), doubleModMass)) {
-                    possibleMods.addAll(higher.getValue());
-                }
-                if (possibleMods.isEmpty()) {
-                    printError("There is an unknown modification with mass " + doubleModMass +
-                            ". Please provide PTM info via additionalMods param in --paramsList.");
-                    System.exit(1);
-                }
+            if (tt.isEmpty()) {
+                printError("There is an unknown modification with mass " + doubleModMass +
+                        ". Please provide PTM info via additionalMods param in --paramsList.");
+                System.exit(1);
+            }
 
-                //add exact mass to not encounter this same issue
-                PTMhandler.aamassToAlphapeptdeep.put(doubleModMass, possibleMods);
+            for (Map.Entry<Double, HashSet<String>> e : tt.entrySet()) {
+                possibleMods.addAll(e.getValue());
             }
 
             int position = starts.get(i) - newEnds.get(i) + positions.get(i);

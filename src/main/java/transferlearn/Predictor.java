@@ -1,8 +1,11 @@
 package transferlearn;
 
 import allconstants.Constants;
+import allconstants.NceConstants;
 import mainsteps.MainClass;
 import mainsteps.ParameterUtils;
+import mainsteps.PinMzmlMatcher;
+import peptideptmformatting.PeptideFormatter;
 import utils.Print;
 
 import java.io.*;
@@ -23,7 +26,9 @@ public class Predictor {
         Print.printError("Usage: java -cp MSBooster.jar src.main.java.transferlearn.Predictor " +
                 "--paramsList <msbooster parameters> " +
                 "--url <server url> --model <path/to/model/weights> " +
-                "optional: --ms2 <predict ms2> --rt <predict rt> --im <predict ccs> --basename <output base name>");
+                "optional: --peptide-list-to-dict <path/to/csv> --basename <output base name> " +
+                "--ms2 <predict ms2> --rt <predict rt> --im <predict ccs> " +
+                "--minCharge <int> maxCharge <int>");
         Print.printError("Example: java -cp MSBooster.jar src.main.java.transferlearn.Predictor " +
                 "--paramsList msbooster_params.txt --url http://localhost:8001 --model model.zip " +
                 "--ms2 true --rt true --im false");
@@ -44,17 +49,23 @@ public class Predictor {
         }
 
         String params = "";
+        String peptideList = "";
         String url = "";
         String model = "";
         String ms2 = "true";
         String rt = "true";
         String im = "true";
         String basename = "";
+        int minCharge = 2;
+        int maxCharge = 3;
 
         for (int i = 0; i < args.length; i++) {
             switch (args[i]) {
                 case "--paramsList":
                     params =  args[i + 1];
+                    break;
+                case "--peptide-list-to-predict":
+                    peptideList = args[i + 1];
                     break;
                 case "--url":
                     url =  args[i + 1];
@@ -74,6 +85,12 @@ public class Predictor {
                 case "--basename":
                     basename =  args[i + 1];
                     break;
+                case "--minCharge":
+                    minCharge = Integer.parseInt(args[i + 1]);
+                    break;
+                case "--maxCharge":
+                    maxCharge = Integer.parseInt(args[i + 1]);
+                    break;
             }
         }
 
@@ -81,17 +98,60 @@ public class Predictor {
             errorMessage();
         }
 
-        //set models to alphapeptdeep
-        Constants.spectraModel = "alphapeptdeep";
-        Constants.rtModel = "alphapeptdeep";
-        Constants.imModel = "alphapeptdeep";
-        Constants.paramsList = params;
-        Constants.createPredFileOnly = true;
-        ParameterUtils.finalizeParameterFile();
+        File inputFile;
+        if (peptideList.isEmpty()) { //predict all peptides in pin files
+            Constants.spectraModel = "alphapeptdeep";
+            Constants.rtModel = "alphapeptdeep";
+            Constants.imModel = "alphapeptdeep";
+            Constants.createPredFileOnly = true;
+            MainClass.main(new String[]{"--paramsList", params});
+            inputFile = new File(Constants.spectraRTPrefix + ".csv");
+        } else { //predict everything in peptide list
+            HashMap<String, String> paramsMap = new HashMap<>();
+            ParameterUtils.processCommandLineInputs(new String[]{"--paramsList", params}, paramsMap);
+            ParameterUtils.updateConstants(paramsMap);
+            inputFile = new File(Constants.spectraRTPrefix + ".csv");
 
-        //create pred file only
-        MainClass.main(new String[]{"--paramsList", params});
-        File inputFile = new File(Constants.spectraRTPrefix + ".csv");
+            //get NCE and instrument
+            PinMzmlMatcher pmm = new PinMzmlMatcher(Constants.mzmlDirectory, Constants.pinPepXMLDirectory);
+
+            //adapt peptide list to alphapeptdeep format
+            try (BufferedReader reader = new BufferedReader(new FileReader(peptideList));
+                 BufferedWriter writer = new BufferedWriter(new FileWriter(inputFile))
+            ) {
+                //skip old header, write new header
+                String line = reader.readLine(); //peptide,proteins,is_decoy
+                writer.write("sequence,mods,mod_sites,charge,nce,instrument,base,proteins,is_decoy\n");
+                while ((line = reader.readLine()) != null) {
+                    String[] lineSplit = line.split(",");
+
+                    String charge = "";
+                    while (Character.isDigit(lineSplit[0].charAt(lineSplit[0].length() - 1))) {
+                        charge += lineSplit[0].charAt(lineSplit[0].length() - 1);
+                        lineSplit[0] = lineSplit[0].substring(0, lineSplit[0].length() - 1);
+                    }
+
+                    PeptideFormatter pf = new PeptideFormatter(lineSplit[0], charge, "apdpred");
+                    if (charge.isEmpty()) {
+                        for (int c = minCharge; c < maxCharge + 1; c++) {
+                            pf.charge = charge;
+                            writer.write(pf.getStripped() + "," + pf.getAlphapeptdeepMods() + "," +
+                                    pf.getModPositions() + "," + pf.getCharge() + "," + NceConstants.getNCE() + "," +
+                                    Constants.instrument + "," + pf.getBase() + "," + lineSplit[1] + "," + lineSplit[2] + "\n");
+                        }
+                    } else {
+                        writer.write(pf.getStripped() + "," + pf.getAlphapeptdeepMods() + "," +
+                                pf.getModPositions() + "," + charge + "," + NceConstants.getNCE() + "," +
+                                Constants.instrument + "," + pf.getBase() + "," + lineSplit[1] + "," + lineSplit[2] + "\n");
+                    }
+
+                }
+            } catch (IOException e) {
+                Print.printError("Error reading and writing input file for AlphaPeptDeep prediction: "
+                        + e.getMessage());
+                System.exit(1);
+            }
+        }
 
         //convert input to parquet
         String parquetPath = Constants.spectraRTPrefix + ".parquet";

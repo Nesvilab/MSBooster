@@ -56,7 +56,7 @@ public class MainClass {
             }
 
             //adding to different constants classes, and setting input/output paths
-            updatesConstants(params);
+            updateConstants(params);
 
             //defining num threads
             if (Constants.numThreads <= 0) {

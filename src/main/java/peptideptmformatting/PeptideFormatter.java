@@ -49,7 +49,7 @@ public class PeptideFormatter {
     private ArrayList<Integer> starts = new ArrayList<>();
     private ArrayList<Integer> ends = new ArrayList<>();
 
-    String charge;
+    public String charge;
 
     public HashSet<String> foundUnimods = new HashSet<>(); //collection of previously used unimod codes
     //TODO: should this be shared amongst all PFs? Can store in a thread-safe set
@@ -66,9 +66,11 @@ public class PeptideFormatter {
         }
     }
 
-    private void pinTObase(String peptide) {
+    private void pinTObase(String peptide, boolean adjacentAA) {
         //remove AA and period at beginning and end
-        peptide = peptide.substring(2, peptide.length() - 2);
+        if (adjacentAA) {
+            peptide = peptide.substring(2, peptide.length() - 2);
+        }
 
         while (Character.isDigit(peptide.charAt(peptide.length() - 1))) {
             peptide = peptide.substring(0, peptide.length() - 1);
@@ -439,7 +441,10 @@ public class PeptideFormatter {
 
         switch(format) {
             case "pin":
-                pinTObase(peptide);
+                pinTObase(peptide, true);
+                break;
+            case "apdpred":
+                pinTObase(peptide, false);
                 break;
             case "diann":
                 diann = peptide;

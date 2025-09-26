@@ -21,11 +21,9 @@ import allconstants.Constants;
 import readers.predictionreaders.LibraryTsvReader;
 import umich.ms.fileio.filetypes.unimod.UnimodOboReader;
 import utils.NumericUtils;
+import utils.Print;
 
-import java.io.BufferedReader;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.InputStreamReader;
+import java.io.*;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.*;
@@ -179,6 +177,13 @@ public class PTMhandler {
     public static void setUnimodObo() {
         try { //only do this when library tsv predicted library is specified
             unimodOboToModMass = new HashMap<>();
+            File f = new File(Constants.unimodObo);
+            if (! f.exists()) {
+                Print.printError("When uploading prediction in spectral library in tsv format, " +
+                        "a unimod.obo file must be provided. " +
+                        "In the command line, provide a path at --unimodObo. Exiting.");
+                System.exit(1);
+            }
             UnimodOboReader uobo = new UnimodOboReader(Paths.get(Constants.unimodObo));
             for (Map.Entry<String, Float> entry : uobo.unimodMassMap.entrySet()) {
                 unimodOboToModMass.put(Integer.parseInt(entry.getKey().split(":")[1]), Double.valueOf(entry.getValue()));

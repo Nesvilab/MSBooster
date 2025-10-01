@@ -218,6 +218,11 @@ public class Predictor {
             os.flush();
             writer.append("\r\n");
 
+            // output format
+            writer.append("--").append(boundary).append("\r\n");
+            writer.append("Content-Disposition: form-data; name=\"output_format\"\r\n\r\n");
+            writer.append("parquet").append("\r\n");
+
             // ms2
             writer.append("--").append(boundary).append("\r\n");
             writer.append("Content-Disposition: form-data; name=\"ms2\"\r\n\r\n");
@@ -285,7 +290,7 @@ public class Predictor {
         }
 
         //download
-        File downloadPath = new File(inputFile.getParent(), basename + ".mgf");
+        File downloadPath = new File(inputFile.getParent(), basename + ".parquet");
 
         if (status.equals("SUCCESS")) {
             URL downloadUrl = new URL(url + "/download/" + jobId);

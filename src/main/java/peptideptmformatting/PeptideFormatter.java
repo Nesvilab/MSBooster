@@ -419,7 +419,7 @@ public class PeptideFormatter {
         if (!mods.isEmpty()) {
             mods = mods.substring(0, mods.length() - 1);
             alphapeptdeepMods = alphapeptdeepMods.substring(0, alphapeptdeepMods.length() - 1);
-            modPositions = modPositions.substring(0, modPositions.length() - 1);
+            //modPositions = modPositions.substring(0, modPositions.length() - 1);
         }
     }
 

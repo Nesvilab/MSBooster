@@ -28,17 +28,25 @@ public class Predictor {
                 "--url <server url> --model <path/to/model/weights> " +
                 "optional: --peptide-list-to-dict <path/to/csv> --basename <output base name> " +
                 "--ms2 <predict ms2> --rt <predict rt> --im <predict ccs> " +
-                "--minCharge <int> maxCharge <int>");
+                "--min-charge <int> max-charge <int> --output_format <'parquet' or 'mgf'>");
         Print.printError("Example: java -cp MSBooster.jar src.main.java.transferlearn.Predictor " +
                 "--paramsList msbooster_params.txt --url http://localhost:8001 --model model.zip " +
-                "--ms2 true --rt true --im false");
+                "--ms2 true --rt true --im false --output_format mgf " +
+                "(rather than the default library.tsv in parquet format, write to mgf)");
         Print.printError("Example: java -cp MSBooster.jar src.main.java.transferlearn.Predictor " +
                 "--paramsList msbooster_params.txt --url http://localhost:8001 --model model.zip " +
                 "(all properties set to true)");
         Print.printError("Example: java -cp MSBooster.jar src.main.java.transferlearn.Predictor " +
                 "--paramsList msbooster_params.txt --url http://localhost:8001 --model model.zip " +
                 "--basename predictions " +
-                "(returns predictions.mgf instead of default model.mgf)");
+                "(returns predictions.parquet instead of default model.parquet)");
+        Print.printError("Example: java -cp MSBooster.jar src.main.java.transferlearn.Predictor " +
+                "--paramsList msbooster_params.txt --url http://localhost:8001 --peptide-list-to-dict peptides.csv " +
+                "--min-charge 1 --max-charge 4 " +
+                "(For all peptides in peptides.csv, predicts precursors with charge 1 to 4, rather than default 2 to 3." +
+                "In peptides.csv, columns must be peptides,proteins,is_decoy. " +
+                "Peptides must be formatted as PEPTIDE[PTM mass]R." +
+                "'is_decoy' is either 0 or 1)");
         System.exit(1);
     }
 
@@ -85,10 +93,10 @@ public class Predictor {
                 case "--basename":
                     basename =  args[i + 1];
                     break;
-                case "--minCharge":
+                case "--min-charge":
                     minCharge = Integer.parseInt(args[i + 1]);
                     break;
-                case "--maxCharge":
+                case "--max-charge":
                     maxCharge = Integer.parseInt(args[i + 1]);
                     break;
             }
@@ -134,7 +142,7 @@ public class Predictor {
                     PeptideFormatter pf = new PeptideFormatter(lineSplit[0], charge, "apdpred");
                     if (charge.isEmpty()) {
                         for (int c = minCharge; c < maxCharge + 1; c++) {
-                            pf.charge = charge;
+                            pf.charge = String.valueOf(c);
                             writer.write(pf.getStripped() + "," + pf.getAlphapeptdeepMods() + "," +
                                     pf.getModPositions() + "," + pf.getCharge() + "," + NceConstants.getNCE() + "," +
                                     Constants.instrument + "," + pf.getBase() + "," + lineSplit[1] + "," + lineSplit[2] + "\n");

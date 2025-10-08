@@ -217,6 +217,7 @@ public class PTMhandler {
             case "alphapept":
             case "deeplc":
             case "im2deep":
+            case "librarytsv":
                 modelAllowedUnimods.addAll(AAunimodToModMassAll.keySet());
                 break;
             case "predfull":
@@ -228,6 +229,7 @@ public class PTMhandler {
         String unimodFormat = "";
         switch(model) {
             case "diann":
+            case "librarytsv":
                 unimodFormat = "UniMod";
                 break;
             default: //koina
@@ -258,7 +260,8 @@ public class PTMhandler {
 
         //all unimod codes allowed
         Map<String, Double> modMap;
-        if (model.equals("alphapept") || model.equals("deeplc") || model.equals("im2deep")) {
+        if (model.equals("alphapept") || model.equals("deeplc") ||
+                model.equals("im2deep") || model.equals("librarytsv")) {
             modMap = AAunimodToModMassAll;
         } else {
             modMap = AAunimodToModMassLimited;
@@ -290,6 +293,11 @@ public class PTMhandler {
         //cterm
         if (cterm && unimod.startsWith("[")) {
             peptide = peptide.substring(0, start) + ctermSuffix + peptide.substring(start);
+        }
+
+        if (model.equals("librarytsv")) {
+            peptide = peptide.replace("[", "(");
+            peptide = peptide.replace("]", ")");
         }
 
         return new String[]{peptide, unimod}; //unimod is accepted unimod, or ""

@@ -5,17 +5,12 @@ import com.google.gson.reflect.TypeToken;
 import utils.Print;
 
 import javax.net.ssl.HttpsURLConnection;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.InputStreamReader;
+import java.io.*;
 import java.lang.reflect.Type;
 import java.net.HttpURLConnection;
 import java.net.URL;
 import java.nio.charset.StandardCharsets;
-import java.sql.Connection;
-import java.sql.DriverManager;
-import java.sql.SQLException;
-import java.sql.Statement;
+import java.sql.*;
 import java.util.HashMap;
 
 public class Helpers {
@@ -65,6 +60,36 @@ public class Helpers {
             Print.printError("Error converting " + csvFilePath + " to parquet: " + e.getMessage());
             e.printStackTrace();
             throw new RuntimeException(e);
+        }
+    }
+
+    static void convertParquetToCsv(String parquet, String tsv) throws SQLException, IOException {
+        try (Connection conn = DriverManager.getConnection("jdbc:duckdb:");
+             Statement stmt = conn.createStatement();
+             BufferedWriter writer = new BufferedWriter(new FileWriter(tsv))) {
+
+            // Register and query Parquet
+            String query = "SELECT * FROM read_parquet('" + parquet + "')";
+            ResultSet rs = stmt.executeQuery(query);
+
+            // Write header
+            ResultSetMetaData meta = rs.getMetaData();
+            int columnCount = meta.getColumnCount();
+            for (int i = 1; i <= columnCount; i++) {
+                writer.write(meta.getColumnName(i));
+                if (i < columnCount) writer.write("\t");
+            }
+            writer.newLine();
+
+            // Write rows
+            while (rs.next()) {
+                for (int i = 1; i <= columnCount; i++) {
+                    Object value = rs.getObject(i);
+                    writer.write(value == null ? "" : value.toString());
+                    if (i < columnCount) writer.write("\t");
+                }
+                writer.newLine();
+            }
         }
     }
 }

@@ -16,8 +16,7 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
 
-import static transferlearn.Helpers.readJsonResponse;
-import static transferlearn.Helpers.setUpConnection;
+import static transferlearn.Helpers.*;
 
 public class Predictor {
     static Long waitTime = 15000L;
@@ -129,7 +128,7 @@ public class Predictor {
             ) {
                 //skip old header, write new header
                 String line = reader.readLine(); //peptide,proteins,is_decoy
-                writer.write("sequence,mods,mod_sites,charge,nce,instrument,base,proteins,is_decoy\n");
+                writer.write("sequence,mods,mod_sites,charge,nce,instrument,modified,proteins,is_decoy\n");
                 while ((line = reader.readLine()) != null) {
                     String[] lineSplit = line.split(",");
 
@@ -145,12 +144,14 @@ public class Predictor {
                             pf.charge = String.valueOf(c);
                             writer.write(pf.getStripped() + "," + pf.getAlphapeptdeepMods() + "," +
                                     pf.getModPositions() + "," + pf.getCharge() + "," + NceConstants.getNCE() + "," +
-                                    Constants.instrument + "," + pf.getBase() + "," + lineSplit[1] + "," + lineSplit[2] + "\n");
+                                    Constants.instrument + "," + pf.getLibrarytsv() + "," +
+                                    lineSplit[1] + "," + lineSplit[2] + "\n");
                         }
                     } else {
                         writer.write(pf.getStripped() + "," + pf.getAlphapeptdeepMods() + "," +
                                 pf.getModPositions() + "," + charge + "," + NceConstants.getNCE() + "," +
-                                Constants.instrument + "," + pf.getBase() + "," + lineSplit[1] + "," + lineSplit[2] + "\n");
+                                Constants.instrument + "," + pf.getLibrarytsv() + "," +
+                                lineSplit[1] + "," + lineSplit[2] + "\n");
                     }
 
                 }
@@ -321,7 +322,12 @@ public class Predictor {
                 }
             }
 
-            Print.printInfo("File downloaded to: " + downloadPath);
+            //convert parquet to library tsv
+            String tsvPath = downloadPath.getAbsolutePath().replace(".parquet", ".tsv");
+            convertParquetToCsv(String.valueOf(downloadPath), tsvPath);
+            downloadPath.delete();
+
+            Print.printInfo("File downloaded to: " + tsvPath);
             System.exit(0);
         } else {
             Print.printError(String.valueOf(map));

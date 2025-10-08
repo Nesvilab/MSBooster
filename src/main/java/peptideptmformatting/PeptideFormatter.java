@@ -38,6 +38,7 @@ public class PeptideFormatter {
     private String ms2pip;
     private String deeplc;
     private String alphapept;
+    private String librarytsv;
     private String stripped;
     String baseCharge;
     private String dlib;
@@ -258,6 +259,24 @@ public class PeptideFormatter {
                     alphapept, start, end, "alphapept", foundUnimods, attemptCterm);
             attemptCterm = false;
             alphapept = peptideUnimod[0];
+            if (!peptideUnimod[1].isEmpty()) {
+                foundUnimods.add(peptideUnimod[1]);
+            }
+        }
+    }
+
+    private void baseTOlibrarytsv() {
+        librarytsv = base;
+
+        boolean attemptCterm = cterm;
+        for (int i = starts.size() - 1; i > -1; i--) {
+            int start = starts.get(i);
+            int end = ends.get(i);
+
+            String[] peptideUnimod = PTMhandler.formatPeptideBaseToSpecific(
+                    librarytsv, start, end, "librarytsv", foundUnimods, attemptCterm);
+            attemptCterm = false;
+            librarytsv = peptideUnimod[0];
             if (!peptideUnimod[1].isEmpty()) {
                 foundUnimods.add(peptideUnimod[1]);
             }
@@ -580,6 +599,13 @@ public class PeptideFormatter {
             baseTOalphapept();
         }
         return alphapept;
+    }
+
+    public String getLibrarytsv() {
+        if (librarytsv == null) {
+            baseTOlibrarytsv();
+        }
+        return librarytsv;
     }
 
     public String getModel(String model) { //model is whole url name

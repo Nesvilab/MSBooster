@@ -27,7 +27,7 @@ public class Predictor {
                 "--url <server url> --model <path/to/model/weights> " +
                 "optional: --peptide-list-to-dict <path/to/csv> --basename <output base name> " +
                 "--ms2 <predict ms2> --rt <predict rt> --im <predict ccs> " +
-                "--min-charge <int> max-charge <int> --output_format <'parquet' or 'mgf'>");
+                "--min-charge <int> max-charge <int> --output-format <'parquet' or 'mgf' or 'librarytsv'>");
         Print.printError("Example: java -cp MSBooster.jar src.main.java.transferlearn.Predictor " +
                 "--paramsList msbooster_params.txt --url http://localhost:8001 --model model.zip " +
                 "--ms2 true --rt true --im false --output_format mgf " +
@@ -65,6 +65,7 @@ public class Predictor {
         String basename = "";
         int minCharge = 2;
         int maxCharge = 3;
+        String outputFormat = "parquet";
 
         for (int i = 0; i < args.length; i++) {
             switch (args[i]) {
@@ -97,6 +98,16 @@ public class Predictor {
                     break;
                 case "--max-charge":
                     maxCharge = Integer.parseInt(args[i + 1]);
+                    break;
+                case "--output-format":
+                    outputFormat = args[i + 1];
+                    if (outputFormat.equals("parquet") ||
+                    outputFormat.equals("mgf") ||
+                    outputFormat.equals("librarytsv")) {} else {
+                        Print.printError("Unknown output format: " + outputFormat + ". " +
+                                "Must be one of mgf, parquet, or librarytsv");
+                        errorMessage();
+                    }
                     break;
             }
         }
@@ -230,7 +241,7 @@ public class Predictor {
             // output format
             writer.append("--").append(boundary).append("\r\n");
             writer.append("Content-Disposition: form-data; name=\"output_format\"\r\n\r\n");
-            writer.append("parquet").append("\r\n");
+            writer.append(outputFormat).append("\r\n");
 
             // ms2
             writer.append("--").append(boundary).append("\r\n");
@@ -299,7 +310,11 @@ public class Predictor {
         }
 
         //download
-        File downloadPath = new File(inputFile.getParent(), basename + ".parquet");
+        String downloadExtension = ".mgf";
+        if (!outputFormat.equals("mgf")) {
+            downloadExtension = ".parquet";
+        }
+        File downloadPath = new File(inputFile.getParent(), basename + downloadExtension);
 
         if (status.equals("SUCCESS")) {
             URL downloadUrl = new URL(url + "/download/" + jobId);
@@ -322,12 +337,15 @@ public class Predictor {
                 }
             }
 
-            //convert parquet to library tsv
-            String tsvPath = downloadPath.getAbsolutePath().replace(".parquet", ".tsv");
-            convertParquetToCsv(String.valueOf(downloadPath), tsvPath);
-            downloadPath.delete();
+            if (outputFormat.equals("librarytsv")) {
+                String tsvPath = downloadPath.getAbsolutePath().replace(".parquet", ".tsv");
+                convertParquetToCsv(String.valueOf(downloadPath), tsvPath);
+                downloadPath.delete();
 
-            Print.printInfo("File downloaded to: " + tsvPath);
+                Print.printInfo("File downloaded to: " + tsvPath);
+            } else {
+                Print.printInfo("File downloaded to: " + downloadPath);
+            }
             System.exit(0);
         } else {
             Print.printError(String.valueOf(map));

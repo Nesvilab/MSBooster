@@ -44,7 +44,7 @@ public class InstrumentUtils {
     static CaseInsensitiveHashSet unispecInstruments = new CaseInsensitiveHashSet(Arrays.asList(
             "LUMOS", "QE", "QEHFX", "ELITE", "VELOS", "NONE"));
     static CaseInsensitiveHashSet alphapeptdeepInstruments = new CaseInsensitiveHashSet(Arrays.asList(
-            "QE", "LUMOS", "TIMSTOF", "SCIEXTOF"));
+            "QE", "LUMOS", "TIMSTOF", "SCIEXTOF", "THERMOTOF"));
 //    static HashSet<String> allInstruments = makeAllInstruments();
 //    private static HashSet<String> makeAllInstruments() {
 //        HashSet<String> allInstruments = new HashSet<>();

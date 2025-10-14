@@ -19,7 +19,7 @@ public class Trainer {
 
     private static void errorMessage() {
         Print.printError("Usage: java -cp MSBooster.jar src.main.java.transferlearn.Trainer " +
-                "--url <server url> --library <path/to/librarytsv> " +
+                "--url <server url> --library <path/to/librarytsv> --api-key <key> " +
                 "optional: --basename <output base name>");
         Print.printError("Example: java -cp MSBooster.jar src.main.java.transferlearn.Trainer " +
                 "--url http://localhost:8000 --library library.tsv --basename weights (returns weights.zip)");
@@ -39,6 +39,7 @@ public class Trainer {
 
         String url = "";
         String library = "";
+        String apiKey = "";
         String basename = "";
 
         for (int i = 0; i < args.length; i++) {
@@ -49,13 +50,16 @@ public class Trainer {
                 case "--library":
                     library =  args[i + 1];
                     break;
+                case "--api-key":
+                    apiKey = args[i + 1];
+                    break;
                 case "--basename":
                     basename =  args[i + 1];
                     break;
             }
         }
 
-        if (url.isEmpty() || library.isEmpty()) {
+        if (url.isEmpty() || library.isEmpty() || apiKey.isEmpty()) {
             errorMessage();
         }
 
@@ -81,6 +85,7 @@ public class Trainer {
 
         String boundary = "----JavaFormBoundary" + System.currentTimeMillis();
         connection.setRequestProperty("Content-Type", "multipart/form-data; boundary=" + boundary);
+        connection.setRequestProperty("X-Api-Key", apiKey);
 
         //send request
         try (OutputStream os = connection.getOutputStream();

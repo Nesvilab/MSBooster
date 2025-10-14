@@ -23,7 +23,7 @@ public class Predictor {
 
     private static void errorMessage() {
         Print.printError("Usage: java -cp MSBooster.jar src.main.java.transferlearn.Predictor " +
-                "--paramsList <msbooster parameters> " +
+                "--paramsList <msbooster parameters> --api-key <key> " +
                 "--url <server url> --model <path/to/model/weights> " +
                 "optional: --peptide-list-to-dict <path/to/csv> --basename <output base name> " +
                 "--ms2 <predict ms2> --rt <predict rt> --im <predict ccs> " +
@@ -59,6 +59,7 @@ public class Predictor {
         String peptideList = "";
         String url = "";
         String model = "";
+        String apiKey = "";
         String ms2 = "true";
         String rt = "true";
         String im = "true";
@@ -80,6 +81,9 @@ public class Predictor {
                     break;
                 case "--model":
                     model =  args[i + 1];
+                    break;
+                case "--api-key":
+                    apiKey = args[i + 1];
                     break;
                 case "--ms2":
                     ms2 = args[i + 1];
@@ -112,7 +116,7 @@ public class Predictor {
             }
         }
 
-        if (params.isEmpty() || url.isEmpty() || model.isEmpty()) {
+        if (params.isEmpty() || url.isEmpty() || model.isEmpty() || apiKey.isEmpty()) {
             errorMessage();
         }
 
@@ -202,6 +206,7 @@ public class Predictor {
 
         String boundary = "----JavaFormBoundary" + System.currentTimeMillis();
         connection.setRequestProperty("Content-Type", "multipart/form-data; boundary=" + boundary);
+        connection.setRequestProperty("X-Api-Key", apiKey);
 
         //send request
         try (OutputStream os = connection.getOutputStream();

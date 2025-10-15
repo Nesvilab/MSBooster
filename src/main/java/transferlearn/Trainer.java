@@ -33,7 +33,8 @@ public class Trainer {
     }
     public static String train(String[] args) throws IOException, InterruptedException {
         //parse arguments
-        if (args.length != 4 && args.length != 6) {
+        if (args.length % 2 != 0) {
+            Print.printError("Malformed arguments, args of length " + args.length);
             errorMessage();
         }
 
@@ -60,6 +61,7 @@ public class Trainer {
         }
 
         if (url.isEmpty() || library.isEmpty() || apiKey.isEmpty()) {
+            Print.printError("At least one of url, library, or apiKey is missing.");
             errorMessage();
         }
 

@@ -52,6 +52,7 @@ public class Predictor {
     public static void main(String[] args) throws Exception {
         //parse arguments
         if (args.length % 2 != 0) {
+            Print.printError("Malformed arguments, args of length " + args.length);
             errorMessage();
         }
 
@@ -117,6 +118,7 @@ public class Predictor {
         }
 
         if (params.isEmpty() || url.isEmpty() || model.isEmpty() || apiKey.isEmpty()) {
+            Print.printError("At least one of params, url, model, or apiKey is missing.");
             errorMessage();
         }
 

@@ -184,7 +184,7 @@ public class Predictor {
 
         //prediction
         Print.printInfo("Generating predictions");
-        URL uploadUrl = new URL(url + "/upload");
+        URL uploadUrl = new URL(url + "/predict/upload");
         File modelZip = new File(model);
         if (modelZip.getName().contains("_")) {
             Print.printError(modelZip.getName() + " cannot contain the underscore character. " +
@@ -300,7 +300,7 @@ public class Predictor {
 
         //check status of job id
         Print.printInfo("Job ID: " + jobId);
-        URL statusUrl = new URL(url + "/status/" + jobId);
+        URL statusUrl = new URL(url + "/predict/status/" + jobId);
 
         HashSet<String> nonResults = new HashSet<>(Arrays.asList("PENDING", "RECEIVED", "STARTED"));
         String status = "PENDING";
@@ -322,7 +322,7 @@ public class Predictor {
         File downloadPath = new File(inputFile.getParent(), basename + downloadExtension);
 
         if (status.equals("SUCCESS")) {
-            URL downloadUrl = new URL(url + "/download/" + jobId);
+            URL downloadUrl = new URL(url + "/predict/download/" + jobId);
             connection = setUpConnection(url, downloadUrl);
             connection.setRequestMethod("GET");
 

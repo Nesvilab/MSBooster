@@ -69,7 +69,7 @@ public class Trainer {
         library = parquetPath;
 
         Print.printInfo("Transfer learning started");
-        URL uploadUrl = new URL(url + "/upload");
+        URL uploadUrl = new URL(url + "/train/upload");
         File libraryparquet = new File(library);
         String outputBaseName;
         if (! basename.isEmpty()) {
@@ -144,7 +144,7 @@ public class Trainer {
 
         //check status of job id
         Print.printInfo("Job ID: " + jobId);
-        URL statusUrl = new URL(url + "/status/" + jobId);
+        URL statusUrl = new URL(url + "/train/status/" + jobId);
 
         HashSet<String> nonResults = new HashSet<>(Arrays.asList("PENDING", "RECEIVED", "STARTED"));
         String status = "PENDING";
@@ -162,7 +162,7 @@ public class Trainer {
         File downloadPath = new File(libraryparquet.getParent(), outputBaseName + ".zip");
 
         if (status.equals("SUCCESS")) {
-            URL downloadUrl = new URL(url + "/download/" + jobId);
+            URL downloadUrl = new URL(url + "/train/download/" + jobId);
             connection = setUpConnection(url, downloadUrl);
             connection.setRequestMethod("GET");
 

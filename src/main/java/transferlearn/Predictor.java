@@ -330,7 +330,9 @@ public class Predictor {
 
             responseCode = connection.getResponseCode();
             if (responseCode != HttpURLConnection.HTTP_OK) {
-                throw new IOException("Server returned HTTP " + responseCode + " " + connection.getResponseMessage());
+                Print.printError("Server returned HTTP " + responseCode + " " + connection.getResponseMessage());
+                Print.printError((String) map.get("result"));
+                System.exit(1);
             }
 
             // Read input stream (file content) from server

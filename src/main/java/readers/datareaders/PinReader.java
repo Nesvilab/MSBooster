@@ -321,7 +321,8 @@ public class PinReader {
         while (next(true)) {
             PeptideFormatter pf = getPep();
             peps.add(pf.getStripped() + "," + pf.getAlphapeptdeepMods() + "," + pf.getModPositions() + "," +
-                    pf.getCharge() + "," + NceConstants.getNCE() + "," + Constants.instrument + "," + pf.getBase());
+                    pf.getCharge() + "," + NceConstants.getNCE() + "," + Constants.instrument + "," +
+                    pf.getLibrarytsv() + "," + getColumn("Proteins") + "," + getTD());
         }
         return peps.toArray(new String[0]);
     }

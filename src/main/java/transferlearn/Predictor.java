@@ -15,6 +15,7 @@ import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Locale;
 
 import static transferlearn.Helpers.*;
 
@@ -50,6 +51,12 @@ public class Predictor {
     }
 
     public static void main(String[] args) throws Exception {
+        Locale.setDefault(Locale.US);
+        Thread.setDefaultUncaughtExceptionHandler((t, e) -> {
+			e.printStackTrace();
+			System.exit(1);
+		});
+
         //parse arguments
         if (args.length % 2 != 0) {
             Print.printError("Malformed arguments, args of length " + args.length);

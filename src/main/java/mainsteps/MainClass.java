@@ -40,6 +40,11 @@ public class MainClass {
 
     public static void main(String[] args) throws Exception {
         Locale.setDefault(Locale.US);
+        Thread.setDefaultUncaughtExceptionHandler((t, e) -> {
+			e.printStackTrace();
+			System.exit(1);
+		});
+
         printInfo("MSBooster v1.3.35");
 
         try {

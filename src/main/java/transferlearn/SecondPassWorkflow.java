@@ -1,5 +1,7 @@
 package transferlearn;
 
+import java.util.Locale;
+
 import utils.Print;
 
 public class SecondPassWorkflow {
@@ -16,6 +18,12 @@ public class SecondPassWorkflow {
     }
 
     public static void main(String[] args) throws Exception {
+        Locale.setDefault(Locale.US);
+        Thread.setDefaultUncaughtExceptionHandler((t, e) -> {
+			e.printStackTrace();
+			System.exit(1);
+		});
+
         //parse arguments
         if (args.length % 2 != 0) {
             errorMessage();

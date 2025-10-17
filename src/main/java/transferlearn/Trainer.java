@@ -9,6 +9,7 @@ import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Locale;
 import java.time.LocalDateTime;
 
 import static transferlearn.Helpers.readJsonResponse;
@@ -29,6 +30,12 @@ public class Trainer {
     }
 
     public static void main(String[] args) throws IOException, InterruptedException {
+        Locale.setDefault(Locale.US);
+        Thread.setDefaultUncaughtExceptionHandler((t, e) -> {
+			e.printStackTrace();
+			System.exit(1);
+		});
+
         train(args);
     }
     public static String train(String[] args) throws IOException, InterruptedException {

@@ -20,6 +20,7 @@ package readers.datareaders;
 import allconstants.Constants;
 import allconstants.NceConstants;
 import org.apache.commons.lang3.ArrayUtils;
+import peptideptmformatting.PTMhandler;
 import peptideptmformatting.PeptideFormatter;
 import peptideptmformatting.PeptideSkipper;
 import umich.ms.fileio.exceptions.FileParsingException;
@@ -300,7 +301,7 @@ public class PinReader {
         ArrayList<String> peps = new ArrayList<String>();
         while (next(true)) {
             PeptideFormatter pf = getPep();
-            peps.add(pf.getProsit() + "," + NceConstants.getNCE() + "," + pf.getCharge());
+            peps.add(pf.getProsit(PTMhandler.prositAAMods) + "," + NceConstants.getNCE() + "," + pf.getCharge());
         }
         return peps.toArray(new String[0]);
     }
@@ -310,7 +311,7 @@ public class PinReader {
         ArrayList<String> peps = new ArrayList<String>();
         while (next(true)) {
             PeptideFormatter pf = getPep();
-            peps.add(pf.getProsit() + "," + NceConstants.getNCE() + "," + pf.getCharge() + "," + Constants.FragmentationType);
+            peps.add(pf.getProsit(PTMhandler.prositTmtAAMods) + "," + NceConstants.getNCE() + "," + pf.getCharge() + "," + Constants.FragmentationType);
         }
         return peps.toArray(new String[0]);
     }

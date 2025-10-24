@@ -53,7 +53,7 @@ public class PeptideFormatter {
     String charge;
 
     public HashSet<String> foundUnimods = new HashSet<>(); //collection of previously used unimod codes
-    //TODO: should this be shared amongst all PFs? Can store in a thread-safe set
+    //only use for alphapeptdeep, deeplc, and im2deep since those use unimod file
 
     public boolean cterm = false;
 
@@ -169,12 +169,9 @@ public class PeptideFormatter {
             int end = ends.get(i);
 
             String[] peptideUnimod = PTMhandler.formatPeptideBaseToSpecific(
-                    diann, start, end, "diann", foundUnimods, attemptCterm);
+                    diann, start, end, "diann", diannAAMods, attemptCterm);
             attemptCterm = false;
             diann = peptideUnimod[0];
-            if (!peptideUnimod[1].isEmpty()) {
-                foundUnimods.add(peptideUnimod[1]);
-            }
         }
 
         //special TMT formatting
@@ -200,12 +197,9 @@ public class PeptideFormatter {
             int end = ends.get(i);
 
             String[] peptideUnimod = PTMhandler.formatPeptideBaseToSpecific(
-                    unispec, start, end, "unispec", foundUnimods, attemptCterm);
+                    unispec, start, end, "unispec", unispecAAMods, attemptCterm);
             attemptCterm = false;
             unispec = peptideUnimod[0];
-            if (!peptideUnimod[1].isEmpty()) {
-                foundUnimods.add(peptideUnimod[1]);
-            }
         }
     }
 
@@ -218,12 +212,9 @@ public class PeptideFormatter {
             int end = ends.get(i);
 
             String[] peptideUnimod = PTMhandler.formatPeptideBaseToSpecific(
-                    ms2pip, start, end, "ms2pip", foundUnimods, attemptCterm);
+                    ms2pip, start, end, "ms2pip", ms2pipAAMods, attemptCterm);
             attemptCterm = false;
             ms2pip = peptideUnimod[0];
-            if (!peptideUnimod[1].isEmpty()) {
-                foundUnimods.add(peptideUnimod[1]);
-            }
         }
     }
 
@@ -272,12 +263,9 @@ public class PeptideFormatter {
             int end = ends.get(i);
 
             String[] peptideUnimod = PTMhandler.formatPeptideBaseToSpecific(
-                    predfull, start, end, "predfull", foundUnimods, attemptCterm);
+                    predfull, start, end, "predfull", predfullAAMods, attemptCterm);
             attemptCterm = false;
             predfull = peptideUnimod[0].replace("[UNIMOD:4]", "");
-            if (!peptideUnimod[1].isEmpty()) {
-                foundUnimods.add(peptideUnimod[1]);
-            }
         }
     }
 
@@ -300,7 +288,7 @@ public class PeptideFormatter {
         }
     }
 
-    private void baseTOprosit() {
+    private void baseTOprosit(HashSet<String> uniqMods) {
         prosit = base;
 
         boolean attemptCterm = cterm;
@@ -309,12 +297,9 @@ public class PeptideFormatter {
             int end = ends.get(i);
 
             String[] peptideUnimod = PTMhandler.formatPeptideBaseToSpecific(
-                    prosit, start, end, "prosit", foundUnimods, attemptCterm);
+                    prosit, start, end, "prosit", uniqMods, attemptCterm);
             attemptCterm = false;
             prosit = peptideUnimod[0];
-            if (!peptideUnimod[1].isEmpty()) {
-                foundUnimods.add(peptideUnimod[1]);
-            }
         }
 
         //C is required to have carbamidomethyl
@@ -498,74 +483,53 @@ public class PeptideFormatter {
     }
 
     public String getDiann() {
-        if (diann == null) {
-            baseTOdiann();
-        }
+        baseTOdiann();
         return diann;
     }
 
-    public String getProsit() {
-        if (prosit == null) {
-            baseTOprosit();
-        }
+    public String getProsit(HashSet<String> uniqMods) {
+        baseTOprosit(uniqMods);
         return prosit;
     }
 
     public String getStripped() {
-        if (stripped == null) {
-            baseTOstripped();
-        }
+        baseTOstripped();
         return stripped;
     }
 
     public String getPrositTMT() {
-        if (prositTMT == null) {
-            getProsit();
-            prositTOprositTMT();
-        }
+        getProsit(prositTmtAAMods);
+        prositTOprositTMT();
         return prositTMT;
     }
 
     public String getPredfull() {
-        if (predfull == null) {
-            baseTOpredfull();
-        }
+        baseTOpredfull();
         return predfull;
     }
 
     public String getPredfullKoina() {
-        if (predfull == null) {
-            baseToPredfullKoina();
-        }
+        baseToPredfullKoina();
         return predfull;
     }
 
-
     public String getUnispec() {
-        if (unispec == null) {
-            baseTOunispec();
-        }
+        baseTOunispec();
         return unispec;
     }
 
     public String getMs2pip() {
-        if (ms2pip == null) {
-            baseTOms2pip();
-        }
+        baseTOms2pip();
         return ms2pip;
     }
 
     public String getDeeplc() {
-        if (deeplc == null) {
-            baseTOdeeplc();
-        }
+        baseTOdeeplc();
         return deeplc;
     }
 
     public String getAlphapept() {
-        if (alphapept == null) {
-            baseTOalphapept();
-        }
+        baseTOalphapept();
         return alphapept;
     }
 
@@ -575,19 +539,11 @@ public class PeptideFormatter {
                 return getDiann();
             case "prosit":
                 if (model.contains("TMT")) {
-                    if (!prositAAMods.contains("[737")) {
-                        prositAAMods.add("[737");
-                        prositAAMods.add("K737");
-                    }
                     return getPrositTMT();
                 } else if (model.contains("_cit")) {
-                    if (!prositAAMods.contains("N7")) {
-                        prositAAMods.add("N7");
-                        prositAAMods.add("Q7");
-                        prositAAMods.add("R7");
-                    }
+                    return getProsit(prositCitAAMods);
                 }
-                return getProsit();
+                return getProsit(prositAAMods);
             case "prosittmt":
                 return getPrositTMT();
             case "unispec":

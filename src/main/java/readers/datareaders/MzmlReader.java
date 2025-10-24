@@ -25,7 +25,6 @@ import features.rtandim.LinearEquation;
 import features.rtandim.LoessUtilities;
 import features.rtandim.RTFunctions;
 import kotlin.jvm.functions.Function1;
-import mainsteps.MainClass;
 import mainsteps.MzmlScanNumber;
 import mainsteps.PeptideObj;
 import peptideptmformatting.PeptideFormatter;
@@ -860,7 +859,7 @@ public class MzmlReader {
                 if (rts[0].length < minLoessRegressionSize) {
                     Function1<Double, Double> RTLOESSentry = null;
                     Function1<Double, Double> RTLOESS_realUnitsentry = null;
-                    if (rts[0].length > minLinearRegressionSize) {
+                    if (rts[0].length >= minLinearRegressionSize) {
                         //get slope and intercept
                         float[] parameters = StatMethods.linearRegression(rts[0], rts[1]);
 
@@ -981,39 +980,47 @@ public class MzmlReader {
         for (Map.Entry<String, Function1<Double, Double>> entry : RTLOESS.entrySet()) {
             String mass = entry.getKey();
             Function1<Double, Double> function = entry.getValue();
-            ConcurrentSkipListMap<Double, Double> map = new ConcurrentSkipListMap<>();
+            if (function != null) {
+                ConcurrentSkipListMap<Double, Double> map = new ConcurrentSkipListMap<>();
 
-            Multithreader mt = new Multithreader(numIncrements, Constants.numThreads);
-            for (int i = 0; i < Constants.numThreads; i++) {
-                int finalI = i;
-                futureList.add(executorService.submit(() -> {
-                    double x = minExpRT + mt.indices[finalI] * increment;
-                    for (int j = mt.indices[finalI]; j < mt.indices[finalI + 1]; j++) {
-                        double y = function.invoke(x);
-                        map.put(y, x);
-                        x += increment;
-                    }
-                }));
+                Multithreader mt = new Multithreader(numIncrements, Constants.numThreads);
+                for (int i = 0; i < Constants.numThreads; i++) {
+                    int finalI = i;
+                    futureList.add(executorService.submit(() -> {
+                        double x = minExpRT + mt.indices[finalI] * increment;
+                        for (int j = mt.indices[finalI]; j < mt.indices[finalI + 1]; j++) {
+                            double y = function.invoke(x);
+                            map.put(y, x);
+                            x += increment;
+                        }
+                    }));
+                }
+                for (Future future : futureList) {
+                    future.get();
+                }
+                irtToMinutes.put(mass, map);
+            } else {
+                irtToMinutes.put(mass, null);
             }
-            for (Future future : futureList) {
-                future.get();
-            }
-            irtToMinutes.put(mass, map);
         }
     }
 
     public void getBestCalibratedRTs() {
         for (Map.Entry<String, double[][]> entry : expAndPredRTs.entrySet()) {
             String mass = entry.getKey();
-            double[][] RTs = entry.getValue();
-            double[] calibratedRTs = new double[RTs[1].length];
-            for (int i = 0; i < RTs[0].length; i++) {
-                calibratedRTs[i] = StatMethods.lookupInverse(irtToMinutes.get(mass), RTs[1][i]);
+            if (irtToMinutes.get(mass) != null) {
+                double[][] RTs = entry.getValue();
+                double[] calibratedRTs = new double[RTs[1].length];
+                for (int i = 0; i < RTs[0].length; i++) {
+                    calibratedRTs[i] = StatMethods.lookupInverse(irtToMinutes.get(mass), RTs[1][i]);
+                }
+                double[][] newValue = new double[2][];
+                newValue[0] = RTs[0];
+                newValue[1] = calibratedRTs;
+                expAndPredRTsMinutes.put(mass, newValue);
+            } else {
+                expAndPredRTsMinutes.put(mass, null);
             }
-            double[][] newValue = new double[2][];
-            newValue[0] = RTs[0];
-            newValue[1] = calibratedRTs;
-            expAndPredRTsMinutes.put(mass, newValue);
         }
     }
 

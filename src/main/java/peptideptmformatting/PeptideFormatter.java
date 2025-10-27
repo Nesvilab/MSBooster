@@ -435,6 +435,7 @@ public class PeptideFormatter {
                 koinaTObase(peptide, unimodToModMassLimited);
                 break;
             case "prosit":
+            case "prosit_cit":
                 prosit = peptide;
                 koinaTObase(peptide, unimodToModMassLimited);
                 break;

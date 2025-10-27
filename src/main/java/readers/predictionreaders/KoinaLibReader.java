@@ -27,7 +27,7 @@ public class KoinaLibReader implements LibraryPredictionMapper {
     public boolean failed = false;
     public PredictionEntryHashMap allPreds = new PredictionEntryHashMap();
     public String finalModel;
-    public String modelType;
+    public String modelType; //TODO: may need better way to handle this i.e. prosit and prosit cit
     public String property;
     public boolean useFullAnnotation = false;
 
@@ -36,6 +36,8 @@ public class KoinaLibReader implements LibraryPredictionMapper {
         modelType = model.toLowerCase().split("_")[0];
         if (modelType.equals("prosit") && model.contains("TMT")) {
             modelType = "prosittmt";
+        } else if (modelType.equals("prosit") && model.contains("_cit")) {
+            modelType = "prosit_cit";
         }
 
         if (modelType.contains("unispec") || modelType.contains("predfull")) {

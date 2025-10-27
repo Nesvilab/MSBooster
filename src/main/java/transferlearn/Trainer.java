@@ -12,8 +12,10 @@ import java.util.HashSet;
 import java.util.Locale;
 import java.time.LocalDateTime;
 
+import static allconstants.Constants.versionNumber;
 import static transferlearn.Helpers.readJsonResponse;
 import static transferlearn.Helpers.setUpConnection;
+import static utils.Print.printInfo;
 
 public class Trainer {
     static Long waitTime = 15000L;
@@ -39,6 +41,8 @@ public class Trainer {
         train(args);
     }
     public static String train(String[] args) throws IOException, InterruptedException {
+        printInfo(versionNumber);
+
         //parse arguments
         if (args.length % 2 != 0) {
             Print.printError("Malformed arguments, args of length " + args.length);
@@ -73,11 +77,12 @@ public class Trainer {
         }
 
         //convert library to parquet
+        printInfo("Converting input to parquet");
         String parquetPath = library.substring(0, library.length() - 3) + "parquet";
         Helpers.convertCsvToParquet(library, parquetPath);
         library = parquetPath;
 
-        Print.printInfo("Transfer learning started");
+        printInfo("Transfer learning started");
         URL uploadUrl = new URL(url + "/train/upload");
         File libraryparquet = new File(library);
         String outputBaseName;

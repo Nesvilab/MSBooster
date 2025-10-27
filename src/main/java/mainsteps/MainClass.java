@@ -30,6 +30,7 @@ import java.util.*;
 
 import java.util.concurrent.ScheduledThreadPoolExecutor;
 
+import static allconstants.Constants.versionNumber;
 import static mainsteps.MainUtils.*;
 import static mainsteps.ParameterUtils.*;
 import static utils.Print.*;
@@ -45,7 +46,7 @@ public class MainClass {
 			System.exit(1);
 		});
 
-        printInfo("MSBooster v1.3.37");
+        printInfo(versionNumber);
 
         try {
             HashMap<String, String> params = new HashMap<>();

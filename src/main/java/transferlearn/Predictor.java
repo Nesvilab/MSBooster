@@ -17,7 +17,9 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Locale;
 
+import static allconstants.Constants.versionNumber;
 import static transferlearn.Helpers.*;
+import static utils.Print.printInfo;
 
 public class Predictor {
     static Long waitTime = 15000L;
@@ -56,6 +58,8 @@ public class Predictor {
 			e.printStackTrace();
 			System.exit(1);
 		});
+
+        printInfo(versionNumber);
 
         //parse arguments
         if (args.length % 2 != 0) {
@@ -153,6 +157,8 @@ public class Predictor {
             try (BufferedReader reader = new BufferedReader(new FileReader(peptideList));
                  BufferedWriter writer = new BufferedWriter(new FileWriter(inputFile))
             ) {
+                printInfo("Converting peptide list to AlphaPeptDeep format");
+
                 //skip old header, write new header
                 String line = reader.readLine(); //peptide,proteins,is_decoy
                 writer.write("sequence,mods,mod_sites,charge,nce,instrument,modified,proteins,is_decoy\n");
@@ -190,6 +196,7 @@ public class Predictor {
         }
 
         //convert input to parquet
+        printInfo("Converting AlphaPeptDeep input to parquet");
         String parquetPath = Constants.spectraRTPrefix + ".parquet";
         Helpers.convertCsvToParquet(inputFile.getPath(), parquetPath);
         inputFile = new File(parquetPath);

@@ -45,7 +45,7 @@ public class MainClass {
 			System.exit(1);
 		});
 
-        printInfo("MSBooster v1.3.36");
+        printInfo("MSBooster v1.3.37");
 
         try {
             HashMap<String, String> params = new HashMap<>();

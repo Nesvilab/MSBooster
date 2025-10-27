@@ -83,6 +83,8 @@ public class Predictor {
                     break;
                 case "--peptide-list-to-predict":
                     peptideList = args[i + 1];
+                    File file = new File(args[i + 1]);
+                    Constants.peptideListDirectory = file.getParent();
                     break;
                 case "--url":
                     url =  args[i + 1];
@@ -139,12 +141,13 @@ public class Predictor {
             inputFile = new File(Constants.spectraRTPrefix + ".csv");
         } else { //predict everything in peptide list
             HashMap<String, String> paramsMap = new HashMap<>();
-            ParameterUtils.processCommandLineInputs(new String[]{"--paramsList", params}, paramsMap);
+            ParameterUtils.processCommandLineInputs(new String[]{"--paramsList", params, "--requirePinMzml", "false"},
+                    paramsMap);
             ParameterUtils.updateConstants(paramsMap);
             inputFile = new File(Constants.spectraRTPrefix + ".csv");
 
-            //get NCE and instrument
-            PinMzmlMatcher pmm = new PinMzmlMatcher(Constants.mzmlDirectory, Constants.pinPepXMLDirectory);
+            //if using peptide list, nce and instrument should be provided
+            NceConstants.mzmlNCEs.put("HCD", String.valueOf(NceConstants.NCE));
 
             //adapt peptide list to alphapeptdeep format
             try (BufferedReader reader = new BufferedReader(new FileReader(peptideList));

@@ -324,6 +324,7 @@ public class Predictor {
         HashSet<String> nonResults = new HashSet<>(Arrays.asList("PENDING", "RECEIVED", "STARTED"));
         String status = "PENDING";
         HashMap<String, Object> map = null;
+        int oldStdoutLen = 0;
         while (nonResults.contains(status.toUpperCase())) {
             Thread.sleep(waitTime);
 
@@ -331,6 +332,11 @@ public class Predictor {
             responseStream = connection.getInputStream();
             map = readJsonResponse(responseStream);
             status = map.get("status").toString();
+            String stdout = map.get("stdout").toString();
+            if (!stdout.isEmpty()) {
+                System.out.print(stdout.substring(oldStdoutLen));
+                oldStdoutLen = stdout.length();
+            }
         }
 
         //download
@@ -348,7 +354,7 @@ public class Predictor {
             responseCode = connection.getResponseCode();
             if (responseCode != HttpURLConnection.HTTP_OK) {
                 Print.printError("Server returned HTTP " + responseCode + " " + connection.getResponseMessage());
-                Print.printError((String) map.get("result"));
+                Print.printError((String) map.get("stdout"));
                 System.exit(1);
             }
 

@@ -167,7 +167,7 @@ public class Predictor {
 
                     String charge = "";
                     while (Character.isDigit(lineSplit[0].charAt(lineSplit[0].length() - 1))) {
-                        charge += lineSplit[0].charAt(lineSplit[0].length() - 1);
+                        charge = lineSplit[0].charAt(lineSplit[0].length() - 1) + charge;
                         lineSplit[0] = lineSplit[0].substring(0, lineSplit[0].length() - 1);
                     }
 

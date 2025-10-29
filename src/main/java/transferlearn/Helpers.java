@@ -36,7 +36,7 @@ public class Helpers {
         }
     }
 
-    static void convertCsvToParquet(String csvFilePath, String parquetFilePath) {
+    static void convertCsvToParquet(String csvFilePath, String parquetFilePath, boolean deleteCsv) {
         try (Connection conn = DriverManager.getConnection("jdbc:duckdb:")) {
             Statement stmt = conn.createStatement();
 
@@ -54,9 +54,12 @@ public class Helpers {
             );
 
             stmt.execute(sql);
-            Print.printInfo(csvFilePath + " successfully converted to parquet. Now deleting " + csvFilePath);
-            File csvFile = new File(csvFilePath);
-            csvFile.delete();
+            Print.printInfo(csvFilePath + " successfully converted to parquet");
+            if (deleteCsv) {
+                Print.printInfo("Now deleting " + csvFilePath);
+                File csvFile = new File(csvFilePath);
+                csvFile.delete();
+            }
 
         } catch (SQLException e) {
             Print.printError("Error converting " + csvFilePath + " to parquet: " + e.getMessage());

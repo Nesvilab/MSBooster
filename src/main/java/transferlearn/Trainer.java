@@ -79,7 +79,7 @@ public class Trainer {
         //convert library to parquet
         printInfo("Converting input to parquet");
         String parquetPath = library.substring(0, library.length() - 3) + "parquet";
-        Helpers.convertCsvToParquet(library, parquetPath);
+        Helpers.convertCsvToParquet(library, parquetPath, false);
         library = parquetPath;
 
         printInfo("Transfer learning started");

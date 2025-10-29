@@ -198,7 +198,7 @@ public class Predictor {
         //convert input to parquet
         printInfo("Converting AlphaPeptDeep input to parquet");
         String parquetPath = Constants.spectraRTPrefix + ".parquet";
-        Helpers.convertCsvToParquet(inputFile.getPath(), parquetPath);
+        Helpers.convertCsvToParquet(inputFile.getPath(), parquetPath, true);
         inputFile = new File(parquetPath);
 
         //prediction

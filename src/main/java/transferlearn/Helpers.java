@@ -1,8 +1,12 @@
 package transferlearn;
 
+import allconstants.Constants;
+import allconstants.NceConstants;
 import com.google.gson.Gson;
 import com.google.gson.reflect.TypeToken;
+import peptideptmformatting.PeptideFormatter;
 import utils.Print;
+import utils.ProgressReporter;
 
 import javax.net.ssl.HttpsURLConnection;
 import java.io.*;
@@ -10,8 +14,12 @@ import java.lang.reflect.Type;
 import java.net.HttpURLConnection;
 import java.net.URL;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.sql.*;
 import java.util.HashMap;
+
+import static utils.Print.printInfo;
 
 public class Helpers {
     static HttpURLConnection setUpConnection(String serverString, URL serverURL) throws IOException {
@@ -73,9 +81,15 @@ public class Helpers {
              Statement stmt = conn.createStatement();
              BufferedWriter writer = new BufferedWriter(new FileWriter(tsv))) {
 
+            //get number of rows
+            ResultSet rs = stmt.executeQuery("SELECT COUNT(*) FROM read_parquet('" + parquet + "')");
+            rs.next();
+            int rowCount = rs.getInt(1);
+            ProgressReporter pr = new ProgressReporter(rowCount);
+
             // Register and query Parquet
             String query = "SELECT * FROM read_parquet('" + parquet + "')";
-            ResultSet rs = stmt.executeQuery(query);
+            rs = stmt.executeQuery(query);
 
             // Write header
             ResultSetMetaData meta = rs.getMetaData();
@@ -94,7 +108,54 @@ public class Helpers {
                     if (i < columnCount) writer.write("\t");
                 }
                 writer.newLine();
+                pr.progress();
             }
+        }
+    }
+
+    static void convertPeptideListToCsv(String peptideList, File csvFile,
+                                        int minCharge, int maxCharge) {
+        try (BufferedReader reader = new BufferedReader(new FileReader(peptideList));
+             BufferedWriter writer = new BufferedWriter(new FileWriter(csvFile))
+        ) {
+            printInfo("Converting peptide list to AlphaPeptDeep format");
+
+            long lines = Files.lines(Paths.get(peptideList)).count() - 1;
+            ProgressReporter pr = new ProgressReporter((int) lines);
+
+            //skip old header, write new header
+            String line = reader.readLine(); //peptide,proteins,is_decoy
+            writer.write("sequence,mods,mod_sites,charge,nce,instrument,modified,proteins,is_decoy\n");
+            while ((line = reader.readLine()) != null) {
+                String[] lineSplit = line.split(",");
+
+                String charge = "";
+                while (Character.isDigit(lineSplit[0].charAt(lineSplit[0].length() - 1))) {
+                    charge = lineSplit[0].charAt(lineSplit[0].length() - 1) + charge;
+                    lineSplit[0] = lineSplit[0].substring(0, lineSplit[0].length() - 1);
+                }
+
+                PeptideFormatter pf = new PeptideFormatter(lineSplit[0], charge, "apdpred");
+                if (charge.isEmpty()) {
+                    for (int c = minCharge; c < maxCharge + 1; c++) {
+                        pf.charge = String.valueOf(c);
+                        writer.write(pf.getStripped() + "," + pf.getAlphapeptdeepMods() + "," +
+                                pf.getModPositions() + "," + pf.getCharge() + "," + NceConstants.getNCE() + "," +
+                                Constants.instrument + "," + pf.getLibrarytsv() + "," +
+                                lineSplit[1] + "," + lineSplit[2] + "\n");
+                    }
+                } else {
+                    writer.write(pf.getStripped() + "," + pf.getAlphapeptdeepMods() + "," +
+                            pf.getModPositions() + "," + charge + "," + NceConstants.getNCE() + "," +
+                            Constants.instrument + "," + pf.getLibrarytsv() + "," +
+                            lineSplit[1] + "," + lineSplit[2] + "\n");
+                }
+                pr.progress();
+            }
+        } catch (IOException e) {
+            Print.printError("Error reading and writing input file for AlphaPeptDeep prediction: "
+                    + e.getMessage());
+            System.exit(1);
         }
     }
 }

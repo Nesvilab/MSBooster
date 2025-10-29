@@ -4,8 +4,6 @@ import allconstants.Constants;
 import allconstants.NceConstants;
 import mainsteps.MainClass;
 import mainsteps.ParameterUtils;
-import mainsteps.PinMzmlMatcher;
-import peptideptmformatting.PeptideFormatter;
 import utils.Print;
 
 import java.io.*;
@@ -154,45 +152,7 @@ public class Predictor {
             NceConstants.mzmlNCEs.put("HCD", String.valueOf(NceConstants.NCE));
 
             //adapt peptide list to alphapeptdeep format
-            try (BufferedReader reader = new BufferedReader(new FileReader(peptideList));
-                 BufferedWriter writer = new BufferedWriter(new FileWriter(inputFile))
-            ) {
-                printInfo("Converting peptide list to AlphaPeptDeep format");
-
-                //skip old header, write new header
-                String line = reader.readLine(); //peptide,proteins,is_decoy
-                writer.write("sequence,mods,mod_sites,charge,nce,instrument,modified,proteins,is_decoy\n");
-                while ((line = reader.readLine()) != null) {
-                    String[] lineSplit = line.split(",");
-
-                    String charge = "";
-                    while (Character.isDigit(lineSplit[0].charAt(lineSplit[0].length() - 1))) {
-                        charge = lineSplit[0].charAt(lineSplit[0].length() - 1) + charge;
-                        lineSplit[0] = lineSplit[0].substring(0, lineSplit[0].length() - 1);
-                    }
-
-                    PeptideFormatter pf = new PeptideFormatter(lineSplit[0], charge, "apdpred");
-                    if (charge.isEmpty()) {
-                        for (int c = minCharge; c < maxCharge + 1; c++) {
-                            pf.charge = String.valueOf(c);
-                            writer.write(pf.getStripped() + "," + pf.getAlphapeptdeepMods() + "," +
-                                    pf.getModPositions() + "," + pf.getCharge() + "," + NceConstants.getNCE() + "," +
-                                    Constants.instrument + "," + pf.getLibrarytsv() + "," +
-                                    lineSplit[1] + "," + lineSplit[2] + "\n");
-                        }
-                    } else {
-                        writer.write(pf.getStripped() + "," + pf.getAlphapeptdeepMods() + "," +
-                                pf.getModPositions() + "," + charge + "," + NceConstants.getNCE() + "," +
-                                Constants.instrument + "," + pf.getLibrarytsv() + "," +
-                                lineSplit[1] + "," + lineSplit[2] + "\n");
-                    }
-
-                }
-            } catch (IOException e) {
-                Print.printError("Error reading and writing input file for AlphaPeptDeep prediction: "
-                        + e.getMessage());
-                System.exit(1);
-            }
+            convertPeptideListToCsv(peptideList, inputFile, minCharge, maxCharge);
         }
 
         //convert input to parquet

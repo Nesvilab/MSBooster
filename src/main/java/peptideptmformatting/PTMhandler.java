@@ -29,6 +29,7 @@ import java.io.InputStreamReader;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.*;
+import java.util.stream.Collectors;
 
 import static utils.Print.printError;
 
@@ -165,10 +166,12 @@ public class PTMhandler {
     }
 
     public static final Map<String, Double> AAunimodToModMassAll;
+    public static final ArrayList<String> AAunimodToModMassAllKeys;
 
     static {
         try {
             AAunimodToModMassAll = makeUnimodToModMassAll(true);
+            AAunimodToModMassAllKeys = new ArrayList<>(AAunimodToModMassAll.keySet());
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
@@ -199,7 +202,7 @@ public class PTMhandler {
     public static String[] formatPeptideBaseToSpecific(String peptide, int start, int end, String model,
                                                        HashSet<String> foundUnimods, boolean cterm) {
         //set allowed unimods
-        HashSet<String> modelAllowedUnimods = new HashSet<>();
+        ArrayList<String> modelAllowedUnimods;
         switch(model) {
             case "diann":
                 modelAllowedUnimods = diannAAMods;
@@ -218,10 +221,13 @@ public class PTMhandler {
             case "deeplc":
             case "im2deep":
             case "librarytsv":
-                modelAllowedUnimods.addAll(AAunimodToModMassAll.keySet());
+                modelAllowedUnimods = AAunimodToModMassAllKeys;
                 break;
             case "predfull":
                 modelAllowedUnimods = predfullAAMods;
+                break;
+            default:
+                modelAllowedUnimods = new ArrayList<>();
                 break;
         }
 
@@ -312,31 +318,60 @@ public class PTMhandler {
 
         //first, remove mods that are not supported
         if (removeMods) {
-            ArrayList<String> missingMods = new ArrayList<>();
-            for (String unimod : allowedMods) {
-                if (!modMap.containsKey(unimod)) {
-                    missingMods.add(unimod);
-                }
-            }
-            for (String unimod : missingMods) {
-                allowedMods.remove(unimod);
-            }
+            allowedMods = allowedMods.stream()
+                    .filter(modMap::containsKey)
+                    .collect(Collectors.toSet());
         }
 
         for (String unimod : allowedMods) {
             Double PTMmass = modMap.get(unimod);
             if (NumericUtils.massesCloseEnough(PTMmass, reportedMass)) {
-                String AA = unimod.substring(0, 1);
+                char AA = unimod.charAt(0);
                 if (start == -1) { //nterm
-                    if (AA.equals("[")) {
+                    if (AA == '[') {
                         return unimod;
                     }
                 } else if (cterm && end == peptide.length() - 1) { //cterm
-                    if (AA.equals("[")) {
+                    if (AA == '[') {
                         return unimod;
                     }
                 } else {
-                    if (AA.equals(peptide.substring(start, start + 1))) {
+                    if (AA == peptide.charAt(start)) {
+                        return unimod;
+                    }
+                }
+            }
+        }
+        return "";
+    }
+
+    private static String findUnimodForMass(ArrayList<String> allowedMods, Map<String, Double> modMap,
+                                            Double reportedMass,
+                                            String peptide, int start, int end,
+                                            boolean removeMods, boolean cterm) {
+        //start is index of amino acid before, or 0 if nterm mod
+
+        //first, remove mods that are not supported
+        if (removeMods) {
+            allowedMods = allowedMods.stream()
+                    .filter(modMap::containsKey)
+                    .collect(Collectors.toCollection(ArrayList::new));
+        }
+
+        for (String unimod : allowedMods) {
+            Double PTMmass = modMap.get(unimod);
+            if (NumericUtils.massesCloseEnough(PTMmass, reportedMass)) {
+                char AA = unimod.charAt(0);
+                if (start == -1) { //nterm
+                    if (AA == '[') {
+                        return unimod;
+                    }
+                } else if (cterm && end == peptide.length() - 1) { //cterm
+                    if (AA == '[') {
+                        return unimod;
+                    }
+                } else {
+                    if (AA == peptide.charAt(start)) {
                         return unimod;
                     }
                 }
@@ -539,15 +574,15 @@ public class PTMhandler {
     }
 
     /////////////////////////////////////////////KOINA///////////////////////////////////////////////////////
-    public static HashSet<String> prositAAMods = new HashSet<>(
+    public static ArrayList<String> prositAAMods = new ArrayList<>(
             Arrays.asList("C4", "M35"));
-    public static final HashSet<String> unispecAAMods = new HashSet<>(
+    public static final ArrayList<String> unispecAAMods = new ArrayList<>(
             Arrays.asList("[1", "C4", "Q28", "E27", "M35", "S21", "T21", "Y21", "C26"));
-    public static final HashSet<String> diannAAMods = new HashSet<>(
+    public static final ArrayList<String> diannAAMods = new ArrayList<>(
             Arrays.asList("C4", "M35", "[1", "S21", "T21", "Y21", "K121", "T121", "C121", "S121", "[121",
                     "[737", "K737", "S737"));
-    public static final HashSet<String> ms2pipAAMods = new HashSet<>(
+    public static final ArrayList<String> ms2pipAAMods = new ArrayList<>(
             Arrays.asList("M35", "C4"));
-    public static final HashSet<String> predfullAAMods = new HashSet<>(
+    public static final ArrayList<String> predfullAAMods = new ArrayList<>(
             Arrays.asList("M35", "C4"));
 }

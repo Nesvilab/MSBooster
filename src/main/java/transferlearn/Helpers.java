@@ -54,7 +54,9 @@ public class Helpers {
             );
 
             stmt.execute(sql);
-            Print.printInfo(csvFilePath + " successfully converted to parquet");
+            Print.printInfo(csvFilePath + " successfully converted to parquet. Now deleting " + csvFilePath);
+            File csvFile = new File(csvFilePath);
+            csvFile.delete();
 
         } catch (SQLException e) {
             Print.printError("Error converting " + csvFilePath + " to parquet: " + e.getMessage());

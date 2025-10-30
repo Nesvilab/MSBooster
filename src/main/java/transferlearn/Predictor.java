@@ -141,6 +141,8 @@ public class Predictor {
             Constants.createPredFileOnly = true;
             MainClass.main(new String[]{"--paramsList", params});
             inputFile = new File(Constants.spectraRTPrefix + ".csv");
+            minCharge = 0;
+            maxCharge = 0;
         } else { //predict everything in peptide list
             HashMap<String, String> paramsMap = new HashMap<>();
             ParameterUtils.processCommandLineInputs(new String[]{"--paramsList", params, "--requirePinMzml", "false"},
@@ -152,7 +154,7 @@ public class Predictor {
             NceConstants.mzmlNCEs.put("HCD", String.valueOf(NceConstants.NCE));
 
             //adapt peptide list to alphapeptdeep format
-            convertPeptideListToCsv(peptideList, inputFile, minCharge, maxCharge);
+            convertPeptideListToCsv(peptideList, inputFile);
         }
 
         //convert input to parquet
@@ -241,6 +243,16 @@ public class Predictor {
             writer.append("--").append(boundary).append("\r\n");
             writer.append("Content-Disposition: form-data; name=\"ccs\"\r\n\r\n");
             writer.append(im).append("\r\n");
+
+            // mincharge
+            writer.append("--").append(boundary).append("\r\n");
+            writer.append("Content-Disposition: form-data; name=\"mincharge\"\r\n\r\n");
+            writer.append(Integer.toString(minCharge)).append("\r\n");
+
+            // maxcharge
+            writer.append("--").append(boundary).append("\r\n");
+            writer.append("Content-Disposition: form-data; name=\"maxcharge\"\r\n\r\n");
+            writer.append(Integer.toString(maxCharge)).append("\r\n");
 
             // end of multipart
             writer.append("--").append(boundary).append("--").append("\r\n");

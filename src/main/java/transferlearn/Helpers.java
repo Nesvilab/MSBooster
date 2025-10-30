@@ -77,6 +77,7 @@ public class Helpers {
     }
 
     static void convertParquetToCsv(String parquet, String tsv) throws SQLException, IOException {
+        Print.printInfo("Converting parquet to CSV");
         try (Connection conn = DriverManager.getConnection("jdbc:duckdb:");
              Statement stmt = conn.createStatement();
              BufferedWriter writer = new BufferedWriter(new FileWriter(tsv))) {
@@ -113,13 +114,11 @@ public class Helpers {
         }
     }
 
-    static void convertPeptideListToCsv(String peptideList, File csvFile,
-                                        int minCharge, int maxCharge) {
+    static void convertPeptideListToCsv(String peptideList, File csvFile) {
+        printInfo("Converting peptide list to AlphaPeptDeep format");
         try (BufferedReader reader = new BufferedReader(new FileReader(peptideList));
              BufferedWriter writer = new BufferedWriter(new FileWriter(csvFile))
         ) {
-            printInfo("Converting peptide list to AlphaPeptDeep format");
-
             long lines = Files.lines(Paths.get(peptideList)).count() - 1;
             ProgressReporter pr = new ProgressReporter((int) lines);
 
@@ -137,13 +136,10 @@ public class Helpers {
 
                 PeptideFormatter pf = new PeptideFormatter(lineSplit[0], charge, "apdpred");
                 if (charge.isEmpty()) {
-                    for (int c = minCharge; c < maxCharge + 1; c++) {
-                        pf.charge = String.valueOf(c);
-                        writer.write(pf.getStripped() + "," + pf.getAlphapeptdeepMods() + "," +
-                                pf.getModPositions() + "," + pf.getCharge() + "," + NceConstants.getNCE() + "," +
-                                Constants.instrument + "," + pf.getLibrarytsv() + "," +
-                                lineSplit[1] + "," + lineSplit[2] + "\n");
-                    }
+                    writer.write(pf.getStripped() + "," + pf.getAlphapeptdeepMods() + "," +
+                            pf.getModPositions() + "," + "," + NceConstants.getNCE() + "," +
+                            Constants.instrument + "," + pf.getLibrarytsv() + "," +
+                            lineSplit[1] + "," + lineSplit[2] + "\n");
                 } else {
                     writer.write(pf.getStripped() + "," + pf.getAlphapeptdeepMods() + "," +
                             pf.getModPositions() + "," + charge + "," + NceConstants.getNCE() + "," +

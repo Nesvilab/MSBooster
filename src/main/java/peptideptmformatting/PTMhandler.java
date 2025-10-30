@@ -205,7 +205,7 @@ public class PTMhandler {
 
     //start is index of [
     public static String[] formatPeptideBaseToSpecific(String peptide, int start, int end, String model,
-                                                       HashSet<String> foundUnimods, boolean cterm) {
+                                                       ArrayList<String> foundUnimods, boolean cterm) {
         //set allowed unimods
         ArrayList<String> modelAllowedUnimods;
         switch(model) {
@@ -312,42 +312,6 @@ public class PTMhandler {
         }
 
         return new String[]{peptide, unimod}; //unimod is accepted unimod, or ""
-    }
-
-    //returns unimod for the reportedMass, or empty string if not found
-    private static String findUnimodForMass(Set<String> allowedMods, Map<String, Double> modMap,
-                                            Double reportedMass,
-                                            String peptide, int start, int end,
-                                            boolean removeMods, boolean cterm) {
-        //start is index of amino acid before, or 0 if nterm mod
-
-        //first, remove mods that are not supported
-        if (removeMods) {
-            allowedMods = allowedMods.stream()
-                    .filter(modMap::containsKey)
-                    .collect(Collectors.toSet());
-        }
-
-        for (String unimod : allowedMods) {
-            Double PTMmass = modMap.get(unimod);
-            if (NumericUtils.massesCloseEnough(PTMmass, reportedMass)) {
-                char AA = unimod.charAt(0);
-                if (start == -1) { //nterm
-                    if (AA == '[') {
-                        return unimod;
-                    }
-                } else if (cterm && end == peptide.length() - 1) { //cterm
-                    if (AA == '[') {
-                        return unimod;
-                    }
-                } else {
-                    if (AA == peptide.charAt(start)) {
-                        return unimod;
-                    }
-                }
-            }
-        }
-        return "";
     }
 
     private static String findUnimodForMass(ArrayList<String> allowedMods, Map<String, Double> modMap,
@@ -579,13 +543,13 @@ public class PTMhandler {
     }
 
     /////////////////////////////////////////////KOINA///////////////////////////////////////////////////////
-    public static final HashSet<String> prositAAMods = new HashSet<>(
+    public static final ArrayList<String> prositAAMods = new ArrayList<>(
             Arrays.asList("C4", "M35"));
-    public static final HashSet<String> prositTmtAAMods = new HashSet<>(
+    public static final ArrayList<String> prositTmtAAMods = new ArrayList<>(
             Arrays.asList("[737", "K737"));
-    public static final HashSet<String> prositCitAAMods = new HashSet<>(
+    public static final ArrayList<String> prositCitAAMods = new ArrayList<>(
             Arrays.asList("N7", "Q7", "R7"));
-    public static final HashSet<String> unispecAAMods = new HashSet<>(
+    public static final ArrayList<String> unispecAAMods = new ArrayList<>(
             Arrays.asList("[1", "C4", "Q28", "E27", "M35", "S21", "T21", "Y21", "C26"));
     public static final ArrayList<String> diannAAMods = new ArrayList<>(
             Arrays.asList("C4", "M35", "[1", "S21", "T21", "Y21", "K121", "T121", "C121", "S121", "[121",

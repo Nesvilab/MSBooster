@@ -52,8 +52,8 @@ public class PeptideFormatter {
 
     public String charge;
 
-    public HashSet<String> foundUnimods = new HashSet<>(); //collection of previously used unimod codes
-    //TODO: should this be shared amongst all PFs? Can store in a thread-safe set
+    public static HashSet<String> foundUnimods = new HashSet<>(); //collection of previously used unimod codes
+    //TODO: Can store in a thread-safe set
 
     public boolean cterm = false;
 

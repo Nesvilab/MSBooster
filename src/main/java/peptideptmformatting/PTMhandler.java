@@ -21,11 +21,9 @@ import allconstants.Constants;
 import readers.predictionreaders.LibraryTsvReader;
 import umich.ms.fileio.filetypes.unimod.UnimodOboReader;
 import utils.NumericUtils;
+import utils.Print;
 
-import java.io.BufferedReader;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.InputStreamReader;
+import java.io.*;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.*;
@@ -182,6 +180,13 @@ public class PTMhandler {
     public static void setUnimodObo() {
         try { //only do this when library tsv predicted library is specified
             unimodOboToModMass = new HashMap<>();
+            File f = new File(Constants.unimodObo);
+            if (! f.exists()) {
+                Print.printError("When uploading prediction in spectral library in tsv format, " +
+                        "a unimod.obo file must be provided. " +
+                        "In the command line, provide a path at --unimodObo. Exiting.");
+                System.exit(1);
+            }
             UnimodOboReader uobo = new UnimodOboReader(Paths.get(Constants.unimodObo));
             for (Map.Entry<String, Float> entry : uobo.unimodMassMap.entrySet()) {
                 unimodOboToModMass.put(Integer.parseInt(entry.getKey().split(":")[1]), Double.valueOf(entry.getValue()));
@@ -574,9 +579,13 @@ public class PTMhandler {
     }
 
     /////////////////////////////////////////////KOINA///////////////////////////////////////////////////////
-    public static ArrayList<String> prositAAMods = new ArrayList<>(
+    public static final HashSet<String> prositAAMods = new HashSet<>(
             Arrays.asList("C4", "M35"));
-    public static final ArrayList<String> unispecAAMods = new ArrayList<>(
+    public static final HashSet<String> prositTmtAAMods = new HashSet<>(
+            Arrays.asList("[737", "K737"));
+    public static final HashSet<String> prositCitAAMods = new HashSet<>(
+            Arrays.asList("N7", "Q7", "R7"));
+    public static final HashSet<String> unispecAAMods = new HashSet<>(
             Arrays.asList("[1", "C4", "Q28", "E27", "M35", "S21", "T21", "Y21", "C26"));
     public static final ArrayList<String> diannAAMods = new ArrayList<>(
             Arrays.asList("C4", "M35", "[1", "S21", "T21", "Y21", "K121", "T121", "C121", "S121", "[121",

@@ -24,6 +24,7 @@ import peptideptmformatting.PeptideSkipper;
 import predictions.PredictionEntry;
 import predictions.PredictionEntryHashMap;
 
+import static peptideptmformatting.PTMhandler.prositAAMods;
 import static utils.Print.printError;
 
 import java.io.BufferedReader;
@@ -150,7 +151,7 @@ public class MspReader implements LibraryPredictionMapper {
                     PeptideFormatter pf = null;
                     if (Constants.spectraModel.equals("Prosit") || Constants.rtModel.equals("Prosit")) {
                         pf = new PeptideFormatter(
-                                new PeptideFormatter(lineSplit2[0], lineSplit2[1], "base").getProsit(),
+                                new PeptideFormatter(lineSplit2[0], lineSplit2[1], "base").getProsit(prositAAMods),
                                 lineSplit2[1], "prosit");
                     } else if (Constants.spectraModel.equals("PrositTMT") || Constants.rtModel.equals("PrositTMT")) {
                         pf = new PeptideFormatter(

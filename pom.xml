@@ -6,14 +6,14 @@
 
     <groupId>org.example</groupId>
     <artifactId>MSBooster</artifactId>
-    <version>1.3.37</version>
+    <version>1.3.32</version>
 
     <properties>
         <maven.compiler.source>11</maven.compiler.source>
         <maven.compiler.target>11</maven.compiler.target>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
 
-        <ver.batmass.io>1.35.4</ver.batmass.io>
+        <ver.batmass.io>1.36.0</ver.batmass.io>
         <lib.scope>compile</lib.scope>
         <kotlin.version>2.1.20</kotlin.version>
     </properties>

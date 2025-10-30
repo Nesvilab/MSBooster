@@ -59,9 +59,6 @@ public class MainUtils {
                                 peptides.add(line);
                             }
                         }
-                        for (PeptideFormatter pf : km.peptideArraylist) {
-                            pf.foundUnimods.clear();
-                        }
                         myWriter.close();
 
                         String predFileString = DiannModelCaller.callModel(inputFile, false);
@@ -181,9 +178,6 @@ public class MainUtils {
                                 myWriter.write(line);
                                 peptides.add(line);
                             }
-                        }
-                        for (PeptideFormatter pf : km.peptideArrayListIM) {
-                            pf.foundUnimods.clear();
                         }
                         myWriter.close();
 
@@ -327,9 +321,6 @@ public class MainUtils {
                                 myWriter.write(line);
                                 peptides.add(line);
                             }
-                        }
-                        for (PeptideFormatter pf : km.peptideArraylist) {
-                            pf.foundUnimods.clear();
                         }
                         myWriter.close();
 

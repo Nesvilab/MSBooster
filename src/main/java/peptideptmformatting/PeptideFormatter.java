@@ -22,6 +22,7 @@ import utils.NumericUtils;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
 import static peptideptmformatting.PTMhandler.*;
@@ -171,12 +172,9 @@ public class PeptideFormatter {
             int end = ends.get(i);
 
             String[] peptideUnimod = PTMhandler.formatPeptideBaseToSpecific(
-                    diann, start, end, "diann", foundUnimods, attemptCterm);
+                    diann, start, end, "diann", diannAAMods, attemptCterm);
             attemptCterm = false;
             diann = peptideUnimod[0];
-            if (!peptideUnimod[1].isEmpty()) {
-                foundUnimods.add(peptideUnimod[1]);
-            }
         }
 
         //special TMT formatting
@@ -202,12 +200,9 @@ public class PeptideFormatter {
             int end = ends.get(i);
 
             String[] peptideUnimod = PTMhandler.formatPeptideBaseToSpecific(
-                    unispec, start, end, "unispec", foundUnimods, attemptCterm);
+                    unispec, start, end, "unispec", unispecAAMods, attemptCterm);
             attemptCterm = false;
             unispec = peptideUnimod[0];
-            if (!peptideUnimod[1].isEmpty()) {
-                foundUnimods.add(peptideUnimod[1]);
-            }
         }
     }
 
@@ -220,12 +215,9 @@ public class PeptideFormatter {
             int end = ends.get(i);
 
             String[] peptideUnimod = PTMhandler.formatPeptideBaseToSpecific(
-                    ms2pip, start, end, "ms2pip", foundUnimods, attemptCterm);
+                    ms2pip, start, end, "ms2pip", ms2pipAAMods, attemptCterm);
             attemptCterm = false;
             ms2pip = peptideUnimod[0];
-            if (!peptideUnimod[1].isEmpty()) {
-                foundUnimods.add(peptideUnimod[1]);
-            }
         }
     }
 
@@ -292,12 +284,9 @@ public class PeptideFormatter {
             int end = ends.get(i);
 
             String[] peptideUnimod = PTMhandler.formatPeptideBaseToSpecific(
-                    predfull, start, end, "predfull", foundUnimods, attemptCterm);
+                    predfull, start, end, "predfull", predfullAAMods, attemptCterm);
             attemptCterm = false;
             predfull = peptideUnimod[0].replace("[UNIMOD:4]", "");
-            if (!peptideUnimod[1].isEmpty()) {
-                foundUnimods.add(peptideUnimod[1]);
-            }
         }
     }
 
@@ -320,7 +309,7 @@ public class PeptideFormatter {
         }
     }
 
-    private void baseTOprosit() {
+    private void baseTOprosit(HashSet<String> uniqMods) {
         prosit = base;
 
         boolean attemptCterm = cterm;
@@ -329,12 +318,9 @@ public class PeptideFormatter {
             int end = ends.get(i);
 
             String[] peptideUnimod = PTMhandler.formatPeptideBaseToSpecific(
-                    prosit, start, end, "prosit", foundUnimods, attemptCterm);
+                    prosit, start, end, "prosit", uniqMods, attemptCterm);
             attemptCterm = false;
             prosit = peptideUnimod[0];
-            if (!peptideUnimod[1].isEmpty()) {
-                foundUnimods.add(peptideUnimod[1]);
-            }
         }
 
         //C is required to have carbamidomethyl
@@ -387,26 +373,17 @@ public class PeptideFormatter {
         for (int i = 0; i < numMods; i++) {
             String modMass = base.substring(starts.get(i) + 1, ends.get(i));
             double doubleModMass = Double.parseDouble(modMass);
-            HashSet<String> possibleMods = PTMhandler.aamassToAlphapeptdeep.get(doubleModMass);
-            if (possibleMods == null) {
-                possibleMods = new HashSet<>();
-                Map.Entry<Double, HashSet<String>> lower = PTMhandler.aamassToAlphapeptdeep.lowerEntry(doubleModMass);
-                Map.Entry<Double, HashSet<String>> higher = PTMhandler.aamassToAlphapeptdeep.higherEntry(doubleModMass);
+            HashSet<String> possibleMods = new HashSet<>();
+            Map<Double, HashSet<String>> tt = PTMhandler.aamassToAlphapeptdeep.subMap(doubleModMass - 0.0001, false, doubleModMass + 0.0001, false);
 
-                if (NumericUtils.massesCloseEnough(lower.getKey(), doubleModMass)) {
-                    possibleMods.addAll(lower.getValue());
-                }
-                if (NumericUtils.massesCloseEnough(higher.getKey(), doubleModMass)) {
-                    possibleMods.addAll(higher.getValue());
-                }
-                if (possibleMods.isEmpty()) {
-                    printError("There is an unknown modification with mass " + doubleModMass +
-                            ". Please provide PTM info via additionalMods param in --paramsList.");
-                    System.exit(1);
-                }
+            if (tt.isEmpty()) {
+                printError("There is an unknown modification with mass " + doubleModMass +
+                        ". Please provide PTM info via additionalMods param in --paramsList.");
+                System.exit(1);
+            }
 
-                //add exact mass to not encounter this same issue
-                PTMhandler.aamassToAlphapeptdeep.put(doubleModMass, possibleMods);
+            for (Map.Entry<Double, HashSet<String>> e : tt.entrySet()) {
+                possibleMods.addAll(e.getValue());
             }
 
             int position = starts.get(i) - newEnds.get(i) + positions.get(i);
@@ -482,6 +459,7 @@ public class PeptideFormatter {
                 koinaTObase(peptide, unimodToModMassLimited);
                 break;
             case "prosit":
+            case "prosit_cit":
                 prosit = peptide;
                 koinaTObase(peptide, unimodToModMassLimited);
                 break;
@@ -530,74 +508,53 @@ public class PeptideFormatter {
     }
 
     public String getDiann() {
-        if (diann == null) {
-            baseTOdiann();
-        }
+        baseTOdiann();
         return diann;
     }
 
-    public String getProsit() {
-        if (prosit == null) {
-            baseTOprosit();
-        }
+    public String getProsit(HashSet<String> uniqMods) {
+        baseTOprosit(uniqMods);
         return prosit;
     }
 
     public String getStripped() {
-        if (stripped == null) {
-            baseTOstripped();
-        }
+        baseTOstripped();
         return stripped;
     }
 
     public String getPrositTMT() {
-        if (prositTMT == null) {
-            getProsit();
-            prositTOprositTMT();
-        }
+        getProsit(prositTmtAAMods);
+        prositTOprositTMT();
         return prositTMT;
     }
 
     public String getPredfull() {
-        if (predfull == null) {
-            baseTOpredfull();
-        }
+        baseTOpredfull();
         return predfull;
     }
 
     public String getPredfullKoina() {
-        if (predfull == null) {
-            baseToPredfullKoina();
-        }
+        baseToPredfullKoina();
         return predfull;
     }
 
-
     public String getUnispec() {
-        if (unispec == null) {
-            baseTOunispec();
-        }
+        baseTOunispec();
         return unispec;
     }
 
     public String getMs2pip() {
-        if (ms2pip == null) {
-            baseTOms2pip();
-        }
+        baseTOms2pip();
         return ms2pip;
     }
 
     public String getDeeplc() {
-        if (deeplc == null) {
-            baseTOdeeplc();
-        }
+        baseTOdeeplc();
         return deeplc;
     }
 
     public String getAlphapept() {
-        if (alphapept == null) {
-            baseTOalphapept();
-        }
+        baseTOalphapept();
         return alphapept;
     }
 
@@ -626,7 +583,7 @@ public class PeptideFormatter {
                         prositAAMods.add("R7");
                     }
                 }
-                return getProsit();
+                return getProsit(prositAAMods);
             case "prosittmt":
                 return getPrositTMT();
             case "unispec":

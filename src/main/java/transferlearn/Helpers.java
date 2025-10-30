@@ -111,6 +111,10 @@ public class Helpers {
                 writer.newLine();
                 pr.progress();
             }
+
+            Print.printInfo("Deleting parquet " + parquet);
+            File parquetFile = new File(parquet);
+            parquetFile.delete();
         }
     }
 

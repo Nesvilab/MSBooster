@@ -53,7 +53,7 @@ public class PeptideFormatter {
 
     public String charge;
 
-    public static ArrayList<String> foundUnimods = new ArrayList<>(); //collection of previously used unimod codes
+    public static HashSet<String> foundUnimods = new HashSet<>(); //collection of previously used unimod codes
     //TODO: Can store in a thread-safe set
 
     public boolean cterm = false;
@@ -309,7 +309,7 @@ public class PeptideFormatter {
         }
     }
 
-    private void baseTOprosit(ArrayList<String> uniqMods) {
+    private void baseTOprosit(HashSet<String> uniqMods) {
         prosit = base;
 
         boolean attemptCterm = cterm;
@@ -512,7 +512,7 @@ public class PeptideFormatter {
         return diann;
     }
 
-    public String getProsit(ArrayList<String> uniqMods) {
+    public String getProsit(HashSet<String> uniqMods) {
         baseTOprosit(uniqMods);
         return prosit;
     }
@@ -571,9 +571,17 @@ public class PeptideFormatter {
                 return getDiann();
             case "prosit":
                 if (model.contains("TMT")) {
+                    if (!prositAAMods.contains("[737")) {
+                        prositAAMods.add(0, "[737");
+                        prositAAMods.add("K737");
+                    }
                     return getPrositTMT();
                 } else if (model.contains("_cit")) {
-                    return getProsit(prositCitAAMods);
+                    if (!prositAAMods.contains("N7")) {
+                        prositAAMods.add(0, "N7");
+                        prositAAMods.add("Q7");
+                        prositAAMods.add("R7");
+                    }
                 }
                 return getProsit(prositAAMods);
             case "prosittmt":

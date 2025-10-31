@@ -6,6 +6,7 @@ import java.io.*;
 import java.net.HttpURLConnection;
 import java.net.URL;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -15,6 +16,7 @@ import java.time.LocalDateTime;
 import static allconstants.Constants.versionNumber;
 import static transferlearn.Helpers.readJsonResponse;
 import static transferlearn.Helpers.setUpConnection;
+import static utils.Print.printError;
 import static utils.Print.printInfo;
 
 public class Trainer {
@@ -23,7 +25,7 @@ public class Trainer {
     private static void errorMessage() {
         Print.printError("Usage: java -cp MSBooster.jar src.main.java.transferlearn.Trainer " +
                 "--url <server url> --library <path/to/librarytsv> --api-key <key> " +
-                "optional: --basename <output base name>");
+                "optional: --basename <output base name> --output-dir <output directory>");
         Print.printError("Example: java -cp MSBooster.jar src.main.java.transferlearn.Trainer " +
                 "--url http://localhost:8000 --library library.tsv --basename weights (returns weights.zip)");
         Print.printError("Example: java -cp MSBooster.jar src.main.java.transferlearn.Trainer " +
@@ -53,6 +55,7 @@ public class Trainer {
         String library = "";
         String apiKey = "";
         String basename = "";
+        String outputDir = "";
 
         for (int i = 0; i < args.length; i++) {
             switch (args[i]) {
@@ -67,6 +70,17 @@ public class Trainer {
                     break;
                 case "--basename":
                     basename =  args[i + 1];
+                    break;
+                case "--output-dir":
+                    outputDir =  args[i + 1];
+                    File directory = new File(outputDir);
+                    if (!directory.isDirectory()) {
+                        printError(outputDir + " is not a directory");
+                        System.exit(1);
+                    }
+                    if (! directory.exists()) {
+                        directory.mkdir();
+                    }
                     break;
             }
         }
@@ -179,7 +193,10 @@ public class Trainer {
         }
 
         //download
-        File downloadPath = new File(libraryparquet.getParent(), outputBaseName + ".zip");
+        if (outputDir.isEmpty()) {
+            outputDir = libraryparquet.getParent();
+        }
+        File downloadPath = new File(outputDir, outputBaseName + ".zip");
 
         if (status.equals("SUCCESS")) {
             URL downloadUrl = new URL(url + "/train/download/" + jobId);

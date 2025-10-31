@@ -17,6 +17,7 @@ import java.util.Locale;
 
 import static allconstants.Constants.versionNumber;
 import static transferlearn.Helpers.*;
+import static utils.Print.printError;
 import static utils.Print.printInfo;
 
 public class Predictor {
@@ -26,7 +27,7 @@ public class Predictor {
         Print.printError("Usage: java -cp MSBooster.jar src.main.java.transferlearn.Predictor " +
                 "--paramsList <msbooster parameters> --api-key <key> " +
                 "--url <server url> --model <path/to/model/weights> " +
-                "optional: --peptide-list-to-dict <path/to/csv> --basename <output base name> " +
+                "optional: --peptide-list-to-dict <path/to/csv> --basename <output base name>  --output-dir <output directory> " +
                 "--ms2 <predict ms2> --rt <predict rt> --im <predict ccs> " +
                 "--min-charge <int> max-charge <int> --output-format <'parquet' or 'mgf' or 'librarytsv'>");
         Print.printError("Example: java -cp MSBooster.jar src.main.java.transferlearn.Predictor " +
@@ -77,6 +78,7 @@ public class Predictor {
         int minCharge = 2;
         int maxCharge = 3;
         String outputFormat = "parquet";
+        String outputDir = "";
 
         for (int i = 0; i < args.length; i++) {
             switch (args[i]) {
@@ -123,6 +125,17 @@ public class Predictor {
                         Print.printError("Unknown output format: " + outputFormat + ". " +
                                 "Must be one of mgf, parquet, or librarytsv");
                         errorMessage();
+                    }
+                    break;
+                case "--output-dir":
+                    outputDir =  args[i + 1];
+                    File directory = new File(outputDir);
+                    if (!directory.isDirectory()) {
+                        printError(outputDir + " is not a directory");
+                        System.exit(1);
+                    }
+                    if (! directory.exists()) {
+                        directory.mkdir();
                     }
                     break;
             }
@@ -316,7 +329,10 @@ public class Predictor {
         if (!outputFormat.equals("mgf")) {
             downloadExtension = ".parquet";
         }
-        File downloadPath = new File(inputFile.getParent(), basename + downloadExtension);
+        if (outputDir.isEmpty()) {
+            outputDir = inputFile.getParent();
+        }
+        File downloadPath = new File(outputDir, basename + downloadExtension);
 
         if (status.equals("SUCCESS")) {
             URL downloadUrl = new URL(url + "/predict/download/" + jobId);

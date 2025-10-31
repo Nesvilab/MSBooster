@@ -130,12 +130,8 @@ public class Predictor {
                 case "--output-dir":
                     outputDir =  args[i + 1];
                     File directory = new File(outputDir);
-                    if (!directory.isDirectory()) {
-                        printError(outputDir + " is not a directory");
-                        System.exit(1);
-                    }
                     if (! directory.exists()) {
-                        directory.mkdir();
+                        directory.mkdirs();
                     }
                     break;
             }

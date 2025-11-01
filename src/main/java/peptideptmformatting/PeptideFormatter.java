@@ -39,6 +39,7 @@ public class PeptideFormatter {
     private String ms2pip;
     private String deeplc;
     private String alphapept;
+    private String librarytsv;
     private String stripped;
     String baseCharge;
     private String dlib;
@@ -50,10 +51,10 @@ public class PeptideFormatter {
     private ArrayList<Integer> starts = new ArrayList<>();
     private ArrayList<Integer> ends = new ArrayList<>();
 
-    String charge;
+    public String charge;
 
-    public HashSet<String> foundUnimods = new HashSet<>(); //collection of previously used unimod codes
-    //only use for alphapeptdeep, deeplc, and im2deep since those use unimod file
+    public static HashSet<String> foundUnimods = new HashSet<>(); //collection of previously used unimod codes
+    //TODO: Can store in a thread-safe set
 
     public boolean cterm = false;
 
@@ -67,9 +68,11 @@ public class PeptideFormatter {
         }
     }
 
-    private void pinTObase(String peptide) {
+    private void pinTObase(String peptide, boolean adjacentAA) {
         //remove AA and period at beginning and end
-        peptide = peptide.substring(2, peptide.length() - 2);
+        if (adjacentAA) {
+            peptide = peptide.substring(2, peptide.length() - 2);
+        }
 
         while (Character.isDigit(peptide.charAt(peptide.length() - 1))) {
             peptide = peptide.substring(0, peptide.length() - 1);
@@ -254,6 +257,24 @@ public class PeptideFormatter {
         }
     }
 
+    private void baseTOlibrarytsv() {
+        librarytsv = base;
+
+        boolean attemptCterm = cterm;
+        for (int i = starts.size() - 1; i > -1; i--) {
+            int start = starts.get(i);
+            int end = ends.get(i);
+
+            String[] peptideUnimod = PTMhandler.formatPeptideBaseToSpecific(
+                    librarytsv, start, end, "librarytsv", foundUnimods, attemptCterm);
+            attemptCterm = false;
+            librarytsv = peptideUnimod[0];
+            if (!peptideUnimod[1].isEmpty()) {
+                foundUnimods.add(peptideUnimod[1]);
+            }
+        }
+    }
+
     private void baseToPredfullKoina() {
         predfull = base;
 
@@ -394,7 +415,7 @@ public class PeptideFormatter {
         if (!mods.isEmpty()) {
             mods = mods.substring(0, mods.length() - 1);
             alphapeptdeepMods = alphapeptdeepMods.substring(0, alphapeptdeepMods.length() - 1);
-            modPositions = modPositions.substring(0, modPositions.length() - 1);
+            //modPositions = modPositions.substring(0, modPositions.length() - 1);
         }
     }
 
@@ -416,7 +437,10 @@ public class PeptideFormatter {
 
         switch(format) {
             case "pin":
-                pinTObase(peptide);
+                pinTObase(peptide, true);
+                break;
+            case "apdpred":
+                pinTObase(peptide, false);
                 break;
             case "diann":
                 diann = peptide;
@@ -534,6 +558,13 @@ public class PeptideFormatter {
         return alphapept;
     }
 
+    public String getLibrarytsv() {
+        if (librarytsv == null) {
+            baseTOlibrarytsv();
+        }
+        return librarytsv;
+    }
+
     public String getModel(String model) { //model is whole url name
         switch(model.toLowerCase().split("_")[0]) {
             case "diann":
@@ -542,7 +573,7 @@ public class PeptideFormatter {
                 if (model.contains("TMT")) {
                     return getPrositTMT();
                 } else if (model.contains("_cit")) {
-                    return getProsit(prositCitAAMods);
+                    getProsit(prositCitAAMods);
                 }
                 return getProsit(prositAAMods);
             case "prosittmt":

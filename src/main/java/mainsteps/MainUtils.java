@@ -569,10 +569,18 @@ public class MainUtils {
     static void makeInputFiles(PinMzmlMatcher pmMatcher, ArrayList<Model> models, KoinaMethods km)
             throws FileParsingException, IOException, ExecutionException, InterruptedException {
         MyFileUtils.deleteWholeDirectory(Constants.outputDirectory + File.separator + "NCE_calibration");
-        //createfull is needed for everything
-        PeptideFileCreator.createPeptideFile(pmMatcher,
-                Constants.spectraRTPrefix + "_full.tsv",
-                "createFull");
+        //createfull is needed for almost everything
+        HashSet<String> modelSet = new HashSet<>();
+        for (Model model : models) {
+            modelSet.add(model.name);
+        }
+        if (modelSet.size() == 1 && modelSet.contains("alphapeptdeep")) {
+
+        } else {
+            PeptideFileCreator.createPeptideFile(pmMatcher,
+                    Constants.spectraRTPrefix + "_full.tsv",
+                    "createFull");
+        }
 
         HashSet<String> modelsRan = new HashSet<>();
         for (Model model : models) {

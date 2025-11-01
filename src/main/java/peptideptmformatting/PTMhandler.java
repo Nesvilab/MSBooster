@@ -27,6 +27,7 @@ import java.io.*;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.*;
+import java.util.stream.Collectors;
 
 import static utils.Print.printError;
 
@@ -163,10 +164,12 @@ public class PTMhandler {
     }
 
     public static final Map<String, Double> AAunimodToModMassAll;
+    public static final Set<String> AAunimodToModMassAllKeys;
 
     static {
         try {
             AAunimodToModMassAll = makeUnimodToModMassAll(true);
+            AAunimodToModMassAllKeys = AAunimodToModMassAll.keySet();
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
@@ -204,7 +207,7 @@ public class PTMhandler {
     public static String[] formatPeptideBaseToSpecific(String peptide, int start, int end, String model,
                                                        HashSet<String> foundUnimods, boolean cterm) {
         //set allowed unimods
-        HashSet<String> modelAllowedUnimods = new HashSet<>();
+        Set<String> modelAllowedUnimods;
         switch(model) {
             case "diann":
                 modelAllowedUnimods = diannAAMods;
@@ -222,10 +225,14 @@ public class PTMhandler {
             case "alphapept":
             case "deeplc":
             case "im2deep":
-                modelAllowedUnimods.addAll(AAunimodToModMassAll.keySet());
+            case "librarytsv":
+                modelAllowedUnimods = AAunimodToModMassAllKeys;
                 break;
             case "predfull":
                 modelAllowedUnimods = predfullAAMods;
+                break;
+            default:
+                modelAllowedUnimods = new HashSet<>();
                 break;
         }
 
@@ -233,6 +240,7 @@ public class PTMhandler {
         String unimodFormat = "";
         switch(model) {
             case "diann":
+            case "librarytsv":
                 unimodFormat = "UniMod";
                 break;
             default: //koina
@@ -263,7 +271,8 @@ public class PTMhandler {
 
         //all unimod codes allowed
         Map<String, Double> modMap;
-        if (model.equals("alphapept") || model.equals("deeplc") || model.equals("im2deep")) {
+        if (model.equals("alphapept") || model.equals("deeplc") ||
+                model.equals("im2deep") || model.equals("librarytsv")) {
             modMap = AAunimodToModMassAll;
         } else {
             modMap = AAunimodToModMassLimited;
@@ -297,6 +306,11 @@ public class PTMhandler {
             peptide = peptide.substring(0, start) + ctermSuffix + peptide.substring(start);
         }
 
+        if (model.equals("librarytsv")) {
+            peptide = peptide.replace("[", "(");
+            peptide = peptide.replace("]", ")");
+        }
+
         return new String[]{peptide, unimod}; //unimod is accepted unimod, or ""
     }
 
@@ -309,31 +323,25 @@ public class PTMhandler {
 
         //first, remove mods that are not supported
         if (removeMods) {
-            ArrayList<String> missingMods = new ArrayList<>();
-            for (String unimod : allowedMods) {
-                if (!modMap.containsKey(unimod)) {
-                    missingMods.add(unimod);
-                }
-            }
-            for (String unimod : missingMods) {
-                allowedMods.remove(unimod);
-            }
+            allowedMods = allowedMods.stream()
+                    .filter(modMap::containsKey)
+                    .collect(Collectors.toSet());
         }
 
         for (String unimod : allowedMods) {
             Double PTMmass = modMap.get(unimod);
             if (NumericUtils.massesCloseEnough(PTMmass, reportedMass)) {
-                String AA = unimod.substring(0, 1);
+                char AA = unimod.charAt(0);
                 if (start == -1) { //nterm
-                    if (AA.equals("[")) {
+                    if (AA == '[') {
                         return unimod;
                     }
                 } else if (cterm && end == peptide.length() - 1) { //cterm
-                    if (AA.equals("[")) {
+                    if (AA == '[') {
                         return unimod;
                     }
                 } else {
-                    if (AA.equals(peptide.substring(start, start + 1))) {
+                    if (AA == peptide.charAt(start)) {
                         return unimod;
                     }
                 }

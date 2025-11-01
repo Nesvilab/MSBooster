@@ -28,6 +28,8 @@ import java.util.HashSet;
 import java.util.concurrent.ConcurrentHashMap;
 
 public class Constants implements ConstantsInterface {
+    public static String versionNumber = "MSBooster v1.3.32";
+
     //file input
     public static String paramsList = null;
     public static String fragger = null;
@@ -350,26 +352,32 @@ public class Constants implements ConstantsInterface {
     ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
     //methods
+    public static Boolean requirePinMzml = true;
+    public static String peptideListDirectory = "";
     public void updateOutputDirectory() {
-        if (outputDirectory == null) {
-            String[] pinFiles = pinPepXMLDirectory.split(" ");
-            String output;
-            if (pinFiles.length == 1) {
-                output = pinFiles[0];
-            } else {
-                output = MyFileUtils.findDeepestCommonDirectory(pinFiles);
-            }
+        if (requirePinMzml) {
+            if (outputDirectory == null) {
+                String[] pinFiles = pinPepXMLDirectory.split(" ");
+                String output;
+                if (pinFiles.length == 1) {
+                    output = pinFiles[0];
+                } else {
+                    output = MyFileUtils.findDeepestCommonDirectory(pinFiles);
+                }
 
-            File newFile = new File(output);
-            if (newFile.isDirectory()) {
-                outputDirectory = output + File.separator + "MSBooster";
-            } else { //file
-                outputDirectory = newFile.getAbsoluteFile().getParent() + File.separator + "MSBooster";
+                File newFile = new File(output);
+                if (newFile.isDirectory()) {
+                    outputDirectory = output + File.separator + "MSBooster";
+                } else { //file
+                    outputDirectory = newFile.getAbsoluteFile().getParent() + File.separator + "MSBooster";
+                }
+                Print.printInfo("Creating output folder at " + outputDirectory);
+                MyFileUtils.createWholeDirectory(outputDirectory);
             }
-            Print.printInfo("Creating output folder at " + outputDirectory);
-            MyFileUtils.createWholeDirectory(outputDirectory);
+            figureDirectory = outputDirectory + File.separator + "MSBooster_plots";
+        } else {
+            outputDirectory = peptideListDirectory;
         }
-        figureDirectory = outputDirectory + File.separator + "MSBooster_plots";
     }
     public void updateInputPaths() {
         if (spectraRTPrefix == null) {

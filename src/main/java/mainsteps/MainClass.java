@@ -30,6 +30,7 @@ import java.util.*;
 
 import java.util.concurrent.ScheduledThreadPoolExecutor;
 
+import static allconstants.Constants.versionNumber;
 import static mainsteps.MainUtils.*;
 import static mainsteps.ParameterUtils.*;
 import static utils.Print.*;
@@ -40,18 +41,18 @@ public class MainClass {
 
     public static void main(String[] args) throws Exception {
         Locale.setDefault(Locale.US);
-        printInfo("MSBooster v1.3.32");
+        Thread.setDefaultUncaughtExceptionHandler((t, e) -> {
+			e.printStackTrace();
+			System.exit(1);
+		});
+
+        printInfo(versionNumber);
 
         try {
             HashMap<String, String> params = new HashMap<>();
 
             //accept command line inputs
             processCommandLineInputs(args, params);
-
-            //adding parameter list
-            if (params.containsKey("paramsList")) { //override previous params input
-                processParameterList(params);
-            }
 
             //read in MSFragger parameters
             if (params.containsKey("fragger")) { //Will override paramsList
@@ -61,7 +62,7 @@ public class MainClass {
             }
 
             //adding to different constants classes, and setting input/output paths
-            updatesConstants(params);
+            updateConstants(params);
 
             //defining num threads
             if (Constants.numThreads <= 0) {
@@ -222,7 +223,7 @@ public class MainClass {
                 makeInputFiles(pmMatcher, models, km);
                 if (Constants.createPredFileOnly) {
                     printInfo("Successfully created input file for prediction model. Stopping here");
-                    System.exit(0);
+                    return;
                 }
             }
 

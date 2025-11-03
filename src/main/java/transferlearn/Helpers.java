@@ -79,42 +79,20 @@ public class Helpers {
     static void convertParquetToCsv(String parquet, String tsv) throws SQLException, IOException {
         Print.printInfo("Converting parquet to CSV");
         try (Connection conn = DriverManager.getConnection("jdbc:duckdb:");
-             Statement stmt = conn.createStatement();
-             BufferedWriter writer = new BufferedWriter(new FileWriter(tsv))) {
-
-            //get number of rows
-            ResultSet rs = stmt.executeQuery("SELECT COUNT(*) FROM read_parquet('" + parquet + "')");
-            rs.next();
-            int rowCount = rs.getInt(1);
-            ProgressReporter pr = new ProgressReporter(rowCount);
+             Statement stmt = conn.createStatement()) {
 
             // Register and query Parquet
-            String query = "SELECT * FROM read_parquet('" + parquet + "')";
-            rs = stmt.executeQuery(query);
+            String query = String.format(
+                    "COPY (SELECT * FROM read_parquet('%s')) " +
+                            "TO '%s' (FORMAT CSV, DELIMITER '\t', HEADER, QUOTE '', ESCAPE '');",
+                    parquet.replace("'", "''"),
+                    tsv.replace("'", "''")
+            );
+            stmt.execute(query);
 
-            // Write header
-            ResultSetMetaData meta = rs.getMetaData();
-            int columnCount = meta.getColumnCount();
-            for (int i = 1; i <= columnCount; i++) {
-                writer.write(meta.getColumnName(i));
-                if (i < columnCount) writer.write("\t");
-            }
-            writer.newLine();
-
-            // Write rows
-            while (rs.next()) {
-                for (int i = 1; i <= columnCount; i++) {
-                    Object value = rs.getObject(i);
-                    writer.write(value == null ? "" : value.toString());
-                    if (i < columnCount) writer.write("\t");
-                }
-                writer.newLine();
-                pr.progress();
-            }
-
-            Print.printInfo("Deleting parquet " + parquet);
-            File parquetFile = new File(parquet);
-            parquetFile.delete();
+//            Print.printInfo("Deleting parquet " + parquet);
+//            File parquetFile = new File(parquet);
+//            parquetFile.delete();
         }
     }
 

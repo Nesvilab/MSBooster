@@ -356,7 +356,7 @@ public class Predictor {
             if (outputFormat.equals("librarytsv")) {
                 String tsvPath = downloadPath.getAbsolutePath().replace(".parquet", ".tsv");
                 convertParquetToCsv(String.valueOf(downloadPath), tsvPath);
-                downloadPath.delete();
+//                downloadPath.delete();
 
                 Print.printInfo("File downloaded to: " + tsvPath);
             } else {

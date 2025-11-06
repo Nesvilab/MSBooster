@@ -15,6 +15,7 @@ import java.net.HttpURLConnection;
 import java.net.URL;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
+import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.sql.*;
 import java.util.HashMap;
@@ -89,10 +90,75 @@ public class Helpers {
                     tsv.replace("'", "''")
             );
             stmt.execute(query);
+        }
+    }
 
-//            Print.printInfo("Deleting parquet " + parquet);
-//            File parquetFile = new File(parquet);
-//            parquetFile.delete();
+    static void convertPeptideListToApdInput(String inputParquet, File outputParquet) {
+        printInfo("Converting peptide list to AlphaPeptDeep parquet");
+
+        Path tmpCsv = null;
+        try (Connection conn = DriverManager.getConnection("jdbc:duckdb:");
+             Statement stmt = conn.createStatement()) {
+
+            // Create temp CSV file
+            tmpCsv = Files.createTempFile("alphapeptdeep_", ".csv");
+
+            // Prepare writer to CSV
+            try (BufferedWriter writer = Files.newBufferedWriter(tmpCsv)) {
+                writer.write("sequence,mods,mod_sites,charge,nce,instrument,modified,proteins,is_decoy\n");
+
+                // Get number of lines for progress reporting
+                ResultSet rs = stmt.executeQuery("SELECT COUNT(*) FROM read_parquet('" + inputParquet + "')");
+                rs.next();
+                int lines = rs.getInt(1);
+                ProgressReporter pr = new ProgressReporter(lines);
+                Print.printInfo(lines + " entries to convert");
+
+                // Query input parquet
+                rs = stmt.executeQuery(
+                        "SELECT peptide, proteins, is_decoy FROM read_parquet('" + inputParquet + "')");
+
+                while (rs.next()) {
+                    String peptide = rs.getString("peptide");
+                    String proteins = rs.getString("proteins");
+                    boolean isDecoy = rs.getBoolean("is_decoy");
+
+                    // extract charge
+                    String charge = "";
+                    while (!peptide.isEmpty() && Character.isDigit(peptide.charAt(peptide.length() - 1))) {
+                        charge = peptide.charAt(peptide.length() - 1) + charge;
+                        peptide = peptide.substring(0, peptide.length() - 1);
+                    }
+
+                    PeptideFormatter pf = new PeptideFormatter(peptide, charge, "apdpred");
+
+                    writer.write(String.join(",",
+                            pf.getStripped(),
+                            pf.getAlphapeptdeepMods(),
+                            pf.getModPositions(),
+                            charge,
+                            String.valueOf(NceConstants.getNCE()),
+                            Constants.instrument,
+                            pf.getLibrarytsv(),
+                            proteins,
+                            String.valueOf(isDecoy)
+                    ));
+                    writer.write("\n");
+                    pr.progress();
+                }
+            }
+
+            stmt.execute("CREATE TABLE tmp AS SELECT * FROM read_csv_auto('" + tmpCsv + "')");
+            stmt.execute("COPY tmp TO '" + outputParquet.getAbsolutePath() + "' (FORMAT PARQUET)");
+
+        } catch (Exception e) {
+            Print.printError("Error: " + e.getMessage());
+            e.printStackTrace();
+            System.exit(1);
+        } finally {
+            if (tmpCsv != null) {
+                try { Files.deleteIfExists(tmpCsv); } catch (IOException ignored) {}
+            }
         }
     }
 

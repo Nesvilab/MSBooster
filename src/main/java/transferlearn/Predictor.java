@@ -152,25 +152,25 @@ public class Predictor {
             inputFile = new File(Constants.spectraRTPrefix + ".csv");
             minCharge = 0;
             maxCharge = 0;
+
+            //convert input to parquet
+            printInfo("Converting AlphaPeptDeep input to parquet");
+            String parquetPath = Constants.spectraRTPrefix + ".parquet";
+            Helpers.convertCsvToParquet(inputFile.getPath(), parquetPath, true);
+            inputFile = new File(parquetPath);
         } else { //predict everything in peptide list
             HashMap<String, String> paramsMap = new HashMap<>();
             ParameterUtils.processCommandLineInputs(new String[]{"--paramsList", params, "--requirePinMzml", "false"},
                     paramsMap);
             ParameterUtils.updateConstants(paramsMap);
-            inputFile = new File(Constants.spectraRTPrefix + ".csv");
+            inputFile = new File(Constants.spectraRTPrefix + ".parquet");
 
             //if using peptide list, nce and instrument should be provided
             NceConstants.mzmlNCEs.put("HCD", String.valueOf(NceConstants.NCE));
 
             //adapt peptide list to alphapeptdeep format
-            convertPeptideListToCsv(peptideList, inputFile);
+            convertPeptideListToApdInput(peptideList, inputFile);
         }
-
-        //convert input to parquet
-        printInfo("Converting AlphaPeptDeep input to parquet");
-        String parquetPath = Constants.spectraRTPrefix + ".parquet";
-        Helpers.convertCsvToParquet(inputFile.getPath(), parquetPath, true);
-        inputFile = new File(parquetPath);
 
         //prediction
         Print.printInfo("Generating predictions");

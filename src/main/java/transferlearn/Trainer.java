@@ -146,6 +146,9 @@ public class Trainer {
             try {
                 HashMap<String, Object> map = readJsonResponse(responseStream);
                 jobId = map.get("job_id").toString();
+
+                //set up shut down hook
+                Runtime.getRuntime().addShutdownHook(new Helpers.EndJob(url + "/train/cancel/" + jobId));
             } catch (Exception e) { //success that we don't handle yet
                 Print.printError(String.valueOf(e));
                 BufferedReader in = new BufferedReader(new InputStreamReader(responseStream));

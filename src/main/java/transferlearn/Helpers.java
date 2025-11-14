@@ -12,6 +12,7 @@ import javax.net.ssl.HttpsURLConnection;
 import java.io.*;
 import java.lang.reflect.Type;
 import java.net.HttpURLConnection;
+import java.net.MalformedURLException;
 import java.net.URL;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
@@ -200,6 +201,30 @@ public class Helpers {
             Print.printError("Error reading and writing input file for AlphaPeptDeep prediction: "
                     + e.getMessage());
             System.exit(1);
+        }
+    }
+
+    static class EndJob extends Thread {
+        private final String cancelUrlPath;
+
+        public EndJob(String cancelUrlPath) {
+            this.cancelUrlPath = cancelUrlPath;
+        }
+        public void run() {
+            URL cancelUrl;
+            try {
+                cancelUrl = new URL(cancelUrlPath);
+                HttpURLConnection connection = setUpConnection(cancelUrlPath, cancelUrl);
+                connection.connect();
+                InputStream responseStream = connection.getInputStream();
+                BufferedReader in = new BufferedReader(new InputStreamReader(responseStream));
+                String line;
+                while ((line = in.readLine()) != null) {
+                    System.out.println(line);
+                }
+            } catch (IOException e) {
+                throw new RuntimeException(e);
+            }
         }
     }
 }

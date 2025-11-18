@@ -367,15 +367,13 @@ public class Predictor {
             FastaReader fastaReader = new FastaReader(fasta);
             HashMap<String, String> protMap = new HashMap<>();
             if (outputFormat.equals("librarytsv") ||  outputFormat.equals("speclib")) {
-                //TODO allow MSFragger candidates to be used for DIA-NN quant
+                Print.printInfo("Reading FASTA file");
+                fastaReader.mapProtToGene();
+
                 if (! peptideList.isEmpty()) {
-                    Print.printInfo("Reading FASTA file");
-                    fastaReader.mapProtToGene();
                     protMap = mapProteinsListToGenes(peptideList, fastaReader.protToGene);
                 } else {
-                    Print.printInfo("MSFragger candidates currently cannot be used for DIA-NN quant. " +
-                            "This functionality will be added in a future release. " +
-                            "For now, using the library.tsv in DIA-NN will crash due to improper gene formatting");
+                    protMap = mapProteinsListToGenes(inputFile.getAbsolutePath(), fastaReader.protToGene);
                 }
             }
 

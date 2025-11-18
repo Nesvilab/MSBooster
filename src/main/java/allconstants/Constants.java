@@ -70,6 +70,7 @@ public class Constants implements ConstantsInterface {
     public static Float digestMaxMass = 5000f;
     public static Integer minPrecursorCharge = 1;
     public static Integer maxPrecursorCharge = 8;
+    public static Integer keepDecoys = 1;
 
     //public static Boolean includeDecoy = false;
     private static FastaReader fastaReader = null;

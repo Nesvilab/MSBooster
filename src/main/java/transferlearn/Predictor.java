@@ -81,6 +81,7 @@ public class Predictor {
         String fasta = "";
         String outputFormat = "parquet";
         String outputDir = "";
+        String keepDecoys = "1";
 
         for (int i = 0; i < args.length; i++) {
             switch (args[i]) {
@@ -122,6 +123,9 @@ public class Predictor {
                 case "--fasta":
                     fasta = args[i + 1];
                     break;
+                case "--keep-decoys":
+                    keepDecoys = args[i + 1];
+                    break;
                 case "--output-format":
                     outputFormat = args[i + 1];
                     if (outputFormat.equals("parquet") ||
@@ -155,7 +159,7 @@ public class Predictor {
             Constants.rtModel = "alphapeptdeep";
             Constants.imModel = "alphapeptdeep";
             Constants.createPredFileOnly = true;
-            MainClass.main(new String[]{"--paramsList", params});
+            MainClass.main(new String[]{"--paramsList", params, "--keepDecoys", keepDecoys});
             inputFile = new File(Constants.spectraRTPrefix + ".csv");
             minCharge = 0;
             maxCharge = 0;

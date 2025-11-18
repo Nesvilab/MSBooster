@@ -24,6 +24,7 @@ import peptideptmformatting.PTMhandler;
 import peptideptmformatting.PeptideFormatter;
 import peptideptmformatting.PeptideSkipper;
 import umich.ms.fileio.exceptions.FileParsingException;
+import utils.Print;
 
 import java.io.BufferedInputStream;
 import java.io.BufferedReader;
@@ -318,12 +319,18 @@ public class PinReader {
 
     public String[] createAlphapeptdeepList()
             throws IOException {
+        if (Constants.keepDecoys == 0) {
+            Print.printInfo("Filtering out decoys");
+        }
         ArrayList<String> peps = new ArrayList<String>();
         while (next(true)) {
             PeptideFormatter pf = getPep();
+            if (Constants.keepDecoys == 0 && getTD() == 0) {
+                continue;
+            }
             peps.add(pf.getStripped() + "," + pf.getAlphapeptdeepMods() + "," + pf.getModPositions() + "," +
                     pf.getCharge() + "," + NceConstants.getNCE() + "," + Constants.instrument + "," +
-                    pf.getLibrarytsv() + "," + getColumn("Proteins") + "," + getTD());
+                    pf.getLibrarytsv() + "," + getColumn("Proteins") + "," + -1 * (getTD() - 1));
         }
         return peps.toArray(new String[0]);
     }

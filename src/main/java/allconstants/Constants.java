@@ -17,7 +17,7 @@
 
 package allconstants;
 
-import features.detectability.FastaReader;
+import readers.datareaders.FastaReader;
 import utils.CaseInsensitiveHashSet;
 import utils.MyFileUtils;
 import utils.Print;
@@ -28,7 +28,7 @@ import java.util.HashSet;
 import java.util.concurrent.ConcurrentHashMap;
 
 public class Constants implements ConstantsInterface {
-    public static String versionNumber = "MSBooster v1.4.1";
+    public static String versionNumber = "MSBooster v1.4.2";
 
     //file input
     public static String paramsList = null;
@@ -61,7 +61,7 @@ public class Constants implements ConstantsInterface {
     //optional file locations and parameters
     //if calculating detectFractionGreater, these are used for FastaReader class
     public static String fasta = "";
-    public static String decoyPrefix = ">rev_";
+    public static String decoyPrefix = "rev_";
     public static String cutAfter = "KR";
     public static String butNotAfter = "P";
     public static Integer digestMinLength = 7;

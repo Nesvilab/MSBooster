@@ -15,9 +15,10 @@
  * along with MSBooster. If not, see <https://www.gnu.org/licenses/>.
  */
 
-package features.detectability;
+package readers.datareaders;
 
 import allconstants.Constants;
+import features.detectability.ProteinEntry;
 import features.spectra.MassCalculator;
 
 import java.io.BufferedReader;
@@ -32,6 +33,8 @@ import java.util.Map;
 //only interested in unique target peptides
 public class FastaReader {
     HashMap<String, ProteinEntry> protToPep = new HashMap<>();
+    String fasta;
+    public HashMap<String, String> protToGene = new HashMap<>();
 
     private String[] getHeaderProtein(BufferedReader reader) throws IOException {
         String header = reader.readLine();
@@ -57,7 +60,28 @@ public class FastaReader {
         return new String[]{header, protein};
     }
 
-    public FastaReader(String fasta) throws FileNotFoundException {
+    public FastaReader(String fasta) {
+        this.fasta = fasta;
+    }
+
+    public void mapProtToGene() throws IOException {
+        BufferedReader reader;
+        reader = new BufferedReader(new FileReader(fasta));
+        String[] sArray = getHeaderProtein(reader);
+        String header = sArray[0];
+        while (header != null) {
+            header = header.substring(1);
+            String[] headerSplit = header.split(" ", 2);
+            String protName = headerSplit[0];
+            ProteinHeaderParser.ProteinRecord pr = ProteinHeaderParser.processHeader(header, Constants.decoyPrefix);
+            protToGene.put(protName, pr.geneName);
+
+            sArray = getHeaderProtein(reader);
+            header = sArray[0];
+        }
+    }
+
+    public void digest() {
         //load fasta
         BufferedReader reader;
         try {
@@ -68,9 +92,11 @@ public class FastaReader {
 
             HashMap<String, HashSet<String>> pepToProt = new HashMap<String, HashSet<String>>();
             while (header != null) {
-                String protID = header.split(" ")[0];
+                String[] headerSplit = header.split(" ");
+                String protID = headerSplit[0];
+                protToGene.put(protID, headerSplit[1]);
 
-                if (! protID.startsWith(Constants.decoyPrefix)) {
+                if (!protID.startsWith(Constants.decoyPrefix)) {
                     protID = protID.substring(1); //remove >
 
                     //split by whatever is digestion rules
@@ -80,7 +106,7 @@ public class FastaReader {
                         if (i == protein.length() - 1) { //end of protein sequence
                             doIt = true;
                         } else if (Constants.cutAfter.contains(protein.substring(i, i + 1))) {
-                            if (! Constants.butNotAfter.contains(protein.substring(i + 1, i + 2))) {
+                            if (!Constants.butNotAfter.contains(protein.substring(i + 1, i + 2))) {
                                 doIt = true;
                             }
                         }
@@ -126,7 +152,7 @@ public class FastaReader {
                 //unique
                 int protSize = 0;
                 for (String prot : prots) {
-                    if (! prot.startsWith(Constants.decoyPrefix)) {
+                    if (!prot.startsWith(Constants.decoyPrefix)) {
                         protSize += 1;
                     }
                 }
@@ -154,5 +180,12 @@ public class FastaReader {
             e.printStackTrace();
             System.exit(1);
         }
+    }
+
+    public static void main(String[] args) throws IOException {
+        FastaReader fr = new FastaReader("C:/Users/yangkl/Downloads/proteomics/fasta/" +
+                "2022-03-18-decoys-reviewed-contam-UP000005640.fas");
+        fr.mapProtToGene();
+        System.out.println(fr.protToGene);
     }
 }

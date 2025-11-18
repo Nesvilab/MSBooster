@@ -4,6 +4,7 @@ import allconstants.Constants;
 import allconstants.NceConstants;
 import mainsteps.MainClass;
 import mainsteps.ParameterUtils;
+import readers.datareaders.FastaReader;
 import utils.Print;
 
 import java.io.*;
@@ -77,6 +78,7 @@ public class Predictor {
         String basename = "";
         int minCharge = 2;
         int maxCharge = 3;
+        String fasta = "";
         String outputFormat = "parquet";
         String outputDir = "";
 
@@ -117,13 +119,17 @@ public class Predictor {
                 case "--max-charge":
                     maxCharge = Integer.parseInt(args[i + 1]);
                     break;
+                case "--fasta":
+                    fasta = args[i + 1];
+                    break;
                 case "--output-format":
                     outputFormat = args[i + 1];
                     if (outputFormat.equals("parquet") ||
-                    outputFormat.equals("mgf") ||
-                    outputFormat.equals("librarytsv")) {} else {
+                            outputFormat.equals("mgf") ||
+                            outputFormat.equals("librarytsv") ||
+                            outputFormat.equals("speclib")) {} else {
                         Print.printError("Unknown output format: " + outputFormat + ". " +
-                                "Must be one of mgf, parquet, or librarytsv");
+                                "Must be one of mgf, parquet, speclib, or librarytsv");
                         errorMessage();
                     }
                     break;
@@ -137,8 +143,9 @@ public class Predictor {
             }
         }
 
-        if (params.isEmpty() || url.isEmpty() || model.isEmpty() || apiKey.isEmpty()) {
-            Print.printError("At least one of params, url, model, or apiKey is missing.");
+        if (params.isEmpty() || url.isEmpty() || model.isEmpty() || apiKey.isEmpty() ||
+                (fasta.isEmpty() && (outputFormat.equals("librarytsv") || outputFormat.equals("speclib")))) {
+            Print.printError("At least one of params, url, model, fasta, or apiKey is missing.");
             errorMessage();
         }
 
@@ -356,10 +363,33 @@ public class Predictor {
                 }
             }
 
+            //read fasta if needed
+            FastaReader fastaReader = new FastaReader(fasta);
+            HashMap<String, String> protMap = new HashMap<>();
+            if (outputFormat.equals("librarytsv") ||  outputFormat.equals("speclib")) {
+                //TODO allow MSFragger candidates to be used for DIA-NN quant
+                if (! peptideList.isEmpty()) {
+                    Print.printInfo("Reading FASTA file");
+                    fastaReader.mapProtToGene();
+                    protMap = mapProteinsListToGenes(peptideList, fastaReader.protToGene);
+                } else {
+                    Print.printInfo("MSFragger candidates currently cannot be used for DIA-NN quant. " +
+                            "This functionality will be added in a future release. " +
+                            "For now, using the library.tsv in DIA-NN will crash due to improper gene formatting");
+                }
+            }
+
+            //TODO: support speclib
             if (outputFormat.equals("librarytsv")) {
                 String tsvPath = downloadPath.getAbsolutePath().replace(".parquet", ".tsv");
-                convertParquetToCsv(String.valueOf(downloadPath), tsvPath);
-//                downloadPath.delete();
+                convertParquetToLibraryTsv(String.valueOf(downloadPath), tsvPath, protMap);
+
+                Print.printInfo("File downloaded to: " + tsvPath);
+            } else if (outputFormat.equals("speclib")) {
+                Print.printInfo("Speclib format in development. For now, converting to library.tsv format.");
+
+                String tsvPath = downloadPath.getAbsolutePath().replace(".parquet", ".tsv");
+                convertParquetToLibraryTsv(String.valueOf(downloadPath), tsvPath, fastaReader.protToGene);
 
                 Print.printInfo("File downloaded to: " + tsvPath);
             } else {

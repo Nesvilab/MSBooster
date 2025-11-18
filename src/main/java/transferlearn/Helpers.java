@@ -12,7 +12,6 @@ import javax.net.ssl.HttpsURLConnection;
 import java.io.*;
 import java.lang.reflect.Type;
 import java.net.HttpURLConnection;
-import java.net.MalformedURLException;
 import java.net.URL;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
@@ -20,6 +19,7 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.sql.*;
 import java.util.HashMap;
+import java.util.Map;
 
 import static utils.Print.printInfo;
 
@@ -78,17 +78,44 @@ public class Helpers {
         }
     }
 
-    static void convertParquetToCsv(String parquet, String tsv) throws SQLException, IOException {
-        Print.printInfo("Converting parquet to CSV");
+    static void convertParquetToLibraryTsv(String parquet, String tsv, HashMap<String, String> protToGene)
+            throws SQLException, IOException {
+        Print.printInfo("Loading fasta to sql");
         try (Connection conn = DriverManager.getConnection("jdbc:duckdb:");
              Statement stmt = conn.createStatement()) {
 
-            // Register and query Parquet
+            // Create temporary table with mapping
+            stmt.execute("CREATE TEMP TABLE mapping (key VARCHAR, value VARCHAR)");
+
+            // Batch insert mapping data (much faster than individual inserts)
+            conn.setAutoCommit(false);
+            try (PreparedStatement pstmt = conn.prepareStatement(
+                    "INSERT INTO mapping VALUES (?, ?)")) {
+                int count = 0;
+                for (Map.Entry<String, String> entry : protToGene.entrySet()) {
+                    pstmt.setString(1, entry.getKey());
+                    pstmt.setString(2, entry.getValue());
+                    pstmt.addBatch();
+
+                    if (++count % 10000 == 0) {
+                        pstmt.executeBatch();
+                    }
+                }
+                pstmt.executeBatch();
+            }
+            conn.commit();
+            conn.setAutoCommit(true);
+
+            // Perform join and export in one SQL operation
+            Print.printInfo("Converting parquet to library.tsv format");
             String query = String.format(
-                    "COPY (SELECT * FROM read_parquet('%s')) " +
-                            "TO '%s' (FORMAT CSV, DELIMITER '\t', HEADER, QUOTE '', ESCAPE '');",
-                    parquet.replace("'", "''"),
-                    tsv.replace("'", "''")
+                "COPY (SELECT p.*, COALESCE(m.value, p.ProteinId) AS GeneName " +
+                    "FROM (SELECT *, row_number() OVER () as row_num FROM read_parquet('%s')) p " +
+                    "LEFT JOIN mapping m ON p.ProteinId = m.key " +
+                    "ORDER BY p.row_num) " +
+                    "TO '%s' (FORMAT CSV, DELIMITER '\t', HEADER);",
+                parquet.replace("'", "''"),
+                tsv.replace("'", "''")
             );
             stmt.execute(query);
         }
@@ -227,4 +254,79 @@ public class Helpers {
             }
         }
     }
+
+    //use this method to deal with parquet column during prediction to get a map with no semicolon parsing needed in future
+    public static HashMap<String, String> mapProteinsListToGenes(String parquetPath, HashMap<String, String> protToGene) {
+        Print.printInfo("Mapping peptide list's proteins to genes");
+        HashMap<String, String> finalMap = new HashMap<>();
+
+        try (Connection conn = DriverManager.getConnection("jdbc:duckdb:");
+             Statement stmt = conn.createStatement()) {
+
+            String query = String.format("SELECT proteins FROM read_parquet('%s')",
+                    parquetPath.replace("'", "''"));
+
+            try (ResultSet rs = stmt.executeQuery(query)) {
+                while (rs.next()) {
+                    String proteins = rs.getString("proteins");
+                    if (proteins == null || proteins.isEmpty()) {
+                        continue;
+                    }
+
+                    String gene = transformProteins(proteins, protToGene);
+                    finalMap.put(proteins, gene);
+                }
+            }
+        } catch (SQLException e) {
+            throw new RuntimeException(e);
+        }
+
+        Print.printInfo("Mapped " + finalMap.size() + " protein labels to gene labels");
+        return finalMap;
+    }
+
+    private static String transformProteins(String proteins, HashMap<String, String> protToGene) {
+        // Case 1: Single key exists in map
+        if (protToGene.containsKey(proteins)) {
+            String gene = protToGene.get(proteins);
+            if (gene == null || gene.isEmpty()) {
+                return extractFromPipeSplit(proteins);
+            }
+            return gene;
+        }
+
+        // Case 2: Semicolon-separated keys
+        if (proteins.contains(";")) {
+            String[] keys = proteins.split(";");
+            StringBuilder result = new StringBuilder();
+
+            for (int i = 0; i < keys.length; i++) {
+                if (i > 0) result.append(";");
+                String key = keys[i].trim();
+
+                if (protToGene.containsKey(key)) {
+                    result.append(protToGene.get(key));
+                } else {
+                    // Not in map, try pipe split
+                    result.append(extractFromPipeSplit(key));
+                }
+            }
+            return result.toString();
+        }
+
+        // Case 3: Not a key, split by "|" and return second element
+        return extractFromPipeSplit(proteins);
+    }
+
+    private static String extractFromPipeSplit(String value) {
+        if (value.contains("|")) {
+            String[] parts = value.split("\\|");
+            if (parts.length >= 2) {
+                return parts[1];
+            }
+        }
+        // If no pipe or not enough parts, return original value
+        return value;
+    }
+
 }

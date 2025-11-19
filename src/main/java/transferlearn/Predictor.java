@@ -5,6 +5,7 @@ import allconstants.NceConstants;
 import mainsteps.MainClass;
 import mainsteps.ParameterUtils;
 import readers.datareaders.FastaReader;
+import speclib.io.ParquetToSpecLib;
 import utils.Print;
 
 import java.io.*;
@@ -18,7 +19,6 @@ import java.util.Locale;
 
 import static allconstants.Constants.versionNumber;
 import static transferlearn.Helpers.*;
-import static utils.Print.printError;
 import static utils.Print.printInfo;
 
 public class Predictor {
@@ -342,7 +342,7 @@ public class Predictor {
         if (outputDir.isEmpty()) {
             outputDir = inputFile.getParent();
         }
-        File downloadPath = new File(outputDir, basename + downloadExtension);
+        File downloadFile = new File(outputDir, basename + downloadExtension);
 
         if (status.equals("SUCCESS")) {
             URL downloadUrl = new URL(url + "/predict/download/" + jobId);
@@ -358,7 +358,7 @@ public class Predictor {
 
             // Read input stream (file content) from server
             try (InputStream inputStream = connection.getInputStream();
-                 FileOutputStream outputStream = new FileOutputStream(downloadPath)) {
+                 FileOutputStream outputStream = new FileOutputStream(downloadFile)) {
 
                 byte[] buffer = new byte[4096];
                 int bytesRead;
@@ -381,19 +381,18 @@ public class Predictor {
                 }
             }
 
-            //TODO: support speclib
+            String downloadPath = downloadFile.getAbsolutePath();
             if (outputFormat.equals("librarytsv")) {
-                String tsvPath = downloadPath.getAbsolutePath().replace(".parquet", ".tsv");
-                convertParquetToLibraryTsv(String.valueOf(downloadPath), tsvPath, protMap);
+                String tsvPath = downloadPath.replace(".parquet", ".tsv");
+                convertParquetToLibraryTsv(downloadPath, tsvPath, protMap);
 
                 Print.printInfo("File downloaded to: " + tsvPath);
             } else if (outputFormat.equals("speclib")) {
-                Print.printInfo("Speclib format in development. For now, converting to library.tsv format.");
+                ParquetToSpecLib ptsl = new ParquetToSpecLib(downloadPath, protMap);
+                String speclibPath = downloadPath.replace(".parquet", ".speclib");
+                ptsl.convertAndWrite(speclibPath);
 
-                String tsvPath = downloadPath.getAbsolutePath().replace(".parquet", ".tsv");
-                convertParquetToLibraryTsv(String.valueOf(downloadPath), tsvPath, fastaReader.protToGene);
-
-                Print.printInfo("File downloaded to: " + tsvPath);
+                Print.printInfo("File downloaded to: " + speclibPath);
             } else {
                 Print.printInfo("File downloaded to: " + downloadPath);
             }

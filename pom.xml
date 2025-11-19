@@ -4,9 +4,9 @@
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
 
-    <groupId>org.example</groupId>
+    <groupId>org.nesvilab</groupId>
     <artifactId>MSBooster</artifactId>
-    <version>1.4.2</version>
+    <version>1.4.3</version>
 
     <properties>
         <maven.compiler.source>11</maven.compiler.source>
@@ -16,6 +16,7 @@
         <ver.batmass.io>1.36.0</ver.batmass.io>
         <lib.scope>compile</lib.scope>
         <kotlin.version>2.1.20</kotlin.version>
+        <ver.speclib.io>1.0.0</ver.speclib.io>
     </properties>
 
     <profiles>
@@ -127,9 +128,9 @@
             <version>2.4</version>
         </dependency>
         <dependency>
-            <groupId>org.duckdb</groupId>
-            <artifactId>duckdb_jdbc</artifactId>
-            <version>1.4.1.0</version>
+            <groupId>org.nesvilab</groupId>
+            <artifactId>speclibio</artifactId>
+            <version>${ver.speclib.io}</version>
         </dependency>
     </dependencies>
 
@@ -209,6 +210,21 @@
                             <goal>install-file</goal>
                         </goals>
                         <id>install-external1</id>
+                        <phase>clean</phase>
+                    </execution>
+                    <execution>
+                        <configuration>
+                            <artifactId>speclibio</artifactId>
+                            <file>${basedir}/lib/speclibio-${ver.speclib.io}.jar</file>
+                            <generatePom>true</generatePom>
+                            <groupId>org.nesvilab</groupId>
+                            <packaging>jar</packaging>
+                            <version>${ver.speclib.io}</version>
+                        </configuration>
+                        <goals>
+                            <goal>install-file</goal>
+                        </goals>
+                        <id>install-external2</id>
                         <phase>clean</phase>
                     </execution>
                 </executions>

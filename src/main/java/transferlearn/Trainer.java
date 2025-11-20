@@ -53,6 +53,8 @@ public class Trainer {
 
         String url = "";
         String library = "";
+        String instrument = "";
+        float nce = 30f;
         String apiKey = "";
         String basename = "";
         String outputDir = "";
@@ -64,6 +66,12 @@ public class Trainer {
                     break;
                 case "--library":
                     library =  args[i + 1];
+                    break;
+                case "--instrument":
+                    instrument =  args[i + 1];
+                    break;
+                case "--nce":
+                    nce = Float.parseFloat(args[i + 1]);
                     break;
                 case "--api-key":
                     apiKey = args[i + 1];
@@ -129,9 +137,18 @@ public class Trainer {
                 os.write(buffer, 0, bytesRead);
             }
             os.flush();
+            writer.append("\r\n");
 
-            // End of multipart
-            writer.append("\r\n").flush();
+            // instrument
+            writer.append("--").append(boundary).append("\r\n");
+            writer.append("Content-Disposition: form-data; name=\"instrument\"\r\n\r\n");
+            writer.append(instrument).append("\r\n");
+
+            // nce
+            writer.append("--").append(boundary).append("\r\n");
+            writer.append("Content-Disposition: form-data; name=\"nce\"\r\n\r\n");
+            writer.append(Float.toString(nce)).append("\r\n");
+
             writer.append("--").append(boundary).append("--").append("\r\n");
             writer.flush();
         }

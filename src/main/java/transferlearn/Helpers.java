@@ -106,16 +106,43 @@ public class Helpers {
             conn.commit();
             conn.setAutoCommit(true);
 
-            // Perform join and export in one SQL operation
             Print.printInfo("Converting parquet to library.tsv format");
+
+            //Fetch column names from parquet
+            ResultSet rs = stmt.executeQuery(
+                    String.format("SELECT * FROM read_parquet('%s') LIMIT 1", parquet.replace("'", "''"))
+            );
+            ResultSetMetaData meta = rs.getMetaData();
+            int colCount = meta.getColumnCount();
+
+            StringBuilder select = new StringBuilder();
+            for (int i = 1; i <= colCount; i++) {
+                String col = meta.getColumnName(i);
+
+                if (i == 5) {
+                    select.append("COALESCE(m.value, p.ProteinId) AS GeneName, ");
+                }
+
+                select.append("p.").append(col);
+
+                if (i != colCount) {
+                    select.append(", ");
+                }
+            }
+
             String query = String.format(
-                "COPY (SELECT p.*, COALESCE(m.value, p.ProteinId) AS GeneName " +
-                    "FROM (SELECT *, row_number() OVER () as row_num FROM read_parquet('%s')) p " +
-                    "LEFT JOIN mapping m ON p.ProteinId = m.key " +
-                    "ORDER BY p.row_num) " +
-                    "TO '%s' (FORMAT CSV, DELIMITER '\t', HEADER);",
-                parquet.replace("'", "''"),
-                tsv.replace("'", "''")
+                    "COPY (" +
+                            "SELECT %s " +
+                            "FROM (" +
+                            "  SELECT *, row_number() OVER () AS row_num " +
+                            "  FROM read_parquet('%s')" +
+                            ") p " +
+                            "LEFT JOIN mapping m ON p.ProteinId = m.key " +
+                            "ORDER BY p.row_num" +
+                            ") TO '%s' (FORMAT CSV, DELIMITER '\t', HEADER);",
+                    select.toString(),
+                    parquet.replace("'", "''"),
+                    tsv.replace("'", "''")
             );
             stmt.execute(query);
         }
@@ -273,8 +300,8 @@ public class Helpers {
                         continue;
                     }
 
-                    String gene = transformProteins(proteins, protToGene);
-                    finalMap.put(proteins, gene);
+                    String[] shorthandProtein_gene = transformProteins(proteins, protToGene);
+                    finalMap.put(shorthandProtein_gene[0], shorthandProtein_gene[1]);
                 }
             }
         } catch (SQLException e) {
@@ -285,40 +312,44 @@ public class Helpers {
         return finalMap;
     }
 
-    private static String transformProteins(String proteins, HashMap<String, String> protToGene) {
-        // Case 1: Single key exists in map
-        if (protToGene.containsKey(proteins)) {
-            String gene = protToGene.get(proteins);
-            if (gene == null || gene.isEmpty()) {
-                return extractFromPipeSplit(proteins);
-            }
-            return gene;
-        }
-
-        // Case 2: Semicolon-separated keys
+    //shorthand proteins, genes
+    private static String[] transformProteins(String proteins, HashMap<String, String> protToGene) {
+        //Semicolon-separated keys
         if (proteins.contains(";")) {
             String[] keys = proteins.split(";");
             StringBuilder result = new StringBuilder();
+            StringBuilder shorthandProteins = new StringBuilder();
 
             for (int i = 0; i < keys.length; i++) {
-                if (i > 0) result.append(";");
-                String key = keys[i].trim();
-
-                if (protToGene.containsKey(key)) {
-                    result.append(protToGene.get(key));
-                } else {
-                    // Not in map, try pipe split
-                    result.append(extractFromPipeSplit(key));
+                if (i > 0) {
+                    result.append(";");
+                    shorthandProteins.append(";");
                 }
+                String key = extractFromPipeSplit(keys[i].trim());
+
+                // Not in map, try pipe split
+                shorthandProteins.append(key);
+                result.append(protToGene.getOrDefault(key, key));
             }
-            return result.toString();
+            return new String[]{shorthandProteins.toString(), result.toString()};
+        }
+
+        //Single key exists in map
+        String sampleProtein = extractFromPipeSplit(proteins);
+        if (protToGene.containsKey(sampleProtein)) {
+            String gene = protToGene.get(sampleProtein);
+            if (gene == null || gene.isEmpty()) {
+                return new String[]{sampleProtein, sampleProtein};
+            }
+            return new String[]{sampleProtein, gene};
         }
 
         // Case 3: Not a key, split by "|" and return second element
-        return extractFromPipeSplit(proteins);
+        String shorthand = extractFromPipeSplit(proteins);
+        return new String[]{shorthand, shorthand};
     }
 
-    private static String extractFromPipeSplit(String value) {
+    public static String extractFromPipeSplit(String value) {
         if (value.contains("|")) {
             String[] parts = value.split("\\|");
             if (parts.length >= 2) {

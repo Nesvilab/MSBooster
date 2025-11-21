@@ -30,6 +30,8 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
 
+import static transferlearn.Helpers.extractFromPipeSplit;
+
 //only interested in unique target peptides
 public class FastaReader {
     HashMap<String, ProteinEntry> protToPep = new HashMap<>();
@@ -73,6 +75,7 @@ public class FastaReader {
             header = header.substring(1);
             String[] headerSplit = header.split(" ", 2);
             String protName = headerSplit[0];
+            protName = extractFromPipeSplit(protName);
             ProteinHeaderParser.ProteinRecord pr = ProteinHeaderParser.processHeader(header, Constants.decoyPrefix);
             protToGene.put(protName, pr.geneName);
 
@@ -180,12 +183,5 @@ public class FastaReader {
             e.printStackTrace();
             System.exit(1);
         }
-    }
-
-    public static void main(String[] args) throws IOException {
-        FastaReader fr = new FastaReader("C:/Users/yangkl/Downloads/proteomics/fasta/" +
-                "2022-03-18-decoys-reviewed-contam-UP000005640.fas");
-        fr.mapProtToGene();
-        System.out.println(fr.protToGene);
     }
 }

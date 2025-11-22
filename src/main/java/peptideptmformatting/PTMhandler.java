@@ -125,6 +125,7 @@ public class PTMhandler {
     private static <T> Map<T, Double> makeUnimodToModMassAll(boolean includeAA) throws IOException {
         ArrayList<String> modPaths = new ArrayList<>();
         modPaths.add("/ptm_resources/alphapept_koina.csv");
+        modPaths.add("/ptm_resources/modification_alphapeptdeep.tsv");
         if (!Constants.additionalMods.isEmpty()) {
             modPaths.add(Constants.additionalMods);
         }
@@ -141,11 +142,24 @@ public class PTMhandler {
             String line = ptmFile.readLine(); //header
 
             while ((line = ptmFile.readLine()) != null) {
-                String[] lineSplit = line.split(",", -1);
+                String[] lineSplit = new String[0];
+                if (modPath.endsWith(".csv")) {
+                    lineSplit = line.split(",", -1);
+                } else if (modPath.endsWith(".tsv")) {
+                    lineSplit = line.split("\t", -1);
+                } else {
+                    printError("Invalid modification file: " + modPath);
+                    printError("Exiting");
+                    System.exit(1);
+                }
                 String unimod = lineSplit[7];
                 Double mass = Double.parseDouble(lineSplit[1]);
                 if (includeAA) {
-                    map.put((T) (lineSplit[0].charAt(0) + unimod), mass);
+                    if (modPath.endsWith(".csv")) {
+                        map.put((T) (lineSplit[0].charAt(0) + unimod), mass);
+                    } else {
+                        map.put((T) (lineSplit[0].split("@")[1] + unimod), mass);
+                    }
                 } else {
                     map.put((T) Integer.valueOf(unimod), mass);
                 }
@@ -182,7 +196,7 @@ public class PTMhandler {
             unimodOboToModMass = new HashMap<>();
             File f = new File(Constants.unimodObo);
             if (! f.exists()) {
-                Print.printError("When uploading prediction in spectral library in tsv format, " +
+                printError("When uploading prediction in spectral library in tsv format, " +
                         "a unimod.obo file must be provided. " +
                         "In the command line, provide a path at --unimodObo. Exiting.");
                 System.exit(1);

@@ -389,7 +389,7 @@ public class Predictor {
                 Print.printInfo("File downloaded to: " + tsvPath);
             } else if (outputFormat.equals("speclib")) {
                 Print.printInfo("Converting parquet to speclib format");
-                ParquetToSpecLib ptsl = new ParquetToSpecLib(downloadPath, protMap);
+                ParquetToSpecLib ptsl = new ParquetToSpecLib(downloadPath, protMap, -3, true, true, true);
                 String speclibPath = downloadPath.replace(".parquet", ".speclib");
                 ptsl.convertAndWrite(speclibPath);
 

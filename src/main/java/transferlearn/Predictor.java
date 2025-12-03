@@ -126,6 +126,9 @@ public class Predictor {
                 case "--keep-decoys":
                     keepDecoys = args[i + 1];
                     break;
+                case "--decoy-tag":
+                    Constants.decoyPrefix = args[i + 1];
+                    break;
                 case "--output-format":
                     outputFormat = args[i + 1];
                     if (outputFormat.equals("parquet") ||
@@ -248,6 +251,11 @@ public class Predictor {
             writer.append("--").append(boundary).append("\r\n");
             writer.append("Content-Disposition: form-data; name=\"output_format\"\r\n\r\n");
             writer.append(outputFormat).append("\r\n");
+
+            // decoy tag
+            writer.append("--").append(boundary).append("\r\n");
+            writer.append("Content-Disposition: form-data; name=\"decoy_tag\"\r\n\r\n");
+            writer.append(Constants.decoyPrefix).append("\r\n");
 
             // ms2
             writer.append("--").append(boundary).append("\r\n");

@@ -327,6 +327,14 @@ public class Helpers {
                 }
                 String key = extractFromPipeSplit(keys[i].trim());
 
+                //add decoy tag
+                if (keys[i].startsWith(Constants.decoyPrefix)) {
+                    shorthandProteins.append(Constants.decoyPrefix);
+                    result.append(Constants.decoyPrefix);
+//                    System.out.println(shorthandProteins.toString());
+//                    System.exit(1);
+                }
+
                 // Not in map, try pipe split
                 shorthandProteins.append(key);
                 result.append(protToGene.getOrDefault(key, key));

@@ -353,6 +353,8 @@ public class Predictor {
         File downloadFile = new File(outputDir, basename + downloadExtension);
 
         if (status.equals("SUCCESS")) {
+            ended = true;
+
             URL downloadUrl = new URL(url + "/predict/download/" + jobId);
             connection = setUpConnection(url, downloadUrl);
             connection.setRequestMethod("GET");
@@ -407,6 +409,7 @@ public class Predictor {
             }
             System.exit(0);
         } else {
+            ended = true;
             Print.printError(String.valueOf(map));
             Print.printError(connection.getResponseMessage());
             System.exit(1);

@@ -14,8 +14,7 @@ import java.util.Locale;
 import java.time.LocalDateTime;
 
 import static allconstants.Constants.versionNumber;
-import static transferlearn.Helpers.readJsonResponse;
-import static transferlearn.Helpers.setUpConnection;
+import static transferlearn.Helpers.*;
 import static utils.Print.printError;
 import static utils.Print.printInfo;
 
@@ -215,6 +214,8 @@ public class Trainer {
         File downloadPath = new File(outputDir, outputBaseName + ".zip");
 
         if (status.equals("SUCCESS")) {
+            ended = true;
+
             URL downloadUrl = new URL(url + "/train/download/" + jobId);
             connection = setUpConnection(url, downloadUrl);
             connection.setRequestMethod("GET");
@@ -240,6 +241,7 @@ public class Trainer {
             Print.printInfo("File downloaded to: " + downloadPath);
             return downloadPath.getAbsolutePath();
         } else {
+            ended = true;
             Print.printError(String.valueOf(map));
             Print.printError(connection.getResponseMessage());
             return "";

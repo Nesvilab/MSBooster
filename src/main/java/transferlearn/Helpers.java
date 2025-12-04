@@ -258,6 +258,7 @@ public class Helpers {
         }
     }
 
+    public static boolean ended = false;
     static class EndJob extends Thread {
         private final String cancelUrlPath;
 
@@ -265,19 +266,21 @@ public class Helpers {
             this.cancelUrlPath = cancelUrlPath;
         }
         public void run() {
-            URL cancelUrl;
-            try {
-                cancelUrl = new URL(cancelUrlPath);
-                HttpURLConnection connection = setUpConnection(cancelUrlPath, cancelUrl);
-                connection.connect();
-                InputStream responseStream = connection.getInputStream();
-                BufferedReader in = new BufferedReader(new InputStreamReader(responseStream));
-                String line;
-                while ((line = in.readLine()) != null) {
-                    System.out.println(line);
+            if (!ended) {
+                URL cancelUrl;
+                try {
+                    cancelUrl = new URL(cancelUrlPath);
+                    HttpURLConnection connection = setUpConnection(cancelUrlPath, cancelUrl);
+                    connection.connect();
+                    InputStream responseStream = connection.getInputStream();
+                    BufferedReader in = new BufferedReader(new InputStreamReader(responseStream));
+                    String line;
+                    while ((line = in.readLine()) != null) {
+                        System.out.println(line);
+                    }
+                } catch (IOException e) {
+                    throw new RuntimeException(e);
                 }
-            } catch (IOException e) {
-                throw new RuntimeException(e);
             }
         }
     }
@@ -367,5 +370,4 @@ public class Helpers {
         // If no pipe or not enough parts, return original value
         return value;
     }
-
 }

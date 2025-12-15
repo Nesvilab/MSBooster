@@ -336,13 +336,14 @@ public class PTMhandler {
         //start is index of amino acid before, or 0 if nterm mod
 
         //first, remove mods that are not supported
+        Set<String> filteredMods = allowedMods;
         if (removeMods) {
-            allowedMods = allowedMods.stream()
+            filteredMods = allowedMods.stream()
                     .filter(modMap::containsKey)
                     .collect(Collectors.toSet());
         }
 
-        for (String unimod : allowedMods) {
+        for (String unimod : filteredMods) {
             Double PTMmass = modMap.get(unimod);
             if (NumericUtils.massesCloseEnough(PTMmass, reportedMass)) {
                 char AA = unimod.charAt(0);

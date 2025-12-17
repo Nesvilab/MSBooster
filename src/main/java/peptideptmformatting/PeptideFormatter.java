@@ -95,14 +95,20 @@ public class PeptideFormatter {
 
     private void diannTObase(String peptide) {
         peptide = peptide.replace("[TMT]", "[" + PTMhandler.tmtUnimod + "]");
-        base = PTMhandler.formatPeptideSpecificToBase(peptide, unimodToModMassLimited);
+        base = PTMhandler.formatPeptideSpecificToBase(peptide, unimodToModMassLimited, "[]");
     }
     private void koinaTObase(String peptide, Map<Integer, Double> unimodToMassMap) {
-        base = PTMhandler.formatPeptideSpecificToBase(peptide, unimodToMassMap);
+        base = PTMhandler.formatPeptideSpecificToBase(peptide, unimodToMassMap, "[]");
     }
 
     private void unimodoboTObase(String peptide) {
-        base = PTMhandler.formatPeptideSpecificToBase(peptide, unimodOboToModMass);
+        base = PTMhandler.formatPeptideSpecificToBase(peptide, unimodOboToModMass, "[]");
+    }
+
+    private void fragpipeSpeclibToBase(String peptide) {
+        base = PTMhandler.formatPeptideSpecificToBase(peptide, unimodOboToModMass, "()");
+        base = base.replace("(", "[");
+        base = base.replace(")", "]");
     }
 
     private void predfullTObase(String peptide) {
@@ -488,6 +494,9 @@ public class PeptideFormatter {
                 break;
             case "unimod.obo":
                 unimodoboTObase(peptide);
+                break;
+            case "fragpipeSpeclib":
+                fragpipeSpeclibToBase(peptide);
                 break;
         }
 

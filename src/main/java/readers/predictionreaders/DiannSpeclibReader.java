@@ -36,6 +36,7 @@ import java.util.HashMap;
 
 import static utils.Print.printError;
 
+//Note: DiannSpeclibReader class is the .predicted.bin file and accompanying files from DIA-NN
 public class DiannSpeclibReader implements LibraryPredictionMapper {
     final ArrayList<String> filenames;
     PredictionEntryHashMap allPreds = new PredictionEntryHashMap();

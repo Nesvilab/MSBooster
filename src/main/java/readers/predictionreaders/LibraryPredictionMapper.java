@@ -52,6 +52,8 @@ public interface LibraryPredictionMapper {
                 return new DlibReader(file);
             case "tsv":
                 return new LibraryTsvReader(file, "unimod.obo");
+            case "speclib":
+                return new FragPipeSpeclibReader(file);
             default:
                 printError(extension + " is not a valid prediction file format");
                 return null;

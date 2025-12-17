@@ -158,7 +158,14 @@ public class PTMhandler {
                     if (modPath.endsWith(".csv")) {
                         map.put((T) (lineSplit[0].charAt(0) + unimod), mass);
                     } else {
-                        map.put((T) (lineSplit[0].split("@")[1] + unimod), mass);
+                        //TODO: "Anywhere" should be expanded
+                        String mod = lineSplit[0].split("@")[1];
+                        mod = mod.replace("Any_N-term", "[");
+                        mod = mod.replace("Protein_N-term", "[");
+                        mod = mod.replace("Any_C-term", "]");
+                        mod = mod.replace("Protein_C-term", "]");
+
+                        map.put((T) (mod + unimod), mass);
                     }
                 } else {
                     map.put((T) Integer.valueOf(unimod), mass);
@@ -192,11 +199,11 @@ public class PTMhandler {
     public static Map<Integer, Double> unimodOboToModMass;
 
     public static void setUnimodObo() {
-        try { //only do this when library tsv predicted library is specified
+        try { //only do this when library tsv or fragpipe speclib predicted library is specified
             unimodOboToModMass = new HashMap<>();
             File f = new File(Constants.unimodObo);
             if (! f.exists()) {
-                printError("When uploading prediction in spectral library in tsv format, " +
+                printError("When uploading prediction in spectral library in tsv or speclib format, " +
                         "a unimod.obo file must be provided. " +
                         "In the command line, provide a path at --unimodObo. Exiting.");
                 System.exit(1);
@@ -366,21 +373,24 @@ public class PTMhandler {
     }
 
     //works for diann
-    public static String formatPeptideSpecificToBase(String peptide, Map<Integer, Double> modmap) {
+    public static String formatPeptideSpecificToBase(String peptide, Map<Integer, Double> modmap, String brackets) {
+        char startBracket = brackets.charAt(0);
+        char endBracket = brackets.charAt(1);
+
         String newpeptide = peptide.toUpperCase();
         newpeptide = newpeptide.replace("UNIMOD:","");
 
         //for koina
-        newpeptide = newpeptide.replace("]-", "]");
-        newpeptide = newpeptide.replace("-[", "[");
+        newpeptide = newpeptide.replace(endBracket + "-", String.valueOf(endBracket));
+        newpeptide = newpeptide.replace("-" + startBracket, String.valueOf(startBracket));
 
         //convert unimod to mass
         ArrayList<Integer> newStarts = new ArrayList<>();
         ArrayList<Integer> newEnds = new ArrayList<>();
         for (int i = 0; i < newpeptide.length(); i++) {
-            if (newpeptide.charAt(i) == '[') {
+            if (newpeptide.charAt(i) == startBracket) {
                 newStarts.add(i);
-            } else if (newpeptide.charAt(i) == ']') {
+            } else if (newpeptide.charAt(i) == endBracket) {
                 newEnds.add(i);
             }
         }

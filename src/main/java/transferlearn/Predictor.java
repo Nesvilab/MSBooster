@@ -59,7 +59,7 @@ public class Predictor {
 			System.exit(1);
 		});
 
-        printInfo(versionNumber);
+        printInfo(versionNumber + " Transfer Learned Prediction");
 
         //parse arguments
         if (args.length % 2 != 0) {

@@ -42,7 +42,7 @@ public class Trainer {
         train(args);
     }
     public static String train(String[] args) throws IOException, InterruptedException {
-        printInfo(versionNumber);
+        printInfo(versionNumber + " Transfer Learning");
 
         //parse arguments
         if (args.length % 2 != 0) {

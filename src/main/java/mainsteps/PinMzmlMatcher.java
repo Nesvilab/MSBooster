@@ -45,32 +45,56 @@ public class PinMzmlMatcher {
     public File[] pinFiles;
     public MzmlReader[] mzmlReaders;
 
-    public PinMzmlMatcher(String mzmlDirectory, String pinDirectory)
+    //mini method that assigns files to one of two pin file lists
+    private void addPinFiles(String fileName,
+                             ArrayList<String> pinFiles,
+                             ArrayList<String> editedPinFiles) {
+        if (fileName.toLowerCase().endsWith(".pin")) { //single file
+            if (!fileName.endsWith("_" + Constants.editedPinSuffix + ".pin")) {
+                pinFiles.add(fileName);
+            } else {
+                editedPinFiles.add(fileName);
+            }
+        }
+    }
+
+    public PinMzmlMatcher(String mzmlElements, String pinElements)
             throws IOException, FileParsingException, ExecutionException, InterruptedException {
         //get pin files
-        String[] allPinDirectories = pinDirectory.split(" ");
+        String[] allPinElements = pinElements.split(" ");
         ArrayList<String> pinFileList = new ArrayList<>();
         ArrayList<String> editedPinFileList = new ArrayList<>();
-        for (String directory : allPinDirectories) {
-            File f = new File(directory);
+        for (String element : allPinElements) {
+            File f = new File(element);
             if (f.isFile()) {
-                if (directory.substring(directory.length() - 3).equalsIgnoreCase("pin")) { //single file
-                    if (!directory.contains("_" + Constants.editedPinSuffix)) {
-                        pinFileList.add(directory);
-                    } else {
-                        editedPinFileList.add(directory);
-                    }
-                }
+                addPinFiles(element, pinFileList, editedPinFileList);
             } else { //directory, but not recursive
-                List<File> pinFilesCollection = Files.list(Paths.get(directory))
+                List<File> pinFilesCollection = Files.list(Paths.get(element))
                     .filter(Files::isRegularFile)
                     .filter(p -> p.getFileName().toString().toLowerCase().endsWith(".pin"))
                     .map(Path::toFile).collect(Collectors.toList());
                 for (File file : pinFilesCollection) {
-                    if (! file.getCanonicalPath().contains("_" + Constants.editedPinSuffix)) {
-                        pinFileList.add(file.getCanonicalPath());
-                    } else {
-                        editedPinFileList.add(file.getCanonicalPath());
+                    addPinFiles(file.getCanonicalPath(), pinFileList, editedPinFileList);
+                }
+            }
+        }
+        //need to look one level deeper
+        if (pinFileList.isEmpty()) {
+            printInfo("Looking one level deeper for pin files");
+            for (String element : allPinElements) {
+                File f = new File(element);
+                if (!f.isFile()) {
+                    List<File> dirCollection = Files.list(Paths.get(element))
+                            .filter(Files::isDirectory)
+                            .map(Path::toFile).collect(Collectors.toList());
+                    for (File dir : dirCollection) {
+                        List<File> pinFilesCollection = Files.list(Paths.get(dir.getCanonicalPath()))
+                                .filter(Files::isRegularFile)
+                                .filter(p -> p.getFileName().toString().toLowerCase().endsWith(".pin"))
+                                .map(Path::toFile).collect(Collectors.toList());
+                        for (File file : pinFilesCollection) {
+                            addPinFiles(file.getCanonicalPath(), pinFileList, editedPinFileList);
+                        }
                     }
                 }
             }
@@ -78,19 +102,19 @@ public class PinMzmlMatcher {
 
         //look for corresponding mzml files
         //can maybe allow uncalibrated.pin to look for uncalibrated.mzml
-        String[] allMzmlDirectories = mzmlDirectory.split(" ");
+        String[] allMzmlDirectories = mzmlElements.split(" ");
         HashMap<String, File> mzmlFileMap = new HashMap<>();
-        for (String directory : allMzmlDirectories) {
-            File f = new File(directory);
+        for (String element : allMzmlDirectories) {
+            File f = new File(element);
             if (f.isFile()) {
-                if (directory.substring(directory.length() - 17).equalsIgnoreCase("uncalibrated.mzml")) {
+                if (element.substring(element.length() - 17).equalsIgnoreCase("uncalibrated.mzml")) {
                     mzmlFileMap.put(f.getName().substring(0, f.getName().length() - 18), f);
                     mzmlFileMap.put(f.getName().substring(0, f.getName().length() - 5), f);
-                } else if (directory.substring(directory.length() - 4).equalsIgnoreCase("mzml")) {
+                } else if (element.substring(element.length() - 4).equalsIgnoreCase("mzml")) {
                     mzmlFileMap.put(f.getName().substring(0, f.getName().length() - 5), f);
-                } else if (directory.substring(directory.length() - 16).equalsIgnoreCase("uncalibrated.mgf")) {
+                } else if (element.substring(element.length() - 16).equalsIgnoreCase("uncalibrated.mgf")) {
                     mzmlFileMap.put(f.getName().substring(0, f.getName().length() - 17), f);
-                } else if (directory.substring(directory.length() - 3).equalsIgnoreCase("mgf")) {
+                } else if (element.substring(element.length() - 3).equalsIgnoreCase("mgf")) {
                     mzmlFileMap.put(f.getName().substring(0, f.getName().length() - 4), f);
                 }
             } else { //directory

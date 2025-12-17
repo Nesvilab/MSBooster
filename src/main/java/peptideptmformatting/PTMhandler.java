@@ -343,11 +343,13 @@ public class PTMhandler {
         //start is index of amino acid before, or 0 if nterm mod
 
         //first, remove mods that are not supported
-        Set<String> filteredMods = allowedMods;
+        Set<String> filteredMods;
         if (removeMods) {
             filteredMods = allowedMods.stream()
                     .filter(modMap::containsKey)
                     .collect(Collectors.toSet());
+        } else {
+            filteredMods = new HashSet<>(allowedMods);  // Always create a copy
         }
 
         for (String unimod : filteredMods) {

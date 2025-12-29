@@ -59,13 +59,13 @@ public class LibraryTsvReader implements LibraryPredictionMapper {
             List<Future> futureList = new ArrayList<>(Constants.numThreads);
             ProgressReporter pr = new ProgressReporter(transitions.size());
             Multithreader mt = new Multithreader(transitions.size(), Constants.numThreads);
-            List<String> transitionKeys = new ArrayList<>(transitions.keySet());
+            String[] transitionKeys = transitions.keySet().toArray(new String[0]);
 
             for (int j = 0; j < Constants.numThreads; j++) {
                 int finalJ = j;
                 futureList.add(executorService.submit(() -> {
                     for (int k = mt.indices[finalJ]; k < mt.indices[finalJ + 1]; k++) {
-                        Collection<Transition> tt = transitions.get(transitionKeys.get(k));
+                        Collection<Transition> tt = transitions.get(transitionKeys[k]);
                         for (Transition t : tt) {
                             String peptide = t.peptide.getUnimodPeptide(false, libraryTsv.massSiteUnimodTable,
                                             null, null, null, '[', ']')

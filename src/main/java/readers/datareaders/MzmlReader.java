@@ -184,19 +184,25 @@ public class MzmlReader {
         printInfo("Processing " + pathStr);
         scans.loadData(LCMSDataSubset.MS2_WITH_SPECTRA);
         ProgressReporter pr = new ProgressReporter(scans.getMapNum2scan().size());
+        Multithreader mt = new Multithreader(scans.getMapNum2scan().size(), Constants.numThreads);
         futureList.clear();
 
-        for (IScan scan : scans.getMapNum2scan().values()) {
+        IScan[] scanList = scans.getMapNum2scan().values().toArray(new IScan[0]);
+        for (int i = 0; i < Constants.numThreads; i++) {
+            int finalI = i;
             futureList.add(executorService.submit(() -> {
-                if (scan.getMsLevel() != 1) {
-                    try {
-                        scanNumberObjects.put(scan.getNum(), new MzmlScanNumber(scan));
-                    } catch (FileParsingException e) {
-                        throw new RuntimeException(e);
+                for (int j = mt.indices[finalI]; j < mt.indices[finalI + 1]; j++) {
+                    IScan scan = scanList[j];
+                    if (scan.getMsLevel() != 1) {
+                        try {
+                            scanNumberObjects.put(scan.getNum(), new MzmlScanNumber(scan));
+                        } catch (FileParsingException e) {
+                            throw new RuntimeException(e);
+                        }
                     }
-                }
 
-                pr.progress();
+                    pr.progress();
+                }
             }));
         }
 

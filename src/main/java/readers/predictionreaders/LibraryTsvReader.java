@@ -25,12 +25,16 @@ import predictions.PredictionEntry;
 import predictions.PredictionEntryHashMap;
 import umich.ms.fileio.filetypes.library.LibraryTsv;
 import umich.ms.fileio.filetypes.library.Transition;
+import utils.Multithreader;
+import utils.ProgressReporter;
 
 import java.nio.file.Paths;
 import java.util.*;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Future;
 
 import static peptideptmformatting.PTMhandler.setUnimodObo;
-import static peptideptmformatting.PTMhandler.unimodOboToModMass;
+import static utils.Print.printInfo;
 
 public class LibraryTsvReader implements LibraryPredictionMapper {
 
@@ -38,8 +42,13 @@ public class LibraryTsvReader implements LibraryPredictionMapper {
     private PredictionEntryHashMap allPreds = new PredictionEntryHashMap();
     protected PredictionEntryHashMap allPredsHashMap = new PredictionEntryHashMap();
 
-    public LibraryTsvReader(String file, String format) throws Exception {
+    public LibraryTsvReader(String file, ExecutorService executorService, String format) throws Exception {
+        this(file, executorService, format, new HashSet<>());
+    }
+
+    public LibraryTsvReader(String file, ExecutorService executorService, String format, HashSet<String> allowedPrecursors) throws Exception {
         filenames.add(file);
+        printInfo("Reading " + file);
         setUnimodObo();
         LibraryTsv libraryTsv = new LibraryTsv(Constants.numThreads, Constants.unimodObo);
         Multimap<String, Transition> transitions = libraryTsv.read(Paths.get(file));
@@ -47,35 +56,57 @@ public class LibraryTsvReader implements LibraryPredictionMapper {
         try {
             Set<String> ignoredFragmentIonTypesSet = FragmentIonConstants.makeIgnoredFragmentIonTypes();
 
-            for (String k : transitions.keySet()) {
-                Collection<Transition> tt = transitions.get(k);
-                for (Transition t : tt) {
-                    String peptide = t.peptide.getUnimodPeptide(false, libraryTsv.massSiteUnimodTable,
-                            null, null, null, '[', ']')
-                            .replaceFirst("^n", "");
-                    String charge = t.peptideCharge + "";
-                    String basePep = new PeptideFormatter(peptide, charge, format).getBaseCharge(); //format is unimod.obo
+            List<Future> futureList = new ArrayList<>(Constants.numThreads);
+            ProgressReporter pr = new ProgressReporter(transitions.size());
+            Multithreader mt = new Multithreader(transitions.size(), Constants.numThreads);
+            List<String> transitionKeys = new ArrayList<>(transitions.keySet());
 
-                    float[] mzArray = new float[t.fragments.length];
-                    float[] intArray = new float[t.fragments.length];
-                    String[] fragmentIonTypes = new String[t.fragments.length];
-                    int[] fragNums = new int[t.fragments.length];
-                    int[] fragCharges = new int[t.fragments.length];
-                    for (int i = 0; i < t.fragments.length; i++) { //might need to decrease array length if removing some fragments
-                        if (!ignoredFragmentIonTypesSet.contains(t.fragments[i].type + "")) {
-                            mzArray[i] = t.fragments[i].mz;
-                            intArray[i] = t.fragments[i].intensity;
-                            fragmentIonTypes[i] = t.fragments[i].type + "";
-                            fragNums[i] = t.fragments[i].ordinal;
-                            fragCharges[i] =  t.fragments[i].charge;
+            for (int j = 0; j < Constants.numThreads; j++) {
+                int finalJ = j;
+                futureList.add(executorService.submit(() -> {
+                    for (int k = mt.indices[finalJ]; k < mt.indices[finalJ + 1]; k++) {
+                        Collection<Transition> tt = transitions.get(transitionKeys.get(k));
+                        for (Transition t : tt) {
+                            String peptide = t.peptide.getUnimodPeptide(false, libraryTsv.massSiteUnimodTable,
+                                            null, null, null, '[', ']')
+                                    .replaceFirst("^n", "");
+                            String charge = t.peptideCharge + "";
+                            String basePep = new PeptideFormatter(peptide, charge, format).getBaseCharge(); //format is unimod.obo
+
+                            //only read in precursors in the pin files
+                            if (!allowedPrecursors.isEmpty()) {
+                                if (!allowedPrecursors.contains(basePep)) {
+                                    continue;
+                                }
+                            }
+
+                            float[] mzArray = new float[t.fragments.length];
+                            float[] intArray = new float[t.fragments.length];
+                            String[] fragmentIonTypes = new String[t.fragments.length];
+                            int[] fragNums = new int[t.fragments.length];
+                            int[] fragCharges = new int[t.fragments.length];
+                            for (int i = 0; i < t.fragments.length; i++) { //might need to decrease array length if removing some fragments
+                                if (!ignoredFragmentIonTypesSet.contains(t.fragments[i].type + "")) {
+                                    mzArray[i] = t.fragments[i].mz;
+                                    intArray[i] = t.fragments[i].intensity;
+                                    fragmentIonTypes[i] = t.fragments[i].type + "";
+                                    fragNums[i] = t.fragments[i].ordinal;
+                                    fragCharges[i] = t.fragments[i].charge;
+                                }
+                            }
+
+                            PredictionEntry newPred = new PredictionEntry(mzArray, intArray, fragNums, fragCharges, fragmentIonTypes);
+                            newPred.setRT(t.normalizedRetentionTime);
+                            newPred.setIM(t.precursorIonMobility);
+                            allPreds.put(basePep, newPred);
                         }
+                        pr.progress();
                     }
+                }));
+            }
 
-                    PredictionEntry newPred = new PredictionEntry(mzArray, intArray, fragNums, fragCharges, fragmentIonTypes);
-                    newPred.setRT(t.normalizedRetentionTime);
-                    newPred.setIM(t.precursorIonMobility);
-                    allPreds.put(basePep, newPred);
-                }
+            for (Future future : futureList) {
+                future.get();
             }
         } catch (Exception e) {
             e.printStackTrace();

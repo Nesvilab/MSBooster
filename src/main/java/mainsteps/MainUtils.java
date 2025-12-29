@@ -21,7 +21,6 @@ import writers.PeptideFileCreator;
 import java.io.*;
 import java.util.*;
 import java.util.concurrent.ExecutionException;
-import java.util.concurrent.ExecutorService;
 import java.util.concurrent.ScheduledThreadPoolExecutor;
 
 import static bestmodelsearch.ModelCollectionDecider.decideCollection;
@@ -29,7 +28,7 @@ import static features.rtandim.LoessUtilities.gridSearchCV;
 import static utils.Print.*;
 
 public class MainUtils {
-    static Model setRTmodel(KoinaMethods km, PinMzmlMatcher pmMatcher, ExecutorService executorService) throws Exception {
+    static Model setRTmodel(KoinaMethods km, PinMzmlMatcher pmMatcher) throws Exception {
         if (Constants.useRT) {
             //here, look for best rt model
             if (Constants.findBestRtModel) {
@@ -62,8 +61,7 @@ public class MainUtils {
                         myWriter.close();
 
                         String predFileString = DiannModelCaller.callModel(inputFile, false);
-                        rtPreds = LibraryPredictionMapper.createLibraryPredictionMapper(
-                                predFileString, "DIA-NN", executorService).getPreds();
+                        rtPreds = LibraryPredictionMapper.createLibraryPredictionMapper(predFileString).getPreds();
                     } else { //mode for koina
                         PeptideFileCreator.createPartialFile(
                                 jsonOutFolder + File.separator + model + "_full.tsv",
@@ -149,7 +147,7 @@ public class MainUtils {
         return new Model(Constants.rtModel, "RT");
     }
 
-    static Model setIMmodel(KoinaMethods km, PinMzmlMatcher pmMatcher, ExecutorService executorService) throws Exception {
+    static Model setIMmodel(KoinaMethods km, PinMzmlMatcher pmMatcher) throws Exception {
         if (Constants.useIM) {
             if (Constants.findBestImModel) {
                 HashMap<String, float[]> datapointsIM = new HashMap<>();
@@ -182,8 +180,7 @@ public class MainUtils {
                         myWriter.close();
 
                         String predFileString = DiannModelCaller.callModel(inputFile, false);
-                        imPreds = LibraryPredictionMapper.createLibraryPredictionMapper(
-                                predFileString, "DIA-NN", executorService).getPreds();
+                        imPreds = LibraryPredictionMapper.createLibraryPredictionMapper(predFileString).getPreds();
                     } else { //mode for koina
                         PeptideFileCreator.createPartialFile(
                                 jsonOutFolder + File.separator + model + "_full.tsv",
@@ -269,7 +266,7 @@ public class MainUtils {
         return new Model(Constants.imModel, "IM");
     }
 
-    static Model setMS2model(KoinaMethods km, ExecutorService executorService) throws Exception {
+    static Model setMS2model(KoinaMethods km) throws Exception {
         if (Constants.useSpectra) {
             //here, look for best spectra model
             if (Constants.findBestSpectraModel) {
@@ -326,8 +323,7 @@ public class MainUtils {
 
                         String predFileString = DiannModelCaller.callModel(inputFile, false);
                         PredictionEntryHashMap allPreds =
-                                LibraryPredictionMapper.createLibraryPredictionMapper(
-                                        predFileString, "DIA-NN", executorService).getPreds();
+                                LibraryPredictionMapper.createLibraryPredictionMapper(predFileString).getPreds();
 
                         ArrayList<Double> similarity = new ArrayList<>();
                         for (PeptideObj peptideObj : km.getPeptideObjects(allPreds, km.scanNums, km.peptides)) {

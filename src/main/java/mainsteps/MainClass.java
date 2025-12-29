@@ -181,15 +181,15 @@ public class MainClass {
                 km.getTopPeptides();
             }
             ArrayList<Model> models = new ArrayList<>();
-            Model spectraModel = setMS2model(km, executorService);
+            Model spectraModel = setMS2model(km);
             if (!spectraModel.name.isEmpty()) {
                 models.add(spectraModel);
             }
-            Model rtModel = setRTmodel(km, pmMatcher, executorService);
+            Model rtModel = setRTmodel(km, pmMatcher);
             if (!rtModel.name.isEmpty()) {
                 models.add(rtModel);
             }
-            Model imModel = setIMmodel(km, pmMatcher, executorService);
+            Model imModel = setIMmodel(km, pmMatcher);
             if (!imModel.name.isEmpty()) {
                 models.add(imModel);
             }

@@ -22,6 +22,10 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 import allconstants.Constants;
 import java.nio.file.Paths;
 import java.util.Objects;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledThreadPoolExecutor;
+
 import org.junit.jupiter.api.Test;
 import readers.predictionreaders.LibraryTsvReader;
 
@@ -31,8 +35,12 @@ class LibraryTsvReaderTest {
       @Test
       void testLibraryReader() throws Exception {
           Constants.unimodObo = Paths.get(Objects.requireNonNull(LibraryTsvReaderTest.class.getResource("/unimod.obo")).toURI()).toString();
+          Runtime run = Runtime.getRuntime();
+          ExecutorService executorService = new ScheduledThreadPoolExecutor(
+                  run.availableProcessors() - 1);
           LibraryTsvReader libraryTsvReader = new LibraryTsvReader(Paths.get(Objects.requireNonNull(
-                  LibraryTsvReader.class.getResource("/library_1.tsv")).toURI()).toString(), "unimod.obo");
+                  LibraryTsvReader.class.getResource("/library_1.tsv")).toURI()).toString(),
+                  executorService, "unimod.obo");
           assertNotNull(libraryTsvReader);
       }
 }

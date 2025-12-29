@@ -92,7 +92,7 @@ public class PercolatorFormatter {
         if (Constants.spectraPredFile != null) {
             printInfo("Loading predicted spectra: " + Constants.spectraPredFile);
             predictedSpectra = LibraryPredictionMapper.createLibraryPredictionMapper(
-                    Constants.spectraPredFile, Constants.spectraModel, executorService);
+                    Constants.spectraPredFile, Constants.spectraModel, executorService, pinFiles);
             libraryFilePaths.add(Constants.spectraPredFile);
             libraries.add(predictedSpectra);
             allProperties.put("spectra", Constants.spectraPredFile);
@@ -116,7 +116,7 @@ public class PercolatorFormatter {
             printInfo("Loading predicted retention times: " + Constants.RTPredFile);
             if (! libraryFilePaths.contains(Constants.RTPredFile)) {
                 predictedRT = LibraryPredictionMapper.createLibraryPredictionMapper(
-                        Constants.RTPredFile, Constants.rtModel, executorService);
+                        Constants.RTPredFile, Constants.rtModel, executorService, pinFiles);
                 libraryFilePaths.add(Constants.RTPredFile);
                 libraries.add(predictedRT);
             }
@@ -127,7 +127,7 @@ public class PercolatorFormatter {
             printInfo("Loading predicted ion mobilities: " + Constants.IMPredFile);
             if (! libraryFilePaths.contains(Constants.IMPredFile)) {
                 predictedIM = LibraryPredictionMapper.createLibraryPredictionMapper(
-                        Constants.IMPredFile, Constants.imModel, executorService);
+                        Constants.IMPredFile, Constants.imModel, executorService, pinFiles);
                 libraryFilePaths.add(Constants.IMPredFile);
                 libraries.add(predictedIM);
             }
@@ -138,7 +138,7 @@ public class PercolatorFormatter {
             printInfo("Loading predicted auxiliary spectra: " + Constants.auxSpectraPredFile);
             if (! libraryFilePaths.contains(Constants.auxSpectraPredFile)) {
                 predictedAuxSpectra = LibraryPredictionMapper.createLibraryPredictionMapper(
-                        Constants.auxSpectraPredFile, Constants.auxSpectraModel, executorService);
+                        Constants.auxSpectraPredFile, Constants.auxSpectraModel, executorService, pinFiles);
                 libraryFilePaths.add(Constants.auxSpectraPredFile);
                 libraries.add(predictedAuxSpectra);
             }

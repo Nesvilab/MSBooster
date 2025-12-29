@@ -19,9 +19,13 @@ package readers.predictionreaders;
 
 import predictions.PredictionEntryHashMap;
 import readers.MgfFileReader;
+import readers.datareaders.PinReader;
+import utils.Print;
+import writers.LibraryTsvReducer;
 
 import java.io.File;
 import java.io.IOException;
+import java.util.HashSet;
 import java.util.concurrent.ExecutorService;
 
 import static utils.Print.printError;
@@ -35,6 +39,18 @@ public interface LibraryPredictionMapper {
     //TODO: multithread all of these
     static LibraryPredictionMapper createLibraryPredictionMapper(String file, String model,
                                                                  ExecutorService executorService)
+        throws Exception {
+        return createLibraryPredictionMapper(file, model, executorService, new File[0]);
+    }
+
+    //assume diann predicted.bin
+    static LibraryPredictionMapper createLibraryPredictionMapper(String file) throws Exception {
+        return new DiannSpeclibReader(file);
+    }
+
+    static LibraryPredictionMapper createLibraryPredictionMapper(String file, String model,
+                                                                 ExecutorService executorService,
+                                                                 File[] pinFiles)
             throws Exception {
         //detecting file extension
         String[] extensionSplit = file.split("\\.");
@@ -51,7 +67,32 @@ public interface LibraryPredictionMapper {
             case "dlib":
                 return new DlibReader(file);
             case "tsv":
-                return new LibraryTsvReader(file, "unimod.obo");
+                //TODO: if we ever encounter a situation where other prediction formats have OOM, extend this idea
+                //write a reduced library tsv first
+                LibraryTsvReducer ltr = new LibraryTsvReducer(file, pinFiles);
+                ltr.writeReducedLib();
+
+                if (ltr.needReduced) {
+                    //get set of precursors in pin files, so only have to read in relevant entries
+                    Print.printInfo("Collecting precursors from pin file to only load relevant precursors");
+                    //TODO: another hashset to store previously checked peptides, not peptide formatters
+                    HashSet<String> allPrecursors = new HashSet<>();
+                    HashSet<String> allPrecursorsUnprocessed = new HashSet<>();
+                    for (File pinFile : pinFiles) {
+                        PinReader pinReader = new PinReader(pinFile.getAbsolutePath());
+                        while (pinReader.next(true)) {
+                            String unprocessedPeptide = pinReader.getColumn("Peptide");
+                            if (!allPrecursors.contains(unprocessedPeptide)) {
+                                allPrecursors.add(pinReader.getPep().getBaseCharge());
+                                allPrecursorsUnprocessed.add(unprocessedPeptide);
+                            }
+                        }
+                    }
+
+                    return new LibraryTsvReader(ltr.newLib, executorService, "unimod.obo", allPrecursors);
+                } else {
+                    return new LibraryTsvReader(file, executorService, "unimod.obo");
+                }
             case "speclib":
                 return new FragPipeSpeclibReader(file);
             default:

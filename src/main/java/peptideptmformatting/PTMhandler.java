@@ -160,11 +160,9 @@ public class PTMhandler {
                     } else {
                         //TODO: "Anywhere" should be expanded
                         String mod = lineSplit[0].split("@")[1];
-                        mod = mod.replace("Any_N-term", "[");
-                        mod = mod.replace("Protein_N-term", "[");
-                        mod = mod.replace("Any_C-term", "]");
-                        mod = mod.replace("Protein_C-term", "]");
-
+                        if (mod.contains("term")) {
+                            mod = "["; //to match logic for alphapept_koina.csv
+                        }
                         map.put((T) (mod + unimod), mass);
                     }
                 } else {
@@ -352,6 +350,7 @@ public class PTMhandler {
             filteredMods = new HashSet<>(allowedMods);  // Always create a copy
         }
 
+        //TODO: could be made faster, like through a binary search
         for (String unimod : filteredMods) {
             Double PTMmass = modMap.get(unimod);
             if (NumericUtils.massesCloseEnough(PTMmass, reportedMass)) {

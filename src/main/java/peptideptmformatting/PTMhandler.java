@@ -224,7 +224,7 @@ public class PTMhandler {
 
     //start is index of [
     public static String[] formatPeptideBaseToSpecific(String peptide, int start, int end, String model,
-                                                       HashSet<String> foundUnimods, boolean cterm) {
+                                                       Set<String> foundUnimods, boolean cterm) {
         //set allowed unimods
         Set<String> modelAllowedUnimods;
         switch(model) {

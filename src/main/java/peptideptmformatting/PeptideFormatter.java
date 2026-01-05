@@ -53,8 +53,7 @@ public class PeptideFormatter {
 
     public String charge;
 
-    public static HashSet<String> foundUnimods = new HashSet<>(); //collection of previously used unimod codes
-    //TODO: Can store in a thread-safe set
+    public static Set<String> foundUnimods = ConcurrentHashMap.newKeySet(); //collection of previously used unimod codes
 
     public boolean cterm = false;
 

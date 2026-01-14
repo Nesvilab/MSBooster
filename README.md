@@ -1,5 +1,5 @@
 # MSBooster
-Last updated: 9/30/2024
+Last updated: 1/14/2026
 
 ## Overview
 MSBooster is a tool for incorporating spectral libary predictions into peptide-spectrum match (PSM) 
@@ -17,6 +17,36 @@ and is included in many of its workflows. MSBooster was developed with other Fra
 such as FragPipe-PDV.
 
 ![Alt text](README_imgs/manuscript1_workflow.png)
+
+## Calculated features
+Listed here are definitions of the default calculated features. An exhaustive list of all possible features is coming:
+- Unweighted spectral entropy: requires fragment ion intensity
+  vectors to sum to 1. p stands for predicted fragment, P for predicted
+  intensity vector, m for matched experimental fragment, and M for matched
+  experimental intensity vector. By default, the top 20 highest predicted intensity
+  fragments are used.
+  $$1 - \frac{2S_{PM} - S_P - S_M}{\ln 4}$$
+where entropy
+$$S = -\sum_{i=1}^{n} f_i \ln f_i$$
+and $S_{PM}$ is the sum of predicted and matched vectors $S_P$ and $S_M$ divided by 2
+- Weighted spectral entropy: The unweighted spectral entropy score is biased towards higher scores for shorter peptides.
+We combat this by normalizing the unweighted score with the square root of the predicted intensity vector entropy
+  $$W = U\sqrt{S_P}$$
+where W is the weighted score, U the unweighted score
+- Hypergeometric probability:
+  ![Alt text](README_imgs/hypergeometric.png)
+- Intersection: of the top 20 highest intensity annotate peaks in the experimental spectrum (by default, b and y ions), how many of
+them are in the top 20 highest predicted intensity fragments?
+- Top 6 matched intensity: Set all experimental fragment intensities to their natural logs. Of the top 6 highest intensity
+ predicted fragments, take their sum and divide it by the sum of intensities of all experimental peaks 
+**with intensities greater than the mean fragment intensity in the spectrum**
+- Delta RT loess: after performing RT calibration between the predicted and experimental units (process described in
+MSBooster paper), calculate the difference between the calibrated predicted RT of the peptide and the MS2 scan RT. The
+score is reported in predicted RT units
+- Delta RT loess real: similar idea to delta RT loess, but calibration is performed from predicted to experimental time
+scales, and the score is reported in minutes
+- Delta IM loess: similar idea to delta RT loess. A separate calibration is done per charge state
+- Ion mobility: experimental ion mobility. This is independent of the predicted IM
 
 ## Accepted inputs and models
 MSBooster is equipped to handle multiple input file formats and models:
@@ -89,7 +119,8 @@ to 1, but you can increase this to specify how many smaller files the DIA-NN inp
 file will then be predicted sequentially, easy the memory burden
   <li><code>plotExtension (String)</code>: what file format plots should be in. png by default, and pdf is also allowed
   <li><code>features (String)</code>: list of features to be calculated. Case-sensitive, comm-separated without spaces in between.
-Default is "predRTrealUnits,unweightedSpectralEntropy,deltaRTLOESS"
+Default is <code>unweightedSpectralEntropy,weightedSpectralEntropy,hypergeometricProbability,intersection,
+top6matchedIntensity,deltaRTLOESS,deltaRTLOESSreal,deltaIMLOESS,ionmobility</code>
 </ul>
 </details>
 
@@ -157,29 +188,40 @@ and predicted spectra
 ## Graphical output files
 MSBooster produces multiple graphs that can be used to further examine how your data compares to model
 predictions.
- - MSBooster_plots folder:
-    - RT_calibration_curves: up to the top 5000 PSMs will be used for calibration between the 
-    experimental and predicted RT scales. These top PSMs are presented in the graph, not all PSMs. 
-    One graph will be produced per pin file
-    ![Alt text](README_imgs/rt_calibration.png?raw=true)
-    - IM_calibration_curves: up to the top 1000 PSMs will be used for calibration between the
-      experimental and predicted IM scales. These top PSMs are presented in the graph, not all PSMs. A separate curve
-      will be learned for each charge state. The figure below is an example for charge 2 precursors
-    ![Alt text](README_imgs/im_calibration_charge2.png?raw=true)
-    - score_histograms: overlayed histograms of all target and decoy PSMs for each pin file. Some 
-    features are plotted here on a log scale for better visualization of the bimodal distribution of
-    true and false positives, but the original value is what is used in the pin files, not the log-scaled
-    version. Shown here are histograms for the unweighted spectral entropy and delta RT scores, but similar ones are
-    produced for all features
-    ![Alt text](README_imgs/entropy_hist.png?raw=true)
-    ![Alt text](README_imgs/delta_RT_loess_hist.png?raw=true)
+
+- RT_calibration_curves: up to the top 5000 PSMs will be used for calibration between the 
+experimental and predicted RT scales. These top PSMs are presented in the graph, not all PSMs. 
+Two graphs will be produced per pin file, the first plotting predicted RT on the y axis, the second plotting calibrated RT
+  (predicted RT adjusted onto the experimented scale); the second plot will have the suffix `_calibrated`
+![Alt text](README_imgs/rt_calibration.png?raw=true)
+![Alt text](README_imgs/calibrated_RT.png?raw=true)
+- IM_calibration_curves: up to the top 1000 PSMs will be used for calibration between the
+  experimental and predicted IM scales. These top PSMs are presented in the graph, not all PSMs. A separate curve
+  will be learned for each charge state. The figure below is an example for charge 2 precursors
+![Alt text](README_imgs/im_calibration_charge2.png?raw=true)
+- score_histograms: overlayed histograms of all target and decoy PSMs for each pin file. Some 
+features are plotted here on a log scale for better visualization of the bimodal distribution of
+true and false positives, but the original value is what is used in the pin files, not the log-scaled
+version. Shown here are histograms for the unweighted spectral entropy and delta RT scores, but similar ones are
+produced for all features
+![Alt text](README_imgs/entropy_hist.png?raw=true)
+![Alt text](README_imgs/delta_RT_loess_hist.png?raw=true)
+- cumulativeQC (summarizing all runs together): 
+  - RT_regression_curves: RT curves for all runs are plotted together, making it easier to spot any outlier runs
+    ![Alt text](README_imgs/RT_regression_curves.png?raw=true)
+  - cumulative_absDeltaRT_trend: 5th, 50th, and 95th percentiles of deltaRT scores across the entire LC. The same top
+  5000 PSMs from the RT calibration are used to calculate percentiles, and a moving average is applied for plotting the 
+  trendline
+    ![Alt text](README_imgs/cumulative_absDeltaRT_trend.png?raw=true)
+  - cumulative_deltaRT_lineplot and cumulative_MS2_lineplot: files are sorted in order of the median delta RT (minutes)
+  and spectral similarity (unweighted spectral entropy similarity) of all PSMs with evalue below the expectation value 
+  cutoff. 5th, 25th, 50th, 75th, and 95th percentiles are plotted
+    ![Alt text](README_imgs/cumulative_deltaRT_lineplot.png?raw=true)
+    ![Alt text](README_imgs/cumulative_MS2_lineplot.png?raw=true)
 
 ## Tutorials
 - Use peptide prediction models from Koina for MSBooster feature generation: https://fragpipe.nesvilab.org/docs/tutorial_koina.html
-- [Reading in predictions from any model via MGF files](ReadMgfPredictions.md) 
-
-## TODO
-- Documentation on all allowed features and how to QC them with graphical output
+- [Reading in predictions from any model via MGF files](ReadMgfPredictions.md)
     
 ## How to cite
 Please cite the following when using MSBooster: https://www.nature.com/articles/s41467-023-40129-9 

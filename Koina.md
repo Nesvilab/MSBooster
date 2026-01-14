@@ -1,9 +1,9 @@
 # Using Koina with MSBooster
-Last updated: 9/15/2025
+Last updated: 1/14/2026
 
 ## Why use Koina?
 [Koina](https://koina.proteomicsdb.org/) (described in 
-[Lautenbacher, Yang et al.,_bioRxiv_, 2024](https://www.biorxiv.org/content/10.1101/2024.06.01.596953v1))
+[Lautenbacher, Yang et al., Nature Communications, 2025](https://www.nature.com/articles/s41467-025-64870-5))
 is an online service that allows us to leverage a GPU server to get predictions from multiple MS2 spectra, 
 retention time (RT), and ion mobility (IM) models, thereby democratizing deep learning. The models on Koina may be 
 more specific to your use case than the default prediction model, DIA-NN. As a result, predictions may be more accurate,

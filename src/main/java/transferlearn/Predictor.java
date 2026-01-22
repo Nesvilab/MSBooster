@@ -212,9 +212,13 @@ public class Predictor {
         connection.setRequestProperty("Content-Type", "multipart/form-data; boundary=" + boundary);
         connection.setRequestProperty("X-Api-Key", apiKey);
 
+        int bufferSize = 65536;
+        connection.setChunkedStreamingMode(bufferSize); // 64KB chunks
+
         //send request
         try (OutputStream os = connection.getOutputStream();
-             PrintWriter writer = new PrintWriter(new OutputStreamWriter(os, StandardCharsets.UTF_8), true);
+             BufferedOutputStream bos = new BufferedOutputStream(os);
+             PrintWriter writer = new PrintWriter(new OutputStreamWriter(bos, StandardCharsets.UTF_8), true);
              FileInputStream fisInput = new FileInputStream(inputFile);
              FileInputStream fisModel = new FileInputStream(modelZip);
         ) {
@@ -225,12 +229,12 @@ public class Predictor {
             writer.append("Content-Type: application/vnd.apache.parquet\r\n\r\n");
             writer.flush();
 
-            byte[] buffer = new byte[4096];
+            byte[] buffer = new byte[bufferSize];
             int bytesRead;
             while ((bytesRead = fisInput.read(buffer)) != -1) {
-                os.write(buffer, 0, bytesRead);
+                bos.write(buffer, 0, bytesRead);
             }
-            os.flush();
+            bos.flush();
             writer.append("\r\n");
 
             //model zip
@@ -242,9 +246,9 @@ public class Predictor {
 
             buffer = new byte[4096];
             while ((bytesRead = fisModel.read(buffer)) != -1) {
-                os.write(buffer, 0, bytesRead);
+                bos.write(buffer, 0, bytesRead);
             }
-            os.flush();
+            bos.flush();
             writer.append("\r\n");
 
             // output format

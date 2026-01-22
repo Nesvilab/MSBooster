@@ -57,49 +57,11 @@ public class DiannModelCaller {
             }
             br.close();
 
-            //get num PSMs
-            int subFileSize = 0;
-            int linenumTotal = 0;
-            if (Constants.splitPredInputFile != 1) {
-                br = new BufferedReader(new FileReader(inputFile));
-                int linenum = -1;
-                while ((line = br.readLine()) != null) {
-                    linenum += 1;
-                }
-                br.close();
-
-                subFileSize = linenum / Constants.splitPredInputFile;
-                linenumTotal = linenum;
-            }
-
-            for (int i = 1; i < Constants.splitPredInputFile + 1; i++) {
+            for (int i = 0; i < Constants.splitPredInputFile; i++) {
                 String inputString = inputFile;
-
-                //splitting in case large input file
-                if (Constants.splitPredInputFile != 1) {
-                    //get new input string name
+                if (Constants.splitPredInputFile > 1) {
                     inputString += i;
-
-                    //get row splits to go in each file
-                    int startRow = (i - 1) * subFileSize;
-                    int endRow = i * subFileSize;
-                    if (i == Constants.splitPredInputFile) {
-                        endRow = linenumTotal;
-                    }
-
-                    br = new BufferedReader(new FileReader(inputFile));
-                    line = br.readLine();
-                    FileWriter myWriter = new FileWriter(inputString);
-                    myWriter.write(line + "\n");
-                    int linenum = 0;
-                    while ((line = br.readLine()) != null) {
-                        if (linenum >= startRow && linenum < endRow) {
-                            myWriter.write(line + "\n");
-                        }
-                        linenum += 1;
-                    }
-                    myWriter.close();
-                    br.close();
+                    printInfo("Predicting batch " + (i + 1));
                 }
 
                 //actual prediction

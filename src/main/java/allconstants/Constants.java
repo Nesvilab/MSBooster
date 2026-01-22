@@ -28,7 +28,7 @@ import java.util.HashSet;
 import java.util.concurrent.ConcurrentHashMap;
 
 public class Constants implements ConstantsInterface {
-    public static String versionNumber = "MSBooster v1.4.17";
+    public static String versionNumber = "MSBooster v1.4.18";
 
     //file input
     public static String paramsList = null;
@@ -88,6 +88,7 @@ public class Constants implements ConstantsInterface {
     public static String rtModel = "";
     public static String imModel = "";
     public static String auxSpectraModel = "";
+    public static Integer diannPeptidePredictionLimit = 2000000;
     public static Integer splitPredInputFile = 1;
     public static Boolean useKoina = false;
     public static Boolean usedKoina = false;

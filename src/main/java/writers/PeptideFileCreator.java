@@ -162,54 +162,138 @@ public class PeptideFileCreator {
                             MainClass.executorService);
                 }
             } else {
-                FileWriter myWriter = new FileWriter(outfile);
+                FileWriter myWriter;
                 switch (modelFormat) {
                     case "pDeep2":
                         printInfo("Writing pDeep2 input file");
+                        myWriter = new FileWriter(outfile);
                         myWriter.write("peptide" + "\t" + "modification" + "\t" + "charge\n");
+                        for (String hSetHit : hSetHits) {
+                            myWriter.write(hSetHit + "\n");
+                        }
+                        myWriter.close();
                         break;
                     case "pDeep3":
                         printInfo("Writing pDeep3 input file");
+                        myWriter = new FileWriter(outfile);
                         myWriter.write("raw_name" + "\t" + "scan" + "\t" + "peptide" + "\t" +
                                 "modinfo" + "\t" + "charge\n");
+                        for (String hSetHit : hSetHits) {
+                            myWriter.write(hSetHit + "\n");
+                        }
+                        myWriter.close();
                         break;
                     case "fineTune":
+                        myWriter = new FileWriter(outfile);
                         myWriter.write("raw_name" + "\t" + "scan" + "\t" + "peptide" + "\t" +
                                 "modinfo" + "\t" + "charge" + "\t" + "RTInSeconds\n");
+                        for (String hSetHit : hSetHits) {
+                            myWriter.write(hSetHit + "\n");
+                        }
+                        myWriter.close();
                         break;
                     case "DeepMSPeptide":
                         printInfo("Writing DeepMSPeptide input file");
-                        //hSetHits.removeIf(hSetHit -> hSetHit.contains("B") || hSetHit.contains("X") || hSetHit.contains("Z"));
+                        myWriter = new FileWriter(outfile);
+                        for (String hSetHit : hSetHits) {
+                            myWriter.write(hSetHit + "\n");
+                        }
+                        myWriter.close();
                         break; //no header
                     case "DeepMSPeptideAll":
                         printInfo("Writing DeepMSPeptideAll input file");
-                        //hSetHits.removeIf(hSetHit -> hSetHit.contains("B") || hSetHit.contains("X") || hSetHit.contains("Z"));
+                        myWriter = new FileWriter(outfile);
+                        for (String hSetHit : hSetHits) {
+                            myWriter.write(hSetHit + "\n");
+                        }
+                        myWriter.close();
                         break; //no header
                     case "Diann":
                         printInfo("Writing DIA-NN input file");
-                        myWriter.write("peptide" + "\t" + "charge\n");
+                        if (hSetHits.size() > Constants.diannPeptidePredictionLimit) {
+                            int numfiles = (int) Math.ceil((double) hSetHits.size() /
+                                    (double) Constants.diannPeptidePredictionLimit);
+                            Constants.splitPredInputFile = numfiles;
+                            printInfo("Writing " + numfiles + " files to predict in batches");
+
+                            int subFileIdx = 0;
+                            int idx = 0;
+                            int totalIdx = 0;
+                            FileWriter totalWriter = new FileWriter(outfile);
+                            totalWriter.write("peptide" + "\t" + "charge\n");
+                            myWriter = new FileWriter(outfile + subFileIdx);
+                            myWriter.write("peptide" + "\t" + "charge\n");
+                            for (String hSetHit : hSetHits) {
+                                myWriter.write(hSetHit + "\n");
+                                totalWriter.write(hSetHit + "\n");
+                                totalIdx++;
+                                if (idx >= Constants.diannPeptidePredictionLimit) {
+                                    myWriter.close();
+                                    subFileIdx++;
+                                    if (totalIdx != hSetHits.size()) {
+                                        myWriter = new FileWriter(outfile + subFileIdx);
+                                        myWriter.write("peptide" + "\t" + "charge\n");
+                                    }
+                                    idx = 0;
+                                }
+                                idx++;
+                            }
+                            myWriter.close();
+                            totalWriter.close();
+                        } else {
+                            myWriter = new FileWriter(outfile);
+                            myWriter.write("peptide" + "\t" + "charge\n");
+                            for (String hSetHit : hSetHits) {
+                                myWriter.write(hSetHit + "\n");
+                            }
+                            myWriter.close();
+                        }
                         break;
                     case "PredFull":
                         printInfo("Writing PredFull input file");
+                        myWriter = new FileWriter(outfile);
                         myWriter.write("Peptide" + "\t" + "Charge" + "\t" + "Type" + "\t" + "NCE\n");
+                        for (String hSetHit : hSetHits) {
+                            myWriter.write(hSetHit + "\n");
+                        }
+                        myWriter.close();
                         break;
                     case "Prosit":
                         printInfo("Writing Prosit input file");
+                        myWriter = new FileWriter(outfile);
                         myWriter.write("modified_sequence,collision_energy,precursor_charge\n");
+                        for (String hSetHit : hSetHits) {
+                            myWriter.write(hSetHit + "\n");
+                        }
+                        myWriter.close();
                         break;
                     case "PrositTMT":
                         printInfo("Writing Prosit TMT input file");
+                        myWriter = new FileWriter(outfile);
                         myWriter.write("modified_sequence,collision_energy,precursor_charge,fragmentation\n");
+                        for (String hSetHit : hSetHits) {
+                            myWriter.write(hSetHit + "\n");
+                        }
+                        myWriter.close();
                         break;
                     case "alphapeptdeep":
                         printInfo("Writing alphapeptdeep input file");
+                        myWriter = new FileWriter(outfile);
                         myWriter.write("sequence,mods,mod_sites,charge,nce,instrument,modified,proteins,is_decoy\n");
+                        for (String hSetHit : hSetHits) {
+                            myWriter.write(hSetHit + "\n");
+                        }
+                        myWriter.close();
+                        break;
+                    case "createFull":
+                        printInfo("Writing createFull input file");
+                        myWriter = new FileWriter(outfile);
+                        for (String hSetHit : hSetHits) {
+                            myWriter.write(hSetHit + "\n");
+                        }
+                        myWriter.close();
                         break;
                 }
-                for (String hSetHit : hSetHits) {
-                    myWriter.write(hSetHit + "\n");
-                }
-                myWriter.close();
 
                 if (Constants.modelSplit && modelFormat.equals("alphapeptdeep")) {
                     PepXMLDivider pxd = new PepXMLDivider(Constants.modelSplitNum);

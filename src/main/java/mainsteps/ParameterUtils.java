@@ -85,6 +85,7 @@ public class ParameterUtils {
         String line;
         boolean ppmToDa = false; //set Da tolernace once all parameters read in. No guarantee which param is read first
         BufferedReader reader = new BufferedReader(new FileReader(params.get("fragger")));
+        printInfo("Reading " + params.get("fragger"));
         while ((line = reader.readLine()) != null) {
             String[] lineSplit = line.split("#")[0].split("=");
             if (lineSplit.length != 2) {

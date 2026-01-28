@@ -57,6 +57,23 @@ public class MainClass {
             //read in MSFragger parameters
             if (params.containsKey("fragger")) { //Will override paramsList
                 if (!params.get("fragger").equals("null")) {
+                    //check for dda or dia params
+                    File f = new File(params.get("fragger"));
+                    if (!f.exists()) {
+                        params.put("fragger", params.get("fragger").replace(".params", "_dda.params"));
+                        f = new File(params.get("fragger"));
+
+                        if (!f.exists()) {
+                            params.put("fragger", params.get("fragger").replace(".params", "_dia.params"));
+                            f = new File(params.get("fragger"));
+
+                            if (!f.exists()) {
+                                printError("Parameter file not found. Exiting");
+                                System.exit(1);
+                            }
+                        }
+                    }
+
                     readFraggerParams(params);
                 }
             }

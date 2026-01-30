@@ -20,14 +20,7 @@ package modelcallers;
 import allconstants.Constants;
 import peptideptmformatting.PTMhandler;
 
-import java.io.BufferedReader;
-import java.io.File;
-import java.io.FileReader;
-import java.io.FileWriter;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.InputStreamReader;
-import java.io.RandomAccessFile;
+import java.io.*;
 import java.nio.file.Files;
 
 import static utils.Print.printError;
@@ -139,22 +132,21 @@ public class DiannModelCaller {
                     File inputf = new File(inputString);
                     inputf.delete();
 
-                    //concatenate files together
-                    //adapted from https://stackoverflow.com/questions/2243073/java-multiple-connection-downloading/2243731#2243731
-                    int data = 0;
-                    try {
-                        File filename = new File(predFileString + ".total");
-                        FileWriter outfile = new FileWriter(filename, true);
+                    // Concatenate binary files with buffering
+                    try (FileOutputStream outfile = new FileOutputStream(predFileString + ".total", true);
+                         BufferedOutputStream bos = new BufferedOutputStream(outfile)) {
 
-                        filename = new File(predFileString);
-                        RandomAccessFile infile = new RandomAccessFile(filename, "r");
-                        data = infile.read();
-                        while (data != -1) {
-                            outfile.write(data);
-                            data = infile.read();
+                        File filename = new File(predFileString);
+
+                        try (FileInputStream infile = new FileInputStream(filename);
+                             BufferedInputStream bis = new BufferedInputStream(infile)) {
+
+                            byte[] buffer = new byte[8192];  // 8KB buffer
+                            int bytesRead;
+                            while ((bytesRead = bis.read(buffer)) != -1) {
+                                bos.write(buffer, 0, bytesRead);
+                            }
                         }
-                        infile.close();
-                        outfile.close();
                     } catch (Exception e) {
                         e.printStackTrace();
                     }

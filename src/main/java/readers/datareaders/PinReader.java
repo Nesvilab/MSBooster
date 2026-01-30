@@ -319,9 +319,6 @@ public class PinReader {
 
     public String[] createAlphapeptdeepList()
             throws IOException {
-        if (Constants.keepDecoys == 0) {
-            Print.printInfo("Filtering out decoys");
-        }
         ArrayList<String> peps = new ArrayList<String>();
         while (next(true)) {
             PeptideFormatter pf = getPep();

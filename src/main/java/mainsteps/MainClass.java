@@ -58,16 +58,21 @@ public class MainClass {
             if (params.containsKey("fragger")) { //Will override paramsList
                 if (!params.get("fragger").equals("null")) {
                     //check for dda or dia params
-                    File f = new File(params.get("fragger"));
+                    String originalFragger = params.get("fragger");
+                    File f = new File(originalFragger);
                     if (!f.exists()) {
-                        params.put("fragger", params.get("fragger").replace(".params", "_dda.params"));
-                        f = new File(params.get("fragger"));
+                        String ddaPath = originalFragger.replace(".params", "_dda.params");
+                        f = new File(ddaPath);
 
-                        if (!f.exists()) {
-                            params.put("fragger", params.get("fragger").replace(".params", "_dia.params"));
-                            f = new File(params.get("fragger"));
+                        if (f.exists()) {
+                            params.put("fragger", ddaPath);
+                        } else {
+                            String diaPath = originalFragger.replace(".params", "_dia.params");
+                            f = new File(diaPath);
 
-                            if (!f.exists()) {
+                            if (f.exists()) {
+                                params.put("fragger", diaPath);
+                            } else {
                                 printError("Parameter file not found. Exiting");
                                 System.exit(1);
                             }

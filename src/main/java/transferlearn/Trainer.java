@@ -204,6 +204,14 @@ public class Trainer {
             if (!stdout.isEmpty()) {
                 System.out.print(stdout.substring(oldStdoutLen));
                 oldStdoutLen = stdout.length();
+            } else { //print queue position
+                int jobsAhead = ((Number) map.get("queue_position")).intValue();
+                if (jobsAhead == 1) {
+                    System.out.println("Your job is queued. There is currently 1 job ahead of yours.");
+                } else {
+                    System.out.println("Your job is queued. There are currently " +
+                            jobsAhead + " jobs ahead of yours.");
+                }
             }
         }
 

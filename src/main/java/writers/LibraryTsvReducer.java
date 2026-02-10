@@ -4,6 +4,9 @@ import readers.datareaders.PinReader;
 import utils.Print;
 
 import java.io.*;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.HashSet;
 
 public class LibraryTsvReducer {
@@ -104,6 +107,7 @@ public class LibraryTsvReducer {
                             Print.printInfo("Reading full library");
                             reader.close();
                             writer.close();
+                            Files.deleteIfExists(Paths.get(newLib));
                             return;
                         }
                         if (!printedMessage) {

@@ -50,7 +50,7 @@ public class LibraryTsvReader implements LibraryPredictionMapper {
         filenames.add(file);
         printInfo("Reading " + file);
         setUnimodObo();
-        LibraryTsv libraryTsv = new LibraryTsv(Constants.numThreads, Constants.unimodObo);
+        LibraryTsv libraryTsv = new LibraryTsv(Constants.unimodObo);
         Multimap<String, Transition> transitions = libraryTsv.read(Paths.get(file));
 
         try {

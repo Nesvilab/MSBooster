@@ -19,10 +19,8 @@ package peptideptmformatting;
 
 import allconstants.Constants;
 import org.apache.commons.lang3.math.NumberUtils;
-import readers.predictionreaders.LibraryTsvReader;
 import umich.ms.fileio.filetypes.unimod.UnimodOboReader;
 import utils.NumericUtils;
-import utils.Print;
 
 import java.io.*;
 import java.nio.file.Files;
@@ -127,8 +125,8 @@ public class PTMhandler {
         ArrayList<String> modPaths = new ArrayList<>();
         modPaths.add("/ptm_resources/alphapept_koina.csv");
         modPaths.add("/ptm_resources/modification_alphapeptdeep.tsv");
-        if (!Constants.additionalMods.isEmpty()) {
-            modPaths.add(Constants.additionalMods);
+        if (!Constants.additionalModsFile.isEmpty()) {
+            modPaths.add(Constants.additionalModsFile);
         }
 
         Map<T, Double> map = new HashMap<>();
@@ -510,8 +508,8 @@ public class PTMhandler {
 
         ArrayList<String> modPaths = new ArrayList<>();
         modPaths.add("/ptm_resources/modification_alphapeptdeep.tsv");
-        if (!Constants.additionalMods.isEmpty()) {
-            modPaths.add(Constants.additionalMods);
+        if (!Constants.additionalModsFile.isEmpty()) {
+            modPaths.add(Constants.additionalModsFile);
         }
 
         for (String modPath : modPaths) {

@@ -5,7 +5,6 @@ import allconstants.NceConstants;
 import mainsteps.MainClass;
 import mainsteps.ParameterUtils;
 import peptideptmformatting.PTMhandler;
-import peptideptmformatting.PeptideFormatter;
 import readers.datareaders.FastaReader;
 import speclib.io.ParquetToSpecLib;
 import utils.Print;
@@ -100,8 +99,8 @@ public class Predictor {
                     Constants.peptideListDirectory = file.getParent();
                     break;
                 case "--custom-mods":
-                    customMods = args[i + 1];
-                    Constants.additionalMods = customMods;
+                    customModsStringToTsv(args[i + 1]);
+                    customMods = Constants.additionalModsFile;
                     PTMhandler.unimodToModMassAll = makeUnimodToModMassAll(false);
                     AAunimodToModMassAll = makeUnimodToModMassAll(true);
                     PTMhandler.AAunimodToModMassAllKeys = AAunimodToModMassAll.keySet();

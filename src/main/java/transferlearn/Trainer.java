@@ -1,5 +1,6 @@
 package transferlearn;
 
+import allconstants.Constants;
 import utils.Print;
 
 import java.io.*;
@@ -76,7 +77,8 @@ public class Trainer {
                     nce = Float.parseFloat(args[i + 1]);
                     break;
                 case "--custom-mods":
-                    customMods = args[i + 1];
+                    customModsStringToTsv(args[i + 1]);
+                    customMods = Constants.additionalModsFile;
                     break;
                 case "--api-key":
                     apiKey = args[i + 1];

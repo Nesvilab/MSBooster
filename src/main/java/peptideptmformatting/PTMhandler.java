@@ -18,6 +18,7 @@
 package peptideptmformatting;
 
 import allconstants.Constants;
+import org.apache.commons.lang3.math.NumberUtils;
 import readers.predictionreaders.LibraryTsvReader;
 import umich.ms.fileio.filetypes.unimod.UnimodOboReader;
 import utils.NumericUtils;
@@ -122,7 +123,7 @@ public class PTMhandler {
     }
 
     @SuppressWarnings("unchecked")
-    private static <T> Map<T, Double> makeUnimodToModMassAll(boolean includeAA) throws IOException {
+    public static <T> Map<T, Double> makeUnimodToModMassAll(boolean includeAA) throws IOException {
         ArrayList<String> modPaths = new ArrayList<>();
         modPaths.add("/ptm_resources/alphapept_koina.csv");
         modPaths.add("/ptm_resources/modification_alphapeptdeep.tsv");
@@ -139,40 +140,53 @@ public class PTMhandler {
             }
             final InputStreamReader reader = new InputStreamReader(stream);
             final BufferedReader ptmFile = new BufferedReader(reader);
+
+            String delimiter = "";
+            if (modPath.endsWith(".csv")) {
+                delimiter = ",";
+            } else if (modPath.endsWith(".tsv")) {
+                delimiter = "\t";
+            } else {
+                printError("Invalid modification file: " + modPath);
+                printError("Exiting");
+                System.exit(1);
+            }
+
             String line = ptmFile.readLine(); //header
+            List<String> fields = Arrays.asList(line.split(delimiter));
+            int unimodIdIdx = fields.indexOf("unimod_id");
+            int massIdx = Math.max(fields.indexOf("unimod_mass"), fields.indexOf("mod_mass"));
+            int nameIdx = fields.indexOf("mod_name");
 
             while ((line = ptmFile.readLine()) != null) {
-                String[] lineSplit = new String[0];
-                if (modPath.endsWith(".csv")) {
-                    lineSplit = line.split(",", -1);
-                } else if (modPath.endsWith(".tsv")) {
-                    lineSplit = line.split("\t", -1);
-                } else {
-                    printError("Invalid modification file: " + modPath);
-                    printError("Exiting");
-                    System.exit(1);
+                String[] lineSplit = line.split(delimiter, -1);
+
+                String unimod;
+                if (unimodIdIdx != -1) {
+                    unimod = lineSplit[unimodIdIdx];
+                } else { //custom mods
+                    unimod = lineSplit[nameIdx].split("@")[0];
                 }
-                String unimod = lineSplit[7];
-                Double mass = Double.parseDouble(lineSplit[1]);
+                Double mass = Double.parseDouble(lineSplit[massIdx]);
                 if (includeAA) {
                     if (modPath.endsWith(".csv")) {
-                        map.put((T) (lineSplit[0].charAt(0) + unimod), mass);
+                        map.put((T) (lineSplit[nameIdx].charAt(0) + unimod), mass);
                     } else {
                         //TODO: "Anywhere" should be expanded
-                        String mod = lineSplit[0].split("@")[1];
-                        if (mod.contains("term")) {
-                            mod = "["; //to match logic for alphapept_koina.csv
+                        String localization = lineSplit[nameIdx].split("@")[1];
+                        if (localization.contains("term")) {
+                            localization = "["; //to match logic for alphapept_koina.csv
                         }
-                        map.put((T) (mod + unimod), mass);
+                        map.put((T) (localization + unimod), mass);
                     }
                 } else {
-                    map.put((T) Integer.valueOf(unimod), mass);
+                    map.put((T) unimod, mass);
                 }
             }
         }
         return map;
     }
-    public static final Map<Integer, Double> unimodToModMassAll;
+    public static Map<Integer, Double> unimodToModMassAll;
 
     static {
         try {
@@ -182,8 +196,8 @@ public class PTMhandler {
         }
     }
 
-    public static final Map<String, Double> AAunimodToModMassAll;
-    public static final Set<String> AAunimodToModMassAllKeys;
+    public static Map<String, Double> AAunimodToModMassAll;
+    public static Set<String> AAunimodToModMassAllKeys;
 
     static {
         try {
@@ -309,6 +323,9 @@ public class PTMhandler {
         if (unimod.isEmpty()) {
             //model won't predict this anyway
             peptide = peptide.substring(0, start) + peptide.substring(end + 1);
+        } else if (model.equals("librarytsv") && !NumberUtils.isDigits(unimod.substring(1))) {
+            //custom mod represented by mass
+            peptide = peptide.substring(0, start + 1) + reportedMass + peptide.substring(end);
         } else {
             peptide = peptide.substring(0, start + 1) + unimodFormat + ":" +
                     unimod.substring(1) + peptide.substring(end);
@@ -488,7 +505,7 @@ public class PTMhandler {
     public static HashSet<String> alphapeptdeepModNames = new HashSet<String>();
     public static HashMap<String, String> writeOutAlphapeptdeepModNames = new HashMap<>();
 
-    private static TreeMap<Double, HashSet<String>> makeModAAmassToAlphapeptdeep() throws IOException {
+    public static TreeMap<Double, HashSet<String>> makeModAAmassToAlphapeptdeep() throws IOException {
         TreeMap<Double, HashSet<String>> map = new TreeMap<>();
 
         ArrayList<String> modPaths = new ArrayList<>();
@@ -505,24 +522,33 @@ public class PTMhandler {
             }
             final InputStreamReader reader = new InputStreamReader(stream);
             final BufferedReader ptmFile = new BufferedReader(reader);
+
             String line = ptmFile.readLine(); //header
+            //get indices of columns
+            String[] lineSplit = line.split("\t", -1);
+            List<String> header = Arrays.asList(lineSplit);
+            int classificationIdx = header.indexOf("classification");
+            int nameIdx = header.indexOf("mod_name");
+            int massIdx = Math.max(header.indexOf("unimod_mass"), header.indexOf("mod_mass"));
 
             while ((line = ptmFile.readLine()) != null) {
-                String[] lineSplit = line.split("\t", -1);
-                String classification = lineSplit[6];
-                if (classification.equals("Other") || classification.equals("AA substitution")) { //may need to exclude more
-                    continue;
+                lineSplit = line.split("\t", -1);
+                if (classificationIdx != -1) {
+                    String classification = lineSplit[classificationIdx];
+                    if (classification.equals("Other") || classification.equals("AA substitution")) { //may need to exclude more
+                        continue;
+                    }
                 }
-                String ptmName = lineSplit[0].split("@")[0];
-                Double mass = Double.parseDouble(lineSplit[1]);
+                String ptmName = lineSplit[nameIdx].split("@")[0];
+                Double mass = Double.parseDouble(lineSplit[massIdx]);
                 HashSet<String> stringMap = map.get(mass);
                 if (stringMap == null) {
                     stringMap = new HashSet<>();
                 }
                 stringMap.add(ptmName);
                 map.put(mass, stringMap);
-                alphapeptdeepModNames.add(lineSplit[0].split("\\^")[0]);
-                writeOutAlphapeptdeepModNames.put(lineSplit[0].split("\\^")[0], lineSplit[0]);
+                alphapeptdeepModNames.add(lineSplit[nameIdx].split("\\^")[0]);
+                writeOutAlphapeptdeepModNames.put(lineSplit[nameIdx].split("\\^")[0], lineSplit[nameIdx]);
 
             }
             ptmFile.close();

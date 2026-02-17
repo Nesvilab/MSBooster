@@ -382,8 +382,7 @@ public class PeptideFormatter {
             Map<Double, HashSet<String>> tt = PTMhandler.aamassToAlphapeptdeep.subMap(doubleModMass - 0.001, false, doubleModMass + 0.001, false);
 
             if (tt.isEmpty()) {
-                printError("There is an unknown modification with mass " + doubleModMass +
-                        ". Please provide PTM info via additionalMods param in --paramsList.");
+                printError("There is an unknown modification with mass " + doubleModMass);
                 System.exit(1);
             }
 

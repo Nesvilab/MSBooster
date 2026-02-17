@@ -4,6 +4,8 @@ import allconstants.Constants;
 import allconstants.NceConstants;
 import mainsteps.MainClass;
 import mainsteps.ParameterUtils;
+import peptideptmformatting.PTMhandler;
+import peptideptmformatting.PeptideFormatter;
 import readers.datareaders.FastaReader;
 import speclib.io.ParquetToSpecLib;
 import utils.Print;
@@ -12,12 +14,15 @@ import java.io.*;
 import java.net.HttpURLConnection;
 import java.net.URL;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Locale;
 
 import static allconstants.Constants.versionNumber;
+import static peptideptmformatting.PTMhandler.*;
 import static transferlearn.Helpers.*;
 import static utils.Print.printInfo;
 
@@ -69,6 +74,7 @@ public class Predictor {
 
         String params = "";
         String peptideList = "";
+        String customMods = "";
         String url = "";
         String model = "";
         String apiKey = "";
@@ -92,6 +98,13 @@ public class Predictor {
                     peptideList = args[i + 1];
                     File file = new File(args[i + 1]);
                     Constants.peptideListDirectory = file.getParent();
+                    break;
+                case "--custom-mods":
+                    customMods = args[i + 1];
+                    Constants.additionalMods = customMods;
+                    PTMhandler.unimodToModMassAll = makeUnimodToModMassAll(false);
+                    AAunimodToModMassAll = makeUnimodToModMassAll(true);
+                    PTMhandler.AAunimodToModMassAllKeys = AAunimodToModMassAll.keySet();
                     break;
                 case "--url":
                     url =  args[i + 1];
@@ -204,6 +217,16 @@ public class Predictor {
                     : zipName;
         }
 
+        //verify custom mods exists
+        FileInputStream customFis = null;
+        if (!customMods.isEmpty()) {
+            if (!Files.exists(Paths.get(customMods))) {
+                Print.printError("Custom mods file does not exist");
+                System.exit(1);
+            }
+            customFis = new FileInputStream(customMods);
+        }
+
         HttpURLConnection connection = setUpConnection(url, uploadUrl);
         connection.setRequestMethod("POST");
         connection.setDoOutput(true);
@@ -285,6 +308,22 @@ public class Predictor {
             writer.append("--").append(boundary).append("\r\n");
             writer.append("Content-Disposition: form-data; name=\"maxcharge\"\r\n\r\n");
             writer.append(Integer.toString(maxCharge)).append("\r\n");
+
+            // custom mods
+            if (customFis != null) {
+                writer.append("--").append(boundary).append("\r\n");
+                writer.append("Content-Disposition: form-data; name=\"custom_mods\"; filename=\"")
+                        .append(new File(customMods).getName()).append("\"\r\n");
+                writer.append("Content-Type: application/vnd.apache.parquet\r\n\r\n");
+                writer.flush();
+
+                buffer = new byte[4096];
+                while ((bytesRead = customFis.read(buffer)) != -1) {
+                    os.write(buffer, 0, bytesRead);
+                }
+                os.flush();
+                writer.append("\r\n");
+            }
 
             // end of multipart
             writer.append("--").append(boundary).append("--").append("\r\n");

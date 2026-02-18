@@ -28,7 +28,7 @@ import java.util.HashSet;
 import java.util.concurrent.ConcurrentHashMap;
 
 public class Constants implements ConstantsInterface {
-    public static String versionNumber = "MSBooster v1.4.25";
+    public static String versionNumber = "MSBooster v1.4.26";
 
     //file input
     public static String paramsList = null;
@@ -108,7 +108,8 @@ public class Constants implements ConstantsInterface {
 
     //additional modifications
     public static String unimodObo = null;
-    public static String additionalMods = ""; //this used in python script for common/user_defined_modifications
+    public static String additionalModsFile = ""; //this used in python script for common/user_defined_modifications
+                                                //pass as string with semi colons separating entries
     public static Boolean predict = true;
     public static Boolean transfer = false;
     public static String AlphaPeptDeep = null; //path to exe

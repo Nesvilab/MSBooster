@@ -370,4 +370,25 @@ public class Helpers {
         // If no pipe or not enough parts, return original value
         return value;
     }
+
+    public static void customModsStringToTsv(String mods) {
+        //hardcoded to write to path
+        try {
+            Path tempFile = Files.createTempFile("custom_mods_", ".tsv");
+            tempFile.toFile().deleteOnExit();
+            Constants.additionalModsFile = tempFile.toFile().getAbsolutePath();
+            BufferedWriter writer = new BufferedWriter(new FileWriter(Constants.additionalModsFile));
+            writer.write("mod_name\tcomposition\tmodloss_composition\tmod_mass\n");
+
+            String[] individualMods = mods.split(";");
+            for (String mod : individualMods) {
+                String line = mod.replace(",", "\t");
+                writer.write(line + "\n");
+            }
+            writer.close();
+        } catch (Exception e) {
+            e.printStackTrace();
+            System.exit(1);
+        }
+    }
 }

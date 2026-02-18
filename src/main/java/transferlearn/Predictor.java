@@ -104,6 +104,7 @@ public class Predictor {
                     PTMhandler.unimodToModMassAll = makeUnimodToModMassAll(false);
                     AAunimodToModMassAll = makeUnimodToModMassAll(true);
                     PTMhandler.AAunimodToModMassAllKeys = AAunimodToModMassAll.keySet();
+                    PTMhandler.aamassToAlphapeptdeep = PTMhandler.makeModAAmassToAlphapeptdeep();
                     break;
                 case "--url":
                     url =  args[i + 1];
@@ -313,7 +314,7 @@ public class Predictor {
                 writer.append("--").append(boundary).append("\r\n");
                 writer.append("Content-Disposition: form-data; name=\"custom_mods\"; filename=\"")
                         .append(new File(customMods).getName()).append("\"\r\n");
-                writer.append("Content-Type: application/vnd.apache.parquet\r\n\r\n");
+                writer.append("Content-Type: text/tab-separated-values\r\n\r\n");
                 writer.flush();
 
                 buffer = new byte[4096];
@@ -322,6 +323,7 @@ public class Predictor {
                 }
                 os.flush();
                 writer.append("\r\n");
+                customFis.close();
             }
 
             // end of multipart

@@ -156,6 +156,17 @@ public class PTMhandler {
             int massIdx = Math.max(fields.indexOf("unimod_mass"), fields.indexOf("mod_mass"));
             int nameIdx = fields.indexOf("mod_name");
 
+            if (massIdx == -1) {
+                printError("Modification file " + modPath + " is missing 'unimod_mass' or 'mod_mass' column");
+                printError("Exiting");
+                System.exit(1);
+            }
+            if (nameIdx == -1) {
+                printError("Modification file " + modPath + " is missing 'mod_name' column");
+                printError("Exiting");
+                System.exit(1);
+            }
+
             while ((line = ptmFile.readLine()) != null) {
                 String[] lineSplit = line.split(delimiter, -1);
 
@@ -178,7 +189,10 @@ public class PTMhandler {
                         map.put((T) (localization + unimod), mass);
                     }
                 } else {
-                    map.put((T) unimod, mass);
+                    if (unimodIdIdx != -1) {
+                        map.put((T) Integer.valueOf(unimod), mass);
+                    }
+                    //custom mods without unimod_id are skipped for Integer-keyed map
                 }
             }
         }
@@ -528,6 +542,17 @@ public class PTMhandler {
             int classificationIdx = header.indexOf("classification");
             int nameIdx = header.indexOf("mod_name");
             int massIdx = Math.max(header.indexOf("unimod_mass"), header.indexOf("mod_mass"));
+
+            if (massIdx == -1) {
+                printError("Modification file " + modPath + " is missing 'unimod_mass' or 'mod_mass' column");
+                printError("Exiting");
+                System.exit(1);
+            }
+            if (nameIdx == -1) {
+                printError("Modification file " + modPath + " is missing 'mod_name' column");
+                printError("Exiting");
+                System.exit(1);
+            }
 
             while ((line = ptmFile.readLine()) != null) {
                 lineSplit = line.split("\t", -1);

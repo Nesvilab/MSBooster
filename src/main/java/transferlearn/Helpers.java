@@ -371,7 +371,7 @@ public class Helpers {
         return value;
     }
 
-    public static void customModsStringToTsv(String mods) throws IOException {
+    public static void customModsStringToTsv(String mods) {
         //hardcoded to write to path
         try {
             Path tempFile = Files.createTempFile("custom_mods_", ".tsv");

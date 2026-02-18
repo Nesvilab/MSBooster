@@ -233,6 +233,7 @@ public class Trainer {
         String status = "PENDING";
         HashMap<String, Object> map = null;
         int oldStdoutLen = 0;
+        int oldJobsAhead = 0;
         while (nonResults.contains(status.toUpperCase())) {
             Thread.sleep(waitTime);
 
@@ -246,11 +247,14 @@ public class Trainer {
                 oldStdoutLen = stdout.length();
             } else { //print queue position
                 int jobsAhead = ((Number) map.get("queue_position")).intValue();
-                if (jobsAhead == 1) {
-                    System.out.println("Your job is queued. There is currently 1 job ahead of yours.");
-                } else {
-                    System.out.println("Your job is queued. There are currently " +
-                            jobsAhead + " jobs ahead of yours.");
+                if (jobsAhead != oldJobsAhead) {
+                    oldJobsAhead = jobsAhead;
+                    if (jobsAhead == 1) {
+                        System.out.println("Your job is queued. There is currently 1 job ahead of yours.");
+                    } else {
+                        System.out.println("Your job is queued. There are currently " +
+                                jobsAhead + " jobs ahead of yours.");
+                    }
                 }
             }
         }

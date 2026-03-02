@@ -251,6 +251,12 @@ public class MainClass {
                     return;
                 }
             }
+            km.peptideArraylist = null;
+            km.peptideArrayListIM = null;
+            km.scanNums = null;
+            km.scanNumsIM = null;
+            km.peptides = null;
+            km.peptidesIM = null;
 
             //generate predictions
             if (createSpectraRTPredFile) {

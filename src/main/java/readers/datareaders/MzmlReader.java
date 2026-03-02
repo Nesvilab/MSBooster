@@ -313,10 +313,6 @@ public class MzmlReader {
     class setScanNumPepObj implements Runnable {
         private final ArrayList<String> lines = new ArrayList<>();
         private final int scanNum;
-        private final ArrayList<PeptideFormatter> peps = new ArrayList<>();
-        private final ArrayList<Integer> ranks = new ArrayList<>();
-        private final ArrayList<Integer> tds = new ArrayList<>();
-        private final ArrayList<String> escores = new ArrayList<>();
         private final PredictionEntryHashMap allPreds;
         private final int specIdx;
         private final int pepIdx;
@@ -349,26 +345,24 @@ public class MzmlReader {
             for (String line : lines) {
                 String[] row = line.split("\t");
                 String[] periodSplit = row[specIdx].split("\\.");
-                peps.add(new PeptideFormatter(row[pepIdx],
-                        periodSplit[periodSplit.length - 1].split("_")[0], "pin"));
+                PeptideFormatter pep = new PeptideFormatter(row[pepIdx],
+                        periodSplit[periodSplit.length - 1].split("_")[0], "pin");
+                int rank;
                 try {
-                    ranks.add(Integer.parseInt(row[rankIdx]));
+                    rank = Integer.parseInt(row[rankIdx]);
                 } catch (Exception e) {
                     String[] specIdxSplit = row[specIdx].split("_");
-                    ranks.add(Integer.parseInt(specIdxSplit[specIdxSplit.length - 1]));
+                    rank = Integer.parseInt(specIdxSplit[specIdxSplit.length - 1]);
                 }
-                tds.add(Math.max(0, Integer.parseInt(row[labelIdx])));
+                int td = Math.max(0, Integer.parseInt(row[labelIdx]));
+                String escore;
                 if (calcEvalue) {
-                    escores.add(String.valueOf(Math.exp(15.0 - Double.parseDouble(row[eScoreIdx]))));
+                    escore = String.valueOf(Math.exp(15.0 - Double.parseDouble(row[eScoreIdx])));
                 } else {
-                    escores.add(String.valueOf(Math.pow(10, Double.parseDouble(row[eScoreIdx]))));
+                    escore = String.valueOf(Math.pow(10, Double.parseDouble(row[eScoreIdx])));
                 }
-            }
-
-            for (int i = 0; i < peps.size(); i++) {
                 try {
-                    getScanNumObject(scanNum).setPeptideObject(peps.get(i), ranks.get(i),
-                            tds.get(i), escores.get(i), allPreds, true);
+                    getScanNumObject(scanNum).setPeptideObject(pep, rank, td, escore, allPreds, true);
                 } catch (Exception e) {
                     throw new RuntimeException(e);
                 }

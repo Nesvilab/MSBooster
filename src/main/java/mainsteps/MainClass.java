@@ -251,6 +251,7 @@ public class MainClass {
                     return;
                 }
             }
+            km = null;
 
             //generate predictions
             if (createSpectraRTPredFile) {

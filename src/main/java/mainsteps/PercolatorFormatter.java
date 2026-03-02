@@ -476,7 +476,9 @@ public class PercolatorFormatter {
                 //plot hist
                 new ScoreHistogram(new PinReader(histFile), pw.newColumnNames);
                 mzml.clear();
+                mzmlReaders[i] = null;
             }
+            allPreds = null;
         } catch (Exception e) {
             executorService.shutdown();
             e.printStackTrace();

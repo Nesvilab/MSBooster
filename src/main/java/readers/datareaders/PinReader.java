@@ -24,7 +24,6 @@ import peptideptmformatting.PTMhandler;
 import peptideptmformatting.PeptideFormatter;
 import peptideptmformatting.PeptideSkipper;
 import umich.ms.fileio.exceptions.FileParsingException;
-import utils.Print;
 
 import java.io.BufferedInputStream;
 import java.io.BufferedReader;
@@ -32,12 +31,7 @@ import java.io.FileInputStream;
 import java.io.FileReader;
 import java.io.IOException;
 import java.io.InputStream;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.LinkedList;
-import java.util.PriorityQueue;
+import java.util.*;
 import java.util.concurrent.ExecutionException;
 
 import static utils.InstrumentUtils.mapInstrumentToModelSpecific;
@@ -261,85 +255,67 @@ public class PinReader {
         length = getLength();
     }
 
-    public String[] createPDeep2List() throws IOException {
-        ArrayList<String> peps = new ArrayList<String>();
+    public void createPDeep2List(Set<String> hSetHits) throws IOException {
         while (next(true)) {
             PeptideFormatter pf = getPep();
-            peps.add(pf.getStripped() + "\t" + pf.getMods() + "\t" + pf.getCharge());
+            hSetHits.add(pf.getStripped() + "\t" + pf.getMods() + "\t" + pf.getCharge());
         }
-        return peps.toArray(new String[0]);
     }
 
-    public String[] createPDeep3List() throws IOException {
-        ArrayList<String> peps = new ArrayList<String>();
+    public void createPDeep3List(Set<String> hSetHits) throws IOException {
         while (next(true)) {
             PeptideFormatter pf = getPep();
-            peps.add("." + "\t" + "." + "\t" + pf.getStripped() + "\t" + pf.getMods() + "\t" + pf.getCharge());
+            hSetHits.add("." + "\t" + "." + "\t" + pf.getStripped() + "\t" + pf.getMods() + "\t" + pf.getCharge());
         }
-        return peps.toArray(new String[0]);
     }
 
-    public String[] createDeepMSPeptideList() throws IOException {
-        ArrayList<String> peps = new ArrayList<String>();
+    public void createDeepMSPeptideList(Set<String> hSetHits) throws IOException {
         while (next(true)) {
-            peps.add(getPep().getStripped());
+            hSetHits.add(getPep().getStripped());
         }
-        return peps.toArray(new String[0]);
     }
 
-    public String[] createDiannList() throws IOException {
-        ArrayList<String> peps = new ArrayList<String>();
-        //TreeMap<Integer, Integer> modMap = new TreeMap<>(); //sorted for future use
+    public void createDiannList(Set<String> hSetHits) throws IOException {
         while (next(true)) {
             PeptideFormatter pf = getPep();
-            peps.add(pf.getDiann() + "\t" + pf.getCharge());
+            hSetHits.add(pf.getDiann() + "\t" + pf.getCharge());
         }
-        return peps.toArray(new String[0]);
     }
 
-    public String[] createPrositList()
-            throws IOException, InterruptedException, ExecutionException, FileParsingException {
-        ArrayList<String> peps = new ArrayList<String>();
+    public void createPrositList(Set<String> hSetHits) throws IOException {
         while (next(true)) {
             PeptideFormatter pf = getPep();
-            peps.add(pf.getProsit(PTMhandler.prositAAMods) + "," + NceConstants.getNCE() + "," + pf.getCharge());
+            hSetHits.add(pf.getProsit(PTMhandler.prositAAMods) + "," + NceConstants.getNCE() + "," + pf.getCharge());
         }
-        return peps.toArray(new String[0]);
     }
 
-    public String[] createPrositTMTList()
-            throws IOException, InterruptedException, ExecutionException, FileParsingException {
-        ArrayList<String> peps = new ArrayList<String>();
+    public void createPrositTMTList(Set<String> hSetHits) throws IOException {
         while (next(true)) {
             PeptideFormatter pf = getPep();
-            peps.add(pf.getProsit(PTMhandler.prositTmtAAMods) + "," + NceConstants.getNCE() + "," + pf.getCharge() + "," + Constants.FragmentationType);
+            hSetHits.add(pf.getProsit(PTMhandler.prositTmtAAMods) + "," + NceConstants.getNCE() + "," + pf.getCharge()
+                    + "," + Constants.FragmentationType);
         }
-        return peps.toArray(new String[0]);
     }
 
-    public String[] createAlphapeptdeepList()
-            throws IOException {
-        ArrayList<String> peps = new ArrayList<String>();
+    public void createAlphapeptdeepList(Set<String> hSetHits) throws IOException {
         while (next(true)) {
             PeptideFormatter pf = getPep();
             if (Constants.keepDecoys == 0 && getTD() == 0) {
                 continue;
             }
-            peps.add(pf.getStripped() + "," + pf.getAlphapeptdeepMods() + "," + pf.getModPositions() + "," +
+            hSetHits.add(pf.getStripped() + "," + pf.getAlphapeptdeepMods() + "," + pf.getModPositions() + "," +
                     pf.getCharge() + "," + NceConstants.getNCE() + "," + Constants.instrument + "," +
                     pf.getLibrarytsv() + "," + getColumn("Proteins") + "," + -1 * (getTD() - 1));
         }
-        return peps.toArray(new String[0]);
     }
 
-    public String[] createFull() throws IOException {
-        ArrayList<String> peps = new ArrayList<String>();
+    public void createFull(Set<String> hSetHits) throws IOException {
         while (next(true)) {
             PeptideFormatter pf = getPep();
             if (pf.cterm) {
-                peps.add(pf.getBase() + "cterm" + "\t" + pf.getCharge());
+                hSetHits.add(pf.getBase() + "cterm" + "\t" + pf.getCharge());
             } else {
-                peps.add(pf.getBase() + "\t" + pf.getCharge());
+                hSetHits.add(pf.getBase() + "\t" + pf.getCharge());
             }
 
             if (Constants.features.contains("peptideCounts")) {
@@ -361,12 +337,9 @@ public class PinReader {
                 }
             }
         }
-        return peps.toArray(new String[0]);
     }
 
-    public String[] createJSON(String modelFormat) throws IOException {
-        ArrayList<String> peps = new ArrayList<String>();
-
+    public void createJSON(String modelFormat, Set<String> hSetHits) throws IOException {
         while (next(true)) {
             PeptideFormatter pf = getPep();
             if (PeptideSkipper.skipPeptide(pf, modelFormat)) {
@@ -377,9 +350,8 @@ public class PinReader {
             String pep = pf.getModel(modelFormat);
             String sb = pep + "," + pf.getCharge() + "," + NceConstants.getCalibratedNCE(modelFormat) + "," +
                     instrument + "," + Constants.FragmentationType + "," + pf.getStripped().length();
-            peps.add(sb);
+            hSetHits.add(sb);
         }
-        return peps.toArray(new String[0]);
     }
 
     public LinkedList[] getTopPSMs(int num, boolean charge2forIM) throws IOException {

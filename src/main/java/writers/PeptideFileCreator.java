@@ -33,6 +33,7 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
@@ -61,7 +62,7 @@ public class PeptideFileCreator {
         //read in pin files
         //filter out redundant peptides
         //this step can reduce number of predictions needed to 1/3, decreasing prediction time
-        ConcurrentHashMap<String, Integer> allHits = new ConcurrentHashMap<>();
+        Set<String> hSetHits = ConcurrentHashMap.newKeySet();
 
         printInfo("Creating input file for " + modelFormat);
         List<Future> futureList = new ArrayList<>();
@@ -75,44 +76,39 @@ public class PeptideFileCreator {
 
                     String fileName = f.getCanonicalPath();
                     PinReader pin = new PinReader(fileName);
-                    String[] hitsToAdd = new String[0];
                     switch (modelFormat) {
                         case "pDeep2":
-                            hitsToAdd = pin.createPDeep2List();
+                            pin.createPDeep2List(hSetHits);
                             break;
                         case "pDeep3":
-                            hitsToAdd = pin.createPDeep3List();
+                            pin.createPDeep3List(hSetHits);
                             break;
                         case "DeepMSPeptide": //ignores charge and mods
-                            hitsToAdd = pin.createDeepMSPeptideList();
+                            pin.createDeepMSPeptideList(hSetHits);
                             break;
                         case "DeepMSPeptideAll": //ignores charge and mods
-                            hitsToAdd = pin.createDeepMSPeptideList();
+                            pin.createDeepMSPeptideList(hSetHits);
                             break;
                         case "Diann":
-                            hitsToAdd = pin.createDiannList();
+                            pin.createDiannList(hSetHits);
                             break;
                         case "Prosit":
-                            hitsToAdd = pin.createPrositList();
+                            pin.createPrositList(hSetHits);
                             break;
                         case "PrositTMT":
-                            hitsToAdd = pin.createPrositTMTList();
+                            pin.createPrositTMTList(hSetHits);
                             break;
                         case "createFull":
-                            hitsToAdd = pin.createFull();
+                            pin.createFull(hSetHits);
                             break;
                         case "alphapeptdeep":
-                            hitsToAdd = pin.createAlphapeptdeepList();
+                            pin.createAlphapeptdeepList(hSetHits);
                             break;
                     }
                     if (KoinaModels.contains(modelFormat)) {
-                        hitsToAdd = pin.createJSON(modelFormat);
+                        pin.createJSON(modelFormat, hSetHits);
                     }
                     pin.close();
-
-                    for (String hit : hitsToAdd) {
-                        allHits.put(hit, 0);
-                    }
                 } catch (Exception e) {
                     e.printStackTrace();
                     System.exit(1);
@@ -122,8 +118,6 @@ public class PeptideFileCreator {
         for (Future future : futureList) {
             future.get();
         }
-
-        HashSet<String> hSetHits = new HashSet<>(allHits.keySet());
         printInfo(hSetHits.size() + " PSMs for prediction");
 
         //want to see what mods were assigned

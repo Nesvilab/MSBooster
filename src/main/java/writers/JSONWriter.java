@@ -29,12 +29,7 @@ import java.io.FileWriter;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Paths;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.Comparator;
-import java.util.HashSet;
-import java.util.List;
+import java.util.*;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Future;
@@ -57,7 +52,7 @@ public class JSONWriter {
 
     public static int maxJsonLength = 1000;
 
-    public JSONWriter(String url, HashSet<String> entries, boolean fullSet) {
+    public JSONWriter(String url, Set<String> entries, boolean fullSet) {
         this.url = url;
         this.model = url.toLowerCase().split("_")[0];
         if (ModelCollections.KoinaRTmodels.contains(url)) {

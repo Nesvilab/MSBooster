@@ -35,11 +35,7 @@ import writers.JSONWriter;
 import java.io.File;
 import java.io.IOException;
 import java.net.URISyntaxException;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.LinkedList;
-import java.util.Map;
+import java.util.*;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ScheduledThreadPoolExecutor;
 
@@ -116,7 +112,7 @@ public class KoinaMethods {
             HashSet<String> allHits, String model, int NCE, String folder, String fulltsv) {
         ScheduledThreadPoolExecutor executorService = new ScheduledThreadPoolExecutor(1);
 
-        HashSet<String> hits = new HashSet<>();
+        Set<String> hits = new HashSet<>();
         for (String s : allHits) { //s is peptide,charge
             String instrument = mapInstrumentToModelSpecific(model, s.split(",")[1]);
             hits.add(s + "," + NCE + "," + instrument + "," + Constants.FragmentationType);

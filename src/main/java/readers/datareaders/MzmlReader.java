@@ -1168,5 +1168,21 @@ public class MzmlReader {
 
     public void clear() {
         scanNumberObjects.clear();
+        scanNumberObjects = null;
+        scans = null;
+        RTbins = null;
+        RTbinStats = null;
+        RTLOESS = null;
+        irtToMinutes = null;
+        IMbins = null;
+        IMbinStats = null;
+        IMLOESS = null;
+        expAndPredRTs = null;
+        expAndPredRTsMinutes = null;
+        expAndPredIMsHashMap = null;
+        RTpeptides = null;
+        IMpeptides = null;
+        betas = null;
+        futureList = null;
     }
 }

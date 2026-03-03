@@ -57,9 +57,9 @@ public class LibraryTsvReader implements LibraryPredictionMapper {
             Set<String> ignoredFragmentIonTypesSet = FragmentIonConstants.makeIgnoredFragmentIonTypes();
 
             List<Future> futureList = new ArrayList<>(Constants.numThreads);
-            ProgressReporter pr = new ProgressReporter(transitions.size());
-            Multithreader mt = new Multithreader(transitions.size(), Constants.numThreads);
             String[] transitionKeys = transitions.keySet().toArray(new String[0]);
+            ProgressReporter pr = new ProgressReporter(transitionKeys.length);
+            Multithreader mt = new Multithreader(transitionKeys.length, Constants.numThreads);
 
             for (int j = 0; j < Constants.numThreads; j++) {
                 int finalJ = j;

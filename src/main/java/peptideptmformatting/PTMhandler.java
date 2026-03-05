@@ -183,7 +183,7 @@ public class PTMhandler {
                     } else {
                         //TODO: "Anywhere" should be expanded
                         String localization = lineSplit[nameIdx].split("@")[1];
-                        if (localization.contains("term")) {
+                        if (localization.contains("term") || localization.equals("n") || localization.equals("c")) {
                             localization = "["; //to match logic for alphapept_koina.csv
                         }
                         map.put((T) (localization + unimod), mass);
@@ -293,22 +293,34 @@ public class PTMhandler {
                 break;
         }
 
-        //is nterm mod followed by "-"?
         String ntermSuffix = "";
         switch(model) {
             case "diann":
             case "unispec":
             case "deeplc":
+            case "librarytsv":
                 break;
             default:
                 ntermSuffix = "-";
                 break;
         }
-        //is cterm mod preceded by "-"?
-        String ctermSuffix = "";
+
+        String ntermPrefix = "";
+        switch(model) {
+            case "librarytsv":
+                ntermPrefix = ".";
+                break;
+            default:
+                break;
+        }
+
+        String ctermPrefix = "";
         switch(model) {
             case "alphapept":
-                ctermSuffix = "-";
+                ctermPrefix = "-";
+                break;
+            case "librarytsv":
+                ctermPrefix = ".";
                 break;
             default:
                 break;
@@ -344,14 +356,19 @@ public class PTMhandler {
         }
 
         //nterm
-        if (peptide.startsWith("[") && start == 0) {
-            int splitpoint = peptide.indexOf("]");
-            peptide = peptide.substring(0, splitpoint + 1) + ntermSuffix + peptide.substring(splitpoint + 1);
+        if (start == 0) {
+            int splitpoint = -1;
+            if (peptide.startsWith("[")) {
+                splitpoint = peptide.indexOf("]");
+            } else if (peptide.startsWith("(")) {
+                splitpoint = peptide.indexOf(")");
+            }
+            peptide = ntermPrefix + peptide.substring(0, splitpoint + 1) + ntermSuffix + peptide.substring(splitpoint + 1);
         }
 
         //cterm
-        if (cterm && unimod.startsWith("[")) {
-            peptide = peptide.substring(0, start) + ctermSuffix + peptide.substring(start);
+        if (cterm && (unimod.startsWith("[") || unimod.startsWith("("))) {
+            peptide = peptide.substring(0, start) + ctermPrefix + peptide.substring(start);
         }
 
         if (model.equals("librarytsv")) {
@@ -562,7 +579,9 @@ public class PTMhandler {
                         continue;
                     }
                 }
-                String ptmName = lineSplit[nameIdx].split("@")[0];
+                String nameLocalization =  lineSplit[nameIdx].replace("@n", "@Any_N-term").
+                        replace("@c", "@Any_C-term");
+                String ptmName = nameLocalization.split("@")[0];
                 Double mass = Double.parseDouble(lineSplit[massIdx]);
                 HashSet<String> stringMap = map.get(mass);
                 if (stringMap == null) {
@@ -570,8 +589,8 @@ public class PTMhandler {
                 }
                 stringMap.add(ptmName);
                 map.put(mass, stringMap);
-                alphapeptdeepModNames.add(lineSplit[nameIdx].split("\\^")[0]);
-                writeOutAlphapeptdeepModNames.put(lineSplit[nameIdx].split("\\^")[0], lineSplit[nameIdx]);
+                alphapeptdeepModNames.add(nameLocalization.split("\\^")[0]);
+                writeOutAlphapeptdeepModNames.put(nameLocalization.split("\\^")[0], nameLocalization);
 
             }
             ptmFile.close();

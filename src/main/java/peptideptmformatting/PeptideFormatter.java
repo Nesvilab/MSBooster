@@ -270,6 +270,7 @@ public class PeptideFormatter {
             int start = starts.get(i);
             int end = ends.get(i);
 
+            //TODO: extra logic for librarytsv periods for termini
             String[] peptideUnimod = PTMhandler.formatPeptideBaseToSpecific(
                     librarytsv, start, end, "librarytsv", foundUnimods, attemptCterm);
             attemptCterm = false;
@@ -394,13 +395,18 @@ public class PeptideFormatter {
             if (i > 0) {
                 position -= 1;
             }
-            positions.add(position);
             String aa;
             if (position == 0) {
                 aa = "Any_N-term"; //might need to change
             } else {
-                aa = stripped.substring(position - 1, position);
+                if ((cterm) && (i == numMods - 1)) {
+                    aa = "Any_C-term";
+                    position = -1;
+                } else {
+                    aa = stripped.substring(position - 1, position);
+                }
             }
+            positions.add(position);
 
             //check that the ptmName@aa is accepted by alphapeptdeep
             for (String name : possibleMods) {

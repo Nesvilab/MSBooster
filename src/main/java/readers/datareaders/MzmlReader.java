@@ -41,6 +41,9 @@ import utils.Multithreader;
 import utils.ProgressReporter;
 import utils.StatMethods;
 
+import java.io.BufferedWriter;
+import java.io.File;
+import java.io.FileWriter;
 import java.io.IOException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -971,7 +974,7 @@ public class MzmlReader {
         }
     }
 
-    public void setInverseLoess(ExecutorService executorService) throws ExecutionException, InterruptedException {
+    public void setInverseLoess(ExecutorService executorService) throws ExecutionException, InterruptedException, IOException {
         int numIncrements = 10000;
         futureList.clear();
         float minExpRT = scanNumberObjects.firstEntry().getValue().RT;
@@ -1000,6 +1003,15 @@ public class MzmlReader {
                     future.get();
                 }
                 irtToMinutes.put(mass, map);
+
+                //write to file
+                BufferedWriter writer = new BufferedWriter(new FileWriter(
+                        Constants.outputDirectory + File.separator + mass + "_RTcalibration.txt"
+                ));
+                for (Map.Entry<Double, Double> datapoint : map.entrySet()) {
+                    writer.write(datapoint.getKey() + "\t" + datapoint.getValue() + "\n");
+                }
+                writer.close();
             } else {
                 irtToMinutes.put(mass, null);
             }

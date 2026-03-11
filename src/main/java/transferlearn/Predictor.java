@@ -25,7 +25,7 @@ import static transferlearn.Helpers.*;
 import static utils.Print.printInfo;
 
 public class Predictor {
-    static Long waitTime = 15000L;
+    static Long waitTime = 5000L;
 
     private static void errorMessage() {
         Print.printError("Usage: java -cp MSBooster.jar src.main.java.transferlearn.Predictor " +
@@ -258,32 +258,46 @@ public class Predictor {
             totalPredFileInitiator.delete();
         }
         String[] subFilePaths = new String[inputFiles.length];
-        try (BufferedWriter totalPredFile = new BufferedWriter(new FileWriter(
-                outputDir + File.separator + basename + downloadExtension, true))) {
+
+        //initiate total file
+        String totalFilePath = outputDir + File.separator + basename + downloadExtension;
+        BufferedWriter totalPredFile = null;
+        if (outputFormat.equals("mgf")) {
+            totalPredFile = new BufferedWriter(new FileWriter(totalFilePath, true));
+        }
+
+        try (Connection conn = DriverManager.getConnection("jdbc:duckdb:")) {
             for (int i = 0; i < inputFiles.length; i++) {
                 String subFilePath = PredictUtils.downloadAndProcess(jobIds[i], url, outputFormat, outputDir,
-                        basename + i, protMap, endJobs[i]);
+                        basename + i, protMap, endJobs[i], totalFilePath, conn);
                 subFilePaths[i] = subFilePath;
 
                 //start merging files together
-                try (BufferedReader in = new BufferedReader(new FileReader(subFilePath))) {
-                    if (outputFormat.equals("librarytsv") || outputFormat.equals("mgf")) {
+                if (outputFormat.equals("mgf")) {
+                    try (BufferedReader in = new BufferedReader(new FileReader(subFilePath))) {
                         String str;
                         while ((str = in.readLine()) != null) {
                             totalPredFile.write(str + "\n");
                         }
-
-                        //delete old file
-                        File miniFile = new File(subFilePath);
-                        miniFile.delete();
+                    } catch (Exception e) {
+                        e.printStackTrace();
+                        totalPredFile.close();
+                        System.exit(1);
                     }
-                } catch (Exception e) {
-                    e.printStackTrace();
-                    System.exit(1);
                 }
+
+                //delete old file
+                File miniFile = new File(subFilePath);
+                miniFile.delete();
+            }
+            if (outputFormat.equals("mgf")) {
+                totalPredFile.close();
             }
         } catch (Exception e) {
             e.printStackTrace();
+            if (outputFormat.equals("mgf")) {
+                totalPredFile.close();
+            }
             System.exit(1);
         }
 

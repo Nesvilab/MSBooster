@@ -18,6 +18,7 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.nio.file.StandardOpenOption;
 import java.sql.*;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -80,73 +81,93 @@ public class Helpers {
         }
     }
 
-    static void convertParquetToLibraryTsv(String parquet, String tsv, HashMap<String, String> protToGene)
-            throws SQLException, IOException {
-        Print.printInfo("Loading fasta to sql");
-        try (Connection conn = DriverManager.getConnection("jdbc:duckdb:");
-             Statement stmt = conn.createStatement()) {
+    static void convertParquetToLibraryTsv(String parquet, String tsv, HashMap<String, String> protToGene,
+                                           Connection conn) throws SQLException, IOException {
+        try (Statement stmt = conn.createStatement()) {
 
-            // Create temporary table with mapping
-            stmt.execute("CREATE TEMP TABLE mapping (key VARCHAR, value VARCHAR)");
+            stmt.execute("CREATE TABLE IF NOT EXISTS mapping (key VARCHAR, value VARCHAR)");
 
-            // Batch insert mapping data (much faster than individual inserts)
-            conn.setAutoCommit(false);
-            try (PreparedStatement pstmt = conn.prepareStatement(
-                    "INSERT INTO mapping VALUES (?, ?)")) {
-                int count = 0;
-                for (Map.Entry<String, String> entry : protToGene.entrySet()) {
-                    pstmt.setString(1, entry.getKey());
-                    pstmt.setString(2, entry.getValue());
-                    pstmt.addBatch();
-
-                    if (++count % 10000 == 0) {
+            try (ResultSet check = stmt.executeQuery("SELECT COUNT(*) FROM mapping")) {
+                check.next();
+                if (check.getLong(1) == 0) {
+                    Print.printInfo("Loading fasta to sql");
+                    conn.setAutoCommit(false);
+                    try (PreparedStatement pstmt = conn.prepareStatement("INSERT INTO mapping VALUES (?, ?)")) {
+                        int count = 0;
+                        for (Map.Entry<String, String> entry : protToGene.entrySet()) {
+                            pstmt.setString(1, entry.getKey());
+                            pstmt.setString(2, entry.getValue());
+                            pstmt.addBatch();
+                            if (++count % 10000 == 0) pstmt.executeBatch();
+                        }
                         pstmt.executeBatch();
                     }
+                    conn.commit();
+                    conn.setAutoCommit(true);
+                    stmt.execute("CREATE INDEX IF NOT EXISTS mapping_idx ON mapping(key)");
                 }
-                pstmt.executeBatch();
             }
-            conn.commit();
-            conn.setAutoCommit(true);
 
             Print.printInfo("Converting parquet to library.tsv format");
 
-            //Fetch column names from parquet
-            ResultSet rs = stmt.executeQuery(
-                    String.format("SELECT * FROM read_parquet('%s') LIMIT 1", parquet.replace("'", "''"))
-            );
-            ResultSetMetaData meta = rs.getMetaData();
-            int colCount = meta.getColumnCount();
+            // Fetch column names from parquet
+            try (ResultSet rs = stmt.executeQuery(
+                    String.format("SELECT * FROM read_parquet('%s') LIMIT 1", parquet.replace("'", "''")))) {
 
-            StringBuilder select = new StringBuilder();
-            for (int i = 1; i <= colCount; i++) {
-                String col = meta.getColumnName(i);
+                ResultSetMetaData meta = rs.getMetaData();
+                int colCount = meta.getColumnCount();
 
-                if (i == 5) {
-                    select.append("COALESCE(m.value, p.ProteinId) AS GeneName, ");
+                StringBuilder select = new StringBuilder();
+                for (int i = 1; i <= colCount; i++) {
+                    String col = meta.getColumnName(i);
+                    if (i == 5) select.append("COALESCE(m.value, p.ProteinId) AS GeneName, ");
+                    select.append("p.").append(col);
+                    if (i != colCount) select.append(", ");
                 }
 
-                select.append("p.").append(col);
+                // Write header if file is new/empty
+                File tsvFile = new File(tsv);
+                if (!tsvFile.exists() || tsvFile.length() == 0) {
+                    try (BufferedWriter writer = Files.newBufferedWriter(Paths.get(tsv),
+                            StandardCharsets.UTF_8, StandardOpenOption.CREATE)) {
+                        // HEADER true writes DuckDB's column names, which already include GeneName
+                        // so we use LIMIT 0 to get just the header row
+                        // Instead, build header from meta to match our select
+                        StringBuilder header = new StringBuilder();
+                        for (int i = 1; i <= colCount; i++) {
+                            if (i > 1) header.append('\t');
+                            if (i == 5) { header.append("GeneName\t"); }
+                            header.append(meta.getColumnName(i));
+                        }
+                        writer.write(header.toString());
+                        writer.newLine();
+                    }
+                }
 
-                if (i != colCount) {
-                    select.append(", ");
+                // Write to temp file using native DuckDB COPY (no JDBC row iteration)
+                Path tmpTsv = Files.createTempFile("apd_chunk_", ".tsv");
+                try {
+                    String query = String.format(
+                            "COPY (" +
+                                    "SELECT %s " +
+                                    "FROM read_parquet('%s') p " +
+                                    "LEFT JOIN mapping m ON p.ProteinId = m.key" +
+                                    ") TO '%s' (FORMAT CSV, DELIMITER '\t', HEADER false);",
+                            select,
+                            parquet.replace("'", "''"),
+                            tmpTsv.toString().replace("\\", "/")
+                    );
+                    stmt.execute(query);
+
+                    // Append temp file to TSV
+                    try (OutputStream out = Files.newOutputStream(Paths.get(tsv),
+                            StandardOpenOption.APPEND, StandardOpenOption.CREATE)) {
+                        Files.copy(tmpTsv, out);
+                    }
+                } finally {
+                    Files.deleteIfExists(tmpTsv);
                 }
             }
-
-            String query = String.format(
-                    "COPY (" +
-                            "SELECT %s " +
-                            "FROM (" +
-                            "  SELECT *, row_number() OVER () AS row_num " +
-                            "  FROM read_parquet('%s')" +
-                            ") p " +
-                            "LEFT JOIN mapping m ON p.ProteinId = m.key " +
-                            "ORDER BY p.row_num" +
-                            ") TO '%s' (FORMAT CSV, DELIMITER '\t', HEADER);",
-                    select.toString(),
-                    parquet.replace("'", "''"),
-                    tsv.replace("'", "''")
-            );
-            stmt.execute(query);
         }
     }
 

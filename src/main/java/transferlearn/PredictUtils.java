@@ -11,6 +11,7 @@ import java.io.*;
 import java.net.HttpURLConnection;
 import java.net.URL;
 import java.nio.charset.StandardCharsets;
+import java.sql.Connection;
 import java.sql.SQLException;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -203,7 +204,8 @@ public class PredictUtils {
     }
 
     public static String downloadAndProcess(String jobId, String url, String outputFormat, String outputDir, String basename,
-                                            HashMap<String, String> protMap, EndJob endJob)
+                                            HashMap<String, String> protMap, EndJob endJob,
+                                            String totalPredFilePath, Connection conn)
             throws IOException, InterruptedException, SQLException {
 
         //check status of job id
@@ -217,8 +219,13 @@ public class PredictUtils {
         int oldJobsAhead = 0;
         InputStream responseStream;
         HttpURLConnection connection = null;
+        boolean firstCheck = true;
         while (nonResults.contains(status.toUpperCase())) {
-            Thread.sleep(waitTime);
+            if (firstCheck) {
+                firstCheck = false;
+            } else {
+                Thread.sleep(waitTime);
+            }
 
             connection = setUpConnection(url, statusUrl);
             responseStream = connection.getInputStream();
@@ -278,19 +285,12 @@ public class PredictUtils {
             String downloadPath = downloadFile.getAbsolutePath();
             if (outputFormat.equals("librarytsv")) {
                 String tsvPath = downloadPath.replace(".parquet", ".tsv");
-                convertParquetToLibraryTsv(downloadPath, tsvPath, protMap);
+                convertParquetToLibraryTsv(downloadPath, totalPredFilePath, protMap, conn);
+                // Delete input parquet now that we're done reading it
+                new File(downloadPath).delete();
 
                 Print.printInfo("File downloaded to: " + tsvPath);
                 return tsvPath;
-//speclib processed at the end
-//            } else if (outputFormat.equals("speclib")) {
-//                Print.printInfo("Converting parquet to speclib format");
-//                ParquetToSpecLib ptsl = new ParquetToSpecLib(downloadPath, protMap, -3, true, true, true);
-//                String speclibPath = downloadPath.replace(".parquet", ".speclib");
-//                ptsl.convertAndWrite(speclibPath);
-//
-//                Print.printInfo("File downloaded to: " + speclibPath);
-//                return speclibPath;
             } else {
                 Print.printInfo("File downloaded to: " + downloadPath);
                 return downloadPath;

@@ -196,6 +196,7 @@ public class Trainer {
         int responseCode = connection.getResponseCode();
         InputStream responseStream;
         String jobId = "";
+        EndJob endJob = null;
         if (responseCode >= 200 && responseCode < 300) {
             responseStream = connection.getInputStream();
 
@@ -204,7 +205,8 @@ public class Trainer {
                 jobId = map.get("job_id").toString();
 
                 //set up shut down hook
-                Runtime.getRuntime().addShutdownHook(new Helpers.EndJob(url + "/train/cancel/" + jobId));
+                endJob = new Helpers.EndJob(url + "/train/cancel/" + jobId);
+                Runtime.getRuntime().addShutdownHook(endJob);
             } catch (Exception e) { //success that we don't handle yet
                 Print.printError(String.valueOf(e));
                 BufferedReader in = new BufferedReader(new InputStreamReader(responseStream));
@@ -266,7 +268,7 @@ public class Trainer {
         File downloadPath = new File(outputDir, outputBaseName + ".zip");
 
         if (status.equals("SUCCESS")) {
-            ended = true;
+            endJob.ended = true;
 
             URL downloadUrl = new URL(url + "/train/download/" + jobId);
             connection = setUpConnection(url, downloadUrl);
@@ -293,7 +295,7 @@ public class Trainer {
             Print.printInfo("File downloaded to: " + downloadPath);
             return downloadPath.getAbsolutePath();
         } else {
-            ended = true;
+            endJob.ended = true;
             Print.printError(String.valueOf(map));
             Print.printError(connection.getResponseMessage());
             return "";

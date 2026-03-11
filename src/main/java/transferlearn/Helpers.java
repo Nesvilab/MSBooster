@@ -5,6 +5,7 @@ import allconstants.NceConstants;
 import com.google.gson.Gson;
 import com.google.gson.reflect.TypeToken;
 import peptideptmformatting.PeptideFormatter;
+import utils.Multithreader;
 import utils.Print;
 import utils.ProgressReporter;
 
@@ -18,6 +19,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.sql.*;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -148,10 +150,41 @@ public class Helpers {
         }
     }
 
-    static void convertPeptideListToApdInput(String inputParquet, File outputParquet) {
-        printInfo("Converting peptide list to AlphaPeptDeep parquet");
+    static File[] convertPeptideListToApdInput(String inputParquet, String outputParquetBasename, int maxSize){
+        File[] inputFiles = null;
+        try (Connection conn = DriverManager.getConnection("jdbc:duckdb:");
+             Statement stmt = conn.createStatement()) {
+            // Get number of lines for progress reporting and splitting into smaller files
+            ResultSet rs = stmt.executeQuery("SELECT COUNT(*) FROM read_parquet('" + inputParquet + "')");
+            rs.next();
+            int lines = rs.getInt(1);
+            ProgressReporter pr = new ProgressReporter(lines);
+            Print.printInfo(lines + " entries to convert");
 
+            //split into even groups of max size maxSize
+            Multithreader mt = new Multithreader(lines, (int) Math.ceil((double) lines / (double) maxSize));
+            inputFiles = new File[mt.indices.length - 1];
+
+            // Query input parquet
+            rs = stmt.executeQuery("SELECT peptide, proteins, is_decoy FROM read_parquet('" + inputParquet + "')");
+
+            //send to mini method
+            printInfo("Converting peptide list to AlphaPeptDeep parquet");
+            for (int i = 0; i < mt.indices.length - 1; i++) {
+                File inputFile = convertPeptideListToApdInput(rs, outputParquetBasename + i,
+                        pr, mt.indices[i + 1] - mt.indices[i]);
+                inputFiles[i] = inputFile;
+            }
+        } catch (SQLException e) {
+            throw new RuntimeException(e);
+        }
+        return inputFiles;
+    }
+
+    static File convertPeptideListToApdInput(ResultSet rs, String outputParquetBasename,
+                                             ProgressReporter pr, int numIter) {
         Path tmpCsv = null;
+        String outputParquetPath = outputParquetBasename + ".parquet";
         try (Connection conn = DriverManager.getConnection("jdbc:duckdb:");
              Statement stmt = conn.createStatement()) {
 
@@ -162,17 +195,7 @@ public class Helpers {
             try (BufferedWriter writer = Files.newBufferedWriter(tmpCsv)) {
                 writer.write("sequence,mods,mod_sites,charge,nce,instrument,modified,proteins,is_decoy\n");
 
-                // Get number of lines for progress reporting
-                ResultSet rs = stmt.executeQuery("SELECT COUNT(*) FROM read_parquet('" + inputParquet + "')");
-                rs.next();
-                int lines = rs.getInt(1);
-                ProgressReporter pr = new ProgressReporter(lines);
-                Print.printInfo(lines + " entries to convert");
-
-                // Query input parquet
-                rs = stmt.executeQuery(
-                        "SELECT peptide, proteins, is_decoy FROM read_parquet('" + inputParquet + "')");
-
+                int i = 0;
                 while (rs.next()) {
                     String peptide = rs.getString("peptide");
                     String proteins = rs.getString("proteins");
@@ -200,12 +223,16 @@ public class Helpers {
                     ));
                     writer.write("\n");
                     pr.progress();
+                    i += 1;
+                    if (i >= numIter) {
+                        break;
+                    }
                 }
             }
 
             stmt.execute("CREATE TABLE tmp AS SELECT * FROM read_csv_auto('" + tmpCsv + "')");
-            stmt.execute("COPY tmp TO '" + outputParquet.getAbsolutePath() + "' (FORMAT PARQUET)");
-
+            stmt.execute("COPY tmp TO '" + outputParquetPath + "' (FORMAT PARQUET)");
+            return new File(outputParquetPath);
         } catch (Exception e) {
             Print.printError("Error: " + e.getMessage());
             e.printStackTrace();
@@ -215,6 +242,7 @@ public class Helpers {
                 try { Files.deleteIfExists(tmpCsv); } catch (IOException ignored) {}
             }
         }
+        return new File(outputParquetPath);
     }
 
     static void convertPeptideListToCsv(String peptideList, File csvFile) {
@@ -258,9 +286,9 @@ public class Helpers {
         }
     }
 
-    public static boolean ended = false;
     static class EndJob extends Thread {
         private final String cancelUrlPath;
+        public boolean ended = false;
 
         public EndJob(String cancelUrlPath) {
             this.cancelUrlPath = cancelUrlPath;

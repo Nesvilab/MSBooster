@@ -1,9 +1,6 @@
 package transferlearn;
 
 import allconstants.Constants;
-import allconstants.NceConstants;
-import mainsteps.MainClass;
-import mainsteps.ParameterUtils;
 import peptideptmformatting.PTMhandler;
 import readers.datareaders.FastaReader;
 import speclib.io.ParquetToSpecLib;
@@ -12,13 +9,15 @@ import utils.Print;
 import java.io.*;
 import java.net.HttpURLConnection;
 import java.net.URL;
-import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Paths;
+import java.sql.Connection;
+import java.sql.DriverManager;
+import java.sql.Statement;
 import java.util.Arrays;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.Locale;
+import java.util.stream.Collectors;
 
 import static allconstants.Constants.versionNumber;
 import static peptideptmformatting.PTMhandler.*;
@@ -169,34 +168,15 @@ public class Predictor {
             errorMessage();
         }
 
-        File inputFile;
-        if (peptideList.isEmpty()) { //predict all peptides in pin files
-            Constants.spectraModel = "alphapeptdeep";
-            Constants.rtModel = "alphapeptdeep";
-            Constants.imModel = "alphapeptdeep";
-            Constants.createPredFileOnly = true;
-            MainClass.main(new String[]{"--paramsList", params, "--keepDecoys", keepDecoys});
-            inputFile = new File(Constants.spectraRTPrefix + ".csv");
+        //use precursor charge states from MSFragger results
+        if (peptideList.isEmpty()) {
             minCharge = 0;
             maxCharge = 0;
+        }
 
-            //convert input to parquet
-            printInfo("Converting AlphaPeptDeep input to parquet");
-            String parquetPath = Constants.spectraRTPrefix + ".parquet";
-            Helpers.convertCsvToParquet(inputFile.getPath(), parquetPath, true);
-            inputFile = new File(parquetPath);
-        } else { //predict everything in peptide list
-            HashMap<String, String> paramsMap = new HashMap<>();
-            ParameterUtils.processCommandLineInputs(new String[]{"--paramsList", params, "--requirePinMzml", "false"},
-                    paramsMap);
-            ParameterUtils.updateConstants(paramsMap);
-            inputFile = new File(Constants.spectraRTPrefix + ".parquet");
-
-            //if using peptide list, nce and instrument should be provided
-            NceConstants.mzmlNCEs.put("HCD", String.valueOf(NceConstants.NCE));
-
-            //adapt peptide list to alphapeptdeep format
-            convertPeptideListToApdInput(peptideList, inputFile);
+        File[] inputFiles = PredictUtils.createPredictInputFiles(peptideList, params, keepDecoys);
+        if (outputDir.isEmpty()) {
+            outputDir = inputFiles[0].getParent();
         }
 
         //prediction
@@ -227,248 +207,118 @@ public class Predictor {
             customFis = new FileInputStream(customMods);
         }
 
-        HttpURLConnection connection = setUpConnection(url, uploadUrl);
-        connection.setRequestMethod("POST");
-        connection.setDoOutput(true);
+        EndJob[] endJobs = new EndJob[inputFiles.length];
+        String[] jobIds = new String[inputFiles.length];
+        for (int i = 0; i < inputFiles.length; i++) {
+            String jobId = PredictUtils.sendPredRequest(url, uploadUrl, apiKey, inputFiles[i], modelZip,
+                    outputFormat, ms2, rt, im, minCharge, maxCharge, customFis, customMods);
+            jobIds[i] = jobId;
 
-        String boundary = "----JavaFormBoundary" + System.currentTimeMillis();
-        connection.setRequestProperty("Content-Type", "multipart/form-data; boundary=" + boundary);
-        connection.setRequestProperty("X-Api-Key", apiKey);
-
-        int bufferSize = 65536;
-        connection.setChunkedStreamingMode(bufferSize); // 64KB chunks
-
-        //send request
-        try (OutputStream os = connection.getOutputStream();
-             BufferedOutputStream bos = new BufferedOutputStream(os);
-             PrintWriter writer = new PrintWriter(new OutputStreamWriter(bos, StandardCharsets.UTF_8), true);
-             FileInputStream fisInput = new FileInputStream(inputFile);
-             FileInputStream fisModel = new FileInputStream(modelZip);
-        ) {
-            // input file
-            writer.append("--").append(boundary).append("\r\n");
-            writer.append("Content-Disposition: form-data; name=\"input_file\"; filename=\"")
-                    .append(inputFile.getName()).append("\"\r\n");
-            writer.append("Content-Type: application/vnd.apache.parquet\r\n\r\n");
-            writer.flush();
-
-            byte[] buffer = new byte[bufferSize];
-            int bytesRead;
-            while ((bytesRead = fisInput.read(buffer)) != -1) {
-                bos.write(buffer, 0, bytesRead);
-            }
-            bos.flush();
-            writer.append("\r\n");
-
-            //model zip
-            writer.append("--").append(boundary).append("\r\n");
-            writer.append("Content-Disposition: form-data; name=\"model_zip\"; filename=\"")
-                    .append(modelZip.getName()).append("\"\r\n");
-            writer.append("Content-Type: application/zip\r\n\r\n");
-            writer.flush();
-
-            buffer = new byte[4096];
-            while ((bytesRead = fisModel.read(buffer)) != -1) {
-                bos.write(buffer, 0, bytesRead);
-            }
-            bos.flush();
-            writer.append("\r\n");
-
-            // output format
-            writer.append("--").append(boundary).append("\r\n");
-            writer.append("Content-Disposition: form-data; name=\"output_format\"\r\n\r\n");
-            writer.append(outputFormat).append("\r\n");
-
-            // decoy tag
-            writer.append("--").append(boundary).append("\r\n");
-            writer.append("Content-Disposition: form-data; name=\"decoy_tag\"\r\n\r\n");
-            writer.append(Constants.decoyPrefix).append("\r\n");
-
-            // ms2
-            writer.append("--").append(boundary).append("\r\n");
-            writer.append("Content-Disposition: form-data; name=\"ms2\"\r\n\r\n");
-            writer.append(ms2).append("\r\n");
-
-            // rt
-            writer.append("--").append(boundary).append("\r\n");
-            writer.append("Content-Disposition: form-data; name=\"rt\"\r\n\r\n");
-            writer.append(rt).append("\r\n");
-
-            // ccs
-            writer.append("--").append(boundary).append("\r\n");
-            writer.append("Content-Disposition: form-data; name=\"ccs\"\r\n\r\n");
-            writer.append(im).append("\r\n");
-
-            // mincharge
-            writer.append("--").append(boundary).append("\r\n");
-            writer.append("Content-Disposition: form-data; name=\"mincharge\"\r\n\r\n");
-            writer.append(Integer.toString(minCharge)).append("\r\n");
-
-            // maxcharge
-            writer.append("--").append(boundary).append("\r\n");
-            writer.append("Content-Disposition: form-data; name=\"maxcharge\"\r\n\r\n");
-            writer.append(Integer.toString(maxCharge)).append("\r\n");
-
-            // custom mods
-            if (customFis != null) {
-                writer.append("--").append(boundary).append("\r\n");
-                writer.append("Content-Disposition: form-data; name=\"custom_mods\"; filename=\"")
-                        .append(new File(customMods).getName()).append("\"\r\n");
-                writer.append("Content-Type: text/tab-separated-values\r\n\r\n");
-                writer.flush();
-
-                buffer = new byte[4096];
-                while ((bytesRead = customFis.read(buffer)) != -1) {
-                    os.write(buffer, 0, bytesRead);
-                }
-                os.flush();
-                writer.append("\r\n");
-                customFis.close();
-            }
-
-            // end of multipart
-            writer.append("--").append(boundary).append("--").append("\r\n");
-            writer.flush();
+            //set up shut down hook
+            EndJob endJob = new Helpers.EndJob(url + "/predict/cancel/" + jobId);
+            Runtime.getRuntime().addShutdownHook(endJob);
+            endJobs[i] = endJob;
         }
 
-        //get response
-        int responseCode = connection.getResponseCode();
-        InputStream responseStream;
-        String jobId = "";
-        if (responseCode >= 200 && responseCode < 300) {
-            responseStream = connection.getInputStream();
+        //read fasta if needed
+        FastaReader fastaReader = new FastaReader(fasta);
+        HashMap<String, String> protMap = new HashMap<>();
+        if (outputFormat.equals("librarytsv") ||  outputFormat.equals("speclib")) {
+            Print.printInfo("Reading FASTA file");
+            fastaReader.mapProtToGene();
 
-            try {
-                HashMap<String, Object> map = readJsonResponse(responseStream);
-                jobId = map.get("job_id").toString();
-
-                //set up shut down hook
-                Runtime.getRuntime().addShutdownHook(new Helpers.EndJob(url + "/predict/cancel/" + jobId));
-            } catch (Exception e) { //success that we don't handle yet
-                Print.printError(String.valueOf(e));
-                BufferedReader in = new BufferedReader(new InputStreamReader(responseStream));
-                String line;
-                while ((line = in.readLine()) != null) {
-                    Print.printError(line);
-                }
-                System.exit(1);
-            }
-        } else { //error
-            responseStream = connection.getErrorStream();
-
-            BufferedReader in = new BufferedReader(new InputStreamReader(responseStream));
-            String line;
-            while ((line = in.readLine()) != null) {
-                Print.printError(line);
-            }
-            System.exit(1);
-        }
-
-        //check status of job id
-        Print.printInfo("Job ID: " + jobId);
-        URL statusUrl = new URL(url + "/predict/status/" + jobId);
-
-        HashSet<String> nonResults = new HashSet<>(Arrays.asList("PENDING", "RECEIVED", "STARTED"));
-        String status = "PENDING";
-        HashMap<String, Object> map = null;
-        int oldStdoutLen = 0;
-        int oldJobsAhead = 0;
-        while (nonResults.contains(status.toUpperCase())) {
-            Thread.sleep(waitTime);
-
-            connection = setUpConnection(url, statusUrl);
-            responseStream = connection.getInputStream();
-            map = readJsonResponse(responseStream);
-            status = map.get("status").toString();
-            String stdout = map.get("stdout").toString();
-            if (!stdout.isEmpty()) {
-                System.out.print(stdout.substring(oldStdoutLen));
-                oldStdoutLen = stdout.length();
-            } else { //print queue position
-                int jobsAhead = ((Number) map.get("queue_position")).intValue();
-                if (jobsAhead != oldJobsAhead) {
-                    oldJobsAhead = jobsAhead;
-                    if (jobsAhead == 1) {
-                        System.out.println("Your job is queued. There is currently 1 job ahead of yours.");
-                    } else {
-                        System.out.println("Your job is queued. There are currently " +
-                                jobsAhead + " jobs ahead of yours.");
-                    }
-                }
-            }
-        }
-
-        //download
-        String downloadExtension = ".mgf";
-        if (!outputFormat.equals("mgf")) {
-            downloadExtension = ".parquet";
-        }
-        if (outputDir.isEmpty()) {
-            outputDir = inputFile.getParent();
-        }
-        File downloadFile = new File(outputDir, basename + downloadExtension);
-
-        if (status.equals("SUCCESS")) {
-            ended = true;
-
-            URL downloadUrl = new URL(url + "/predict/download/" + jobId);
-            connection = setUpConnection(url, downloadUrl);
-            connection.setRequestMethod("GET");
-
-            responseCode = connection.getResponseCode();
-            if (responseCode != HttpURLConnection.HTTP_OK) {
-                Print.printError("Server returned HTTP " + responseCode + " " + connection.getResponseMessage());
-                Print.printError((String) map.get("stdout"));
-                System.exit(1);
-            }
-
-            // Read input stream (file content) from server
-            try (InputStream inputStream = connection.getInputStream();
-                 FileOutputStream outputStream = new FileOutputStream(downloadFile)) {
-
-                byte[] buffer = new byte[4096];
-                int bytesRead;
-                while ((bytesRead = inputStream.read(buffer)) != -1) {
-                    outputStream.write(buffer, 0, bytesRead);
-                }
-            }
-
-            //read fasta if needed
-            FastaReader fastaReader = new FastaReader(fasta);
-            HashMap<String, String> protMap = new HashMap<>();
-            if (outputFormat.equals("librarytsv") ||  outputFormat.equals("speclib")) {
-                Print.printInfo("Reading FASTA file");
-                fastaReader.mapProtToGene();
-
-                if (! peptideList.isEmpty()) {
-                    protMap = mapProteinsListToGenes(peptideList, fastaReader.protToGene);
-                } else {
-                    protMap = mapProteinsListToGenes(inputFile.getAbsolutePath(), fastaReader.protToGene);
-                }
-            }
-
-            String downloadPath = downloadFile.getAbsolutePath();
-            if (outputFormat.equals("librarytsv")) {
-                String tsvPath = downloadPath.replace(".parquet", ".tsv");
-                convertParquetToLibraryTsv(downloadPath, tsvPath, protMap);
-
-                Print.printInfo("File downloaded to: " + tsvPath);
-            } else if (outputFormat.equals("speclib")) {
-                Print.printInfo("Converting parquet to speclib format");
-                ParquetToSpecLib ptsl = new ParquetToSpecLib(downloadPath, protMap, -3, true, true, true);
-                String speclibPath = downloadPath.replace(".parquet", ".speclib");
-                ptsl.convertAndWrite(speclibPath);
-
-                Print.printInfo("File downloaded to: " + speclibPath);
+            if (! peptideList.isEmpty()) {
+                protMap = mapProteinsListToGenes(peptideList, fastaReader.protToGene);
             } else {
-                Print.printInfo("File downloaded to: " + downloadPath);
+                protMap = mapProteinsListToGenes(inputFiles[0].getAbsolutePath(), fastaReader.protToGene);
             }
-            System.exit(0);
-        } else {
-            ended = true;
-            Print.printError(String.valueOf(map));
-            Print.printError(connection.getResponseMessage());
+        }
+
+        String downloadExtension = "";
+        switch (outputFormat) {
+            case "librarytsv":
+                downloadExtension = ".tsv";
+                break;
+            case "speclib":
+                downloadExtension = ".speclib";
+                break;
+            case "parquet":
+                downloadExtension = ".parquet";
+                break;
+            case  "mgf":
+                downloadExtension = ".mgf";
+                break;
+            default:
+                break;
+        }
+
+        //download files and merge
+        File totalPredFileInitiator = new File(outputDir + File.separator + basename + downloadExtension);
+        if (totalPredFileInitiator.exists()) {
+            totalPredFileInitiator.delete();
+        }
+        String[] subFilePaths = new String[inputFiles.length];
+        try (BufferedWriter totalPredFile = new BufferedWriter(new FileWriter(
+                outputDir + File.separator + basename + downloadExtension, true))) {
+            for (int i = 0; i < inputFiles.length; i++) {
+                String subFilePath = PredictUtils.downloadAndProcess(jobIds[i], url, outputFormat, outputDir,
+                        basename + i, protMap, endJobs[i]);
+                subFilePaths[i] = subFilePath;
+
+                //start merging files together
+                try (BufferedReader in = new BufferedReader(new FileReader(subFilePath))) {
+                    if (outputFormat.equals("librarytsv") || outputFormat.equals("mgf")) {
+                        String str;
+                        while ((str = in.readLine()) != null) {
+                            totalPredFile.write(str + "\n");
+                        }
+
+                        //delete old file
+                        File miniFile = new File(subFilePath);
+                        miniFile.delete();
+                    }
+                } catch (Exception e) {
+                    e.printStackTrace();
+                    System.exit(1);
+                }
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
             System.exit(1);
         }
+
+        if (outputFormat.equals("speclib") || outputFormat.equals("parquet")) {
+            Print.printInfo("Merging parquet files");
+            try (Connection conn = DriverManager.getConnection("jdbc:duckdb:");
+                 Statement stmt = conn.createStatement()) {
+
+                String fileList = Arrays.stream(subFilePaths)
+                        .map(p -> "'" + p.replace("\\", "/") + "'")
+                        .collect(Collectors.joining(", "));
+
+                stmt.execute("COPY (SELECT * FROM read_parquet([" + fileList + "])) " +
+                        "TO '" + totalPredFileInitiator.getAbsolutePath().replace("\\", "/") +
+                        "' (FORMAT PARQUET)");
+            }
+
+            //delete old files
+            for (String subFilePath : subFilePaths) {
+                File subFile = new File(subFilePath);
+                if (subFile.exists()) {
+                    subFile.delete();
+                }
+            }
+        }
+        if (outputFormat.equals("speclib")) {
+            Print.printInfo("Converting parquet to speclib format");
+            ParquetToSpecLib ptsl = new ParquetToSpecLib(totalPredFileInitiator.getAbsolutePath(), protMap, -3,
+                    true, true, true);
+            String speclibPath = totalPredFileInitiator.getAbsolutePath().replace(".parquet", ".speclib");
+            ptsl.convertAndWrite(speclibPath);
+
+            Print.printInfo("File downloaded to: " + speclibPath);
+        }
+
+        System.exit(0);
     }
 }

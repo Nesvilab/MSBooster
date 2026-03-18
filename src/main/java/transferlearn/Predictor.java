@@ -271,6 +271,7 @@ public class Predictor {
                 String subFilePath = PredictUtils.downloadAndProcess(jobIds[i], url, outputFormat, outputDir,
                         basename + i, protMap, endJobs[i], totalFilePath, conn);
                 subFilePaths[i] = subFilePath;
+                Print.printInfo("Downloaded file " + (i + 1) + " of " + inputFiles.length);
 
                 //start merging files together
                 if (outputFormat.equals("mgf")) {
@@ -287,8 +288,10 @@ public class Predictor {
                 }
 
                 //delete old file
-                File miniFile = new File(subFilePath);
-                miniFile.delete();
+                if (outputFormat.equals("mgf") || outputFormat.equals("librarytsv")) {
+                    File miniFile = new File(subFilePath);
+                    miniFile.delete();
+                }
             }
             if (outputFormat.equals("mgf")) {
                 totalPredFile.close();
@@ -302,25 +305,29 @@ public class Predictor {
         }
 
         if (outputFormat.equals("speclib") || outputFormat.equals("parquet")) {
-            Print.printInfo("Merging parquet files");
-            try (Connection conn = DriverManager.getConnection("jdbc:duckdb:");
-                 Statement stmt = conn.createStatement()) {
+            if (subFilePaths.length > 1) {
+                Print.printInfo("Merging parquet files");
+                try (Connection conn = DriverManager.getConnection("jdbc:duckdb:");
+                     Statement stmt = conn.createStatement()) {
 
-                String fileList = Arrays.stream(subFilePaths)
-                        .map(p -> "'" + p.replace("\\", "/") + "'")
-                        .collect(Collectors.joining(", "));
+                    String fileList = Arrays.stream(subFilePaths)
+                            .map(p -> "'" + p.replace("\\", "/") + "'")
+                            .collect(Collectors.joining(", "));
 
-                stmt.execute("COPY (SELECT * FROM read_parquet([" + fileList + "])) " +
-                        "TO '" + totalPredFileInitiator.getAbsolutePath().replace("\\", "/") +
-                        "' (FORMAT PARQUET)");
-            }
-
-            //delete old files
-            for (String subFilePath : subFilePaths) {
-                File subFile = new File(subFilePath);
-                if (subFile.exists()) {
-                    subFile.delete();
+                    stmt.execute("COPY (SELECT * FROM read_parquet([" + fileList + "])) " +
+                            "TO '" + totalPredFileInitiator.getAbsolutePath().replace("\\", "/") +
+                            "' (FORMAT PARQUET)");
                 }
+
+                //delete old files
+                for (String subFilePath : subFilePaths) {
+                    File subFile = new File(subFilePath);
+                    if (subFile.exists()) {
+                        subFile.delete();
+                    }
+                }
+            } else {
+                Files.move(Paths.get(subFilePaths[0]), Paths.get(totalFilePath));
             }
         }
         if (outputFormat.equals("speclib")) {
@@ -330,7 +337,9 @@ public class Predictor {
             String speclibPath = totalPredFileInitiator.getAbsolutePath().replace(".parquet", ".speclib");
             ptsl.convertAndWrite(speclibPath);
 
-            Print.printInfo("File downloaded to: " + speclibPath);
+            Print.printInfo("Total speclib file at " + speclibPath);
+        } else {
+            Print.printInfo("Total file at " + totalFilePath);
         }
 
         System.exit(0);

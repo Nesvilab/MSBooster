@@ -19,6 +19,7 @@ import java.util.HashMap;
 import java.util.Locale;
 import java.util.stream.Collectors;
 
+import static allconstants.Constants.allowParquetMerging;
 import static allconstants.Constants.versionNumber;
 import static peptideptmformatting.PTMhandler.*;
 import static transferlearn.Helpers.*;
@@ -168,6 +169,11 @@ public class Predictor {
             errorMessage();
         }
 
+        if (!allowParquetMerging && outputFormat.equals("speclib") && !peptideList.isEmpty()) {
+            Print.printError("Library prediction in speclib format is currently not supported for full fasta digestion. Exiting");
+            System.exit(1);
+        }
+
         //use precursor charge states from MSFragger results
         if (peptideList.isEmpty()) {
             minCharge = 0;
@@ -257,10 +263,14 @@ public class Predictor {
         if (totalPredFileInitiator.exists()) {
             totalPredFileInitiator.delete();
         }
+        File totalPredFileInitiatorParquet = new File(outputDir + File.separator + basename + ".parquet");
+        if (totalPredFileInitiatorParquet.exists()) {
+            totalPredFileInitiatorParquet.delete();
+        }
         String[] subFilePaths = new String[inputFiles.length];
 
         //initiate total file
-        String totalFilePath = outputDir + File.separator + basename + downloadExtension;
+        String totalFilePath = outputDir + File.separator + basename + downloadExtension; //only for librarytsv and mgf
         BufferedWriter totalPredFile = null;
         if (outputFormat.equals("mgf")) {
             totalPredFile = new BufferedWriter(new FileWriter(totalFilePath, true));
@@ -310,40 +320,47 @@ public class Predictor {
 
         if (outputFormat.equals("speclib") || outputFormat.equals("parquet")) {
             if (subFilePaths.length > 1) {
-                Print.printInfo("Merging parquet files");
-                try (Connection conn = DriverManager.getConnection("jdbc:duckdb:");
-                     Statement stmt = conn.createStatement()) {
+                if (allowParquetMerging) {
+                    Print.printInfo("Merging parquet files"); //TODO: too much RAM and too slow for multiple precursor charges
+                                                                //If needed, use Hadoop
+                    try (Connection conn = DriverManager.getConnection("jdbc:duckdb:");
+                         Statement stmt = conn.createStatement()) {
 
-                    String fileList = Arrays.stream(subFilePaths)
-                            .map(p -> "'" + p.replace("\\", "/") + "'")
-                            .collect(Collectors.joining(", "));
+                        String fileList = Arrays.stream(subFilePaths)
+                                .map(p -> "'" + p.replace("\\", "/") + "'")
+                                .collect(Collectors.joining(", "));
 
-                    stmt.execute("COPY (SELECT * FROM read_parquet([" + fileList + "])) " +
-                            "TO '" + totalPredFileInitiator.getAbsolutePath().replace("\\", "/") +
-                            "' (FORMAT PARQUET)");
-                }
+                        stmt.execute("COPY (SELECT * FROM read_parquet([" + fileList + "])) " +
+                                "TO '" + totalPredFileInitiatorParquet.getAbsolutePath().replace("\\", "/") +
+                                "' (FORMAT PARQUET)");
+                    }
 
-                //delete old files
-                for (String subFilePath : subFilePaths) {
-                    File subFile = new File(subFilePath);
-                    if (subFile.exists()) {
-                        subFile.delete();
+                    //delete old files
+                    for (String subFilePath : subFilePaths) {
+                        File subFile = new File(subFilePath);
+                        if (subFile.exists()) {
+                            subFile.delete();
+                        }
                     }
                 }
             } else {
-                Files.move(Paths.get(subFilePaths[0]), Paths.get(totalFilePath));
+                String oneParquet = outputDir + File.separator + basename + ".parquet";
+                Files.move(Paths.get(subFilePaths[0]), Paths.get(oneParquet));
+                Print.printInfo(subFilePaths[0] + " moved to " + oneParquet);
             }
         }
         if (outputFormat.equals("speclib")) {
             Print.printInfo("Converting parquet to speclib format");
-            ParquetToSpecLib ptsl = new ParquetToSpecLib(totalPredFileInitiator.getAbsolutePath(), protMap, -3,
+            ParquetToSpecLib ptsl = new ParquetToSpecLib(totalPredFileInitiatorParquet.getAbsolutePath(), protMap, -3,
                     true, true, true);
-            String speclibPath = totalPredFileInitiator.getAbsolutePath().replace(".parquet", ".speclib");
+            String speclibPath = totalPredFileInitiator.getAbsolutePath();
             ptsl.convertAndWrite(speclibPath);
 
             Print.printInfo("Total speclib file at " + speclibPath);
         } else {
-            Print.printInfo("Total file at " + totalFilePath);
+            if (outputFormat.equals("mgf") || outputFormat.equals("librarytsv")) {
+                Print.printInfo("Total file at " + totalFilePath);
+            }
         }
 
         System.exit(0);

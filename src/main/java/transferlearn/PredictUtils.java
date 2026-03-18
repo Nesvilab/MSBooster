@@ -205,7 +205,7 @@ public class PredictUtils {
 
     public static String downloadAndProcess(String jobId, String url, String outputFormat, String outputDir, String basename,
                                             HashMap<String, String> protMap, EndJob endJob,
-                                            String totalPredFilePath, Connection conn)
+                                            String totalPredFilePath, Connection conn, boolean verbose)
             throws IOException, InterruptedException, SQLException {
 
         //check status of job id
@@ -233,7 +233,9 @@ public class PredictUtils {
             status = map.get("status").toString();
             String stdout = map.get("stdout").toString();
             if (!stdout.isEmpty()) {
-                System.out.print(stdout.substring(oldStdoutLen));
+                if (verbose) {
+                    System.out.print(stdout.substring(oldStdoutLen));
+                }
                 oldStdoutLen = stdout.length();
             } else { //print queue position
                 int jobsAhead = ((Number) map.get("queue_position")).intValue();

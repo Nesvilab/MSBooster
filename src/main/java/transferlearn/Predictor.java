@@ -266,10 +266,14 @@ public class Predictor {
             totalPredFile = new BufferedWriter(new FileWriter(totalFilePath, true));
         }
 
+        boolean verbose = true;
+        if (inputFiles.length > 1) {
+            verbose = false;
+        }
         try (Connection conn = DriverManager.getConnection("jdbc:duckdb:")) {
             for (int i = 0; i < inputFiles.length; i++) {
                 String subFilePath = PredictUtils.downloadAndProcess(jobIds[i], url, outputFormat, outputDir,
-                        basename + i, protMap, endJobs[i], totalFilePath, conn);
+                        basename + i, protMap, endJobs[i], totalFilePath, conn, verbose);
                 subFilePaths[i] = subFilePath;
                 Print.printInfo("Downloaded file " + (i + 1) + " of " + inputFiles.length);
 

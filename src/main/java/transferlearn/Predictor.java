@@ -163,7 +163,7 @@ public class Predictor {
             }
         }
 
-        if (params.isEmpty() || url.isEmpty() || model.isEmpty() || apiKey.isEmpty() ||
+        if (params.isEmpty() || url.isEmpty() || apiKey.isEmpty() ||
                 (fasta.isEmpty() && (outputFormat.equals("librarytsv") || outputFormat.equals("speclib")))) {
             Print.printError("At least one of params, url, model, fasta, or apiKey is missing.");
             errorMessage();
@@ -188,19 +188,26 @@ public class Predictor {
         //prediction
         Print.printInfo("Generating predictions");
         URL uploadUrl = new URL(url + "/predict/upload");
-        File modelZip = new File(model);
-        if (modelZip.getName().contains("_")) {
-            Print.printError(modelZip.getName() + " cannot contain the underscore character. " +
-                    "Please replace them with dashes and try again.");
-            System.exit(1);
+        File modelZip = null;
+        if (!model.isEmpty()) {
+            modelZip = new File(model);
+            if (modelZip.getName().contains("_")) {
+                Print.printError(modelZip.getName() + " cannot contain the underscore character. " +
+                        "Please replace them with dashes and try again.");
+                System.exit(1);
+            }
         }
 
         if (basename.isEmpty()) {
-            String zipName = modelZip.getName();
-            int lastIndex = zipName.lastIndexOf(".zip");
-            basename = (lastIndex != -1)
-                    ? zipName.substring(0, lastIndex)
-                    : zipName;
+            if (model.isEmpty()) {
+                basename = "fragpipe_predict";
+            } else {
+                String zipName = modelZip.getName();
+                int lastIndex = zipName.lastIndexOf(".zip");
+                basename = (lastIndex != -1)
+                        ? zipName.substring(0, lastIndex)
+                        : zipName;
+            }
         }
 
         //verify custom mods exists

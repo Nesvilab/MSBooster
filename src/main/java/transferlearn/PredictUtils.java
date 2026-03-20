@@ -77,8 +77,8 @@ public class PredictUtils {
              BufferedOutputStream bos = new BufferedOutputStream(os);
              PrintWriter writer = new PrintWriter(new OutputStreamWriter(bos, StandardCharsets.UTF_8), true);
              FileInputStream fisInput = new FileInputStream(inputFile);
-             FileInputStream fisModel = new FileInputStream(modelZip);
-        ) {
+             FileInputStream fisModel = modelZip != null ? new FileInputStream(modelZip) : null)
+        {
             // input file
             writer.append("--").append(boundary).append("\r\n");
             writer.append("Content-Disposition: form-data; name=\"input_file\"; filename=\"")
@@ -95,18 +95,20 @@ public class PredictUtils {
             writer.append("\r\n");
 
             //model zip
-            writer.append("--").append(boundary).append("\r\n");
-            writer.append("Content-Disposition: form-data; name=\"model_zip\"; filename=\"")
-                    .append(modelZip.getName()).append("\"\r\n");
-            writer.append("Content-Type: application/zip\r\n\r\n");
-            writer.flush();
+            if (fisModel != null) {
+                writer.append("--").append(boundary).append("\r\n");
+                writer.append("Content-Disposition: form-data; name=\"model_zip\"; filename=\"")
+                        .append(modelZip.getName()).append("\"\r\n");
+                writer.append("Content-Type: application/zip\r\n\r\n");
+                writer.flush();
 
-            buffer = new byte[4096];
-            while ((bytesRead = fisModel.read(buffer)) != -1) {
-                bos.write(buffer, 0, bytesRead);
+                buffer = new byte[4096];
+                while ((bytesRead = fisModel.read(buffer)) != -1) {
+                    bos.write(buffer, 0, bytesRead);
+                }
+                bos.flush();
+                writer.append("\r\n");
             }
-            bos.flush();
-            writer.append("\r\n");
 
             // output format
             writer.append("--").append(boundary).append("\r\n");

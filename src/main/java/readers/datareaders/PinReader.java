@@ -125,7 +125,7 @@ public class PinReader {
         return getRow()[colNum];
     }
 
-    public int getLength() throws IOException {
+    public int getLength() throws IOException { //works under the assumption that pin file ends with newline
         if (length == -1) {
                 //https://stackoverflow.com/questions/453018/number-of-lines-in-a-file-in-java
             InputStream is = new BufferedInputStream(new FileInputStream(name));
@@ -135,7 +135,6 @@ public class PinReader {
                 int readChars = is.read(c);
                 if (readChars == -1) {
                     // bail out if nothing to read
-                    length = 0;
                 }
 
                 // make it easy for the optimizer to tune this loop
@@ -160,11 +159,15 @@ public class PinReader {
                 }
 
                 if (count <= 0) {
-                    length = 1;
+                    length = 0;
                     printInfo(name + " has 0 PSMs");
                 } else {
                     length = count;
-                    printInfo(name + " has " + length + " PSMs");
+                    if (length == 1) {
+                        printInfo(name + " has 1 PSM");
+                    } else {
+                        printInfo(name + " has " + length + " PSMs");
+                    }
                 }
             } finally {
                 is.close();

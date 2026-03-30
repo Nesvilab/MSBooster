@@ -190,7 +190,7 @@ public class PercolatorFormatter {
                 PinReader pin = new PinReader(pinFiles[i].getCanonicalPath());
 
                 //handling for empty pin files
-                if (pin.getLength() < 2) {
+                if (pin.getLength() < 1) {
                     printInfo(pinFiles[i].getCanonicalPath() + " is empty. Writing empty edited file");
                     PinWriter pw = new PinWriter(newOutfile, pin, featuresList, mzml);
                     pw.write();
@@ -475,6 +475,7 @@ public class PercolatorFormatter {
 
                 //plot hist
                 new ScoreHistogram(new PinReader(histFile), pw.newColumnNames);
+
                 mzml.clear();
                 mzmlReaders[i] = null;
             }

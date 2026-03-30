@@ -156,30 +156,34 @@ public class ScoreHistogram {
                 numBins = (int) (scoreMax.get(feature) - scoreMin.get(feature) + 1);
             }
             try {
-                Histogram histT;
-                if (useInt) {
-                    histT = new Histogram(targetScores.get(feature), numBins,
-                            scoreMin.get(feature) - 0.5, scoreMax.get(feature) + 1 - 0.5);
-                } else {
-                    histT = new Histogram(targetScores.get(feature), numBins,
-                            scoreMin.get(feature), scoreMax.get(feature));
+                if (! targetScores.get(feature).isEmpty()) {
+                    Histogram histT;
+                    if (useInt) {
+                        histT = new Histogram(targetScores.get(feature), numBins,
+                                scoreMin.get(feature) - 0.5, scoreMax.get(feature) + 1 - 0.5);
+                    } else {
+                        histT = new Histogram(targetScores.get(feature), numBins,
+                                scoreMin.get(feature), scoreMax.get(feature));
+                    }
+                    List<Double> xData = histT.getxAxisData();
+                    List<Double> yData = histT.getyAxisData();
+                    chart.addSeries("targets", xData, yData);
                 }
-                List<Double> xData = histT.getxAxisData();
-                List<Double> yData = histT.getyAxisData();
-                chart.addSeries("targets", xData, yData);
             } catch (Exception e) {e.printStackTrace();}
             try {
-                Histogram histD;
-                if (useInt) {
-                    histD = new Histogram(decoyScores.get(feature), numBins,
-                            scoreMin.get(feature) - 0.5, scoreMax.get(feature) + 1 - 0.5);
-                } else {
-                    histD = new Histogram(decoyScores.get(feature), numBins,
-                            scoreMin.get(feature), scoreMax.get(feature));
+                if (! decoyScores.get(feature).isEmpty()) {
+                    Histogram histD;
+                    if (useInt) {
+                        histD = new Histogram(decoyScores.get(feature), numBins,
+                                scoreMin.get(feature) - 0.5, scoreMax.get(feature) + 1 - 0.5);
+                    } else {
+                        histD = new Histogram(decoyScores.get(feature), numBins,
+                                scoreMin.get(feature), scoreMax.get(feature));
+                    }
+                    List<Double> xData = histD.getxAxisData();
+                    List<Double> yData = histD.getyAxisData();
+                    chart.addSeries("decoys", xData, yData);
                 }
-                List<Double> xData = histD.getxAxisData();
-                List<Double> yData = histD.getyAxisData();
-                chart.addSeries("decoys", xData, yData);
             } catch (Exception e) {e.printStackTrace();}
 
             String name = new File(pinReader.name).getName();

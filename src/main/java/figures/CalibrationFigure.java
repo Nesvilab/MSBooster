@@ -24,6 +24,8 @@ import org.knowm.xchart.XYSeries;
 import org.knowm.xchart.style.Styler;
 import org.knowm.xchart.style.markers.SeriesMarkers;
 import readers.datareaders.MzmlReader;
+import utils.NumericUtils;
+import utils.Print;
 
 import java.awt.Color;
 import java.io.File;
@@ -44,7 +46,7 @@ public class CalibrationFigure {
     public String folderString;
     String mode;
     String charge;
-    public HashMap<String, List<Float>[]> curves;
+    public HashMap<String, List<Float>[]> curves = new HashMap<>();
     String yaxislabel = "predicted";
     String regressionLabel = "regression";
     public CalibrationFigure() {}
@@ -125,6 +127,10 @@ public class CalibrationFigure {
                 } catch (Exception ignored) {}
             }
         }
+        if (NumericUtils.massesCloseEnough(minVal, maxVal)) { //not masses but just functioning as comparing numbers
+            Print.printInfo("[" + minVal + ", " + maxVal + "] is too narrow an x-value range to plot. Skipping");
+            return curves;
+        }
 
         double ymax = 0;
         for (float f : yData) {
@@ -204,9 +210,6 @@ public class CalibrationFigure {
             series.setMarker(SeriesMarkers.CIRCLE);
             series.setShowInLegend(showInLegend);
         }
-
-        //hashmap to hold regression curves
-        HashMap<String, List<Float>[]> curves = new HashMap<>();
 
         //loess regression
         // generates Log data

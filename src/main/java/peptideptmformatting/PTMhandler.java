@@ -308,7 +308,7 @@ public class PTMhandler {
         String ntermPrefix = "";
         switch(model) {
             case "librarytsv":
-                ntermPrefix = ".";
+                ntermPrefix = "_";
                 break;
             default:
                 break;
@@ -320,7 +320,7 @@ public class PTMhandler {
                 ctermPrefix = "-";
                 break;
             case "librarytsv":
-                ctermPrefix = ".";
+                ctermPrefix = "_";
                 break;
             default:
                 break;

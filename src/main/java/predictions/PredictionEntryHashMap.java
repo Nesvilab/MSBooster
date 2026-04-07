@@ -244,7 +244,8 @@ public class PredictionEntryHashMap extends ConcurrentHashMap<String, Prediction
                                 newMZs[i] = oldPred.getMzs()[i] +
                                         mc.compareModMasses(oldMc, oldPred.getFragNums()[i],
                                                 oldPred.getFragmentIonTypes()[i],
-                                                oldPred.getCharges()[i], oldPred.getFullAnnotations()[i]);
+                                                oldPred.getCharges()[i],
+                                                oldPred.fullAnnotations.length > 0 ? oldPred.fullAnnotations[i] : "");
                             }
                         }
                     }

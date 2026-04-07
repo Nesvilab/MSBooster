@@ -356,7 +356,7 @@ public class PTMhandler {
         }
 
         //nterm
-        if (start == 0) {
+        if (!unimod.isEmpty() && start == 0) {
             int splitpoint = -1;
             if (peptide.startsWith("[")) {
                 splitpoint = peptide.indexOf("]");

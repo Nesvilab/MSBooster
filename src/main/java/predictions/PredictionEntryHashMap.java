@@ -37,6 +37,9 @@ import java.util.concurrent.Future;
 import static utils.Print.printError;
 
 public class PredictionEntryHashMap extends ConcurrentHashMap<String, PredictionEntry> {
+    public PredictionEntryHashMap() { super(); }
+    public PredictionEntryHashMap(int initialCapacity) { super(initialCapacity); }
+
     public void preprocessPredictedSpectra(ExecutorService executorService, HashSet<String> primaryTypes, HashSet<String> auxTypes)
             throws ExecutionException, InterruptedException {
         String[] peptides = new String[this.size()];

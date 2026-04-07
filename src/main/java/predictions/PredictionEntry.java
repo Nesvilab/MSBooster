@@ -20,10 +20,9 @@ package predictions;
 import allconstants.Constants;
 import allconstants.FragmentIonConstants;
 
-import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.stream.IntStream;
 
 public class PredictionEntry {
     public float[] mzs = new float[0];
@@ -36,8 +35,7 @@ public class PredictionEntry {
     public float RT;
     public float IM;
     public PredictionEntry auxSpectra = null;
-    public HashMap<String, Float[]> scores = new HashMap<>();
-    public ArrayList<Integer> times = new ArrayList<>();
+    public HashMap<String, Float[]> scores = null;
     public double precursorMz = 0d;
     //public boolean filtered = false; //work with this if filtering step is unnecessarily run multiple times
     private static final float maxIntensity = 1f;
@@ -53,12 +51,10 @@ public class PredictionEntry {
         this.fragNums = new int[fragNums.length];
         this.charges = new int[charges.length];
         this.fragmentIonTypes = new String[fragmentIonTypes.length];
-        this.isotopes = new int[mzs.length];
-        this.fullAnnotations = new String[mzs.length];
+        this.isotopes = new int[0];
+        this.fullAnnotations = new String[0];
 
-        int[] sortedIndices = IntStream.range(0, mzs.length)
-                .boxed().sorted((k, j) -> Float.compare(mzs[k], mzs[j]))
-                .mapToInt(ele -> ele).toArray();
+        int[] sortedIndices = sortedIndicesByMz(mzs);
 
         for (int i = 0; i < sortedIndices.length; i++) {
             this.mzs[i] = mzs[sortedIndices[i]];
@@ -84,9 +80,7 @@ public class PredictionEntry {
         this.charges = new int[charges.length];
         this.fragmentIonTypes = new String[fragmentIonTypes.length];
 
-        int[] sortedIndices = IntStream.range(0, mzs.length)
-                .boxed().sorted((k, j) -> Float.compare(mzs[k], mzs[j]))
-                .mapToInt(ele -> ele).toArray();
+        int[] sortedIndices = sortedIndicesByMz(mzs);
 
         for (int i = 0; i < sortedIndices.length; i++) {
             this.mzs[i] = mzs[sortedIndices[i]];
@@ -103,6 +97,22 @@ public class PredictionEntry {
         }
 
         setFullAnnotations(fullAnnotations, sortedIndices);
+    }
+
+    // Sort indices by ascending m/z without boxing.
+    // Packs float bits (high 32 bits) + original index (low 32 bits) into a long[],
+    // sorts as primitives, then extracts indices. Valid for positive floats (m/z values).
+    private static int[] sortedIndicesByMz(float[] mzs) {
+        long[] keys = new long[mzs.length];
+        for (int i = 0; i < mzs.length; i++) {
+            keys[i] = ((long) Float.floatToRawIntBits(mzs[i]) << 32) | i;
+        }
+        Arrays.sort(keys);
+        int[] indices = new int[keys.length];
+        for (int i = 0; i < keys.length; i++) {
+            indices[i] = (int) keys[i];
+        }
+        return indices;
     }
 
     public void preprocessFragments(HashSet<String> fragmentIonTypesSet, int numTopFragments) {

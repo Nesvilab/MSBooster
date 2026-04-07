@@ -17,10 +17,13 @@
 
 package readers.predictionreaders;
 
+import allconstants.Constants;
 import features.spectra.MassCalculator;
 import peptideptmformatting.PeptideFormatter;
 import predictions.PredictionEntry;
 import predictions.PredictionEntryHashMap;
+import utils.Print;
+import utils.ProgressReporter;
 
 import java.io.BufferedReader;
 import java.io.File;
@@ -29,10 +32,7 @@ import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.IOException;
 import java.io.InputStream;
-import java.nio.ByteBuffer;
-import java.nio.ByteOrder;
 import java.util.ArrayList;
-import java.util.HashMap;
 
 import static utils.Print.printError;
 
@@ -41,13 +41,7 @@ public class DiannSpeclibReader implements LibraryPredictionMapper {
     final ArrayList<String> filenames;
     PredictionEntryHashMap allPreds = new PredictionEntryHashMap();
 
-    private static HashMap<Integer, String> makeFlagTOion() {
-        HashMap<Integer, String> map = new HashMap<>();
-        map.put(0, "b");
-        map.put(1, "y");
-        return map;
-    }
-    private static final HashMap<Integer, String> flagTOion = makeFlagTOion();
+    private static final String[] flagTOion = {"b", "y"}; // 0=b, 1=y
 
     //https://stackoverflow.com/questions/46163114/get-bit-values-from-byte-array
     //https://www.geeksforgeeks.org/bitwise-operators-in-java/
@@ -66,6 +60,20 @@ public class DiannSpeclibReader implements LibraryPredictionMapper {
             }
         }
 
+        // Pre-count total entries across all files to pre-size the HashMap (avoids costly rehashing)
+        int totalAllEntries = 0;
+        for (String bFile : filenames) {
+            int splitDot = bFile.indexOf("predicted.bin");
+            String textFile = bFile.substring(0, splitDot) + "tsv";
+            try (BufferedReader counter = new BufferedReader(new FileReader(textFile))) {
+                counter.readLine(); // skip header
+                while (counter.readLine() != null) totalAllEntries++;
+            } catch (IOException e) {
+                // validation below will catch missing files
+            }
+        }
+        allPreds = new PredictionEntryHashMap(totalAllEntries);
+
         for (String bFile : filenames) {
             //try to infer binary file name from text file
             int splitDot = bFile.indexOf("predicted.bin");
@@ -78,23 +86,40 @@ public class DiannSpeclibReader implements LibraryPredictionMapper {
                 printError("Error: no prediction file available at: " + textFile);
                 System.exit(1);
             }
-
             try{
+                // Count entries for progress reporting
+                int totalEntries = -1; // -1 to subtract header
+                try (BufferedReader counter = new BufferedReader(new FileReader(textFile))) {
+                    while (counter.readLine() != null) totalEntries++;
+                }
+                Print.printInfo("Reading " + totalEntries + " entries from binary spectral library");
+                ProgressReporter pr = new ProgressReporter(totalEntries);
+
                 InputStream is = new FileInputStream(bFile);
                 BufferedReader TSVReader = new BufferedReader(new FileReader(textFile));
 
                 int len; //holds length of bytes
                 byte[] buffer1 = new byte[12];
-                String[] line = TSVReader.readLine().split("\t"); //header
+                byte[] buffer2 = new byte[4 * 100]; // pre-allocated; reused each peptide (max 100 frags)
+                TSVReader.readLine(); //header
 
                 while ((len = is.read(buffer1)) != -1) {
-                    line = TSVReader.readLine().split("\t");
-                    MassCalculator mc = new MassCalculator(new PeptideFormatter(line[0], line[1], "diann").getBase(), line[1]);
+                    String rawLine = TSVReader.readLine();
+                    int tab = rawLine.indexOf('\t');
+                    String peptideSeq = rawLine.substring(0, tab);
+                    String chargeStr = rawLine.substring(tab + 1);
+                    pr.progress();
+                    MassCalculator mc = new MassCalculator(new PeptideFormatter(peptideSeq, chargeStr, "diann").getBase(), chargeStr);
 
-                    //get data for precursor
-                    int numFrags = ByteBuffer.wrap(buffer1, 0, 4).order(ByteOrder.LITTLE_ENDIAN).getInt();
-                    float iRT = ByteBuffer.wrap(buffer1, 4, 4).order(ByteOrder.LITTLE_ENDIAN).getFloat();
-                    float IM = ByteBuffer.wrap(buffer1, 8, 4).order(ByteOrder.LITTLE_ENDIAN).getFloat();
+                    //get data for precursor — read directly from buffer1 bytes (little-endian)
+                    int numFrags = (buffer1[0] & 0xFF) | ((buffer1[1] & 0xFF) << 8)
+                            | ((buffer1[2] & 0xFF) << 16) | (buffer1[3] << 24);
+                    int iRTbits = (buffer1[4] & 0xFF) | ((buffer1[5] & 0xFF) << 8)
+                            | ((buffer1[6] & 0xFF) << 16) | (buffer1[7] << 24);
+                    float iRT = Float.intBitsToFloat(iRTbits);
+                    int IMbits = (buffer1[8] & 0xFF) | ((buffer1[9] & 0xFF) << 8)
+                            | ((buffer1[10] & 0xFF) << 16) | (buffer1[11] << 24);
+                    float IM = Float.intBitsToFloat(IMbits);
 
                     //arrays for hashmap
                     float[] mzs = new float[numFrags];
@@ -103,20 +128,25 @@ public class DiannSpeclibReader implements LibraryPredictionMapper {
                     String[] fragmentIonTypes = new String[numFrags];
                     int[] charges = new int[numFrags];
 
-                    //load fragment info
-                    byte[] buffer2 = new byte[4 * numFrags];
-                    len = is.read(buffer2);
+                    //load fragment info — reuse buffer2 (grow only if needed)
+                    int needed = 4 * numFrags;
+                    if (needed > buffer2.length) {
+                        buffer2 = new byte[needed];
+                    }
+                    len = is.read(buffer2, 0, needed);
 
-                    //iterate through fragments
+                    //iterate through fragments — read bytes directly, inline bit extraction
                     for (int i = 0; i < numFrags; i++) {
-                        int fragInt = ByteBuffer.wrap(buffer2, i * 4, 4).order(ByteOrder.LITTLE_ENDIAN).getInt();
-                        int intensity = bits(fragInt, 0, 16);
-                        int fragNum = bits(fragInt, 16, 8);
-                        int flag = bits(fragInt, 29, 1); //y 1, b 0
-                        int charge = bits(fragInt, 30, 2) + 1; //start from end
+                        int off = i * 4;
+                        int fragInt = (buffer2[off] & 0xFF) | ((buffer2[off + 1] & 0xFF) << 8)
+                                | ((buffer2[off + 2] & 0xFF) << 16) | (buffer2[off + 3] << 24);
+                        int intensity = (fragInt >>> 16) & 0xFFFF;   // bits[31..16]
+                        int fragNum   = (fragInt >>> 8)  & 0xFF;     // bits[15..8]
+                        int flag      = (fragInt >>> 2)  & 0x1;      // bit[2]  y=1, b=0
+                        int charge    = (fragInt & 0x3) + 1;         // bits[1..0]
 
                         //get fragment m/z
-                        String ionType = flagTOion.get(flag);
+                        String ionType = flagTOion[flag];
                         float fragMZ = mc.calcMass(fragNum, ionType, charge, 0);
 
                         //add to arrays
@@ -143,23 +173,33 @@ public class DiannSpeclibReader implements LibraryPredictionMapper {
                 TSVReader.close();
 
                 textFile = bFile.substring(0, splitDot - 1) + "_full.tsv";
+                int totalFullEntries = 0;
+                try (BufferedReader counter = new BufferedReader(new FileReader(textFile))) {
+                    while (counter.readLine() != null) totalFullEntries++;
+                }
+                Print.printInfo("Reading " + totalFullEntries + " entries from full TSV");
+                ProgressReporter prFull = new ProgressReporter(totalFullEntries);
+
                 TSVReader = new BufferedReader(new FileReader(textFile));
                 String l;
 
                 while ((l = TSVReader.readLine()) != null) {
-                    line = l.split("\t");
+                    int tab = l.indexOf('\t');
+                    String peptideSeq = l.substring(0, tab);
+                    String chargeStr = l.substring(tab + 1);
+                    prFull.progress();
                     //check if diann to base results in same base peptide
                     PeptideFormatter pf = new PeptideFormatter(
-                            new PeptideFormatter(line[0], line[1], "base").getDiann(), line[1], "diann");
+                            new PeptideFormatter(peptideSeq, chargeStr, "base").getDiann(), chargeStr, "diann");
 
-                    if (! pf.getBase().equals(line[0])) {
+                    if (! pf.getBase().equals(peptideSeq)) {
                         //get predictionEntry
                         PredictionEntry tmp = allPreds.get(pf.getBaseCharge());
-                        MassCalculator mc = new MassCalculator(line[0], line[1]);
+                        MassCalculator mc = new MassCalculator(peptideSeq, chargeStr);
                         float[] newMZs = new float[tmp.mzs.length];
                         for (int i = 0; i < newMZs.length; i++) {
                             newMZs[i] = mc.calcMass(tmp.fragNums[i], tmp.fragmentIonTypes[i],
-                                    tmp.charges[i], tmp.isotopes[i]);
+                                    tmp.charges[i], tmp.isotopes.length > 0 ? tmp.isotopes[i] : 0);
                         }
 
                         //add to hashmap
@@ -189,5 +229,13 @@ public class DiannSpeclibReader implements LibraryPredictionMapper {
 
     public void clear() {
         allPreds.clear();
+    }
+
+    public static void main(String[] args) throws FileNotFoundException {
+        Constants.numThreads = 11;
+        DiannSpeclibReader dslr = new DiannSpeclibReader(
+                "Z:/yangkl/troubleshooting_issues/github1435/PublicSearch.266.HLAI.FDR3.pekin/MSBooster");
+        dslr = new DiannSpeclibReader("C:/Users/yangkl/Downloads/proteomics/" +
+                "diannspeclib/spectraRT.predicted.bin");
     }
 }

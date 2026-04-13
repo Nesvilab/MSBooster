@@ -196,15 +196,15 @@ public class DiannSpeclibReader implements LibraryPredictionMapper {
                         //get predictionEntry
                         PredictionEntry tmp = allPreds.get(pf.getBaseCharge());
                         MassCalculator mc = new MassCalculator(peptideSeq, chargeStr);
-                        float[] newMZs = new float[tmp.mzs.length];
+                        float[] newMZs = new float[tmp.numFragments()];
                         for (int i = 0; i < newMZs.length; i++) {
-                            newMZs[i] = mc.calcMass(tmp.fragNums[i], tmp.fragmentIonTypes[i],
-                                    tmp.charges[i], tmp.isotopes.length > 0 ? tmp.isotopes[i] : 0);
+                            newMZs[i] = mc.calcMass(tmp.getFragNum(i), tmp.getIonTypeString(i),
+                                    tmp.getCharge(i), tmp.isotopes.length > 0 ? tmp.isotopes[i] : 0);
                         }
 
                         //add to hashmap
-                        PredictionEntry newPred = new PredictionEntry(newMZs, tmp.intensities,
-                                tmp.fragNums, tmp.charges, tmp.fragmentIonTypes);
+                        PredictionEntry newPred = new PredictionEntry(newMZs, tmp.getIntensities(),
+                                tmp.getFragNums(), tmp.getCharges(), tmp.getFragmentIonTypes());
                         newPred.setRT(tmp.RT);
                         newPred.setIM(tmp.IM);
                         allPreds.put(mc.fullPeptide, newPred);
@@ -229,5 +229,10 @@ public class DiannSpeclibReader implements LibraryPredictionMapper {
 
     public void clear() {
         allPreds.clear();
+    }
+
+    public static void main(String[] args) throws FileNotFoundException {
+        Constants.numThreads = 11;
+        DiannSpeclibReader dslr = new DiannSpeclibReader("C:/Users/yangkl/Downloads/proteomics/2701/");
     }
 }

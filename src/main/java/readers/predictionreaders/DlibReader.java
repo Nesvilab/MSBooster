@@ -161,7 +161,7 @@ public class DlibReader implements LibraryPredictionMapper {
                                 pfDecoy.getCharge());
                         PredictionEntry pe = allPreds.get(targetPeptide);
 
-                        String[] annotations = mcTarget.annotateMZs(pe.mzs, "default", false)[0];
+                        String[] annotations = mcTarget.annotateMZs(pe.getMzs(), "default", false)[0];
                         float[] decoyMZs = new float[annotations.length];
                         for (int i = 0; i < annotations.length; i++) {
                             String anno = annotations[i];
@@ -172,7 +172,7 @@ public class DlibReader implements LibraryPredictionMapper {
                                     plusSplit[0].substring(0, 1), Integer.parseInt(plusSplit[1]), 0);
                             decoyMZs[i] = mz;
                         }
-                        PredictionEntry newPred = new PredictionEntry(decoyMZs, pe.intensities,
+                        PredictionEntry newPred = new PredictionEntry(decoyMZs, pe.getIntensities(),
                                 new int[0], new int[0], new String[0]);
                         newPred.setRT(pe.RT);
                         allPreds.put(pfDecoy.getBaseCharge(), newPred);
@@ -184,7 +184,7 @@ public class DlibReader implements LibraryPredictionMapper {
                         //get predictionEntry
                         PredictionEntry tmp = allPreds.get(pf.getDlib());
                         MassCalculator mc = new MassCalculator(pf.getDlib().split("\\|")[0], pf.getCharge());
-                        String[][] info = mc.annotateMZs(tmp.mzs, "default", false);
+                        String[][] info = mc.annotateMZs(tmp.getMzs(), "default", false);
                         String[] annotations = info[0];
 
                         MassCalculator shiftedMC = new MassCalculator(pf.getBase(), pf.getCharge());
@@ -200,7 +200,7 @@ public class DlibReader implements LibraryPredictionMapper {
                                 if (anno.equals("unknown")) {
                                     printInfo(pf.getDlib());
                                     printInfo(Arrays.toString(annotations));
-                                    printInfo(Arrays.toString(tmp.mzs));
+                                    printInfo(Arrays.toString(tmp.getMzs()));
                                     printInfo(mc.fragmentIons.keySet().toString());
                                 }
 
@@ -220,7 +220,7 @@ public class DlibReader implements LibraryPredictionMapper {
                                 }
                             }
                             if (assign) {
-                                newIntensities.add(tmp.intensities[i]);
+                                newIntensities.add(tmp.getIntensity(i));
 
                                 float avg = 0f;
                                 for (float fl : finalmz) {

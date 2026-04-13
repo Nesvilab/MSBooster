@@ -101,14 +101,10 @@ public class PredictionEntryHashMap extends ConcurrentHashMap<String, Prediction
                         pe1.setIM(pe2.getIM());
                         break;
                     case "spectra":
-                        pe1.mzs = pe2.mzs;
-                        pe1.intensities = pe2.intensities;
-                        pe1.fragNums = pe2.fragNums;
-                        pe1.charges = pe2.charges;
-                        pe1.fragmentIonTypes = pe2.fragmentIonTypes;
+                        pe1.fragments = pe2.fragments;
                         break;
                     case "auxSpectra":
-                        if (pe1.mzs.length <= 1) { //populate missing main spectra
+                        if (pe1.numFragments() <= 1) { //populate missing main spectra
                             if (Constants.auxSpectraModel.equalsIgnoreCase("unispec")) {
                                 //filter to use only 0 isotopes
                                 ArrayList<Integer> zeroIsotopes = new ArrayList<>();
@@ -118,39 +114,26 @@ public class PredictionEntryHashMap extends ConcurrentHashMap<String, Prediction
                                     }
                                 }
 
-                                pe1.mzs = new float[zeroIsotopes.size()];
-                                pe1.intensities = new float[zeroIsotopes.size()];
-                                pe1.fragNums = new int[zeroIsotopes.size()];
-                                pe1.charges = new int[zeroIsotopes.size()];
-                                pe1.fragmentIonTypes = new String[zeroIsotopes.size()];
-                                pe1.fullAnnotations = new String[zeroIsotopes.size()];
-                                pe1.isotopes = new int[zeroIsotopes.size()];
+                                int sz = zeroIsotopes.size();
+                                pe1.fragments = new int[PredictionEntry.STRIDE * sz];
+                                pe1.fullAnnotations = pe2.fullAnnotations.length > 0 ? new String[sz] : pe2.fullAnnotations;
+                                pe1.isotopes = pe2.isotopes.length > 0 ? new int[sz] : pe2.isotopes;
 
                                 int i = 0;
                                 for (int idx : zeroIsotopes) {
-                                    pe1.mzs[i] = pe2.mzs[idx];
-                                    pe1.intensities[i] = pe2.intensities[idx];
-                                    if (pe2.fragNums.length != 0) {
-                                        pe1.fragNums[i] = pe2.fragNums[idx];
-                                    }
-                                    if (pe2.charges.length != 0) {
-                                        pe1.charges[i] = pe2.charges[idx];
-                                    }
-                                    if (pe2.fullAnnotations.length != 0) {
+                                    pe1.fragments[PredictionEntry.STRIDE * i]     = pe2.fragments[PredictionEntry.STRIDE * idx];
+                                    pe1.fragments[PredictionEntry.STRIDE * i + 1] = pe2.fragments[PredictionEntry.STRIDE * idx + 1];
+                                    pe1.fragments[PredictionEntry.STRIDE * i + 2] = pe2.fragments[PredictionEntry.STRIDE * idx + 2];
+                                    if (pe2.fullAnnotations.length > 0) {
                                         pe1.fullAnnotations[i] = pe2.fullAnnotations[idx];
                                     }
-                                    if (pe2.isotopes.length != 0) {
+                                    if (pe2.isotopes.length > 0) {
                                         pe1.isotopes[i] = pe2.isotopes[idx];
                                     }
-                                    pe1.fragmentIonTypes[i] = pe2.fragmentIonTypes[idx];
                                     i++;
                                 }
                             } else { //PredFull
-                                pe1.mzs = pe2.mzs;
-                                pe1.intensities = pe2.intensities;
-                                pe1.fragNums = pe2.fragNums;
-                                pe1.charges = pe2.charges;
-                                pe1.fragmentIonTypes = pe2.fragmentIonTypes;
+                                pe1.fragments = pe2.fragments;
                                 pe1.fullAnnotations = pe2.fullAnnotations;
                                 pe1.isotopes = pe2.isotopes;
 
@@ -236,15 +219,15 @@ public class PredictionEntryHashMap extends ConcurrentHashMap<String, Prediction
                     } else { //don't want to worry about calculating all the different NLs
                         if (klr.property.equals("ms2") || klr.property.equals("ms2_aux")) {
                             MassCalculator mc = new MassCalculator(line[0], line[1]);
-                            newMZs = new float[oldPred.getMzs().length];
+                            newMZs = new float[oldPred.numFragments()];
 
                             MassCalculator oldMc = new MassCalculator(pf.getBase(), pf.getCharge());
 
                             for (int i = 0; i < newMZs.length; i++) {
-                                newMZs[i] = oldPred.getMzs()[i] +
-                                        mc.compareModMasses(oldMc, oldPred.getFragNums()[i],
-                                                oldPred.getFragmentIonTypes()[i],
-                                                oldPred.getCharges()[i],
+                                newMZs[i] = oldPred.getMz(i) +
+                                        mc.compareModMasses(oldMc, oldPred.getFragNum(i),
+                                                oldPred.getIonTypeString(i),
+                                                oldPred.getCharge(i),
                                                 oldPred.fullAnnotations.length > 0 ? oldPred.fullAnnotations[i] : "");
                             }
                         }
@@ -254,21 +237,19 @@ public class PredictionEntryHashMap extends ConcurrentHashMap<String, Prediction
                 switch (klr.property) {
                     case "ms2":
                         if (skipPeptide) {
-                            newPred.mzs = new float[]{0};
-                            newPred.intensities = new float[]{0};
-                            newPred.fragNums = new int[]{0};
-                            newPred.charges = new int[]{0};
-                            newPred.fragmentIonTypes = new String[]{"y"};
+                            newPred.fragments = new int[PredictionEntry.STRIDE];
+                            PredictionEntry.packSlot(newPred.fragments, 0, 0f, 0f, 0,
+                                    allconstants.FragmentIonConstants.ION_INDEX.get("y"), 0);
                         } else {
                             if (newMZs.length == 0) { //this entry is already in old pred hashmap
-                                newMZs = oldPred.mzs;
+                                newMZs = oldPred.getMzs();
                             }
                             if (klr.modelType.contains("unispec") || klr.modelType.contains("predfull")) {
-                                newPred = new PredictionEntry(newMZs, oldPred.intensities, oldPred.fragNums,
-                                        oldPred.charges, oldPred.fragmentIonTypes, oldPred.fullAnnotations);
+                                newPred = new PredictionEntry(newMZs, oldPred.getIntensities(), oldPred.getFragNums(),
+                                        oldPred.getCharges(), oldPred.getFragmentIonTypes(), oldPred.fullAnnotations);
                             } else {
-                                newPred = new PredictionEntry(newMZs, oldPred.intensities, oldPred.fragNums,
-                                        oldPred.charges, oldPred.fragmentIonTypes);
+                                newPred = new PredictionEntry(newMZs, oldPred.getIntensities(), oldPred.getFragNums(),
+                                        oldPred.getCharges(), oldPred.getFragmentIonTypes());
                             }
                         }
                         break;
@@ -289,21 +270,19 @@ public class PredictionEntryHashMap extends ConcurrentHashMap<String, Prediction
                     case "ms2_aux":
                         PredictionEntry auxPe = new PredictionEntry();
                         if (skipPeptide) {
-                            auxPe.mzs = new float[]{0};
-                            auxPe.intensities = new float[]{0};
-                            auxPe.fragNums = new int[]{0};
-                            auxPe.charges = new int[]{0};
-                            auxPe.fragmentIonTypes = new String[]{"y"};
+                            auxPe.fragments = new int[PredictionEntry.STRIDE];
+                            PredictionEntry.packSlot(auxPe.fragments, 0, 0f, 0f, 0,
+                                    allconstants.FragmentIonConstants.ION_INDEX.get("y"), 0);
                         } else {
                             if (newMZs.length == 0) {
-                                newMZs = oldPred.mzs;
+                                newMZs = oldPred.getMzs();
                             }
                             if (klr.modelType.contains("unispec") || klr.modelType.contains("predfull")) {
-                                auxPe = new PredictionEntry(newMZs, oldPred.intensities, oldPred.fragNums,
-                                        oldPred.charges, oldPred.fragmentIonTypes, oldPred.fullAnnotations);
+                                auxPe = new PredictionEntry(newMZs, oldPred.getIntensities(), oldPred.getFragNums(),
+                                        oldPred.getCharges(), oldPred.getFragmentIonTypes(), oldPred.fullAnnotations);
                             } else {
-                                auxPe = new PredictionEntry(newMZs, oldPred.intensities, oldPred.fragNums,
-                                        oldPred.charges, oldPred.fragmentIonTypes);
+                                auxPe = new PredictionEntry(newMZs, oldPred.getIntensities(), oldPred.getFragNums(),
+                                        oldPred.getCharges(), oldPred.getFragmentIonTypes());
                             }
                         }
                         newPred.auxSpectra = auxPe;

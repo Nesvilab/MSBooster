@@ -9,8 +9,10 @@ import java.io.InputStreamReader;
 import java.net.URISyntaxException;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 import java.util.TreeSet;
@@ -19,6 +21,21 @@ import static utils.Print.printError;
 import static utils.Print.printInfo;
 
 public class FragmentIonConstants implements ConstantsInterface {
+    // Canonical ordered list of ion type names — index is the byte stored in packed PredictionEntry fragments.
+    public static final String[] ION_NAMES = {
+            "b", "y", "a", "c", "x", "z", "zdot", "cdot", "zprime", "x+1", "a+1",
+            "p", "imm", "int", "int-NL",
+            "z-NL", "c-NL", "y-NL", "a-NL", "x-NL", "b-NL", "p-NL", "unknown"
+    };
+    public static final Map<String, Integer> ION_INDEX;
+    static {
+        ION_INDEX = new HashMap<>();
+        for (int i = 0; i < ION_NAMES.length; i++) {
+            ION_INDEX.put(ION_NAMES[i], i);
+        }
+    }
+    public static final int UNKNOWN_ION_BYTE = ION_INDEX.get("unknown");
+
     public static final HashSet<String> allowedFragmentIonTypes = new HashSet<>(Arrays.asList(
             "z", "c", "y", "a", "x", "b", "zdot", "cdot", "zprime", "x+1", "a+1",
             "p", "imm", "int", "int-NL",

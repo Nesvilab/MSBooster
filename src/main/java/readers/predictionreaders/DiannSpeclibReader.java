@@ -230,12 +230,4 @@ public class DiannSpeclibReader implements LibraryPredictionMapper {
     public void clear() {
         allPreds.clear();
     }
-
-    public static void main(String[] args) throws FileNotFoundException {
-        Constants.numThreads = 11;
-        DiannSpeclibReader dslr = new DiannSpeclibReader(
-                "Z:/yangkl/troubleshooting_issues/github1435/PublicSearch.266.HLAI.FDR3.pekin/MSBooster");
-        dslr = new DiannSpeclibReader("C:/Users/yangkl/Downloads/proteomics/" +
-                "diannspeclib/spectraRT.predicted.bin");
-    }
 }

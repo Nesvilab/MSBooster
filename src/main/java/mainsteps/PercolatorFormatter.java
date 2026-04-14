@@ -22,7 +22,7 @@ import allconstants.FragmentIonConstants;
 import features.FeatureCalculator;
 import features.rtandim.IMFunctions;
 import figures.*;
-import kotlin.jvm.functions.Function1;
+import java.util.function.DoubleUnaryOperator;
 import predictions.PredictionEntry;
 import predictions.PredictionEntryHashMap;
 import readers.MgfFileReader;
@@ -286,7 +286,7 @@ public class PercolatorFormatter {
 
                                 HashMap<String, double[][]> miniMassToData = new HashMap<>();
                                 miniMassToData.put(mass, mzml.expAndPredRTs.get(mass));
-                                HashMap<String, Function1<Double, Double>> miniLoessFunctions = new HashMap<>();
+                                HashMap<String, DoubleUnaryOperator> miniLoessFunctions = new HashMap<>();
                                 miniLoessFunctions.put(mass, mzml.RTLOESS.get(mass));
                                 new RTCalibrationFigure(mzml,
                                         pinFiles[i].getCanonicalPath().substring(0,
@@ -388,7 +388,7 @@ public class PercolatorFormatter {
 
                                     HashMap<String, double[][]> miniMassToData = new HashMap<>();
                                     miniMassToData.put(mass, mzml.expAndPredIMsHashMap.get(charge).get(mass));
-                                    HashMap<String, Function1<Double, Double>> miniLoessFunctions = new HashMap<>();
+                                    HashMap<String, DoubleUnaryOperator> miniLoessFunctions = new HashMap<>();
                                     miniLoessFunctions.put(mass, mzml.IMLOESS.get(charge - 1).get(mass));
                                     new IMCalibrationFigure(mzml,
                                             pinFiles[i].getCanonicalPath().substring(0,

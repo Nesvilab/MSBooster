@@ -18,7 +18,7 @@
 package figures;
 
 import readers.datareaders.MzmlReader;
-import kotlin.jvm.functions.Function1;
+import java.util.function.DoubleUnaryOperator;
 
 import java.io.IOException;
 import java.util.HashMap;
@@ -30,7 +30,7 @@ public class IMCalibrationFigure extends CalibrationFigure {
 
     public IMCalibrationFigure(MzmlReader mzml, String outFile, float opacity,
                                HashMap<String, double[][]> massToData,
-                               HashMap<String, Function1<Double, Double>> loessFunctions,
+                               HashMap<String, DoubleUnaryOperator> loessFunctions,
                                int charge) throws IOException {
         super();
         super.folderString = FOLDER_STRING;

@@ -24,7 +24,7 @@ import features.rtandim.IMFunctions;
 import features.rtandim.LinearEquation;
 import features.rtandim.LoessUtilities;
 import features.rtandim.RTFunctions;
-import kotlin.jvm.functions.Function1;
+import java.util.function.DoubleUnaryOperator;
 import mainsteps.MzmlScanNumber;
 import mainsteps.PeptideObj;
 import peptideptmformatting.PeptideFormatter;
@@ -72,7 +72,7 @@ public class MzmlReader {
     private float[] betas;
     public ArrayList<Float>[] RTbins = null;
     public float[][] RTbinStats;
-    public HashMap<String, Function1<Double, Double>> RTLOESS = new HashMap<>();
+    public HashMap<String, DoubleUnaryOperator> RTLOESS = new HashMap<>();
     public HashMap<String, ConcurrentSkipListMap<Double, Double>> irtToMinutes = new HashMap<>();
     public int unifPriorSize;
     public float unifProb;
@@ -80,7 +80,7 @@ public class MzmlReader {
     public float[] unifProbIM;
     public ArrayList<Float>[][] IMbins = null;
     public float[][][] IMbinStats = new float[IMFunctions.numCharges][2 * Constants.IMbinMultiplier + 1][3];
-    public ArrayList<HashMap<String, Function1<Double, Double>>> IMLOESS = new ArrayList<>();
+    public ArrayList<HashMap<String, DoubleUnaryOperator>> IMLOESS = new ArrayList<>();
     public HashMap<String, double[][]> expAndPredRTs;
     public HashMap<String, double[][]> expAndPredRTsMinutes = new HashMap<>();
     public HashMap<Integer, HashMap<String, double[][]>> expAndPredIMsHashMap = new HashMap<>();
@@ -646,7 +646,7 @@ public class MzmlReader {
 
                     //now calculate deltaRTs
                     for (String mass : RTLOESS.keySet()) {
-                        LOESSRT.put(mass, RTLOESS.get(mass).invoke((double) msn.RT));
+                        LOESSRT.put(mass, RTLOESS.get(mass).applyAsDouble(msn.RT));
                     }
                     for (PeptideObj pep : msn.peptideObjects) {
                         if (pep == null) {
@@ -861,8 +861,8 @@ public class MzmlReader {
 
                 //linear regression if too few points
                 if (rts[0].length < minLoessRegressionSize) {
-                    Function1<Double, Double> RTLOESSentry = null;
-                    Function1<Double, Double> RTLOESS_realUnitsentry = null;
+                    DoubleUnaryOperator RTLOESSentry = null;
+                    DoubleUnaryOperator RTLOESS_realUnitsentry = null;
                     if (rts[0].length >= minLinearRegressionSize) {
                         //get slope and intercept
                         float[] parameters = StatMethods.linearRegression(rts[0], rts[1]);
@@ -915,7 +915,7 @@ public class MzmlReader {
                     peptides.addAll(entry.getValue());
                     IMpeptides.put(entry.getKey(), peptides);
                 }
-                HashMap<String, Function1<Double, Double>> IMLOESSmap = new HashMap<>();
+                HashMap<String, DoubleUnaryOperator> IMLOESSmap = new HashMap<>();
 
                 for (String mass : masses) {
                     double[][] ims = expAndPredIMs.get(mass);
@@ -929,7 +929,7 @@ public class MzmlReader {
 
                     //linear regression if too few points
                     if (ims[0].length < minLoessRegressionSize) {
-                        Function1<Double, Double> IMLOESSentry = null;
+                        DoubleUnaryOperator IMLOESSentry = null;
                         if (ims[0].length > minLinearRegressionSize) {
                             //get slope and intercept
                             float[] parameters = StatMethods.linearRegression(ims[0], ims[1]);
@@ -977,23 +977,31 @@ public class MzmlReader {
     public void setInverseLoess(ExecutorService executorService) throws ExecutionException, InterruptedException, IOException {
         int numIncrements = 10000;
         futureList.clear();
-        float minExpRT = scanNumberObjects.firstEntry().getValue().RT;
-        float maxExpRT = scanNumberObjects.lastEntry().getValue().RT;
+        // Use actual min/max RT across all scans rather than firstEntry/lastEntry, because
+        // scanNumberObjects is sorted by scan number (not RT). For DIA-Tracer memory mzML files
+        // scan numbers are not RT-ordered, so firstEntry/lastEntry would give wrong RT bounds.
+        float minExpRT = Float.MAX_VALUE;
+        float maxExpRT = -Float.MAX_VALUE;
+        for (MzmlScanNumber msn : scanNumberObjects.values()) {
+            if (msn.RT < minExpRT) minExpRT = msn.RT;
+            if (msn.RT > maxExpRT) maxExpRT = msn.RT;
+        }
         float increment = (maxExpRT - minExpRT) / (float) numIncrements;
 
-        for (Map.Entry<String, Function1<Double, Double>> entry : RTLOESS.entrySet()) {
+        for (Map.Entry<String, DoubleUnaryOperator> entry : RTLOESS.entrySet()) {
             String mass = entry.getKey();
-            Function1<Double, Double> function = entry.getValue();
+            DoubleUnaryOperator function = entry.getValue();
             if (function != null) {
                 ConcurrentSkipListMap<Double, Double> map = new ConcurrentSkipListMap<>();
 
                 Multithreader mt = new Multithreader(numIncrements, Constants.numThreads);
                 for (int i = 0; i < Constants.numThreads; i++) {
                     int finalI = i;
+                    float finalMinExpRT = minExpRT;
                     futureList.add(executorService.submit(() -> {
-                        double x = minExpRT + mt.indices[finalI] * increment;
+                        double x = finalMinExpRT + mt.indices[finalI] * increment;
                         for (int j = mt.indices[finalI]; j < mt.indices[finalI + 1]; j++) {
-                            double y = function.invoke(x);
+                            double y = function.applyAsDouble(x);
                             map.put(y, x);
                             x += increment;
                         }
@@ -1063,7 +1071,7 @@ public class MzmlReader {
                         if (RTLOESS.get(mass) == null) {
                             continue;
                         }
-                        LOESSRT.put(mass, RTLOESS.get(mass).invoke((double) msn.RT));
+                        LOESSRT.put(mass, RTLOESS.get(mass).applyAsDouble(msn.RT));
                     }
                     for (PeptideObj pep : msn.peptideObjects) {
                         if (pep == null) {
@@ -1132,14 +1140,14 @@ public class MzmlReader {
                             break;
                         }
 
-                        HashMap<String, Function1<Double, Double>> ImChargeEntry = IMLOESS.get(pep.charge - 1);
+                        HashMap<String, DoubleUnaryOperator> ImChargeEntry = IMLOESS.get(pep.charge - 1);
                         HashMap<String, Double> LOESSIM = new HashMap<>();
                         for (String mass : ImChargeEntry.keySet()) {
                             //if null
                             if (ImChargeEntry.get(mass) == null) {
                                 continue;
                             }
-                            LOESSIM.put(mass, ImChargeEntry.get(mass).invoke((double) msn.IM));
+                            LOESSIM.put(mass, ImChargeEntry.get(mass).applyAsDouble(msn.IM));
                         }
 
                         double finalDelta = 0.5;

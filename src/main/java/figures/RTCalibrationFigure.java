@@ -18,7 +18,7 @@
 package figures;
 
 import readers.datareaders.MzmlReader;
-import kotlin.jvm.functions.Function1;
+import java.util.function.DoubleUnaryOperator;
 
 import java.io.IOException;
 import java.util.HashMap;
@@ -30,7 +30,7 @@ public class RTCalibrationFigure extends CalibrationFigure {
 
     public RTCalibrationFigure(MzmlReader mzml, String outFile, float opacity,
                                HashMap<String, double[][]> massToData,
-                               HashMap<String, Function1<Double, Double>> loessFunctions) throws IOException {
+                               HashMap<String, DoubleUnaryOperator> loessFunctions) throws IOException {
         super();
         super.folderString = FOLDER_STRING;
         super.mode = MODE;
@@ -47,7 +47,7 @@ public class RTCalibrationFigure extends CalibrationFigure {
         super.regressionLabel = "y = x";
 
         //return y = x
-        HashMap<String, Function1<Double, Double>> identityFunctions = new HashMap<>();
+        HashMap<String, DoubleUnaryOperator> identityFunctions = new HashMap<>();
         for (String key : massToData.keySet()) {
             identityFunctions.put(key, identityFunction());
         }
@@ -55,9 +55,7 @@ public class RTCalibrationFigure extends CalibrationFigure {
                 massToData, identityFunctions);
     }
 
-    private static Function1<Double, Double> identityFunction() {
-        return x -> {
-            return x;  // y = x
-        };
+    private static DoubleUnaryOperator identityFunction() {
+        return x -> x;
     }
 }

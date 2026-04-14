@@ -17,8 +17,10 @@
 
 package features.rtandim
 
+import java.util.function.DoubleUnaryOperator
+
 class LinearEquation(private val m: Double, private val b: Double) {
-    operator fun invoke(): (Double) -> Double {
-        return { x -> m * x + b }
+    fun invoke(): DoubleUnaryOperator {
+        return DoubleUnaryOperator { x -> m * x + b }
     }
 }

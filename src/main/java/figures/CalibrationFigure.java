@@ -17,7 +17,7 @@
 
 package figures;
 
-import kotlin.jvm.functions.Function1;
+import java.util.function.DoubleUnaryOperator;
 import org.knowm.xchart.XYChart;
 import org.knowm.xchart.XYChartBuilder;
 import org.knowm.xchart.XYSeries;
@@ -53,7 +53,7 @@ public class CalibrationFigure {
 
     public HashMap<String, List<Float>[]> plotFigure(MzmlReader mzml, String outFile, float opacity,
                            HashMap<String, double[][]> massToData,
-                           HashMap<String, Function1<Double, Double>> loessFunctions) throws IOException {
+                           HashMap<String, DoubleUnaryOperator> loessFunctions) throws IOException {
         String pinName = new File(outFile).getName();
         if (mode.equals("IM")) {
             pinName = "charge" + charge + "_" + pinName;
@@ -237,7 +237,7 @@ public class CalibrationFigure {
 
             for (float i = minVal; i < maxVal; i = i + (maxVal - minVal) / 1000f) {
                 x1Data.add(i);
-                double y = loessFunctions.get(mass).invoke((double) i);
+                double y = loessFunctions.get(mass).applyAsDouble(i);
                 y1Data.add(y);
 
                 if (i >= minX && i <= maxX) {

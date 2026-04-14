@@ -18,9 +18,7 @@
 package features.rtandim;
 
 import allconstants.Constants;
-import com.github.sanity.pav.PairAdjacentViolators;
-import com.github.sanity.pav.Point;
-import kotlin.jvm.functions.Function1;
+import java.util.function.DoubleUnaryOperator;
 import mainsteps.MzmlScanNumber;
 import mainsteps.PeptideObj;
 import org.apache.commons.math3.analysis.interpolation.LoessInterpolator;
@@ -33,7 +31,6 @@ import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -349,7 +346,7 @@ public class LoessUtilities {
         }
         return bandwidth;
     }
-    public static Function1<Double, Double> LOESS(double[][] bins, double bandwidth, int robustIters) {
+    public static DoubleUnaryOperator LOESS(double[][] bins, double bandwidth, int robustIters) {
         //need to sort arrays (DIA-U mzml not in order)
         int[] sortedIndices = IntStream.range(0, bins[0].length)
                 .boxed().sorted(Comparator.comparingDouble(k -> bins[0][k])).mapToInt(ele -> ele).toArray();
@@ -397,9 +394,9 @@ public class LoessUtilities {
         newX = removeIdx(newX, nanIdx);
         newY = removeIdx(newY, nanIdx);
 
-        Function1<Double, Double> ir = isotonicRegressor(newX, fittedY);
+        DoubleUnaryOperator ir = isotonicRegressor(newX, fittedY);
         for (i = 0; i < fittedY.length; i++) {
-            fittedY[i] = ir.invoke(newX[i]);
+            fittedY[i] = ir.applyAsDouble(newX[i]);
         }
         results = fittingRound(loessInterpolator, newX, newY, fittedY, true);
         fittedY = results[0];
@@ -408,14 +405,96 @@ public class LoessUtilities {
         return isotonicRegressor(newX, fittedY);
     }
 
-    private static Function1<Double, Double> isotonicRegressor(double[] x, double[] y) {
-        List<Point> points = new LinkedList<>();
-        for (int i = 0; i < y.length; i++) {
-            points.add(new Point(x[i], y[i]));
-        }
-        PairAdjacentViolators pav = new PairAdjacentViolators(points);
+    /**
+     * Pool Adjacent Violators (PAV) isotonic regression enforcing non-decreasing monotonicity.
+     *
+     * Memory: O(n) pre-allocated primitive arrays; no per-point object allocation.
+     * Time:   O(n) for PAV; O(log n) per interpolator call via binary search.
+     *
+     * The returned interpolator assigns each original data point the block mean (standard PAV).
+     * Within a block the function is flat (step function); between adjacent blocks it ramps
+     * linearly between the two block boundary values. Outside the data range the slope of the
+     * first/last inter-block boundary is used for extrapolation.
+     *
+     * @param x sorted x-coordinates (must be non-decreasing)
+     * @param y y-coordinates to make monotone
+     */
+    private static DoubleUnaryOperator isotonicRegressor(double[] x, double[] y) {
+        int n = x.length;
+        if (n == 0) return v -> 0.0;
+        if (n == 1) { double y0 = y[0]; return v -> y0; }
 
-        return pav.interpolator(); //extrapolationStrategy can use flat or tangent (default tangent)
+        // Stack-based PAV — one pass, O(n).
+        // sumY / cnt gives the mean of each block; we also track the start index so we
+        // can write block means back to the isoY array in a single forward pass.
+        double[] sumY    = new double[n];
+        int[]    cnt     = new int[n];
+        int[]    blockStart = new int[n]; // index of first point in each stack slot
+        int top = 0;
+
+        for (int i = 0; i < n; i++) {
+            sumY[top]       = y[i];
+            cnt[top]        = 1;
+            blockStart[top] = i;
+            top++;
+            // Merge while the newest block's mean < previous block's mean
+            while (top > 1 && sumY[top - 1] / cnt[top - 1] < sumY[top - 2] / cnt[top - 2]) {
+                top--;
+                sumY[top - 1]       += sumY[top];
+                cnt[top - 1]        += cnt[top];
+                // blockStart[top-1] already holds the earlier start index — no change needed
+            }
+        }
+
+        // Write block means into isoY at the original data positions
+        final double[] isoY = new double[n];
+        for (int k = 0; k < top; k++) {
+            double mean = sumY[k] / cnt[k];
+            int start   = blockStart[k];
+            int end     = (k + 1 < top) ? blockStart[k + 1] : n;
+            for (int i = start; i < end; i++) {
+                isoY[i] = mean;
+            }
+        }
+
+        // Build the interpolator over (x[i], isoY[i]).
+        // Within a block all isoY values are equal → the segment is flat.
+        // Between the last point of one block and the first point of the next the
+        // function ramps linearly, which avoids a hard discontinuity.
+        final double[] fx = x.clone();
+        final int N = n;
+
+        return v -> {
+            if (v <= fx[0]) {
+                // Left extrapolation: use slope between the first two distinct PAV block means.
+                // Skip points that share the same isoY as fx[0] (same PAV block) so we get
+                // the inter-block slope rather than the intra-block slope (which is 0).
+                int j = 1;
+                while (j < N && isoY[j] == isoY[0]) j++;
+                if (j == N) return isoY[0];
+                double slope = (isoY[j] - isoY[0]) / (fx[j] - fx[0]);
+                return isoY[0] + slope * (v - fx[0]);
+            }
+            if (v >= fx[N - 1]) {
+                // Right extrapolation: use slope between the last two distinct PAV block means.
+                // Skip points that share the same isoY as fx[N-1] (same PAV block) so we get
+                // the inter-block slope rather than the intra-block slope (which is 0).
+                int j = N - 2;
+                while (j >= 0 && isoY[j] == isoY[N - 1]) j--;
+                if (j < 0) return isoY[N - 1];
+                double slope = (isoY[N - 1] - isoY[j]) / (fx[N - 1] - fx[j]);
+                return isoY[N - 1] + slope * (v - fx[N - 1]);
+            }
+            // Binary search for the interval [fx[lo], fx[hi]] that straddles v
+            int lo = 0, hi = N - 1;
+            while (lo + 1 < hi) {
+                int mid = (lo + hi) >>> 1;
+                if (fx[mid] <= v) lo = mid; else hi = mid;
+            }
+            double denom = fx[hi] - fx[lo];
+            if (denom == 0.0) return (isoY[lo] + isoY[hi]) * 0.5;
+            return isoY[lo] + (v - fx[lo]) / denom * (isoY[hi] - isoY[lo]);
+        };
     }
 
     private static double[][] fittingRound(LoessInterpolator lr, double[] newX, double[] newY, double[] smoothedY,
@@ -544,13 +623,13 @@ public class LoessUtilities {
             for (float floatb : bandwidths) { //for bandwidth in grid search
                 //get the loess model
                 try {
-                    Function1<Double, Double> loess = LOESS(train, floatb, Constants.robustIters);
+                    DoubleUnaryOperator loess = LOESS(train, floatb, Constants.robustIters);
 
                     //calculate MSE by comparing calibrated expRT to predRT
                     double[] calibratedRTs = new double[test[0].length];
                     for (int i = 0; i < calibratedRTs.length; i++) {
                         double rt = test[0][i];
-                        calibratedRTs[i] = loess.invoke(rt);
+                        calibratedRTs[i] = loess.applyAsDouble(rt);
                     }
                     double mse = meanSquaredError(calibratedRTs, test[1]);
 
@@ -572,14 +651,14 @@ public class LoessUtilities {
         //or just have all indexes past 1 as rtDiffs
         //final model trained on all data
         bestMSE = Double.MAX_VALUE;
-        Function1<Double, Double> loess = null;
+        DoubleUnaryOperator loess = null;
         while (true) {
             try {
                 loess = LOESS(rts, finalBandwidth, Constants.robustIters);
                 float[] rtDiffs = new float[rts[0].length];
                 for (int i = 0; i < rtDiffs.length - 1; i++) {
                     double rt = rts[0][i];
-                    rtDiffs[i] = (float) Math.abs(loess.invoke(rt) - rts[1][i]);
+                    rtDiffs[i] = (float) Math.abs(loess.applyAsDouble(rt) - rts[1][i]);
                 }
                 return new Object[]{finalBandwidth, loess, rtDiffs};
             } catch (Exception e) {

@@ -28,7 +28,7 @@ import java.util.HashSet;
 import java.util.concurrent.ConcurrentHashMap;
 
 public class Constants implements ConstantsInterface {
-    public static String versionNumber = "MSBooster v1.4.40";
+    public static String versionNumber = "MSBooster v1.4.41";
 
     //file input
     public static String paramsList = null;

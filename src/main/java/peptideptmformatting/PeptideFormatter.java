@@ -586,7 +586,7 @@ public class PeptideFormatter {
                 if (model.contains("TMT")) {
                     return getPrositTMT();
                 } else if (model.contains("_cit")) {
-                    getProsit(prositCitAAMods); //partial mods, still need to apply prosit AA mods
+                    return getProsit(prositCitAAMods);
                 }
                 return getProsit(prositAAMods);
             case "prosittmt":

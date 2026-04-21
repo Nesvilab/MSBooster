@@ -98,7 +98,7 @@ public class PredFullSpeclibReader extends MgfFileReader {
             MassCalculator mc = new MassCalculator(peptideToSearch.getBase(), peptideToSearch.getCharge());
             //annotate ion
             //any calculated annotated fragment is considered
-            String[][] info = mc.annotateMZs(pe.mzs, "default", true);
+            String[][] info = mc.annotateMZs(pe.getMzs(), "default", true);
             String[] annotations = info[0];
             String[] fragmentIonTypes = info[1];
 
@@ -162,7 +162,7 @@ public class PredFullSpeclibReader extends MgfFileReader {
                             }
                             break;
                         case "unknown":
-                            newMZ.add(pe.mzs[index]);
+                            newMZ.add(pe.getMz(index));
                             break;
                         default: //backbone and internal
                             if (ionName.contains("dot")) {
@@ -196,7 +196,7 @@ public class PredFullSpeclibReader extends MgfFileReader {
                 }
                 if (newMZ.size() == 1) { //problem if one possibility is shifted and other isn't
                     finalMZs.add(newMZ.iterator().next());
-                    finalIntensities.add(pe.intensities[index]);
+                    finalIntensities.add(pe.getIntensity(index));
                     finalFragmentIonTypes.add(fragmentIonTypes[index]);
                 } else {
                     float totalFloat = 0f;
@@ -213,7 +213,7 @@ public class PredFullSpeclibReader extends MgfFileReader {
                     }
                     if (! problem) {
                         finalMZs.add(totalFloat / newMZ.size());
-                        finalIntensities.add(pe.intensities[index]);
+                        finalIntensities.add(pe.getIntensity(index));
                         finalFragmentIonTypes.add(fragmentIonTypes[index]);
                     }
                 }

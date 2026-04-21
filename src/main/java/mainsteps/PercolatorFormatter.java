@@ -99,7 +99,7 @@ public class PercolatorFormatter {
 
             //deciding which fragments to use for primary and aux models, as well as setting which fragments to use for multiple scores
             for (PredictionEntry pe : predictedSpectra.getPreds().values()) {
-                FragmentIonConstants.setPrimaryAndAuxFragmentIonTypes(pe.fragmentIonTypes); //this can be approximated if too slow
+                FragmentIonConstants.setPrimaryAndAuxFragmentIonTypes(pe.getFragmentIonTypes()); //this can be approximated if too slow
             }
             FragmentIonConstants.fragmentGroups = createFragmentGroups();
 

@@ -133,26 +133,26 @@ public class MzmlScanNumber {
                 List<Integer> rankListMain = new ArrayList<>();
                 List<Integer> rankListAux = new ArrayList<>();
 
-                getRanks(predictionEntry.mzs, predictionEntry.auxSpectra.mzs, rankListMain, rankListAux);
+                getRanks(predictionEntry.getMzs(), predictionEntry.auxSpectra.getMzs(), rankListMain, rankListAux);
 
                 predMZs = new float[rankListMain.size() + rankListAux.size()];
                 predIntensities = new float[rankListMain.size() + rankListAux.size()];
                 predFragmentIonTypes = new String[rankListMain.size() + rankListAux.size()];
 
                 for (int i = 0; i < rankListMain.size(); i++) {
-                    predMZs[rankListMain.get(i)] = predictionEntry.mzs[i];
-                    predIntensities[rankListMain.get(i)] = predictionEntry.intensities[i];
-                    predFragmentIonTypes[rankListMain.get(i)] = predictionEntry.fragmentIonTypes[i];
+                    predMZs[rankListMain.get(i)] = predictionEntry.getMz(i);
+                    predIntensities[rankListMain.get(i)] = predictionEntry.getIntensity(i);
+                    predFragmentIonTypes[rankListMain.get(i)] = predictionEntry.getIonTypeString(i);
                 }
                 for (int i = 0; i < rankListAux.size(); i++) {
-                    predMZs[rankListAux.get(i)] = predictionEntry.auxSpectra.mzs[i];
-                    predIntensities[rankListAux.get(i)] = predictionEntry.auxSpectra.intensities[i];
-                    predFragmentIonTypes[rankListAux.get(i)] = predictionEntry.auxSpectra.fragmentIonTypes[i];
+                    predMZs[rankListAux.get(i)] = predictionEntry.auxSpectra.getMz(i);
+                    predIntensities[rankListAux.get(i)] = predictionEntry.auxSpectra.getIntensity(i);
+                    predFragmentIonTypes[rankListAux.get(i)] = predictionEntry.auxSpectra.getIonTypeString(i);
                 }
             } else {
-                predMZs = predictionEntry.mzs;
-                predIntensities = predictionEntry.intensities;
-                predFragmentIonTypes = predictionEntry.fragmentIonTypes;
+                predMZs = predictionEntry.getMzs();
+                predIntensities = predictionEntry.getIntensities();
+                predFragmentIonTypes = predictionEntry.getFragmentIonTypes();
             }
 
             float predRT = predictionEntry.RT;

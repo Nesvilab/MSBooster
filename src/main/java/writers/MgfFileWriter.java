@@ -40,7 +40,7 @@ public class MgfFileWriter {
         for (Map.Entry<String, PredictionEntry> entry : allPreds.entrySet()) {
             String[] peptide = entry.getKey().split("\\|");
             PredictionEntry pe = entry.getValue();
-            if (pe.mzs == null) { //was not able to have its mzs predicted
+            if (pe.numFragments() == 0) { //was not able to have its mzs predicted
                 continue;
             }
 
@@ -52,13 +52,13 @@ public class MgfFileWriter {
             bw.write("CHARGE=" + peptide[1] + "\n");
             bw.write("RT=" + pe.RT + "\n");
             bw.write("1/K0=" + pe.IM + "\n");
-            for (int i = 0; i < pe.mzs.length; i++) {
+            for (int i = 0; i < pe.numFragments(); i++) {
                 //no need to filter by intensity since that's already done
-                if (pe.intensities[i] != 0) {
+                if (pe.getIntensity(i) != 0) {
                     if (isotopeSum > 0) {
-                        bw.write(pe.mzs[i] + "\t" + pe.intensities[i] + " " + pe.fragmentIonTypes[i] + " " + pe.isotopes[i] + "\n");
+                        bw.write(pe.getMz(i) + "\t" + pe.getIntensity(i) + " " + pe.getIonTypeString(i) + " " + pe.isotopes[i] + "\n");
                     } else {
-                        bw.write(pe.mzs[i] + "\t" + pe.intensities[i] + " " + pe.fragmentIonTypes[i] + "\n");
+                        bw.write(pe.getMz(i) + "\t" + pe.getIntensity(i) + " " + pe.getIonTypeString(i) + "\n");
                     }
                 }
             }

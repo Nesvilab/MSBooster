@@ -442,7 +442,20 @@ public class PTMhandler {
             }
         }
         for (int i = newStarts.size() - 1; i > -1; i--) {
-            int unimod = Integer.parseInt(newpeptide.substring(newStarts.get(i) + 1, newEnds.get(i)));
+            String bracketContent = newpeptide.substring(newStarts.get(i) + 1, newEnds.get(i));
+            int unimod;
+            try {
+                unimod = Integer.parseInt(bracketContent);
+            } catch (NumberFormatException e) {
+                //bracket content is already a mass (e.g., unresolved unimod from library), keep as-is
+                //just fix number of sig figs
+                String formmatedContent = String.format("%.4f", Double.parseDouble(bracketContent));
+                if (!bracketContent.equals(formmatedContent)) {
+                    newpeptide = newpeptide.substring(0, newStarts.get(i) + 1) +
+                            formmatedContent + newpeptide.substring(newEnds.get(i));
+                }
+                continue;
+            }
             try {
                 String modMass = String.format("%.4f", modmap.get(unimod));
                 newpeptide = newpeptide.substring(0, newStarts.get(i) + 1) + modMass + newpeptide.substring(newEnds.get(i));

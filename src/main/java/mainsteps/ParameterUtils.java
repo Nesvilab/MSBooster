@@ -68,10 +68,11 @@ public class ParameterUtils {
         String line;
         BufferedReader reader = new BufferedReader(new FileReader(params.get("paramsList")));
         while ((line = reader.readLine()) != null) {
-            if (!line.contains("=")) { //maybe empty line or comment line with #
+            String stripped = line.split("#", 2)[0];
+            if (!stripped.contains("=")) { //empty line, comment line, or no key=value
                 continue;
             }
-            String[] lineSplit = line.split("=", 2);
+            String[] lineSplit = stripped.split("=", 2);
 
             //check if null here
             if (!lineSplit[1].trim().equals("null")) {

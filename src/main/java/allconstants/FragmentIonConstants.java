@@ -151,7 +151,7 @@ public class FragmentIonConstants implements ConstantsInterface {
 //            } else if (Constants.divideFragments.equals("5")) { //ethcd
 //                Constants.divideFragments = "b_y_c_z;immonium_a_cdot_zdot_y-NL_b-NL_a-NL_internal_internal-NL_unknown";
 //                Constants.topFragments = 12;
-//            } else if (Constants.divideFragments.equals("0") && Constants.spectraModel.equals("DIA-NN")) {
+//            } else if (Constants.divideFragments.equals("0") && Constants.spectraModel.equals("FragPred")) {
 //                Constants.topFragments = 20;
 //            }
 

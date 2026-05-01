@@ -190,7 +190,7 @@ public class DiannSpeclibReader implements LibraryPredictionMapper {
                     prFull.progress();
                     //check if diann to base results in same base peptide
                     PeptideFormatter pf = new PeptideFormatter(
-                            new PeptideFormatter(peptideSeq, chargeStr, "base").getDiann(), chargeStr, "diann");
+                            new PeptideFormatter(peptideSeq, chargeStr, "base").getFragpred(), chargeStr, "diann");
 
                     if (! pf.getBase().equals(peptideSeq)) {
                         //get predictionEntry

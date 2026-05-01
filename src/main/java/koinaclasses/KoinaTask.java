@@ -98,7 +98,7 @@ public class KoinaTask implements Callable<Boolean> {
                 break;
             } catch (SocketException e) {
                 if (numAttempts >= numKoinaAttempts) {
-                    printError("Koina server is busy. Please retry later, or use DIA-NN for prediction. Exiting");
+                    printError("Koina server is busy. Please retry later, or use FragPred for prediction. Exiting");
                     System.exit(1);
                 }
                 printInfo("Koina server may be running slow. Resending " + jsonFilePath);

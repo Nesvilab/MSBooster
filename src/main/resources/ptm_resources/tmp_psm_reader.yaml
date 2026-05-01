@@ -19,27 +19,6 @@ alphapept:
     Phospho@T: pT
     Phospho@Y: pY
   reader_type: alphapept
-diann:
-  column_mapping:
-    ccs: CCS
-    charge: Precursor.Charge
-    genes: Genes
-    mobility:
-    - IM
-    - IonMobility
-    proteins: Protein.Names
-    raw_name: Run
-    rt: RT
-    scan_num: MS2.Scan
-    score: CScore
-    sequence: Stripped.Sequence
-    uniprot_ids: Protein.Ids
-  csv_sep: "\t"
-  fixed_C57: false
-  mod_sep: ()
-  modification_mapping: maxquant
-  reader_type: diann
-  underscore_for_ncterm: false
 maxquant:
   column_mapping:
     ccs: CCS

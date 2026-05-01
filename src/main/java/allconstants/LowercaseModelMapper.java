@@ -23,7 +23,7 @@ public class LowercaseModelMapper {
     private static HashMap<String, String> lowercaseToModel = new HashMap<>();
     public LowercaseModelMapper() {
         lowercaseToModel.put("", "");
-        lowercaseToModel.put("dia-nn", "DIA-NN");
+        lowercaseToModel.put("fragpred", "FragPred");
         lowercaseToModel.put("alphapeptdeep", "alphapeptdeep");
 
         for (String model : ModelCollections.KoinaModels) {

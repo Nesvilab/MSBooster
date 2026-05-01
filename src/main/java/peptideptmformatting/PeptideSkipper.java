@@ -34,7 +34,8 @@ public class PeptideSkipper {
 
         //letters
         if (model.contains("prosit") || model.contains("ms2pip") || model.contains("deeplc") ||
-                model.contains("unispec") || model.contains("predfull") || model.contains("im2deep")) {
+                model.contains("unispec") || model.contains("predfull") || model.contains("im2deep") ||
+                model.contains("fragpred")) {
             for (char c : "OUBZJX".toCharArray()) {
                 if (stripped.indexOf(c) != -1) {
                     return true;
@@ -51,12 +52,20 @@ public class PeptideSkipper {
         if ((model.contains("deeplc") || model.contains("im2deep")) && stripped.length() > 60) {
             return true;
         }
+        // FragPred LibraryBuilder + PeptideEncoder accept plain length 3..30 only.
+        if (model.contains("fragpred") && (stripped.length() < 3 || stripped.length() > 30)) {
+            return true;
+        }
         //charge
         int chargeInt = Integer.parseInt(charge);
         if (model.contains("unispec") && chargeInt > 5) {
             return true;
         }
         if (model.contains("prosit") && chargeInt > 6) { //predfull can handle charge up to 30
+            return true;
+        }
+        // FragPred ChargeOneHot accepts 1..6; outside that the charge feature is all zeros.
+        if (model.contains("fragpred") && (chargeInt < 1 || chargeInt > 6)) {
             return true;
         }
         //string length

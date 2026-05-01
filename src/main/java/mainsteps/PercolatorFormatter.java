@@ -28,6 +28,7 @@ import predictions.PredictionEntryHashMap;
 import readers.MgfFileReader;
 import readers.datareaders.MzmlReader;
 import readers.datareaders.PinReader;
+import readers.predictionreaders.InMemoryLibraryMapper;
 import readers.predictionreaders.LibraryPredictionMapper;
 import utils.MyFileUtils;
 import writers.PinWriter;
@@ -71,18 +72,23 @@ public class PercolatorFormatter {
         ArrayList<LibraryPredictionMapper> libraries = new ArrayList<>();
         HashMap<String, String> allProperties = new HashMap<>(); //key: property, value: library file path
 
+        // FragPred runs in-process and stores predictions on Constants. Treat that as a
+        // valid source for any of spectra/RT/IM that the user explicitly enabled.
+        boolean haveFragpredInMemory = Constants.fragpredPredictions != null;
+        final String FRAGPRED_KEY = "fragpred:in-memory";
+
         //check that all needed files are here
-        if (Constants.useSpectra && Constants.spectraPredFile == null) {
+        if (Constants.useSpectra && Constants.spectraPredFile == null && !haveFragpredInMemory) {
             printError("Spectral prediction file is missing. " +
                     "Please specify its path with the --spectraPredFile parameter. Exiting");
             System.exit(1);
         }
-        if (Constants.useRT && Constants.RTPredFile == null) {
+        if (Constants.useRT && Constants.RTPredFile == null && !haveFragpredInMemory) {
             printError("RT prediction file is missing. " +
                     "Please specify its path with the --RTPredFile parameter. Exiting");
             System.exit(1);
         }
-        if (Constants.useIM && Constants.IMPredFile == null) {
+        if (Constants.useIM && Constants.IMPredFile == null && !haveFragpredInMemory) {
             printError("IM prediction file is missing. " +
                     "Please specify its path with the --IMPredFile parameter. Exiting");
             System.exit(1);
@@ -110,6 +116,22 @@ public class PercolatorFormatter {
                 Constants.matchWithDaltons = false;
                 Constants.matchWithDaltonsDefault = false;
             }
+        } else if (haveFragpredInMemory && Constants.useSpectra) {
+            printInfo("Using in-memory FragPred spectral predictions");
+            predictedSpectra = new InMemoryLibraryMapper(Constants.fragpredPredictions);
+            libraryFilePaths.add(FRAGPRED_KEY);
+            libraries.add(predictedSpectra);
+            allProperties.put("spectra", FRAGPRED_KEY);
+
+            for (PredictionEntry pe : predictedSpectra.getPreds().values()) {
+                FragmentIonConstants.setPrimaryAndAuxFragmentIonTypes(pe.getFragmentIonTypes());
+            }
+            FragmentIonConstants.fragmentGroups = createFragmentGroups();
+
+            if (Constants.matchWithDaltons == null) {
+                Constants.matchWithDaltons = false;
+                Constants.matchWithDaltonsDefault = false;
+            }
         }
 
         if (Constants.RTPredFile != null) {
@@ -121,6 +143,14 @@ public class PercolatorFormatter {
                 libraries.add(predictedRT);
             }
             allProperties.put("RT", Constants.RTPredFile);
+        } else if (haveFragpredInMemory && Constants.useRT) {
+            printInfo("Using in-memory FragPred RT predictions");
+            if (! libraryFilePaths.contains(FRAGPRED_KEY)) {
+                predictedRT = new InMemoryLibraryMapper(Constants.fragpredPredictions);
+                libraryFilePaths.add(FRAGPRED_KEY);
+                libraries.add(predictedRT);
+            }
+            allProperties.put("RT", FRAGPRED_KEY);
         }
 
         if (Constants.IMPredFile != null) {
@@ -132,6 +162,14 @@ public class PercolatorFormatter {
                 libraries.add(predictedIM);
             }
             allProperties.put("IM", Constants.IMPredFile);
+        } else if (haveFragpredInMemory && Constants.useIM) {
+            printInfo("Using in-memory FragPred IM predictions");
+            if (! libraryFilePaths.contains(FRAGPRED_KEY)) {
+                predictedIM = new InMemoryLibraryMapper(Constants.fragpredPredictions);
+                libraryFilePaths.add(FRAGPRED_KEY);
+                libraries.add(predictedIM);
+            }
+            allProperties.put("IM", FRAGPRED_KEY);
         }
 
         if (Constants.auxSpectraPredFile != null) {

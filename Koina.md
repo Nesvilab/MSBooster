@@ -6,7 +6,7 @@ Last updated: 1/14/2026
 [Lautenbacher, Yang et al., Nature Communications, 2025](https://www.nature.com/articles/s41467-025-64870-5))
 is an online service that allows us to leverage a GPU server to get predictions from multiple MS2 spectra, 
 retention time (RT), and ion mobility (IM) models, thereby democratizing deep learning. The models on Koina may be 
-more specific to your use case than the default prediction model, DIA-NN. As a result, predictions may be more accurate,
+more specific to your use case than the default prediction model, FragPred. As a result, predictions may be more accurate,
 resulting in increased peptide identifications. The following models are currently supported by MSBooster:
 
 | RT models            | MS2 models | IM models  | 
@@ -28,7 +28,7 @@ resulting in increased peptide identifications. The following models are current
 |                      |UniSpec|   |
 |                      |PredFull|   |
 
-You can mix and match models, or even use `DIA-NN` for one of them and a Koina model for the other.
+You can mix and match models, or even use `FragPred` for one of them and a Koina model for the other.
 
 ## Using Koina
 Koina can be used in the FragPipe GUI or the command line interface. Below we will describe usage in both places. 
@@ -56,11 +56,11 @@ Important parameters when using Koina are explained below:
     peptides you are predicting to an external public server. If you are OK with this, you may use
     <code>https://koina.wilhelmlab.org:443/v2/models/</code> or a different URL (e.g. for a 
     <a href="#notes">private Koina instance</a>)</li>
-    <li><code>rtModel (String)</code>: If kept blank, it will default to <code>DIA-NN</code>. You may specify this or any of the 
+    <li><code>rtModel (String)</code>: If kept blank, it will default to <code>FragPred</code>. You may specify this or any of the 
     RT models listed above. This will be ignored if <code>useRT</code> is set to false</li>
-    <li><code>spectraModel (String)</code>: If kept blank, it will default to <code>DIA-NN</code>. You may specify this or any of 
+    <li><code>spectraModel (String)</code>: If kept blank, it will default to <code>FragPred</code>. You may specify this or any of 
     the MS2 models listed above. This will be ignored if <code>useSpectra</code> is set to false</li>
-    <li><code>imModel (String)</code>: If kept blank, it will default to <code>DIA-NN</code>. You may specify this or any of 
+    <li><code>imModel (String)</code>: If kept blank, it will default to <code>FragPred</code>. You may specify this or any of 
     the IM models listed above. This will be ignored if <code>useIM</code> is set to false</li>
 </ul>
 </details>
@@ -82,9 +82,9 @@ Important parameters when using Koina are explained below:
     Prosit_2023_intensity_timsTOF</code>). Models are case-insensitive (e.g. prosit_2020_Intensity_cid), but they must 
     be spelled correctly</li>
     <li><code>rtSearchModelsString (String)</code>: Same as <code>ms2SearchModelsString</code>, but for RT models. By default, it
-    is set to <code>DIA-NN,AlphaPept_rt_generic,Prosit_2019_irt,Deeplc_hela_hf</code></li>
+    is set to <code>FragPred,AlphaPept_rt_generic,Prosit_2019_irt,Deeplc_hela_hf</code></li>
     <li><code>imSearchModelsString (String)</code>: Same as <code>ms2SearchModelsString</code>, but for IM models. By default, it
-    is set to <code>DIA-NN,AlphaPept_ccs_generic</code></li>
+    is set to <code>FragPred,AlphaPept_ccs_generic</code></li>
     <li><code>calibrateNCE (boolean)</code>: Set to <code>true</code> if you would like to find the optimal collision energy for 
     MS2 predictions across the mzML files. Otherwise, set to <code>false</code> (default is true). NCE is only used in 
     Prosit and AlphaPeptDeep predictions. If false, MSBooster will attempt to read in the NCE from the mzML file.
@@ -105,7 +105,7 @@ Important parameters when using Koina are explained below:
 
 ## Output files
 In addition to [edited pin files, score histograms, and RT/IM calibration curves](README.md#graphical-output-files), several other files are produced when running Koina:
-- `*_koina.mgf`: Contains the MS2/RT/IM predictions from the Koina models. RT/IM will be 0.0 if DIA-NN was used or no
+- `*_koina.mgf`: Contains the MS2/RT/IM predictions from the Koina models. RT/IM will be 0.0 if FragPred was used or no
 RT/IM prediction was performed. This file is used in FragPipe-PDV for mirror plot visualization of experimental vs predicted
 spectra, if MSBooster was most recently run with a Koina MS/MS model
 - `Koina_timing_*.png`: A useful figure to keep track of how long it took to run the Koina model
@@ -167,9 +167,9 @@ that make it hard to visualize all in a single figure
 2024-07-24 13:09:41 [INFO] - NCE detected: 27.0
 2024-07-24 13:09:41 [INFO] - Searching for best RT model for your data
 2024-07-24 13:09:41 [INFO] - Searching the following models:
-2024-07-24 13:09:41 [INFO] - [DIA-NN, Deeplc_hela_hf, AlphaPept_rt_generic, Prosit_2019_irt, Prosit_2020_irt_TMT]
+2024-07-24 13:09:41 [INFO] - [FragPred, Deeplc_hela_hf, AlphaPept_rt_generic, Prosit_2019_irt, Prosit_2020_irt_TMT]
 Iteration 1...2...3...4...5...
-2024-07-24 13:09:46 [INFO] - DIA-NN has root mean squared error of 3.1493
+2024-07-24 13:09:46 [INFO] - FragPred has root mean squared error of 3.1493
 Iteration 1...2...3...4...5...
 2024-07-24 13:09:48 [INFO] - Deeplc_hela_hf has root mean squared error of 3.8912
 Iteration 1...2...3...4...5...
@@ -178,7 +178,7 @@ Iteration 1...2...3...4...5...
 2024-07-24 13:09:55 [INFO] - Prosit_2019_irt has root mean squared error of 6.2771
 Iteration 1...2...3...4...5...
 2024-07-24 13:09:56 [INFO] - Prosit_2020_irt_TMT has root mean squared error of 14.5587
-2024-07-24 13:09:56 [INFO] - RT model chosen is DIA-NN
+2024-07-24 13:09:56 [INFO] - RT model chosen is FragPred
 2024-07-24 13:09:56 [INFO] - Searching for best spectra model for your data
 2024-07-24 13:09:56 [INFO] - Searching the following models:
 2024-07-24 13:09:56 [INFO] - [ms2pip_2021_HCD, AlphaPept_ms2_generic, Prosit_2019_intensity, Prosit_2020_intensity_CID, Prosit_2020_intensity_HCD]
@@ -202,38 +202,18 @@ Iteration 1...2...3...4...5...
 2024-07-24 13:10:23 [INFO] - 31944 PSMs for prediction
 2024-07-24 13:10:23 [INFO] - AlphaPept_ms2_generic input file generation took 258 milliseconds
 2024-07-24 13:10:23 [INFO] - Input files in jsonFiles
-2024-07-24 13:10:23 [INFO] - Generating input file for DIA-NN
-2024-07-24 13:10:23 [INFO] - Creating input file for Diann
+2024-07-24 13:10:23 [INFO] - Generating input file for FragPred
+2024-07-24 13:10:23 [INFO] - Creating input file for FragPred
 2024-07-24 13:10:23 [INFO] - 31944 PSMs for prediction
-2024-07-24 13:10:23 [INFO] - Writing DIA-NN input file
-2024-07-24 13:10:23 [INFO] - Diann input file generation took 118 milliseconds
+2024-07-24 13:10:23 [INFO] - Writing FragPred input file
+2024-07-24 13:10:23 [INFO] - FragPred input file generation took 118 milliseconds
 2024-07-24 13:10:23 [INFO] - Input file at spectraRT.tsv
 2024-07-24 13:10:23 [INFO] - Calling AlphaPept_ms2_generic model
 ...10%...20%...30%...40%...50%...60%...70%...80%...90%...100%
 2024-07-24 13:10:33 [INFO] - cURL and parse time in milliseconds: 10130
-2024-07-24 13:10:34 [INFO] - Generating DIA-NN predictions
-2024-07-24 13:10:34 [INFO] - diann/1.8.2_beta_8/linux/diann-1.8.1.8 --lib spectraRT.tsv --predict --threads 55 --strip-unknown-mods --predict-n-frag 100
-2024-07-24 13:10:34 [INFO] - DIA-NN 1.8.2 beta 8 (Data-Independent Acquisition by Neural Networks)
-2024-07-24 13:10:34 [INFO] - Compiled on Dec  1 2022 14:47:06
-2024-07-24 13:10:34 [INFO] - Current date and time: Wed Jul 24 13:10:34 2024
-2024-07-24 13:10:34 [INFO] - Logical CPU cores: 72
-2024-07-24 13:10:34 [INFO] - Predicted spectra will be saved in a binary format
-2024-07-24 13:10:34 [INFO] - Thread number set to 55
-2024-07-24 13:10:34 [INFO] - DIA-NN will use deep learning to predict spectra/RTs/IMs even for peptides carrying modifications which are not recognised by the deep learning predictor. In this scenario, if also generating a spectral library from the DIA data or using the MBR mode, it might or might not be better (depends on the data) to also use the --out-measured-rt option - it's recommended to test it with and without this option
-2024-07-24 13:10:34 [INFO] - Deep learning predictor will predict 100 fragments
-2024-07-24 13:10:34 [INFO] -
-2024-07-24 13:10:34 [INFO] - 0 files will be processed
-2024-07-24 13:10:34 [INFO] - [0:00] Loading spectral library spectraRT.tsv
-2024-07-24 13:10:34 [INFO] - [0:00] Finding proteotypic peptides (assuming that the list of UniProt ids provided for each peptide is complete)
-2024-07-24 13:10:34 [INFO] - [0:00] Spectral library loaded: 0 protein isoforms, 0 protein groups and 31944 precursors in 27896 elution groups.
-2024-07-24 13:10:36 [INFO] - [0:02] Encoding peptides for spectra and RTs prediction
-2024-07-24 13:10:36 [INFO] - [0:02] Predicting spectra and IMs
-2024-07-24 13:10:39 [INFO] - [0:05] Predicting RTs
-2024-07-24 13:10:40 [INFO] - [0:06] Decoding predicted spectra and IMs
-2024-07-24 13:10:40 [INFO] - [0:06] Decoding RTs
-2024-07-24 13:10:40 [INFO] - [0:06] Saving the list of predictions to spectraRT.predicted.bin
-2024-07-24 13:10:40 [INFO] - Finished
-2024-07-24 13:10:41 [INFO] - Done generating DIA-NN predictions
+2024-07-24 13:10:34 [INFO] - Generating FragPred predictions
+2024-07-24 13:10:34 [INFO] - FragPred: predicting 31944 peptides
+2024-07-24 13:10:40 [INFO] - Done generating FragPred predictions
 2024-07-24 13:10:41 [INFO] - Model running took 7236 milliseconds
 2024-07-24 13:10:41 [INFO] - Generating edited pin with following features: [predRTrealUnits, unweightedSpectralEntropy, deltaRTLOESS]
 2024-07-24 13:10:41 [INFO] - Loading predicted spectra

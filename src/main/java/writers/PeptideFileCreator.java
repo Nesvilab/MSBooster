@@ -45,10 +45,15 @@ import static utils.Print.printInfo;
 
 public class PeptideFileCreator {
 
-    public static void createPeptideFile(PinMzmlMatcher pmm, String outfile, String modelFormat)
-            throws IOException, InterruptedException, ExecutionException, FileParsingException { //pepXML or pin
-        //diff versions based on submitting File[] or pinReader
-        long startTime = System.nanoTime();
+    /**
+     * Read pin files (and the matching mzML readers) to build the dedup'd set of
+     * peptide records for a given model format. No file output.
+     *
+     * @return set of strings whose layout depends on {@code modelFormat} (e.g. for
+     *         FragPred each entry is {@code peptide<tab>charge}).
+     */
+    public static Set<String> gatherPeptideRecords(PinMzmlMatcher pmm, String modelFormat)
+            throws InterruptedException, ExecutionException, IOException, FileParsingException {
         File[] pinFiles = pmm.pinFiles;
         File[] mzmlFiles = pmm.mzmlFiles;
 
@@ -64,7 +69,7 @@ public class PeptideFileCreator {
         //this step can reduce number of predictions needed to 1/3, decreasing prediction time
         Set<String> hSetHits = ConcurrentHashMap.newKeySet();
 
-        printInfo("Creating input file for " + modelFormat);
+        printInfo("Gathering peptides for " + modelFormat);
         List<Future> futureList = new ArrayList<>();
         ExecutorService executorService = MainClass.executorService;
         for (int i = 0; i < pinFiles.length; i++) {
@@ -72,7 +77,6 @@ public class PeptideFileCreator {
             futureList.add(executorService.submit(() -> {
                 try {
                     File f = pinFiles[finalI];
-                    File mzmlf = mzmlFiles[finalI];
 
                     String fileName = f.getCanonicalPath();
                     PinReader pin = new PinReader(fileName);
@@ -89,8 +93,8 @@ public class PeptideFileCreator {
                         case "DeepMSPeptideAll": //ignores charge and mods
                             pin.createDeepMSPeptideList(hSetHits);
                             break;
-                        case "Diann":
-                            pin.createDiannList(hSetHits);
+                        case "FragPred":
+                            pin.createFragpredList(hSetHits);
                             break;
                         case "Prosit":
                             pin.createPrositList(hSetHits);
@@ -139,6 +143,13 @@ public class PeptideFileCreator {
             }
             printInfo(modelFormat + " using UniMod codes " + unimodCodes);
         }
+        return hSetHits;
+    }
+
+    public static Set<String> createPeptideFile(PinMzmlMatcher pmm, String outfile, String modelFormat)
+            throws IOException, InterruptedException, ExecutionException, FileParsingException { //pepXML or pin
+        long startTime = System.nanoTime();
+        Set<String> hSetHits = gatherPeptideRecords(pmm, modelFormat);
 
         //write to file
         try {
@@ -202,11 +213,11 @@ public class PeptideFileCreator {
                         }
                         myWriter.close();
                         break; //no header
-                    case "Diann":
-                        printInfo("Writing DIA-NN input file");
-                        if (hSetHits.size() > Constants.diannPeptidePredictionLimit) {
+                    case "FragPred":
+                        printInfo("Writing FragPred input file");
+                        if (hSetHits.size() > Constants.fragpredPeptidePredictionLimit) {
                             int numfiles = (int) Math.ceil((double) hSetHits.size() /
-                                    (double) Constants.diannPeptidePredictionLimit);
+                                    (double) Constants.fragpredPeptidePredictionLimit);
                             Constants.splitPredInputFile = numfiles;
                             printInfo("Writing " + numfiles + " files to predict in batches");
 
@@ -221,7 +232,7 @@ public class PeptideFileCreator {
                                 myWriter.write(hSetHit + "\n");
                                 totalWriter.write(hSetHit + "\n");
                                 totalIdx++;
-                                if (idx >= Constants.diannPeptidePredictionLimit) {
+                                if (idx >= Constants.fragpredPeptidePredictionLimit) {
                                     myWriter.close();
                                     subFileIdx++;
                                     if (totalIdx != hSetHits.size()) {
@@ -304,13 +315,12 @@ public class PeptideFileCreator {
             } else {
                 printInfo("Input file at " + outfile);
             }
-            //return fasta; //save fasta for later
         } catch (IOException | JAXBException e) {
             printError("An error occurred");
             e.printStackTrace();
             System.exit(1);
-            //return null;
         }
+        return hSetHits;
     }
 
     //give it a list of peptides to write instead of all peptides in pin file

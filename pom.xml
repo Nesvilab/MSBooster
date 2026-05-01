@@ -17,6 +17,7 @@
         <lib.scope>compile</lib.scope>
         <kotlin.version>2.1.20</kotlin.version>
         <ver.speclib.io>1.0.0</ver.speclib.io>
+        <ver.fragpred>1.0.0</ver.fragpred>
     </properties>
 
     <profiles>
@@ -132,6 +133,12 @@
             <artifactId>speclibio</artifactId>
             <version>${ver.speclib.io}</version>
         </dependency>
+        <dependency>
+            <groupId>com.fragpred</groupId>
+            <artifactId>fragpred</artifactId>
+            <version>${ver.fragpred}</version>
+            <scope>${lib.scope}</scope>
+        </dependency>
     </dependencies>
 
     <build>
@@ -225,6 +232,21 @@
                             <goal>install-file</goal>
                         </goals>
                         <id>install-external2</id>
+                        <phase>clean</phase>
+                    </execution>
+                    <execution>
+                        <configuration>
+                            <artifactId>fragpred</artifactId>
+                            <file>${basedir}/lib/FragPred-${ver.fragpred}.jar</file>
+                            <generatePom>true</generatePom>
+                            <groupId>com.fragpred</groupId>
+                            <packaging>jar</packaging>
+                            <version>${ver.fragpred}</version>
+                        </configuration>
+                        <goals>
+                            <goal>install-file</goal>
+                        </goals>
+                        <id>install-external3</id>
                         <phase>clean</phase>
                     </execution>
                 </executions>

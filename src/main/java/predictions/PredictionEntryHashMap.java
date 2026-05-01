@@ -83,7 +83,7 @@ public class PredictionEntryHashMap extends ConcurrentHashMap<String, Prediction
 
     //fullLib is allPreds, or the library all properties should be transfered onto
     //only need if reading in prepredicted libraries from different sources
-    //example would be IM from DIANN, spectra and RT from Koina
+    //example would be IM from FragPred, spectra and RT from Koina
     //for both files, they already have all the peptides needed, no transferring needed
     public void mergeIntoLibrary(PredictionEntryHashMap fullLib, String mode) {
         //switch case for spectra, RT, IM, aux

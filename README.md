@@ -1,5 +1,5 @@
 # MSBooster
-Last updated: 1/14/2026
+Last updated: 4/30/2026
 
 ## Overview
 MSBooster is a tool for incorporating spectral libary predictions into peptide-spectrum match (PSM) 
@@ -63,7 +63,7 @@ MSBooster is equipped to handle multiple input file formats and models:
 
 | Prediction model                             |
 |----------------------------------------------|
-| [DIA-NN](https://github.com/vdemichev/DiaNN) |
+| FragPred (built-in, ONNX Runtime)            |
 | [Koina models](Koina.md)                     |
 
 ## Installation and running guide
@@ -76,17 +76,15 @@ retention time features with "Predict RT" and MS/MS spectral features with "Pred
 
 ### On the command line
 If using standalone MSBooster to run in the command line, please download the latest jar file from 
-Releases. MSBooster also requires DIA-NN for MS/MS and RT prediction. Please install 
-[DIA-NN](https://github.com/vdemichev/DiaNN) and take note of the path to the DIA-NN executable 
-(ex. DiaNN.exe for Windows, diann-1.8.1.8 for Linux).
+Releases. MSBooster ships with the built-in FragPred model (ONNX Runtime, no external executable
+required) for MS/MS, RT, and IM prediction.
 
 You can run MSBooster using a command similar to the following: 
 
-    java -jar MSBooster-1.2.1.jar --paramsList msbooster_params.txt
+    java -jar MSBooster-1.4.42.jar --paramsList msbooster_params.txt
     
 The minimum parameters needing to be passed are:
 
-    - DiaNN (String): path to DIA-NN executable (if using DIA-NN model, which is the MSBooster default)
     - mzmlDirectory (String): path to mzML/mgf files. Accepts multiple space-separated folder and files
     - pinPepXMLDirectory (String): path to pin files. Accepts multiple space-separated folder and files.
       If using in FragPipe, place the pin and pepXML files in the same folder
@@ -114,9 +112,8 @@ to false. Set to true if you wish to delete these
   <li><code>loadingPercent (int)</code>: how often to report progress on tasks using a progress reporter. By default, set to 10, meaning an 
 update will be printed every 10%. 
   <li><code>numThreads (int)</code>: number of threads to use. By default set to 0, which uses all available threads minus 1
-  <li><code>splitPredInputFile (int)</code>: only used when DIA-NN predictions fail due to an out of memory error (137). By default, set
-to 1, but you can increase this to specify how many smaller files the DIA-NN input file should be broken up into. Each
-file will then be predicted sequentially, easy the memory burden
+  <li><code>splitPredInputFile (int)</code>: legacy batching parameter retained for backward compatibility with FragPipe configurations.
+By default, set to 1; FragPred handles arbitrarily large inputs in-process and does not require splitting
   <li><code>plotExtension (String)</code>: what file format plots should be in. png by default, and pdf is also allowed
   <li><code>features (String)</code>: list of features to be calculated. Case-sensitive, comm-separated without spaces in between.
 Default is <code>unweightedSpectralEntropy,weightedSpectralEntropy,hypergeometricProbability,intersection,
@@ -127,7 +124,7 @@ top6matchedIntensity,deltaRTLOESS,deltaRTLOESSreal,deltaIMLOESS,ionmobility</cod
 <details>
 <summary>Enabling, specifying, and loading predictions</summary>
 <ul>
-  <li><code>spectraPredFile (String)</code>: if you are reusing old spectral predictions (e.g. from DIA-NN or Koina), you can specify the file
+  <li><code>spectraPredFile (String)</code>: if you are reusing old spectral predictions (e.g. from FragPred or Koina), you can specify the file
 location here
   <li><code>RTPredFile (String)</code>: same as spectraPredFile, but for RT predictions
   <li><code>IMPredFile (String)</code>: same as spectraPredFile, but for IM predictions
@@ -180,10 +177,11 @@ is comma-separated with no spaces in between. The masses should be written to th
  - .pin file with new features. By default, new pin files will be produced ending in "_edited.pin". The
  default features used are "unweighted_spectral_entropy", "delta_RT_loess", and "pred_RT_real_units". If ion mobility
  features are enabled, "delta_IM_loess" and "ion_mobility" will also be included
- - spectraRT.tsv and spectraRT_full.tsv: input files for DIA-NN prediction model
- - spectraRT.predicted.bin: a binary file with predictions from DIA-NN to be used by MSBooster for 
-feature calculation. If using FragPipe-PDV, these files are used to generate mirror plots of experimental
-and predicted spectra
+ - When FragPred is the active predictor, predictions are produced in-process (ONNX Runtime) and held in
+ memory; no `spectraRT.tsv` / `spectraRT_full.tsv` input file or `spectraRT.predicted.bin` prediction file
+ is written
+ - When a Koina (or other external) model is used, `spectraRT.tsv` and `spectraRT_full.tsv` are written as
+ the request payload, and the corresponding predictions are cached on disk for re-use across runs
 
 ## Graphical output files
 MSBooster produces multiple graphs that can be used to further examine how your data compares to model

@@ -194,6 +194,10 @@ public class MainClass {
                 printError("No auxiliary spectra model called " + Constants.auxSpectraModel + ". Exiting.");
                 System.exit(0);
             }
+            if (Constants.auxSpectraModel.equals("FragPred")) {
+                printError("FragPred does not predict auxiliary spectra. Exiting.");
+                System.exit(0);
+            }
 
             //set models
             KoinaMethods km = new KoinaMethods(pmMatcher);
@@ -234,12 +238,24 @@ public class MainClass {
 
             //create file for spectral and RT prediction
             //ignore if files already created
-            boolean createSpectraRTPredFile = false;
-            if (featuresArray.length > 0) {
-                createSpectraRTPredFile = true;
+            boolean createSpectraRTPredFile = featuresArray.length > 0;
+            //per-modality skip: drop any model whose pred file the user already supplied,
+            //so the remaining models (e.g. FragPred for RT/IM when only spectraPredFile was given) still run
+            Iterator<Model> modelIt = models.iterator();
+            while (modelIt.hasNext()) {
+                Model m = modelIt.next();
+                boolean haveFile = false;
+                switch (m.modelType) {
+                    case "spectra":     haveFile = Constants.spectraPredFile != null; break;
+                    case "RT":          haveFile = Constants.RTPredFile != null; break;
+                    case "IM":          haveFile = Constants.IMPredFile != null; break;
+                    case "auxSpectra":  haveFile = Constants.auxSpectraPredFile != null; break;
+                }
+                if (haveFile) {
+                    modelIt.remove();
+                }
             }
-            //if pred file ready, skip pred file creation. Assumes that either all or none of pred files are ready
-            if (Constants.spectraPredFile != null || Constants.RTPredFile != null || Constants.IMPredFile != null) {
+            if (models.isEmpty()) {
                 createSpectraRTPredFile = false;
             }
 

@@ -1,4 +1,4 @@
-## MSBooster parameter template (defaults match Constants.java for v1.4.42)
+## MSBooster parameter template (defaults match Constants.java for v1.5.0)
 ## Lines without '=' are ignored. A value of 'null' means "use the code default"
 ## (the parser skips that key); empty values become empty strings, which is only
 ## valid for String fields. Edit the (REQUIRED) entries for your run.

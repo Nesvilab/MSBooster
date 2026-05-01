@@ -192,9 +192,11 @@ public class MzmlScanNumber {
         } catch (Exception e) { //TODO: percolator imputation
             float predRT = 0f;
             float predIM = 0f;
+            boolean daltonMatching = false;
             if (predictionEntry != null) {
                 predRT = predictionEntry.RT; //best option?
                 predIM = predictionEntry.IM; //best option?
+                daltonMatching = predictionEntry.daltonMatching;
             }
 
             //when peptide isn't in predictions, like unsupported amino acids
@@ -203,7 +205,7 @@ public class MzmlScanNumber {
             if (PeptideSkipper.skipPeptide(name,
                     Constants.spectraModel + Constants.rtModel + Constants.imModel)) {
                 newPepObj = new PeptideObj(this, name.getBaseCharge(), rank, targetORdecoy, escore,
-                        zeroFloatArray, zeroFloatArray, zeroStringArray, predRT, predIM, predictionEntry.daltonMatching);
+                        zeroFloatArray, zeroFloatArray, zeroStringArray, predRT, predIM, daltonMatching);
                 if (set) {
                     peptideObjects.add(newPepObj);
                 }

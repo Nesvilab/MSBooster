@@ -210,8 +210,8 @@ public class FragPredModelCaller {
         }
 
         int threads = Math.max(1, Constants.numThreads == null ? 1 : Constants.numThreads);
-        int batchSize = 1024;
-        int specBatchSize = 256;
+        int batchSize = 4;
+        int specBatchSize = 4;
 
         float[] rtZ = new float[kept];
         float[] imZ = new float[kept];

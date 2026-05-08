@@ -18,6 +18,7 @@
 package peptideptmformatting;
 
 import allconstants.Constants;
+import com.fragpred.properties.featurize.PeptideEncoder;
 
 public class PeptideSkipper {
     //provide peptide and see if it may be problematic
@@ -52,8 +53,8 @@ public class PeptideSkipper {
         if ((model.contains("deeplc") || model.contains("im2deep")) && stripped.length() > 60) {
             return true;
         }
-        // FragPred LibraryBuilder + PeptideEncoder accept plain length 3..30 only.
-        if (model.contains("fragpred") && (stripped.length() < 3 || stripped.length() > 30)) {
+        // Keep this in sync with FragPred's encoder instead of duplicating a stale limit.
+        if (model.contains("fragpred") && (stripped.length() < 3 || stripped.length() > PeptideEncoder.MAX_LEN)) {
             return true;
         }
         //charge

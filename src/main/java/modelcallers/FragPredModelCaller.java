@@ -23,7 +23,6 @@ import com.fragpred.properties.api.PropertyType;
 import com.fragpred.properties.data.ParsedPeptide;
 import com.fragpred.properties.featurize.ChargeOneHot;
 import com.fragpred.properties.featurize.PeptideEncoder;
-import com.fragpred.properties.library.Calibration;
 import com.fragpred.properties.models.OnnxFragRtImPredictor;
 import com.fragpred.properties.models.OnnxFragSpecPredictor;
 import features.spectra.MassCalculator;
@@ -213,8 +212,8 @@ public class FragPredModelCaller {
         int batchSize = 4;
         int specBatchSize = 4;
 
-        float[] rtZ = new float[kept];
-        float[] imZ = new float[kept];
+        float[] rtPred = new float[kept];
+        float[] imPred = new float[kept];
         float[][][] specOut = new float[kept][][];
 
         // ONNX Runtime sessions are heavyweight; create once per task and run batches in parallel.
@@ -223,12 +222,12 @@ public class FragPredModelCaller {
             try (OnnxFragRtImPredictor rt = new OnnxFragRtImPredictor(
                     PropertyType.RT,
                     ModelDir.resolveModel(ModelDir.DEFAULT_RT_NAME, modelDir), 1)) {
-                runScalar(rt, parsed, chargeArr, batchSize, pool, rtZ);
+                runScalar(rt, parsed, chargeArr, batchSize, pool, rtPred);
             }
             try (OnnxFragRtImPredictor im = new OnnxFragRtImPredictor(
                     PropertyType.IM,
                     ModelDir.resolveModel(ModelDir.DEFAULT_IM_NAME, modelDir), 1)) {
-                runScalar(im, parsed, chargeArr, batchSize, pool, imZ);
+                runScalar(im, parsed, chargeArr, batchSize, pool, imPred);
             }
             try (OnnxFragSpecPredictor spec = new OnnxFragSpecPredictor(
                     ModelDir.resolveModel(ModelDir.DEFAULT_SPEC_NAME, modelDir), 1)) {
@@ -239,18 +238,10 @@ public class FragPredModelCaller {
             try { pool.awaitTermination(5, TimeUnit.MINUTES); } catch (InterruptedException ignored) {}
         }
 
-        // FragPred's RT/IM ONNX heads emit z-scores in normalized space; LibraryBuilder
-        // calibrates them per-charge before writing a library. We mirror that here with
-        // the default ballpark fit (RT = 40z + 50, IM = 0.05z + 0.75) so that downstream
-        // consumers see physical RT minutes and 1/K0 values rather than raw z-scores.
-        Calibration.PerChargeCalibration cal = Calibration.ballpark();
-
-        // Build PredictionEntry objects and populate the hashmap.
+        // FragPred RT/IM outputs are already in the scale MSBooster should consume.
         for (int i = 0; i < kept; i++) {
-            float rt = (float) cal.applyRt(chargeArr[i], rtZ[i]);
-            float im = (float) cal.applyIm(chargeArr[i], imZ[i]);
             PredictionEntry pe = buildEntry(specOut[i], mcs[i], chargeArr[i], plainLens[i],
-                    rt, im);
+                    rtPred[i], imPred[i]);
             allPreds.put(mcs[i].fullPeptide, pe);
         }
         return allPreds;

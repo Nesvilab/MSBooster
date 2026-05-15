@@ -211,18 +211,17 @@ public class Predictor {
         }
 
         //verify custom mods exists
-        FileInputStream customFis = null;
         if (!customMods.isEmpty()) {
             if (!Files.exists(Paths.get(customMods))) {
                 Print.printError("Custom mods file does not exist");
                 System.exit(1);
             }
-            customFis = new FileInputStream(customMods);
         }
 
         EndJob[] endJobs = new EndJob[inputFiles.length];
         String[] jobIds = new String[inputFiles.length];
         for (int i = 0; i < inputFiles.length; i++) {
+            FileInputStream customFis = customMods.isEmpty() ? null : new FileInputStream(customMods);
             String jobId = PredictUtils.sendPredRequest(url, uploadUrl, apiKey, inputFiles[i], modelZip,
                     outputFormat, ms2, rt, im, minCharge, maxCharge, customFis, customMods);
             jobIds[i] = jobId;

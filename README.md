@@ -63,7 +63,7 @@ MSBooster is equipped to handle multiple input file formats and models:
 
 | Prediction model                             |
 |----------------------------------------------|
-| FragPred (built-in, ONNX Runtime)            |
+| FragCast (built-in, ONNX Runtime)            |
 | [Koina models](Koina.md)                     |
 
 ## Installation and running guide
@@ -76,7 +76,7 @@ retention time features with "Predict RT" and MS/MS spectral features with "Pred
 
 ### On the command line
 If using standalone MSBooster to run in the command line, please download the latest jar file from 
-Releases. MSBooster ships with the built-in FragPred model (ONNX Runtime, no external executable
+Releases. MSBooster ships with the built-in FragCast model (ONNX Runtime, no external executable
 required) for MS/MS, RT, and IM prediction.
 
 You can run MSBooster using a command similar to the following: 
@@ -113,7 +113,7 @@ to false. Set to true if you wish to delete these
 update will be printed every 10%. 
   <li><code>numThreads (int)</code>: number of threads to use. By default set to 0, which uses all available threads minus 1
   <li><code>splitPredInputFile (int)</code>: legacy batching parameter retained for backward compatibility with FragPipe configurations.
-By default, set to 1; FragPred handles arbitrarily large inputs in-process and does not require splitting
+By default, set to 1; FragCast handles arbitrarily large inputs in-process and does not require splitting
   <li><code>plotExtension (String)</code>: what file format plots should be in. png by default, and pdf is also allowed
   <li><code>features (String)</code>: list of features to be calculated. Case-sensitive, comm-separated without spaces in between.
 Default is <code>unweightedSpectralEntropy,weightedSpectralEntropy,hypergeometricProbability,intersection,
@@ -124,7 +124,7 @@ top6matchedIntensity,deltaRTLOESS,deltaRTLOESSreal,deltaIMLOESS,ionmobility</cod
 <details>
 <summary>Enabling, specifying, and loading predictions</summary>
 <ul>
-  <li><code>spectraPredFile (String)</code>: if you are reusing old spectral predictions (e.g. from FragPred or Koina), you can specify the file
+  <li><code>spectraPredFile (String)</code>: if you are reusing old spectral predictions (e.g. from FragCast or Koina), you can specify the file
 location here
   <li><code>RTPredFile (String)</code>: same as spectraPredFile, but for RT predictions
   <li><code>IMPredFile (String)</code>: same as spectraPredFile, but for IM predictions
@@ -177,7 +177,7 @@ is comma-separated with no spaces in between. The masses should be written to th
  - .pin file with new features. By default, new pin files will be produced ending in "_edited.pin". The
  default features used are "unweighted_spectral_entropy", "delta_RT_loess", and "pred_RT_real_units". If ion mobility
  features are enabled, "delta_IM_loess" and "ion_mobility" will also be included
- - When FragPred is the active predictor, predictions are produced in-process (ONNX Runtime) and held in
+ - When FragCast is the active predictor, predictions are produced in-process (ONNX Runtime) and held in
  memory; no `spectraRT.tsv` / `spectraRT_full.tsv` input file or `spectraRT.predicted.bin` prediction file
  is written
  - When a Koina (or other external) model is used, `spectraRT.tsv` and `spectraRT_full.tsv` are written as

@@ -71,7 +71,7 @@ numKoinaAttempts = 5
 initialKoinaMillisecondsToWaitRtIm = 30000
 initialKoinaMillisecondsToWaitMs2 = 60000
 numPSMsToCalibrate = 1000
-fragpredPeptidePredictionLimit = 2000000
+fragcastPeptidePredictionLimit = 2000000
 
 ############################################################
 # MS/MS spectral matching
@@ -85,7 +85,7 @@ useTopFragments = true
 topFragments = 20
 useBasePeak = true
 percentBasePeak = 1.0
-splitPredInputFile = 1                           # legacy; FragPred no longer splits
+splitPredInputFile = 1                           # legacy; FragCast no longer splits
 
 ############################################################
 # Fragmentation / NCE

@@ -17,7 +17,7 @@
         <lib.scope>compile</lib.scope>
         <kotlin.version>2.1.20</kotlin.version>
         <ver.speclib.io>1.0.0</ver.speclib.io>
-        <ver.fragpred>1.0.0</ver.fragpred>
+        <ver.fragcast>1.0.4</ver.fragcast>
     </properties>
 
     <profiles>
@@ -119,9 +119,9 @@
             <version>${ver.speclib.io}</version>
         </dependency>
         <dependency>
-            <groupId>com.fragpred</groupId>
-            <artifactId>fragpred</artifactId>
-            <version>${ver.fragpred}</version>
+            <groupId>com.fragcast</groupId>
+            <artifactId>fragcast</artifactId>
+            <version>${ver.fragcast}</version>
             <scope>${lib.scope}</scope>
         </dependency>
     </dependencies>
@@ -221,12 +221,12 @@
                     </execution>
                     <execution>
                         <configuration>
-                            <artifactId>fragpred</artifactId>
-                            <file>${basedir}/lib/FragPred-${ver.fragpred}.jar</file>
+                            <artifactId>fragcast</artifactId>
+                            <file>${basedir}/lib/FragCast-${ver.fragcast}.jar</file>
                             <generatePom>true</generatePom>
-                            <groupId>com.fragpred</groupId>
+                            <groupId>com.fragcast</groupId>
                             <packaging>jar</packaging>
-                            <version>${ver.fragpred}</version>
+                            <version>${ver.fragcast}</version>
                         </configuration>
                         <goals>
                             <goal>install-file</goal>

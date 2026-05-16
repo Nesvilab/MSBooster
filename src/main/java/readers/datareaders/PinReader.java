@@ -278,13 +278,13 @@ public class PinReader {
         }
     }
 
-    public void createFragpredList(Set<String> hSetHits) throws IOException {
+    public void createFragcastList(Set<String> hSetHits) throws IOException {
         while (next(true)) {
             PeptideFormatter pf = getPep();
-            if (PeptideSkipper.skipPeptide(pf, "fragpred")) {
+            if (PeptideSkipper.skipPeptide(pf, "fragcast")) {
                 continue;
             }
-            hSetHits.add(pf.getFragpred() + "\t" + pf.getCharge());
+            hSetHits.add(pf.getFragcast() + "\t" + pf.getCharge());
         }
     }
 
@@ -391,7 +391,7 @@ public class PinReader {
             }
             float escore = Float.parseFloat(getEScore());
             if (escore <= eScoreCutoff) {
-                PeptideFormatter pf = getPep(); //pf.getBaseCharge() + "," + pf.getFragpred() + "," + pf.getStripped()
+                PeptideFormatter pf = getPep(); //pf.getBaseCharge() + "," + pf.getFragcast() + "," + pf.getStripped()
                 PSMs.add(pf);
                 scanNums.add(getScanNum());
             }
@@ -424,7 +424,7 @@ public class PinReader {
             float escore = Float.parseFloat(getEScore());
             if ((escore <= eScoreCutoff) && (getTD() == 0)) {
                 PeptideFormatter pf = getPep();
-                PSMs.add(pf.getBaseCharge() + "," + pf.getFragpred() + "," + pf.getStripped());
+                PSMs.add(pf.getBaseCharge() + "," + pf.getFragcast() + "," + pf.getStripped());
                 scanNums.add(getScanNum());
             }
         }

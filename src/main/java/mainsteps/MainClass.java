@@ -194,8 +194,8 @@ public class MainClass {
                 printError("No auxiliary spectra model called " + Constants.auxSpectraModel + ". Exiting.");
                 System.exit(0);
             }
-            if (Constants.auxSpectraModel.equals("FragPred")) {
-                printError("FragPred does not predict auxiliary spectra. Exiting.");
+            if (Constants.auxSpectraModel.equals("FragCast")) {
+                printError("FragCast does not predict auxiliary spectra. Exiting.");
                 System.exit(0);
             }
 
@@ -240,7 +240,7 @@ public class MainClass {
             //ignore if files already created
             boolean createSpectraRTPredFile = featuresArray.length > 0;
             //per-modality skip: drop any model whose pred file the user already supplied,
-            //so the remaining models (e.g. FragPred for RT/IM when only spectraPredFile was given) still run
+            //so the remaining models (e.g. FragCast for RT/IM when only spectraPredFile was given) still run
             Iterator<Model> modelIt = models.iterator();
             while (modelIt.hasNext()) {
                 Model m = modelIt.next();

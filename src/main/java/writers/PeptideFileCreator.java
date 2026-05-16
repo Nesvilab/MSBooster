@@ -50,7 +50,7 @@ public class PeptideFileCreator {
      * peptide records for a given model format. No file output.
      *
      * @return set of strings whose layout depends on {@code modelFormat} (e.g. for
-     *         FragPred each entry is {@code peptide<tab>charge}).
+     *         FragCast each entry is {@code peptide<tab>charge}).
      */
     public static Set<String> gatherPeptideRecords(PinMzmlMatcher pmm, String modelFormat)
             throws InterruptedException, ExecutionException, IOException, FileParsingException {
@@ -93,8 +93,8 @@ public class PeptideFileCreator {
                         case "DeepMSPeptideAll": //ignores charge and mods
                             pin.createDeepMSPeptideList(hSetHits);
                             break;
-                        case "FragPred":
-                            pin.createFragpredList(hSetHits);
+                        case "FragCast":
+                            pin.createFragcastList(hSetHits);
                             break;
                         case "Prosit":
                             pin.createPrositList(hSetHits);
@@ -213,11 +213,11 @@ public class PeptideFileCreator {
                         }
                         myWriter.close();
                         break; //no header
-                    case "FragPred":
-                        printInfo("Writing FragPred input file");
-                        if (hSetHits.size() > Constants.fragpredPeptidePredictionLimit) {
+                    case "FragCast":
+                        printInfo("Writing FragCast input file");
+                        if (hSetHits.size() > Constants.fragcastPeptidePredictionLimit) {
                             int numfiles = (int) Math.ceil((double) hSetHits.size() /
-                                    (double) Constants.fragpredPeptidePredictionLimit);
+                                    (double) Constants.fragcastPeptidePredictionLimit);
                             Constants.splitPredInputFile = numfiles;
                             printInfo("Writing " + numfiles + " files to predict in batches");
 
@@ -232,7 +232,7 @@ public class PeptideFileCreator {
                                 myWriter.write(hSetHit + "\n");
                                 totalWriter.write(hSetHit + "\n");
                                 totalIdx++;
-                                if (idx >= Constants.fragpredPeptidePredictionLimit) {
+                                if (idx >= Constants.fragcastPeptidePredictionLimit) {
                                     myWriter.close();
                                     subFileIdx++;
                                     if (totalIdx != hSetHits.size()) {

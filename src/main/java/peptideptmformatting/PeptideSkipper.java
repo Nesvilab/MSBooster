@@ -18,7 +18,7 @@
 package peptideptmformatting;
 
 import allconstants.Constants;
-import com.fragpred.properties.featurize.PeptideEncoder;
+import com.fragcast.properties.featurize.PeptideEncoder;
 
 public class PeptideSkipper {
     //provide peptide and see if it may be problematic
@@ -36,7 +36,7 @@ public class PeptideSkipper {
         //letters
         if (model.contains("prosit") || model.contains("ms2pip") || model.contains("deeplc") ||
                 model.contains("unispec") || model.contains("predfull") || model.contains("im2deep") ||
-                model.contains("fragpred")) {
+                model.contains("fragcast")) {
             for (char c : "OUBZJX".toCharArray()) {
                 if (stripped.indexOf(c) != -1) {
                     return true;
@@ -53,8 +53,8 @@ public class PeptideSkipper {
         if ((model.contains("deeplc") || model.contains("im2deep")) && stripped.length() > 60) {
             return true;
         }
-        // Keep this in sync with FragPred's encoder instead of duplicating a stale limit.
-        if (model.contains("fragpred") && (stripped.length() < 3 || stripped.length() > PeptideEncoder.MAX_LEN)) {
+        // Keep this in sync with FragCast's encoder instead of duplicating a stale limit.
+        if (model.contains("fragcast") && (stripped.length() < 3 || stripped.length() > PeptideEncoder.MAX_LEN)) {
             return true;
         }
         //charge
@@ -65,8 +65,8 @@ public class PeptideSkipper {
         if (model.contains("prosit") && chargeInt > 6) { //predfull can handle charge up to 30
             return true;
         }
-        // FragPred ChargeOneHot accepts 1..6; outside that the charge feature is all zeros.
-        if (model.contains("fragpred") && (chargeInt < 1 || chargeInt > 6)) {
+        // FragCast ChargeOneHot accepts 1..6; outside that the charge feature is all zeros.
+        if (model.contains("fragcast") && (chargeInt < 1 || chargeInt > 6)) {
             return true;
         }
         //string length

@@ -116,7 +116,7 @@ public interface LibraryPredictionMapper {
 
         //        for (String key : totalKeyset) {
 //            PredictionEntry pe = allPreds.get(key);
-//            if (pe == null) { //missing in prosit/fragpred
+//            if (pe == null) { //missing in prosit/fragcast
 //                allPreds.put(key, predictedSpectra2.getPreds().get(key));
 //            } else { //add non-y/b ions
 //                ArrayList<Float> mzs = new ArrayList<>();
@@ -146,8 +146,8 @@ public interface LibraryPredictionMapper {
 //                    float maxMZ = maxIntensityMZ + Constants.DaTolerance;
 //
 //                    //add new peaks
-//                    //Scale so that max intensity fragment of fragpred has same intensity as matched fragment in predfull
-//                    //TODO: multiply pe2 intensity by (fragpred max intensity / predfull intensity of matching fragment)
+//                    //Scale so that max intensity fragment of fragcast has same intensity as matched fragment in predfull
+//                    //TODO: multiply pe2 intensity by (fragcast max intensity / predfull intensity of matching fragment)
 //                    PredictionEntry pe2 = predictedSpectra2.getPreds().get(key);
 //                    //if null, convert to base format
 //

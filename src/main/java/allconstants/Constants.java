@@ -52,16 +52,16 @@ public class Constants implements ConstantsInterface {
     public static String spectraPredFilePDV = null; //for PDV visualization
     public static String RTPredFile = null;
     public static String IMPredFile = null;
-    // In-memory predictions populated by FragPredModelCaller; null when FragPred
+    // In-memory predictions populated by FragCastModelCaller; null when FragCast
     // was not the active predictor or when predictions came from a Koina/external file.
-    public static predictions.PredictionEntryHashMap fragpredPredictions = null;
+    public static predictions.PredictionEntryHashMap fragcastPredictions = null;
     // In-memory peptide records (one "peptide<tab>charge" string per PSM) produced
-    // by makeInputFiles for FragPred — passed directly to FragPredModelCaller.predict
+    // by makeInputFiles for FragCast — passed directly to FragCastModelCaller.predict
     // so no spectraRT.tsv is written or re-read.
-    public static java.util.Set<String> fragpredInputRecords = null;
+    public static java.util.Set<String> fragcastInputRecords = null;
     // In-memory base-format records corresponding to spectraRT_full.tsv — used by
-    // FragPredModelCaller.predict for the base-format alias pass.
-    public static java.util.Set<String> fragpredFullRecords = null;
+    // FragCastModelCaller.predict for the base-format alias pass.
+    public static java.util.Set<String> fragcastFullRecords = null;
     public static String auxSpectraPredFile = null;
     public static String detectPredFile = null;
     public static Boolean deletePreds = false;
@@ -97,7 +97,7 @@ public class Constants implements ConstantsInterface {
     public static String rtModel = "";
     public static String imModel = "";
     public static String auxSpectraModel = "";
-    public static Integer fragpredPeptidePredictionLimit = 2000000;
+    public static Integer fragcastPeptidePredictionLimit = 2000000;
     public static Integer splitPredInputFile = 1;
     public static Boolean useKoina = false;
     public static Boolean usedKoina = false;
@@ -130,7 +130,7 @@ public class Constants implements ConstantsInterface {
     //miscellaneous inner workings
     private static HashMap<String, Integer> makeModelMaxIntensity() {
         HashMap<String, Integer> map = new HashMap<>();
-        map.put("FragPred", 60000);
+        map.put("FragCast", 60000);
         map.put("Prosit", 1);
         map.put("alphapeptdeep", 1);
         map.put("PredFull", 1000);

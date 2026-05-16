@@ -332,7 +332,7 @@ public class PepXMLReader {
         return array;
     }
 
-//    public String[] createFragpredList() {
+//    public String[] createFragcastList() {
 //        List<SpectrumQuery> spectrumQueries = getSpectrumQueries();
 //        String[] array = new String[spectrumQueries.size()];
 //        int index = 0;

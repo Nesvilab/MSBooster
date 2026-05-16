@@ -254,8 +254,8 @@ public class PTMhandler {
         //set allowed unimods
         Set<String> modelAllowedUnimods;
         switch(model) {
-            case "fragpred":
-                modelAllowedUnimods = fragpredAAMods;
+            case "fragcast":
+                modelAllowedUnimods = fragcastAAMods;
                 break;
             case "unispec":
                 modelAllowedUnimods = unispecAAMods;
@@ -284,7 +284,7 @@ public class PTMhandler {
         //set unimod string formatting
         String unimodFormat = "";
         switch(model) {
-            case "fragpred":
+            case "fragcast":
             case "librarytsv":
                 unimodFormat = "UniMod";
                 break;
@@ -295,7 +295,7 @@ public class PTMhandler {
 
         String ntermSuffix = "";
         switch(model) {
-            case "fragpred":
+            case "fragcast":
             case "unispec":
             case "deeplc":
             case "librarytsv":
@@ -419,7 +419,7 @@ public class PTMhandler {
         return "";
     }
 
-    //works for fragpred
+    //works for fragcast
     public static String formatPeptideSpecificToBase(String peptide, Map<Integer, Double> modmap, String brackets) {
         char startBracket = brackets.charAt(0);
         char endBracket = brackets.charAt(1);
@@ -659,7 +659,7 @@ public class PTMhandler {
             Arrays.asList("N7", "Q7", "R7"));
     public static final HashSet<String> unispecAAMods = new HashSet<>(
             Arrays.asList("[1", "C4", "Q28", "E27", "M35", "S21", "T21", "Y21", "C26"));
-    public static final HashSet<String> fragpredAAMods = new HashSet<>(
+    public static final HashSet<String> fragcastAAMods = new HashSet<>(
             Arrays.asList("C4", "M35", "[1", "S21", "T21", "Y21", "K121", "T121", "C121", "S121", "[121",
                     "[737", "K737", "S737"));
     public static final HashSet<String> ms2pipAAMods = new HashSet<>(

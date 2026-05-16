@@ -31,7 +31,7 @@ import static utils.Print.printError;
 //lots of different ways to format peptide string
 public class PeptideFormatter {
     String base;
-    private String fragpred;
+    private String fragcast;
     private String predfull;
     private String prosit;
     private String prositTMT;
@@ -92,7 +92,7 @@ public class PeptideFormatter {
         base = peptide;
     }
 
-    private void fragpredTObase(String peptide) {
+    private void fragcastTObase(String peptide) {
         peptide = peptide.replace("[TMT]", "[" + PTMhandler.tmtUnimod + "]");
         base = PTMhandler.formatPeptideSpecificToBase(peptide, unimodToModMassLimited, "[]");
     }
@@ -168,8 +168,8 @@ public class PeptideFormatter {
         stripped = sb.toString();
     }
 
-    private void baseTOfragpred() {
-        fragpred = base;
+    private void baseTOfragcast() {
+        fragcast = base;
 
         boolean attemptCterm = cterm;
         for (int i = starts.size() - 1; i > -1; i--) {
@@ -177,20 +177,20 @@ public class PeptideFormatter {
             int end = ends.get(i);
 
             String[] peptideUnimod = PTMhandler.formatPeptideBaseToSpecific(
-                    fragpred, start, end, "fragpred", fragpredAAMods, attemptCterm);
+                    fragcast, start, end, "fragcast", fragcastAAMods, attemptCterm);
             attemptCterm = false;
-            fragpred = peptideUnimod[0];
+            fragcast = peptideUnimod[0];
         }
 
         //special TMT formatting
-        fragpred = fragpred.replaceAll("UniMod:" + PTMhandler.tmtUnimod, "TMT");
+        fragcast = fragcast.replaceAll("UniMod:" + PTMhandler.tmtUnimod, "TMT");
 
         //nterm mod and TMT on AA1 not allowed
-        if (fragpred.startsWith("[")) {
-            String[] fragpredsplit = fragpred.split("]");
-            if (fragpredsplit.length > 2) {
-                if (fragpredsplit[1].substring(1).startsWith("[TMT")) {
-                    fragpred = fragpred.substring(fragpred.indexOf("]") + 1);
+        if (fragcast.startsWith("[")) {
+            String[] fragcastsplit = fragcast.split("]");
+            if (fragcastsplit.length > 2) {
+                if (fragcastsplit[1].substring(1).startsWith("[TMT")) {
+                    fragcast = fragcast.substring(fragcast.indexOf("]") + 1);
                 }
             }
         }
@@ -452,9 +452,9 @@ public class PeptideFormatter {
             case "apdpred":
                 pinTObase(peptide, false);
                 break;
-            case "fragpred":
-                fragpred = peptide;
-                fragpredTObase(peptide);
+            case "fragcast":
+                fragcast = peptide;
+                fragcastTObase(peptide);
                 break;
             case "base":
                 base = peptide;
@@ -520,9 +520,9 @@ public class PeptideFormatter {
         return charge;
     }
 
-    public String getFragpred() {
-        baseTOfragpred();
-        return fragpred;
+    public String getFragcast() {
+        baseTOfragcast();
+        return fragcast;
     }
 
     public String getProsit(HashSet<String> uniqMods) {
@@ -580,8 +580,8 @@ public class PeptideFormatter {
 
     public String getModel(String model) { //model is whole url name
         switch(model.toLowerCase().split("_")[0]) {
-            case "fragpred":
-                return getFragpred();
+            case "fragcast":
+                return getFragcast();
             case "prosit":
                 if (model.contains("TMT")) {
                     return getPrositTMT();

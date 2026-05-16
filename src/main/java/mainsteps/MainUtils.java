@@ -4,7 +4,7 @@ import allconstants.*;
 import bestmodelsearch.BestModelSearcher;
 import koinaclasses.KoinaMethods;
 import koinaclasses.NCEcalibrator;
-import modelcallers.FragPredModelCaller;
+import modelcallers.FragCastModelCaller;
 import modelcallers.KoinaModelCaller;
 import peptideptmformatting.PeptideFormatter;
 import peptideptmformatting.PeptideSkipper;
@@ -41,15 +41,15 @@ public class MainUtils {
                 for (String model : consideredModels) {
                     Constants.rtModel = model;
                     PredictionEntryHashMap rtPreds = null;
-                    if (model.equals("FragPred")) { //mode for FragPred (in-memory, no I/O)
+                    if (model.equals("FragCast")) { //mode for FragCast (in-memory, no I/O)
                         HashSet<String> records = new HashSet<>();
                         HashSet<String> fullRecords = new HashSet<>();
                         for (PeptideFormatter pf : km.peptideArraylist) {
                             if (PeptideSkipper.skipPeptide(pf, model)) continue;
-                            records.add(pf.getFragpred() + "\t" + pf.getCharge());
+                            records.add(pf.getFragcast() + "\t" + pf.getCharge());
                             fullRecords.add(pf.getBase() + "\t" + pf.getCharge());
                         }
-                        rtPreds = FragPredModelCaller.predict(records, fullRecords, false);
+                        rtPreds = FragCastModelCaller.predict(records, fullRecords, false);
                     } else { //mode for koina
                         PeptideFileCreator.createPartialFile(
                                 jsonOutFolder + File.separator + model + "_full.tsv",
@@ -122,7 +122,7 @@ public class MainUtils {
             }
 
             if (Constants.rtModel.isEmpty()) {
-                Constants.rtModel = "FragPred";
+                Constants.rtModel = "FragCast";
             }
             for (String model : ModelCollections.KoinaRTmodels) {
                 if (model.equalsIgnoreCase(Constants.rtModel)) {
@@ -147,15 +147,15 @@ public class MainUtils {
                 for (String model : consideredModels) {
                     Constants.imModel = model;
                     PredictionEntryHashMap imPreds = null;
-                    if (model.equals("FragPred")) { //mode for FragPred (in-memory, no I/O)
+                    if (model.equals("FragCast")) { //mode for FragCast (in-memory, no I/O)
                         HashSet<String> records = new HashSet<>();
                         HashSet<String> fullRecords = new HashSet<>();
                         for (PeptideFormatter pf : km.peptideArrayListIM) {
                             if (PeptideSkipper.skipPeptide(pf, model)) continue;
-                            records.add(pf.getFragpred() + "\t" + pf.getCharge());
+                            records.add(pf.getFragcast() + "\t" + pf.getCharge());
                             fullRecords.add(pf.getBase() + "\t" + pf.getCharge());
                         }
-                        imPreds = FragPredModelCaller.predict(records, fullRecords, false);
+                        imPreds = FragCastModelCaller.predict(records, fullRecords, false);
                     } else { //mode for koina
                         PeptideFileCreator.createPartialFile(
                                 jsonOutFolder + File.separator + model + "_full.tsv",
@@ -228,7 +228,7 @@ public class MainUtils {
             }
 
             if (Constants.imModel.isEmpty()) {
-                Constants.imModel = "FragPred";
+                Constants.imModel = "FragCast";
             }
             for (String model : ModelCollections.KoinaIMmodels) {
                 if (model.equalsIgnoreCase(Constants.imModel)) {
@@ -278,15 +278,15 @@ public class MainUtils {
                     }
 
                     MyFileUtils.createWholeDirectory(jsonOutFolder + File.separator + model);
-                    if (model.equals("FragPred")) { //mode for FragPred (in-memory, no I/O)
+                    if (model.equals("FragCast")) { //mode for FragCast (in-memory, no I/O)
                         HashSet<String> records = new HashSet<>();
                         HashSet<String> fullRecords = new HashSet<>();
                         for (PeptideFormatter pf : km.peptideArraylist) {
                             if (PeptideSkipper.skipPeptide(pf, model)) continue;
-                            records.add(pf.getFragpred() + "\t" + pf.getCharge());
+                            records.add(pf.getFragcast() + "\t" + pf.getCharge());
                             fullRecords.add(pf.getBase() + "\t" + pf.getCharge());
                         }
-                        PredictionEntryHashMap allPreds = FragPredModelCaller.predict(records, fullRecords, false);
+                        PredictionEntryHashMap allPreds = FragCastModelCaller.predict(records, fullRecords, false);
 
                         ArrayList<Double> similarity = new ArrayList<>();
                         for (PeptideObj peptideObj : km.getPeptideObjects(allPreds, km.scanNums, km.peptides)) {
@@ -382,7 +382,7 @@ public class MainUtils {
             }
 
             if (Constants.spectraModel.isEmpty()) {
-                Constants.spectraModel = "FragPred";
+                Constants.spectraModel = "FragCast";
             }
             for (String model : ModelCollections.KoinaMS2models) {
                 if (model.equalsIgnoreCase(Constants.spectraModel)) {
@@ -539,8 +539,8 @@ public class MainUtils {
 
         } else {
             // _full.tsv is still written for downstream Koina consumers; keep a copy
-            // of the gathered records in memory so FragPred doesn't need to re-read it.
-            Constants.fragpredFullRecords = PeptideFileCreator.createPeptideFile(pmMatcher,
+            // of the gathered records in memory so FragCast doesn't need to re-read it.
+            Constants.fragcastFullRecords = PeptideFileCreator.createPeptideFile(pmMatcher,
                     Constants.spectraRTPrefix + "_full.tsv",
                     "createFull");
         }
@@ -579,12 +579,12 @@ public class MainUtils {
                             Constants.spectraRTPrefix + "_" + currentModel + ".json", currentModel);
                 } else {
                     switch (currentModel) {
-                        case "FragPred":
-                            // FragPred runs as an in-process Java library (ONNX Runtime).
+                        case "FragCast":
+                            // FragCast runs as an in-process Java library (ONNX Runtime).
                             // Gather peptide records into memory and skip writing spectraRT.tsv —
-                            // FragPredModelCaller.predict consumes the set directly.
-                            Constants.fragpredInputRecords =
-                                    PeptideFileCreator.gatherPeptideRecords(pmMatcher, "FragPred");
+                            // FragCastModelCaller.predict consumes the set directly.
+                            Constants.fragcastInputRecords =
+                                    PeptideFileCreator.gatherPeptideRecords(pmMatcher, "FragCast");
                             break;
                         case "pDeep2":
                             printInfo("Generating input file for pDeep2");
@@ -611,7 +611,7 @@ public class MainUtils {
                             PeptideFileCreator.createPeptideFile(pmMatcher, Constants.spectraRTPrefix + ".csv", "alphapeptdeep");
                             break;
                         default:
-                            printError("spectraRTPredModel must be one of FragPred, Prosit, PrositTMT, " +
+                            printError("spectraRTPredModel must be one of FragCast, Prosit, PrositTMT, " +
                                     "PredFull, pDeep2, pDeep3, or alphapeptdeep");
                             System.exit(1);
                     }
@@ -626,7 +626,7 @@ public class MainUtils {
         ArrayList<String> predFilePaths = new ArrayList<>(); //replace "koina" with final name later
 
         boolean ranKoina = false;
-        boolean ranFragpred = false;
+        boolean ranFragcast = false;
         for (Model model : models) {
             String currentModel = model.name;
             KoinaModelCaller kmc = new KoinaModelCaller();
@@ -638,18 +638,18 @@ public class MainUtils {
                 predFilePaths.add("koina" + currentModel);
                 klrs.add(klr);
             } else {
-                if (!ranFragpred) {
-                    if (Constants.fragpredInputRecords == null) {
-                        printError("FragPred peptide records were not gathered before prediction. Exiting.");
+                if (!ranFragcast) {
+                    if (Constants.fragcastInputRecords == null) {
+                        printError("FragCast peptide records were not gathered before prediction. Exiting.");
                         System.exit(1);
                     }
-                    Constants.fragpredPredictions = FragPredModelCaller.predict(
-                            Constants.fragpredInputRecords,
-                            Constants.fragpredFullRecords,
+                    Constants.fragcastPredictions = FragCastModelCaller.predict(
+                            Constants.fragcastInputRecords,
+                            Constants.fragcastFullRecords,
                             true);
-                    ranFragpred = true;
+                    ranFragcast = true;
                 }
-                predFilePaths.add("fragpred");
+                predFilePaths.add("fragcast");
             }
         }
         PredictionEntryHashMap koinaPreds = new PredictionEntryHashMap();
@@ -670,7 +670,7 @@ public class MainUtils {
                         koinaPredFilePath.insert(0, "spectra-" +
                                 predFilePaths.get(j).substring(5) + ".");
                     }
-                    // FragPred predictions live in Constants.fragpredPredictions and are
+                    // FragCast predictions live in Constants.fragcastPredictions and are
                     // consumed in-process by PercolatorFormatter — no file path needed.
                     break;
                 case "RT":
@@ -685,7 +685,7 @@ public class MainUtils {
                                 predFilePaths.get(j).substring(5) + ".");
                     }
                     break;
-                case "auxSpectra": //FragPred does not predict this
+                case "auxSpectra": //FragCast does not predict this
                     auxPredFilePath.insert(0, "auxSpectra-" +
                             predFilePaths.get(j).substring(5) + ".");
                     break;
@@ -727,7 +727,7 @@ public class MainUtils {
     }
 
     static void deletePredFiles() {
-        //FragPred input files
+        //FragCast input files
         File predFile = new File(Constants.outputDirectory + File.separator + "spectraRT.tsv");
         predFile.delete();
         predFile = new File(Constants.outputDirectory + File.separator + "spectraRT_full.tsv");

@@ -22,7 +22,7 @@ import predictions.PredictionEntryHashMap;
 /**
  * Adapter that exposes an existing {@link PredictionEntryHashMap} through the
  * {@link LibraryPredictionMapper} interface, used when predictions were produced
- * in-process (e.g. by FragPred) and there is no backing file to load from.
+ * in-process (e.g. by FragCast) and there is no backing file to load from.
  */
 public class InMemoryLibraryMapper implements LibraryPredictionMapper {
     private PredictionEntryHashMap allPreds;

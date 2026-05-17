@@ -112,8 +112,22 @@ public class PeptideFormatter {
 
     private void predfullTObase(String peptide) {
         //remove (O) and add [57] to C
-        base = peptide.replace("(O)", "[" + PTMhandler.oxidationMass + "]")
-                .replace("C", "C[" + PTMhandler.carbamidomethylationMass + "]");
+        base = peptide.replace("(O)", "[" + PTMhandler.oxidationMass + "]");
+        addCarbamidomethylationToBareC();
+    }
+
+    private void predfullKoinaTObase(String peptide) {
+        koinaTObase(peptide, unimodToModMassLimited);
+        addCarbamidomethylationToBareC();
+    }
+
+    private void addCarbamidomethylationToBareC() {
+        for (int i = base.length() - 1; i > -1; i--) {
+            if (base.charAt(i) == 'C' && (i == base.length() - 1 || base.charAt(i + 1) != '[')) {
+                base = base.substring(0, i + 1) + "[" + PTMhandler.carbamidomethylationMass + "]" +
+                        base.substring(i + 1);
+            }
+        }
     }
 
     private void mspTObase(String peptide) {
@@ -461,8 +475,11 @@ public class PeptideFormatter {
                 break;
             case "predfull":
                 predfull = peptide;
-                predfullTObase(peptide); //this version is for standalone
-                koinaTObase(peptide, unimodToModMassLimited); //this version for koina
+                if (peptide.toUpperCase().contains("UNIMOD:")) {
+                    predfullKoinaTObase(peptide);
+                } else {
+                    predfullTObase(peptide);
+                }
                 break;
             case "unispec":
                 unispec = peptide;

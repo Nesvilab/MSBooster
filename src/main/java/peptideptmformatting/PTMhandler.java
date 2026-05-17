@@ -343,6 +343,10 @@ public class PTMhandler {
                     start - 1, end, false, cterm);
         }
 
+        if (unimod.isEmpty() && isUnsupportedCModification(peptide, start, modelAllowedUnimods)) {
+            unimod = "C" + carbamidomethylationUnimod;
+        }
+
         //need to check if the AA is allowed to hold this PTM
         if (unimod.isEmpty()) {
             //model won't predict this anyway
@@ -377,6 +381,12 @@ public class PTMhandler {
         }
 
         return new String[]{peptide, unimod}; //unimod is accepted unimod, or ""
+    }
+
+    private static boolean isUnsupportedCModification(String peptide, int start, Set<String> modelAllowedUnimods) {
+        return start > 0
+                && peptide.charAt(start - 1) == 'C'
+                && modelAllowedUnimods.contains("C" + carbamidomethylationUnimod);
     }
 
     //returns unimod for the reportedMass, or empty string if not found

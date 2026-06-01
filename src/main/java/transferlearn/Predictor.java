@@ -218,6 +218,9 @@ public class Predictor {
             }
         }
 
+        //preflight: validate API key before streaming uploads so auth errors surface clearly
+        PredictUtils.validateApiKey(url, apiKey);
+
         EndJob[] endJobs = new EndJob[inputFiles.length];
         String[] jobIds = new String[inputFiles.length];
         for (int i = 0; i < inputFiles.length; i++) {

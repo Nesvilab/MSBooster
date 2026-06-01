@@ -2,6 +2,8 @@ package transferlearn;
 
 import allconstants.Constants;
 import allconstants.NceConstants;
+import com.google.gson.Gson;
+import com.google.gson.reflect.TypeToken;
 import mainsteps.MainClass;
 import mainsteps.ParameterUtils;
 import speclib.io.ParquetToSpecLib;
@@ -172,6 +174,50 @@ public class PredictUtils {
         return jobId;
     }
 
+    //Preflight check: validate the API key with a lightweight GET before streaming the (potentially large)
+    //multipart upload. A simple request without a streaming body reliably exposes the server's error body via
+    //getErrorStream(), so the server-provided detail (e.g. "Invalid or expired API key") is printed. The upload
+    //path uses chunked streaming mode, in which HttpURLConnection discards the error body on early rejection.
+    public static void validateApiKey(String url, String apiKey) throws IOException {
+        URL validateUrl = new URL(url + "/auth/protected");
+        HttpURLConnection connection = setUpConnection(url, validateUrl);
+        connection.setRequestMethod("GET");
+        connection.setRequestProperty("X-Api-Key", apiKey);
+
+        int responseCode = connection.getResponseCode();
+        if (responseCode >= 200 && responseCode < 300) {
+            connection.getInputStream().close();
+            return;
+        }
+
+        Print.printError("API key validation failed: HTTP " + responseCode + " " +
+                connection.getResponseMessage());
+        InputStream errorStream = connection.getErrorStream();
+        if (errorStream != null) {
+            StringBuilder body = new StringBuilder();
+            try (BufferedReader in = new BufferedReader(
+                    new InputStreamReader(errorStream, StandardCharsets.UTF_8))) {
+                String line;
+                while ((line = in.readLine()) != null) {
+                    body.append(line).append("\n");
+                }
+            }
+
+            String detail = null;
+            try {
+                HashMap<String, Object> map =
+                        new Gson().fromJson(body.toString(), new TypeToken<HashMap<String, Object>>(){}.getType());
+                if (map != null && map.get("detail") != null) {
+                    detail = map.get("detail").toString();
+                }
+            } catch (Exception ignored) { //not JSON, fall back to raw body
+            }
+
+            Print.printError(detail != null ? detail : body.toString().trim());
+        }
+        System.exit(1);
+    }
+
     private static String getJobId(HttpURLConnection connection) throws IOException {
         //get response
         int responseCode = connection.getResponseCode();
@@ -193,12 +239,35 @@ public class PredictUtils {
                 System.exit(1);
             }
         } else { //error
+            Print.printError("Prediction server returned HTTP " + responseCode + " " +
+                    connection.getResponseMessage());
             responseStream = connection.getErrorStream();
 
-            BufferedReader in = new BufferedReader(new InputStreamReader(responseStream));
-            String line;
-            while ((line = in.readLine()) != null) {
-                Print.printError(line);
+            if (responseStream != null) {
+                //read the full error body, then try to pull out FastAPI's {"detail": ...} field
+                StringBuilder body = new StringBuilder();
+                try (BufferedReader in = new BufferedReader(
+                        new InputStreamReader(responseStream, StandardCharsets.UTF_8))) {
+                    String line;
+                    while ((line = in.readLine()) != null) {
+                        body.append(line).append("\n");
+                    }
+                }
+
+                String detail = null;
+                try {
+                    HashMap<String, Object> map =
+                            new Gson().fromJson(body.toString(), new TypeToken<HashMap<String, Object>>(){}.getType());
+                    if (map != null && map.get("detail") != null) {
+                        detail = map.get("detail").toString();
+                    }
+                } catch (Exception ignored) { //not JSON, fall back to raw body
+                }
+
+                Print.printError(detail != null ? detail : body.toString().trim());
+            } else {
+                Print.printError("Server returned no error details. " +
+                        "This usually indicates a server-side or gateway error; please retry or contact support.");
             }
             System.exit(1);
         }

@@ -5,6 +5,7 @@ import bestmodelsearch.BestModelSearcher;
 import koinaclasses.KoinaMethods;
 import koinaclasses.NCEcalibrator;
 import modelcallers.DiannModelCaller;
+import modelcallers.FragCastModelCaller;
 import modelcallers.KoinaModelCaller;
 import peptideptmformatting.PeptideFormatter;
 import predictions.PredictionEntry;
@@ -28,6 +29,45 @@ import static features.rtandim.LoessUtilities.gridSearchCV;
 import static utils.Print.*;
 
 public class MainUtils {
+    //Run a local executable predictor (DIA-NN or FragCast) as a findBest candidate, returning its
+    //predictions. DIA-NN gets a peptide\tcharge input (getDiann) and writes .predicted.bin
+    //(DiannSpeclibReader). FragCast gets a peptide\tcharge input too, but in base/delta-mass format
+    //(getBase, so its full UniMod table resolves every mod), and writes .predicted.parquet
+    //(ParquetSpeclibReader). DIA-NN behavior is unchanged.
+    static PredictionEntryHashMap runLocalBestModel(String model, String inputFile,
+                                                    ArrayList<PeptideFormatter> peptides) throws Exception {
+        if (model.equals("FragCast")) {
+            FileWriter myWriter = new FileWriter(inputFile);
+            myWriter.write("peptide" + "\t" + "charge\n");
+            HashSet<String> seen = new HashSet<>();
+            for (PeptideFormatter pf : peptides) {
+                String line = pf.getBase() + "\t" + pf.getCharge() + "\n";
+                if (seen.add(line)) {
+                    myWriter.write(line);
+                }
+            }
+            myWriter.close();
+            String predFileString = FragCastModelCaller.callModel(inputFile, false);
+            //no pin files here, so the whole (small best-model) library is read without precursor filtering
+            return LibraryPredictionMapper.createLibraryPredictionMapper(
+                    predFileString, model, MainClass.executorService).getPreds();
+        } else { //DIA-NN
+            FileWriter myWriter = new FileWriter(inputFile);
+            myWriter.write("peptide" + "\t" + "charge\n");
+            HashSet<String> seen = new HashSet<>();
+            for (PeptideFormatter pf : peptides) {
+                String line = pf.getDiann() + "\t" + pf.getCharge() + "\n";
+                if (!seen.contains(line)) {
+                    myWriter.write(line);
+                    seen.add(line);
+                }
+            }
+            myWriter.close();
+            String predFileString = DiannModelCaller.callModel(inputFile, false);
+            return LibraryPredictionMapper.createLibraryPredictionMapper(predFileString).getPreds();
+        }
+    }
+
     static Model setRTmodel(KoinaMethods km, PinMzmlMatcher pmMatcher) throws Exception {
         if (Constants.useRT) {
             //here, look for best rt model
@@ -41,27 +81,14 @@ public class MainUtils {
                 for (String model : consideredModels) {
                     Constants.rtModel = model;
                     PredictionEntryHashMap rtPreds = null;
-                    if (model.equals("DIA-NN")) { //mode for DIA-NN
+                    if (model.equals("DIA-NN") || model.equals("FragCast")) { //mode for local predictor
                         MyFileUtils.createWholeDirectory(jsonOutFolder + File.separator + model);
 
                         PeptideFileCreator.createPartialFile(
                                 jsonOutFolder + File.separator + model + File.separator + "spectraRT_full.tsv",
                                 model, km.peptideArraylist);
                         String inputFile = jsonOutFolder + File.separator + model + File.separator + "spectraRT.tsv";
-                        FileWriter myWriter = new FileWriter(inputFile);
-                        myWriter.write("peptide" + "\t" + "charge\n");
-                        HashSet<String> peptides = new HashSet<>();
-                        for (PeptideFormatter pf : km.peptideArraylist) {
-                            String line = pf.getDiann() + "\t" + pf.getCharge() + "\n";
-                            if (!peptides.contains(line)) {
-                                myWriter.write(line);
-                                peptides.add(line);
-                            }
-                        }
-                        myWriter.close();
-
-                        String predFileString = DiannModelCaller.callModel(inputFile, false);
-                        rtPreds = LibraryPredictionMapper.createLibraryPredictionMapper(predFileString).getPreds();
+                        rtPreds = runLocalBestModel(model, inputFile, km.peptideArraylist);
                     } else { //mode for koina
                         PeptideFileCreator.createPartialFile(
                                 jsonOutFolder + File.separator + model + "_full.tsv",
@@ -159,7 +186,7 @@ public class MainUtils {
                 for (String model : consideredModels) {
                     Constants.imModel = model;
                     PredictionEntryHashMap imPreds = null;
-                    if (model.equals("DIA-NN")) { //mode for DIA-NN
+                    if (model.equals("DIA-NN") || model.equals("FragCast")) { //mode for local predictor
                         MyFileUtils.createWholeDirectory(jsonOutFolder + File.separator + model);
 
                         PeptideFileCreator.createPartialFile(
@@ -167,20 +194,7 @@ public class MainUtils {
                                 model, km.peptideArrayListIM);
                         KoinaMethods.createPartialKoinaSet(model, km.peptideArrayListIM);
                         String inputFile = jsonOutFolder + File.separator + model + File.separator + "spectraRT.tsv";
-                        FileWriter myWriter = new FileWriter(inputFile);
-                        myWriter.write("peptide" + "\t" + "charge\n");
-                        HashSet<String> peptides = new HashSet<>();
-                        for (PeptideFormatter pf : km.peptideArrayListIM) {
-                            String line = pf.getDiann() + "\t" + pf.getCharge() + "\n";
-                            if (!peptides.contains(line)) {
-                                myWriter.write(line);
-                                peptides.add(line);
-                            }
-                        }
-                        myWriter.close();
-
-                        String predFileString = DiannModelCaller.callModel(inputFile, false);
-                        imPreds = LibraryPredictionMapper.createLibraryPredictionMapper(predFileString).getPreds();
+                        imPreds = runLocalBestModel(model, inputFile, km.peptideArrayListIM);
                     } else { //mode for koina
                         PeptideFileCreator.createPartialFile(
                                 jsonOutFolder + File.separator + model + "_full.tsv",
@@ -303,27 +317,13 @@ public class MainUtils {
                     }
 
                     MyFileUtils.createWholeDirectory(jsonOutFolder + File.separator + model);
-                    if (model.equals("DIA-NN")) { //mode for DIA-NN
+                    if (model.equals("DIA-NN") || model.equals("FragCast")) { //mode for local predictor
                         PeptideFileCreator.createPartialFile(
                                 jsonOutFolder + File.separator + model + File.separator + "spectraRT_full.tsv",
                                 model, km.peptideArraylist);
                         KoinaMethods.createPartialKoinaSet(model, km.peptideArraylist);
                         String inputFile = jsonOutFolder + File.separator + model + File.separator + "spectraRT.tsv";
-                        FileWriter myWriter = new FileWriter(inputFile);
-                        myWriter.write("peptide" + "\t" + "charge\n");
-                        HashSet<String> peptides = new HashSet<>();
-                        for (PeptideFormatter pf : km.peptideArraylist) {
-                            String line = pf.getDiann() + "\t" + pf.getCharge() + "\n";
-                            if (!peptides.contains(line)) {
-                                myWriter.write(line);
-                                peptides.add(line);
-                            }
-                        }
-                        myWriter.close();
-
-                        String predFileString = DiannModelCaller.callModel(inputFile, false);
-                        PredictionEntryHashMap allPreds =
-                                LibraryPredictionMapper.createLibraryPredictionMapper(predFileString).getPreds();
+                        PredictionEntryHashMap allPreds = runLocalBestModel(model, inputFile, km.peptideArraylist);
 
                         ArrayList<Double> similarity = new ArrayList<>();
                         for (PeptideObj peptideObj : km.getPeptideObjects(allPreds, km.scanNums, km.peptides)) {
@@ -612,6 +612,13 @@ public class MainUtils {
                             Constants.spectraRTPrefix + "_" + currentModel + ".json", currentModel);
                 } else {
                     switch (currentModel) {
+                        case "FragCast":
+                            if (Constants.FragCast == null) {
+                                throw new IllegalArgumentException("path to FragCast executable must be provided");
+                            }
+                            printInfo("Generating input file for FragCast");
+                            PeptideFileCreator.createPeptideFile(pmMatcher, Constants.spectraRTPrefix + ".tsv", "FragCast");
+                            break;
                         case "DIA-NN":
                             if (Constants.DiaNN == null) {
                                 throw new IllegalArgumentException("path to DIA-NN executable must be provided");
@@ -644,7 +651,7 @@ public class MainUtils {
                             PeptideFileCreator.createPeptideFile(pmMatcher, Constants.spectraRTPrefix + ".csv", "alphapeptdeep");
                             break;
                         default:
-                            printError("spectraRTPredModel must be one of DIA-NN, Prosit, PrositTMT, " +
+                            printError("spectraRTPredModel must be one of FragCast, DIA-NN, Prosit, PrositTMT, " +
                                     "PredFull, pDeep2, pDeep3, or alphapeptdeep");
                             System.exit(1);
                     }
@@ -656,7 +663,9 @@ public class MainUtils {
 
     static void getPredictionFiles(ArrayList<Model> models, ScheduledThreadPoolExecutor executorService) throws Exception {
         ArrayList<KoinaLibReader> klrs = new ArrayList<>();
-        String DiannPredFilePath = "";
+        //cache the prediction file produced by each local executable model so the same model is only
+        //run once even when it serves multiple properties (e.g. FragCast for spectra + RT + IM)
+        HashMap<String, String> localPredFilePaths = new HashMap<>();
         ArrayList<String> predFilePaths = new ArrayList<>(); //replace "koina" with final name later
 
         boolean ranKoina = false;
@@ -670,12 +679,19 @@ public class MainUtils {
                 ranKoina = true;
                 predFilePaths.add("koina" + currentModel);
                 klrs.add(klr);
-            } else {
-                if (DiannPredFilePath.isEmpty()) {
-                    DiannPredFilePath = DiannModelCaller.callModel(
-                            Constants.spectraRTPrefix + ".tsv", true);
+            } else { //local executable predictor (FragCast or DIA-NN)
+                String localPredFilePath = localPredFilePaths.get(currentModel);
+                if (localPredFilePath == null) {
+                    if (currentModel.equals("FragCast")) {
+                        localPredFilePath = FragCastModelCaller.callModel(
+                                Constants.spectraRTPrefix + ".tsv", true);
+                    } else { //DIA-NN
+                        localPredFilePath = DiannModelCaller.callModel(
+                                Constants.spectraRTPrefix + ".tsv", true);
+                    }
+                    localPredFilePaths.put(currentModel, localPredFilePath);
                 }
-                predFilePaths.add(DiannPredFilePath);
+                predFilePaths.add(localPredFilePath);
             }
         }
         PredictionEntryHashMap koinaPreds = new PredictionEntryHashMap();
@@ -695,8 +711,8 @@ public class MainUtils {
                     if (predFilePaths.get(j).startsWith("koina")) {
                         koinaPredFilePath.insert(0, "spectra-" +
                                 predFilePaths.get(j).substring(5) + ".");
-                    } else { //DIANN
-                        Constants.spectraPredFile = DiannPredFilePath;
+                    } else { //local predictor (FragCast / DIA-NN)
+                        Constants.spectraPredFile = predFilePaths.get(j);
                     }
                     break;
                 case "RT":
@@ -704,7 +720,7 @@ public class MainUtils {
                         koinaPredFilePath.insert(0, "RT-" +
                                 predFilePaths.get(j).substring(5) + ".");
                     } else {
-                        Constants.RTPredFile = DiannPredFilePath;
+                        Constants.RTPredFile = predFilePaths.get(j);
                     }
                     break;
                 case "IM":
@@ -712,7 +728,7 @@ public class MainUtils {
                         koinaPredFilePath.insert(0, "IM-" +
                                 predFilePaths.get(j).substring(5) + ".");
                     } else {
-                        Constants.IMPredFile = DiannPredFilePath;
+                        Constants.IMPredFile = predFilePaths.get(j);
                     }
                     break;
                 case "auxSpectra": //DIANN cannot predict this

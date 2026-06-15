@@ -93,6 +93,19 @@ public interface LibraryPredictionMapper {
                 } else {
                     return new LibraryTsvReader(file, executorService, "unimod.obo");
                 }
+            case "parquet":
+            case "pq": {
+                //FragCast (or any DIA-NN/Spectronaut) library written as Parquet. Collect the pin
+                //precursors so only relevant entries are kept (empty when no pins -> keep everything).
+                HashSet<String> parquetPrecursors = new HashSet<>();
+                for (File pinFile : pinFiles) {
+                    PinReader pinReader = new PinReader(pinFile.getAbsolutePath());
+                    while (pinReader.next(true)) {
+                        parquetPrecursors.add(pinReader.getPep().getBaseCharge());
+                    }
+                }
+                return new ParquetSpeclibReader(file, executorService, parquetPrecursors);
+            }
             case "speclib":
                 return new FragPipeSpeclibReader(file);
             default:

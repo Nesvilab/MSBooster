@@ -84,6 +84,12 @@ public class Constants implements ConstantsInterface {
     //locations of executables and other models
     public static Integer numThreads = Runtime.getRuntime().availableProcessors() - 1;
     public static String DiaNN = null;
+    public static String FragCast = null; //path to the FragCast executable
+    public static String FragCastModelDir = ""; //optional dir with FragCast-{RT,IM,Spec}.onnx; sets FRAGCAST_MODEL_DIR
+    public static Integer fragCastTopN = 20; //build-library: keep top-N fragments per precursor by intensity
+    public static Double fragCastMinFragMz = 200.0; //build-library: drop fragments below this m/z
+    public static Double fragCastMinRelIntensity = 0.01; //build-library: drop fragments below this relative intensity
+    public static Integer fragCastMinFragSize = 2; //build-library: minimum fragment length in residues
     public static String spectraModel = "";
     public static String rtModel = "";
     public static String imModel = "";

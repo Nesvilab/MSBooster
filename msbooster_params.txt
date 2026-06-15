@@ -56,6 +56,17 @@ imBestModelSearchMetric = top
 spectraBestModelSearchMetric = median
 
 ############################################################
+# Local predictors (FragCast is the default; DIA-NN optional)
+############################################################
+FragCast = null                                  # path to the FragCast executable (selectable via spectraModel/rtModel/imModel = FragCast)
+FragCastModelDir =                               # dir with FragCast-{RT,IM,Spec}.onnx; empty -> resolved beside the exe
+fragCastTopN = 20                                # build-library: top-N fragments per precursor by intensity
+fragCastMinFragMz = 200.0                        # build-library: drop fragments below this m/z
+fragCastMinRelIntensity = 0.01                   # build-library: drop fragments below this relative intensity
+fragCastMinFragSize = 2                          # build-library: minimum fragment length in residues
+DiaNN = null                                     # path to the DIA-NN executable (only when spectraModel/rtModel/imModel = DIA-NN)
+
+############################################################
 # Reusing existing prediction files (skip if regenerating)
 ############################################################
 spectraPredFile = null

@@ -35,24 +35,25 @@ public class ModelCollections implements ConstantsInterface {
             new String[] {"Prosit_2020_irt_TMT", "Prosit_2020_intensity_TMT"});
 
     ////////////individual collections/////////////
+    //FragCast is added alongside DIA-NN as a findBest candidate (it does not replace DIA-NN).
     public static ArrayList<String> generalRTmodels = new ArrayList<>(
-            List.of("DIA-NN", "AlphaPept_rt_generic", "Prosit_2019_irt", "Deeplc_hela_hf"));
+            List.of("DIA-NN", "FragCast", "AlphaPept_rt_generic", "Prosit_2019_irt", "Deeplc_hela_hf"));
     public static ArrayList<String> isolabelRTmodels = new ArrayList<>(
-            List.of("DIA-NN", "Prosit_2020_irt_TMT", "AlphaPept_rt_generic", "Deeplc_hela_hf"));
+            List.of("DIA-NN", "FragCast", "Prosit_2020_irt_TMT", "AlphaPept_rt_generic", "Deeplc_hela_hf"));
 
     public static ArrayList<String> generalMS2models = new ArrayList<>(
-            List.of("DIA-NN", "ms2pip_2021_HCD", "ms2pip_TTOF5600", "AlphaPept_ms2_generic",
+            List.of("DIA-NN", "FragCast", "ms2pip_2021_HCD", "ms2pip_TTOF5600", "AlphaPept_ms2_generic",
                     "Prosit_2020_intensity_CID", "Prosit_2020_intensity_HCD"));
     public static ArrayList<String> isolabelMS2models = new ArrayList<>(
             List.of("Prosit_2020_intensity_TMT", "ms2pip_CID_TMT", "ms2pip_iTRAQphospho"));
     public static ArrayList<String> hlaMS2models = new ArrayList<>(
-            List.of("DIA-NN", "ms2pip_Immuno_HCD", "AlphaPept_ms2_generic",
+            List.of("DIA-NN", "FragCast", "ms2pip_Immuno_HCD", "AlphaPept_ms2_generic",
                     "Prosit_2020_intensity_CID", "Prosit_2020_intensity_HCD"));
     public static ArrayList<String> timstofMS2models = new ArrayList<>(
-            List.of("DIA-NN", "ms2pip_timsTOF2024", "AlphaPept_ms2_generic", "Prosit_2023_intensity_timsTOF"));
+            List.of("DIA-NN", "FragCast", "ms2pip_timsTOF2024", "AlphaPept_ms2_generic", "Prosit_2023_intensity_timsTOF"));
 
     public static ArrayList<String> generalIMmodels = new ArrayList<>(
-            List.of("DIA-NN", "AlphaPept_ccs_generic", "IM2Deep"));
+            List.of("DIA-NN", "FragCast", "AlphaPept_ccs_generic", "IM2Deep"));
 
     public static String rtCollection = "general";
     public static String ms2Collection = "general";

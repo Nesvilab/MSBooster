@@ -132,6 +132,13 @@
             <artifactId>speclibio</artifactId>
             <version>${ver.speclib.io}</version>
         </dependency>
+        <!-- Reads FragCast's Parquet spectral libraries (build-library format=parquet).
+             parquet-floor is a thin, Hadoop-free wrapper over parquet-java (LocalInputFile). -->
+        <dependency>
+            <groupId>blue.strategic.parquet</groupId>
+            <artifactId>parquet-floor</artifactId>
+            <version>1.41</version>
+        </dependency>
     </dependencies>
 
     <build>

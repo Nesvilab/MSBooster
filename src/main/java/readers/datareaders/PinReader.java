@@ -285,6 +285,15 @@ public class PinReader {
         }
     }
 
+    //FragCast reads delta-mass peptides (e.g. C[57.0215]) and resolves them against its full UniMod
+    //table, so feed it the base format rather than DIA-NN's (which is restricted to DIA-NN's mod set).
+    public void createFragCastList(Set<String> hSetHits) throws IOException {
+        while (next(true)) {
+            PeptideFormatter pf = getPep();
+            hSetHits.add(pf.getBase() + "\t" + pf.getCharge());
+        }
+    }
+
     public void createPrositList(Set<String> hSetHits) throws IOException {
         while (next(true)) {
             PeptideFormatter pf = getPep();

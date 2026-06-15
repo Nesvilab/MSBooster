@@ -92,6 +92,9 @@ public class PeptideFileCreator {
                         case "Diann":
                             pin.createDiannList(hSetHits);
                             break;
+                        case "FragCast":
+                            pin.createFragCastList(hSetHits);
+                            break;
                         case "Prosit":
                             pin.createPrositList(hSetHits);
                             break;
@@ -242,6 +245,18 @@ public class PeptideFileCreator {
                             }
                             myWriter.close();
                         }
+                        break;
+                    case "FragCast":
+                        //FragCast takes one precursor per line as peptide<TAB>charge (charge is mandatory
+                        //per row); the peptides carry their mods as delta masses (getBase), which FragCast
+                        //resolves against its full UniMod table. hSetHits is already "peptide\tcharge".
+                        printInfo("Writing FragCast input file");
+                        myWriter = new FileWriter(outfile);
+                        myWriter.write("peptide" + "\t" + "charge\n");
+                        for (String hSetHit : hSetHits) {
+                            myWriter.write(hSetHit + "\n");
+                        }
+                        myWriter.close();
                         break;
                     case "PredFull":
                         printInfo("Writing PredFull input file");

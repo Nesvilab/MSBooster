@@ -187,6 +187,20 @@
                                         <exclude>META-INF/*.RSA</exclude>
                                     </excludes>
                                 </filter>
+                                <filter>
+                                    <!--Only bundle the DuckDB JNI natives we support: keep
+                                        libduckdb_java.so_linux_amd64 and libduckdb_java.so_windows_amd64;
+                                        drop the macOS (osx_*) and ARM64 (*_arm64) builds. These natives
+                                        are shaded into the vendored speclibio jar at its root, so they
+                                        must be excluded here rather than via a normal Maven exclusion.
+                                        DuckDB selects its native at runtime by os.name/os.arch with no
+                                        cross-platform fallback, so this only drops macOS/Linux-ARM64.-->
+                                    <artifact>org.nesvilab:speclibio</artifact>
+                                    <excludes>
+                                        <exclude>libduckdb_java.so_osx_*</exclude>
+                                        <exclude>libduckdb_java.so_*_arm64</exclude>
+                                    </excludes>
+                                </filter>
                             </filters>
                             <transformers>
                                 <transformer implementation="org.apache.maven.plugins.shade.resource.ServicesResourceTransformer"/>

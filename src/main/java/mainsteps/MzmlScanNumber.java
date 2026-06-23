@@ -123,6 +123,22 @@ public class MzmlScanNumber {
                                        PredictionEntryHashMap allPreds, boolean set) throws IOException, URISyntaxException {
         PredictionEntry predictionEntry = allPreds.get(name.getBaseCharge());
         PeptideObj newPepObj = null;
+
+        //No prediction for this precursor. This happens when a provided spectral library does not
+        //cover every PSM in the pin (the library is not a superset of the search results). Degrade
+        //gracefully instead of dereferencing null and calling System.exit(1): build a zero-vector
+        //PeptideObj (so nothing matches, similarity 0) and tally it as a skipped PSM. The count is
+        //reported once at the end ("had N PSMs with peptides not available in the predictions").
+        if (predictionEntry == null) {
+            newPepObj = new PeptideObj(this, name.getBaseCharge(), rank, targetORdecoy, escore,
+                    zeroFloatArray, zeroFloatArray, zeroStringArray, 0f, 0f, false);
+            if (set) {
+                peptideObjects.add(newPepObj);
+            }
+            skippedPSMs.incrementAndGet();
+            return newPepObj;
+        }
+
         try {
             //merge spectra and aux spectra
             float[] predMZs;

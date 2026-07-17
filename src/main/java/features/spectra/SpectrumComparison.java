@@ -947,6 +947,15 @@ public class SpectrumComparison {
             }
         }
 
+        //No peak clears the mean, so there is nothing to normalize against. Happens when every
+        //peak shares one intensity (a SCIEX TOF quantization artifact) and when the scan is empty,
+        //where mean() is NaN and no comparison passes. Dividing would emit Infinity (score > 0) or
+        //NaN (score == 0) into the pin, which Percolator and the score histograms cannot consume.
+        //Such a spectrum carries no intensity ranking, so fall back to 0 like the guard above.
+        if (!(denominator > 0f)) { //also true when denominator is NaN
+            return 0;
+        }
+
         return score / denominator;
     }
 

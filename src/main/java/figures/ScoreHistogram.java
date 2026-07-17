@@ -36,6 +36,8 @@ import java.util.Set;
 
 import static allconstants.Constants.figureDirectory;
 import static figures.ExtensionPlotter.plot;
+import static utils.Print.printError;
+import static utils.Print.printInfo;
 
 public class ScoreHistogram {
     HashSet<String> logScaleFeatures = new HashSet<>(Set.of(
@@ -49,6 +51,7 @@ public class ScoreHistogram {
         HashMap<String, ArrayList<Double>> decoyScores = new HashMap<>();
         HashMap<String, Double> scoreMax = new HashMap<>();
         HashMap<String, Double> scoreMin = new HashMap<>();
+        HashMap<String, Integer> nonFiniteScores = new HashMap<>();
 
         ArrayList<String> features = new ArrayList<>(fs.size());
         ArrayList<Boolean> logScaleBooleans = new ArrayList<>(fs.size());
@@ -84,6 +87,15 @@ public class ScoreHistogram {
                 if (useLogScale) {
                     score = Math.log10(score + 0.01);
                 }
+                //A non-finite score belongs in no bin and would stretch the axis range to
+                //infinity, making xchart throw while painting and take the whole run down with
+                //it. Drop the PSM from the figure and report it instead. Note Double.parseDouble
+                //round-trips the literal "Infinity"/"NaN" that a pin may already carry, and
+                //log10 of a negative score is NaN, so this must run after the transform above.
+                if (!Double.isFinite(score)) {
+                    nonFiniteScores.merge(feature, 1, Integer::sum);
+                    continue;
+                }
                 if (useInt) {
                     if (pinReader.getTD() == 1) {
                         targetScores.get(feature).add(score - 0.5);
@@ -112,6 +124,16 @@ public class ScoreHistogram {
             String xAxisLabel = features.get(i);
             boolean useLogScale = logScaleBooleans.get(i);
             boolean useInt = intBooleans.get(i);
+
+            if (nonFiniteScores.containsKey(feature)) {
+                printInfo("Excluding " + nonFiniteScores.get(feature) + " PSMs with a missing or " +
+                        "infinite " + feature + " from its score histogram");
+            }
+            //every PSM was dropped, so there is no range to bin over
+            if (targetScores.get(feature).isEmpty() && decoyScores.get(feature).isEmpty()) {
+                printError("No usable " + feature + " scores. Skipping its score histogram");
+                continue;
+            }
 
             if (useLogScale) {
                 xAxisLabel = "log(" + xAxisLabel + " + 0.01)";
@@ -194,8 +216,13 @@ public class ScoreHistogram {
                 new File(figureDirectory + File.separator + "score_histograms").mkdirs();
             }
 
-            plot(chart, figureDirectory + File.separator + "score_histograms" + File.separator +
-                    name.substring(0, name.length() - 4) + "_" + feature);
+            //a QC figure is not worth aborting a run whose pin is already written
+            try {
+                plot(chart, figureDirectory + File.separator + "score_histograms" + File.separator +
+                        name.substring(0, name.length() - 4) + "_" + feature);
+            } catch (Exception e) {
+                printError("Could not plot score histogram for " + feature + ": " + e.getMessage());
+            }
         }
         pinReader.close();
     }

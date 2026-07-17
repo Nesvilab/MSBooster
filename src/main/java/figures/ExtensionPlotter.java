@@ -25,19 +25,43 @@ import org.knowm.xchart.BitmapEncoder;
 import org.knowm.xchart.VectorGraphicsEncoder;
 import org.knowm.xchart.internal.chartpart.Chart;
 
+import java.io.File;
 import java.io.IOException;
 
 public class ExtensionPlotter {
+    @FunctionalInterface
+    private interface ChartWriter {
+        void write() throws IOException;
+    }
+
+    //Both xchart encoders open their output file before they render the chart, so a chart that
+    //throws while painting truncates the file and leaves it behind at 0 bytes. That empty figure
+    //is indistinguishable from a real one on disk and hides which feature actually failed, so
+    //drop it and let the caller see the original failure.
+    private static void writeOrDeletePartial(String path, ChartWriter writer) throws IOException {
+        try {
+            writer.write();
+        } catch (Throwable t) { //Errors too, a partial figure must not outlive any failed render
+            new File(path).delete();
+            throw t;
+        }
+    }
+
     public static void plot(Chart<?, ?> chart, String basename) throws IOException {
         Constants.plotExtension = Constants.plotExtension.toLowerCase();
         switch (Constants.plotExtension) {
             case "png":
-                BitmapEncoder.saveBitmap(chart, basename,
-                        BitmapEncoder.BitmapFormat.PNG);
+                writeOrDeletePartial(
+                        BitmapEncoder.addFileExtension(basename, BitmapEncoder.BitmapFormat.PNG),
+                        () -> BitmapEncoder.saveBitmap(chart, basename,
+                                BitmapEncoder.BitmapFormat.PNG));
                 break;
             case "pdf":
-                VectorGraphicsEncoder.saveVectorGraphic(chart, basename,
-                        VectorGraphicsEncoder.VectorGraphicsFormat.PDF);
+                writeOrDeletePartial(
+                        VectorGraphicsEncoder.addFileExtension(basename,
+                                VectorGraphicsEncoder.VectorGraphicsFormat.PDF),
+                        () -> VectorGraphicsEncoder.saveVectorGraphic(chart, basename,
+                                VectorGraphicsEncoder.VectorGraphicsFormat.PDF));
                 break;
             default:
                 printError(Constants.plotExtension + " not supported for plotting. Exiting");

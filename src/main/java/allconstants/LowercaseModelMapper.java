@@ -21,7 +21,8 @@ public class LowercaseModelMapper {
     public LowercaseModelMapper() {
         lowercaseToModel.put("", "");
         lowercaseToModel.put("dia-nn", "DIA-NN");
-        lowercaseToModel.put("fragcast", "FragCast");
+        lowercaseToModel.put(FragCastModels.CONFORMER.toLowerCase(), FragCastModels.CONFORMER);
+        lowercaseToModel.put(FragCastModels.FAST.toLowerCase(), FragCastModels.FAST);
         lowercaseToModel.put("alphapeptdeep", "alphapeptdeep");
 
         for (String model : ModelCollections.KoinaModels) {

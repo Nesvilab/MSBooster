@@ -33,10 +33,11 @@ public class MainUtils {
     //predictions. DIA-NN gets a peptide\tcharge input (getDiann) and writes .predicted.bin
     //(DiannSpeclibReader). FragCast gets a peptide\tcharge input too, but in base/delta-mass format
     //(getBase, so its full UniMod table resolves every mod), and writes .predicted.parquet
-    //(ParquetSpeclibReader). DIA-NN behavior is unchanged.
+    //(ParquetSpeclibReader). Both FragCast Spec variants take this path; the model name decides
+    //whether --fast is passed. DIA-NN behavior is unchanged.
     static PredictionEntryHashMap runLocalBestModel(String model, String inputFile,
                                                     ArrayList<PeptideFormatter> peptides) throws Exception {
-        if (model.equals("FragCast")) {
+        if (FragCastModels.isFragCast(model)) {
             FileWriter myWriter = new FileWriter(inputFile);
             myWriter.write("peptide" + "\t" + "charge\n");
             HashSet<String> seen = new HashSet<>();
@@ -47,7 +48,8 @@ public class MainUtils {
                 }
             }
             myWriter.close();
-            String predFileString = FragCastModelCaller.callModel(inputFile, false);
+            String predFileString = FragCastModelCaller.callModel(inputFile, false,
+                    FragCastModels.usesFastSpecModel(model));
             //no pin files here, so the whole (small best-model) library is read without precursor filtering
             return LibraryPredictionMapper.createLibraryPredictionMapper(
                     predFileString, model, MainClass.executorService).getPreds();
@@ -81,7 +83,7 @@ public class MainUtils {
                 for (String model : consideredModels) {
                     Constants.rtModel = model;
                     PredictionEntryHashMap rtPreds = null;
-                    if (model.equals("DIA-NN") || model.equals("FragCast")) { //mode for local predictor
+                    if (model.equals("DIA-NN") || FragCastModels.isFragCast(model)) { //mode for local predictor
                         MyFileUtils.createWholeDirectory(jsonOutFolder + File.separator + model);
 
                         PeptideFileCreator.createPartialFile(
@@ -186,7 +188,7 @@ public class MainUtils {
                 for (String model : consideredModels) {
                     Constants.imModel = model;
                     PredictionEntryHashMap imPreds = null;
-                    if (model.equals("DIA-NN") || model.equals("FragCast")) { //mode for local predictor
+                    if (model.equals("DIA-NN") || FragCastModels.isFragCast(model)) { //mode for local predictor
                         MyFileUtils.createWholeDirectory(jsonOutFolder + File.separator + model);
 
                         PeptideFileCreator.createPartialFile(
@@ -317,7 +319,7 @@ public class MainUtils {
                     }
 
                     MyFileUtils.createWholeDirectory(jsonOutFolder + File.separator + model);
-                    if (model.equals("DIA-NN") || model.equals("FragCast")) { //mode for local predictor
+                    if (model.equals("DIA-NN") || FragCastModels.isFragCast(model)) { //mode for local predictor
                         PeptideFileCreator.createPartialFile(
                                 jsonOutFolder + File.separator + model + File.separator + "spectraRT_full.tsv",
                                 model, km.peptideArraylist);
@@ -578,87 +580,141 @@ public class MainUtils {
                     "createFull");
         }
 
-        HashSet<String> modelsRan = new HashSet<>();
-        for (Model model : models) {
+        for (Model model : inputFileModels(models)) {
             String currentModel = model.name;
-            if (! modelsRan.contains(currentModel)) { //do not rerun (e.g. spectra and RT same model)
-                if (ModelCollections.KoinaModels.contains(currentModel)) {
-                    if (NceConstants.nceModels.contains(currentModel) && NceConstants.calibrateNCE &&
-                            ! NceConstants.calibratedModels.containsKey(currentModel)) {
-                        //set matching with Da or not
-                        //if matchWithDaltons are true, also accept that (e.g. from reading it from fragger.params)
-                        if (currentModel.equalsIgnoreCase("predfull")) {
-                            Constants.matchWithDaltonsDefault = true;
+            if (ModelCollections.KoinaModels.contains(currentModel)) {
+                if (NceConstants.nceModels.contains(currentModel) && NceConstants.calibrateNCE &&
+                        ! NceConstants.calibratedModels.containsKey(currentModel)) {
+                    //set matching with Da or not
+                    //if matchWithDaltons are true, also accept that (e.g. from reading it from fragger.params)
+                    if (currentModel.equalsIgnoreCase("predfull")) {
+                        Constants.matchWithDaltonsDefault = true;
+                    } else {
+                        if (Constants.matchWithDaltons == null) {
+                            Constants.matchWithDaltonsDefault = false;
                         } else {
-                            if (Constants.matchWithDaltons == null) {
-                                Constants.matchWithDaltonsDefault = false;
-                            } else {
-                                Constants.matchWithDaltonsDefault = Constants.matchWithDaltons;
-                            }
+                            Constants.matchWithDaltonsDefault = Constants.matchWithDaltons;
                         }
-
-                        Object[] modelInfo = NCEcalibrator.calibrateNCE(currentModel, km,
-                                Constants.outputDirectory + File.separator + "NCE_calibration", true);
-                        for (PeptideFormatter pf : km.peptideArraylist) {
-                            pf.foundUnimods.clear();
-                        }
-
-                        String bestNCE = String.valueOf((int) modelInfo[2]);
-                        NceConstants.calibratedModels.put(currentModel, bestNCE);
-                        NCEcalibrator.plotNCEchart(currentModel, (TreeMap<Integer, ArrayList<Double>>) modelInfo[0]);
                     }
 
-                    PeptideFileCreator.createPeptideFile(pmMatcher,
-                            Constants.spectraRTPrefix + "_" + currentModel + ".json", currentModel);
-                } else {
-                    switch (currentModel) {
-                        case "FragCast":
-                            if (Constants.FragCast == null) {
-                                throw new IllegalArgumentException("path to FragCast executable must be provided");
-                            }
-                            printInfo("Generating input file for FragCast");
-                            PeptideFileCreator.createPeptideFile(pmMatcher, Constants.spectraRTPrefix + ".tsv", "FragCast");
-                            break;
-                        case "DIA-NN":
-                            if (Constants.DiaNN == null) {
-                                throw new IllegalArgumentException("path to DIA-NN executable must be provided");
-                            }
-                            printInfo("Generating input file for DIA-NN");
-                            PeptideFileCreator.createPeptideFile(pmMatcher, Constants.spectraRTPrefix + ".tsv", "Diann");
-                            break;
-                        case "pDeep2":
-                            printInfo("Generating input file for pDeep2");
-                            PeptideFileCreator.createPeptideFile(pmMatcher, Constants.spectraRTPrefix + ".tsv", "pDeep2");
-                            break;
-                        case "pDeep3":
-                            printInfo("Generating input file for pDeep3");
-                            PeptideFileCreator.createPeptideFile(pmMatcher, Constants.spectraRTPrefix + ".tsv", "pDeep3");
-                            break;
-                        case "PredFull":
-                            printInfo("Generating input file for PredFull");
-                            PeptideFileCreator.createPeptideFile(pmMatcher, Constants.spectraRTPrefix + ".tsv", "PredFull");
-                            break;
-                        case "Prosit":
-                            printInfo("Generating input file for Prosit");
-                            PeptideFileCreator.createPeptideFile(pmMatcher, Constants.spectraRTPrefix + ".csv", "Prosit");
-                            break;
-                        case "PrositTMT":
-                            printInfo("Generating input file for PrositTMT");
-                            PeptideFileCreator.createPeptideFile(pmMatcher, Constants.spectraRTPrefix + ".csv", "PrositTMT");
-                            break;
-                        case "alphapeptdeep":
-                            printInfo("Generating input file for alphapeptdeep");
-                            PeptideFileCreator.createPeptideFile(pmMatcher, Constants.spectraRTPrefix + ".csv", "alphapeptdeep");
-                            break;
-                        default:
-                            printError("spectraRTPredModel must be one of FragCast, DIA-NN, Prosit, PrositTMT, " +
-                                    "PredFull, pDeep2, pDeep3, or alphapeptdeep");
-                            System.exit(1);
+                    Object[] modelInfo = NCEcalibrator.calibrateNCE(currentModel, km,
+                            Constants.outputDirectory + File.separator + "NCE_calibration", true);
+                    for (PeptideFormatter pf : km.peptideArraylist) {
+                        pf.foundUnimods.clear();
                     }
+
+                    String bestNCE = String.valueOf((int) modelInfo[2]);
+                    NceConstants.calibratedModels.put(currentModel, bestNCE);
+                    NCEcalibrator.plotNCEchart(currentModel, (TreeMap<Integer, ArrayList<Double>>) modelInfo[0]);
                 }
-                modelsRan.add(currentModel);
+
+                PeptideFileCreator.createPeptideFile(pmMatcher,
+                        Constants.spectraRTPrefix + "_" + currentModel + ".json", currentModel);
+            } else {
+                switch (currentModel) {
+                    case FragCastModels.CONFORMER:
+                    case FragCastModels.FAST:
+                        //both Spec variants come from the same executable and read the same input
+                        //file format; only the --fast flag at call time differs
+                        if (Constants.FragCast == null) {
+                            throw new IllegalArgumentException("path to FragCast executable must be provided");
+                        }
+                        printInfo("Generating input file for " + currentModel);
+                        PeptideFileCreator.createPeptideFile(pmMatcher, Constants.spectraRTPrefix + ".tsv",
+                                FragCastModels.CONFORMER);
+                        break;
+                    case "DIA-NN":
+                        if (Constants.DiaNN == null) {
+                            throw new IllegalArgumentException("path to DIA-NN executable must be provided");
+                        }
+                        printInfo("Generating input file for DIA-NN");
+                        PeptideFileCreator.createPeptideFile(pmMatcher, Constants.spectraRTPrefix + ".tsv", "Diann");
+                        break;
+                    case "pDeep2":
+                        printInfo("Generating input file for pDeep2");
+                        PeptideFileCreator.createPeptideFile(pmMatcher, Constants.spectraRTPrefix + ".tsv", "pDeep2");
+                        break;
+                    case "pDeep3":
+                        printInfo("Generating input file for pDeep3");
+                        PeptideFileCreator.createPeptideFile(pmMatcher, Constants.spectraRTPrefix + ".tsv", "pDeep3");
+                        break;
+                    case "PredFull":
+                        printInfo("Generating input file for PredFull");
+                        PeptideFileCreator.createPeptideFile(pmMatcher, Constants.spectraRTPrefix + ".tsv", "PredFull");
+                        break;
+                    case "Prosit":
+                        printInfo("Generating input file for Prosit");
+                        PeptideFileCreator.createPeptideFile(pmMatcher, Constants.spectraRTPrefix + ".csv", "Prosit");
+                        break;
+                    case "PrositTMT":
+                        printInfo("Generating input file for PrositTMT");
+                        PeptideFileCreator.createPeptideFile(pmMatcher, Constants.spectraRTPrefix + ".csv", "PrositTMT");
+                        break;
+                    case "alphapeptdeep":
+                        printInfo("Generating input file for alphapeptdeep");
+                        PeptideFileCreator.createPeptideFile(pmMatcher, Constants.spectraRTPrefix + ".csv", "alphapeptdeep");
+                        break;
+                    default:
+                        printError("spectraRTPredModel must be one of FragCast, FragCast-Fast, DIA-NN, " +
+                                "Prosit, PrositTMT, PredFull, pDeep2, pDeep3, or alphapeptdeep");
+                        System.exit(1);
+                }
             }
         }
+    }
+
+    /**
+     * The models a job must build a prediction input file for: the first model named under each
+     * distinct prediction key, so a model serving several properties (e.g. spectra and RT) builds
+     * its input file once.
+     *
+     * <p>Keying on {@link FragCastModels#predictionKey} rather than the model name is what collapses
+     * the two FragCast Spec variants. They write the same {@code spectraRT.tsv} from the same
+     * peptides — {@code createPeptideFile} is called with {@link FragCastModels#CONFORMER} either
+     * way — so a job naming both (fast spectra with Conformer RT/IM) would otherwise rebuild an
+     * identical file, re-reading every pin file to do it. Which Spec weights that job loads is
+     * {@link FragCastModels#jobUsesFastSpecModel}'s decision, not this list's, so it does not matter
+     * which of the two names survives here. This is the same key
+     * {@link #localPredFile} caches prediction files on, keeping the two steps consistent.
+     */
+    static ArrayList<Model> inputFileModels(List<Model> models) {
+        ArrayList<Model> deduped = new ArrayList<>();
+        HashSet<String> keysSeen = new HashSet<>();
+        for (Model model : models) {
+            if (keysSeen.add(FragCastModels.predictionKey(model.name))) {
+                deduped.add(model);
+            }
+        }
+        return deduped;
+    }
+
+    //one invocation of a local executable predictor, as a seam: the caching in localPredFile is what
+    //keeps a job to one run per predictor, and it is testable without an installed executable
+    interface LocalPredictorRunner {
+        String run(String model, boolean fragCastFast) throws Exception;
+    }
+
+    static final LocalPredictorRunner DEFAULT_LOCAL_PREDICTOR = (model, fragCastFast) ->
+            FragCastModels.isFragCast(model)
+                    ? FragCastModelCaller.callModel(Constants.spectraRTPrefix + ".tsv", true, fragCastFast)
+                    : DiannModelCaller.callModel(Constants.spectraRTPrefix + ".tsv", true);
+
+    /**
+     * The prediction file for one local executable model, running the predictor only when this job
+     * has not already produced its library. Both FragCast Spec variants share a {@code cache} entry
+     * (see {@link FragCastModels#predictionKey}) and the job-wide {@code fragCastFast} choice, so a
+     * job naming both — fast spectra with Conformer RT/IM — runs FragCast once and reads all three
+     * properties from that library; RT and IM are identical under either set of Spec weights.
+     */
+    static String localPredFile(String model, boolean fragCastFast, HashMap<String, String> cache,
+                                LocalPredictorRunner runner) throws Exception {
+        String key = FragCastModels.predictionKey(model);
+        String predFilePath = cache.get(key);
+        if (predFilePath == null) {
+            predFilePath = runner.run(model, fragCastFast);
+            cache.put(key, predFilePath);
+        }
+        return predFilePath;
     }
 
     static void getPredictionFiles(ArrayList<Model> models, ScheduledThreadPoolExecutor executorService) throws Exception {
@@ -666,6 +722,8 @@ public class MainUtils {
         //cache the prediction file produced by each local executable model so the same model is only
         //run once even when it serves multiple properties (e.g. FragCast for spectra + RT + IM)
         HashMap<String, String> localPredFilePaths = new HashMap<>();
+        //FragCast runs at most once per job, so its Spec weights are chosen once, up front
+        boolean fragCastFast = FragCastModels.jobUsesFastSpecModel(models);
         ArrayList<String> predFilePaths = new ArrayList<>(); //replace "koina" with final name later
 
         boolean ranKoina = false;
@@ -680,18 +738,8 @@ public class MainUtils {
                 predFilePaths.add("koina" + currentModel);
                 klrs.add(klr);
             } else { //local executable predictor (FragCast or DIA-NN)
-                String localPredFilePath = localPredFilePaths.get(currentModel);
-                if (localPredFilePath == null) {
-                    if (currentModel.equals("FragCast")) {
-                        localPredFilePath = FragCastModelCaller.callModel(
-                                Constants.spectraRTPrefix + ".tsv", true);
-                    } else { //DIA-NN
-                        localPredFilePath = DiannModelCaller.callModel(
-                                Constants.spectraRTPrefix + ".tsv", true);
-                    }
-                    localPredFilePaths.put(currentModel, localPredFilePath);
-                }
-                predFilePaths.add(localPredFilePath);
+                predFilePaths.add(localPredFile(currentModel, fragCastFast, localPredFilePaths,
+                        DEFAULT_LOCAL_PREDICTOR));
             }
         }
         PredictionEntryHashMap koinaPreds = new PredictionEntryHashMap();

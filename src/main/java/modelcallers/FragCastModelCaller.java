@@ -34,43 +34,73 @@ import static utils.Print.printInfo;
  * reads the peptide and charge columns (the charge is mandatory per row). A single call predicts RT,
  * IM and MS2 at once and writes a 19-column DIA-NN/Spectronaut spectral library as Parquet, read back
  * by {@link readers.predictionreaders.ParquetSpeclibReader}.
+ *
+ * <p>{@code fast} selects FragCast's small/fast Spec model (its {@code --fast} flag,
+ * {@code FragCast-Spec-Fast.onnx}) instead of the default Conformer; see
+ * {@link allconstants.FragCastModels}. Only the MS2 intensities change — RT and IM are predicted by
+ * the same weights either way, which is why a job naming both variants (fast spectra with Conformer
+ * RT/IM) calls this once, under the spectra model's weights. The two variants still write to
+ * different files: the name records which Spec weights produced a library, so findBest scoring them
+ * against each other, and a rerun that switches variants while keeping its predictions, never read
+ * or overwrite the other's.
  */
 public class FragCastModelCaller {
-    public static String callModel(String inputFile, boolean verbose) {
+    /**
+     * The output library path for an input peptide file: {@code spectraRT.tsv} ->
+     * {@code spectraRT.predicted.parquet}, or {@code spectraRT.fast.predicted.parquet} under
+     * {@code fast}. The two Spec variants must not share a path — the name is what says which
+     * weights wrote a library.
+     */
+    static String predictionFile(String inputFile, boolean fast) {
+        return inputFile.substring(0, inputFile.length() - 4) //strip the trailing ".tsv"
+                + (fast ? ".fast" : "") + ".predicted.parquet";
+    }
+
+    /**
+     * The FragCast command line. Every flag here exists in FragCast's {@code build-library} task;
+     * {@code --fast} swaps the Conformer Spec weights for the small/fast ones and is FragCast's only
+     * way to choose between them (there is no per-property task to call).
+     */
+    static List<String> buildCommand(String inputFile, String predFileString, boolean fast) {
+        List<String> command = new ArrayList<>();
+        command.add(Constants.FragCast);
+        command.add("--task");
+        command.add("build-library");
+        if (fast) {
+            command.add("--fast");
+        }
+        command.add("--in");
+        command.add(inputFile);
+        command.add("--out");
+        command.add(predFileString);
+        command.add("--format");
+        command.add("parquet");
+        command.add("--threads");
+        command.add(String.valueOf(Constants.numThreads));
+        command.add("--top-n");
+        command.add(String.valueOf(Constants.fragCastTopN));
+        command.add("--min-frag-mz");
+        command.add(String.valueOf(Constants.fragCastMinFragMz));
+        command.add("--min-rel-intensity");
+        command.add(String.valueOf(Constants.fragCastMinRelIntensity));
+        command.add("--min-frag-size");
+        command.add(String.valueOf(Constants.fragCastMinFragSize));
+        return command;
+    }
+
+    public static String callModel(String inputFile, boolean verbose, boolean fast) {
         long startTime = System.nanoTime();
-        // spectraRT.tsv -> spectraRT.predicted.parquet (strip the trailing ".tsv")
-        String predFileString = inputFile.substring(0, inputFile.length() - 4) + ".predicted.parquet";
+        String predFileString = predictionFile(inputFile, fast);
         try {
             if (Constants.FragCast == null) {
                 printError("path to FragCast executable must be provided (set the FragCast parameter)");
                 System.exit(1);
             }
             if (verbose) {
-                printInfo("Generating FragCast predictions");
+                printInfo("Generating FragCast predictions" + (fast ? " (small/fast Spec model)" : ""));
             }
 
-            List<String> command = new ArrayList<>();
-            command.add(Constants.FragCast);
-            command.add("--task");
-            command.add("build-library");
-            command.add("--in");
-            command.add(inputFile);
-            command.add("--out");
-            command.add(predFileString);
-            command.add("--format");
-            command.add("parquet");
-            command.add("--threads");
-            command.add(String.valueOf(Constants.numThreads));
-            command.add("--top-n");
-            command.add(String.valueOf(Constants.fragCastTopN));
-            command.add("--min-frag-mz");
-            command.add(String.valueOf(Constants.fragCastMinFragMz));
-            command.add("--min-rel-intensity");
-            command.add(String.valueOf(Constants.fragCastMinRelIntensity));
-            command.add("--min-frag-size");
-            command.add(String.valueOf(Constants.fragCastMinFragSize));
-
-            ProcessBuilder builder = new ProcessBuilder(command);
+            ProcessBuilder builder = new ProcessBuilder(buildCommand(inputFile, predFileString, fast));
             //Tell FragCast where its pretrained ONNX weights live via FRAGCAST_MODEL_DIR. An explicit
             //FragCastModelDir param wins; otherwise we derive a "pretrained_models" directory from the
             //executable's location (e.g. tools/FragCast/pretrained_models when the exe is in

@@ -88,10 +88,13 @@ public class ParameterUtils {
         BufferedReader reader = new BufferedReader(new FileReader(params.get("fragger")));
         printInfo("Reading " + params.get("fragger"));
         while ((line = reader.readLine()) != null) {
-            String[] lineSplit = line.split("#")[0].split("=");
-            if (lineSplit.length != 2) {
+            //split on the first "=" only. Values may contain "=" themselves,
+            //such as the site specifiers in mass_offsets_detailed (e.g. 422.16238(aa=KYS))
+            String stripped = line.split("#", 2)[0];
+            if (!stripped.contains("=")) { //empty line, comment line, or no key=value
                 continue;
             }
+            String[] lineSplit = stripped.split("=", 2);
             String key = lineSplit[0].trim();
             String val = lineSplit[1].trim();
             switch (key) {
@@ -162,7 +165,9 @@ public class ParameterUtils {
                                 if (!final_vals.isEmpty()) {
                                     final_vals += "&";
                                 }
-                                final_vals += v;
+                                //must match the number of digits written in the pin file,
+                                //since group assignment is a substring match on the peptide name
+                                final_vals += String.format("%.4f", fv);
                             }
                         }
                         params.put("massOffsetsDetailed", final_vals);

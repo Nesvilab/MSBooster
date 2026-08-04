@@ -27,7 +27,6 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -187,12 +186,23 @@ public class LoessUtilities {
 
         HashMap<String, ArrayList<String>> peptideMap = new HashMap<>();
 
-        //create ignorable mass offsets
-        HashSet<String> ignorableMassOffsets = new HashSet<>();
+        //parse each group once, and each peptide's delta masses once, so the assignment below is
+        //a numeric comparison rather than a substring search (see MassOffsetGroup)
+        HashMap<String, MassOffsetGroup> groups = new HashMap<>();
+        for (String mass : massesList) {
+            groups.put(mass, MassOffsetGroup.of(mass));
+        }
+        double[][] peptideDeltaMasses = new double[peptides.size()][];
+        for (int i = 0; i < peptides.size(); i++) {
+            peptideDeltaMasses[i] = MassOffsetGroup.deltaMasses(peptides.get(i));
+        }
+
+        //mass offsets that already share a curve must not be pulled into a plain single-mass group,
+        //which stands for a regular variable mod
+        ArrayList<MassOffsetGroup> ignorableMassOffsets = new ArrayList<>();
         for (String mass : massesList) {
             if (mass.contains("&")) {
-                String[] masses = mass.split("&");
-                ignorableMassOffsets.addAll(List.of(masses));
+                ignorableMassOffsets.add(groups.get(mass));
             }
         }
 
@@ -207,19 +217,16 @@ public class LoessUtilities {
                 thisPredValues = predValues;
                 thisEscores = eScores;
                 finalPeptides = peptides;
-            } else if (mass.equals("others")) {
+            } else if (mass.equals(MassOffsetGroup.OTHERS)) {
                 for (int i = 0; i < peptides.size(); i++) {
                     boolean peptideContains = false;
                     for (String m : massesList) {
-                        if (m.equals("others")) {
+                        if (m.equals(MassOffsetGroup.OTHERS)) {
                             continue;
                         }
-                        String[] masses = m.split("&");
-                        for (String minimass : masses) {
-                            if (peptides.get(i).contains(minimass)) {
-                                peptideContains = true;
-                                break;
-                            }
+                        if (groups.get(m).matches(peptides.get(i), peptideDeltaMasses[i])) {
+                            peptideContains = true;
+                            break;
                         }
                     }
 
@@ -231,25 +238,14 @@ public class LoessUtilities {
                     }
                 }
             } else {
+                MassOffsetGroup group = groups.get(mass);
                 //if it's a regular variable mod, don't include mass offsets
-                if (mass.contains("&")) {
-                    String[] masses = mass.split("&");
-                    for (int i = 0; i < peptides.size(); i++) {
-                        for (String minimass : masses) {
-                            if (peptides.get(i).contains(minimass)) {
-                                thisExpValues.add(expValues.get(i));
-                                thisPredValues.add(predValues.get(i));
-                                thisEscores.add(eScores.get(i));
-                                finalPeptides.add(peptides.get(i));
-                                break;
-                            }
-                        }
-                    }
-                } else {
-                    for (int i = 0; i < peptides.size(); i++) {
+                boolean isRegularVariableMod = !mass.contains("&");
+                for (int i = 0; i < peptides.size(); i++) {
+                    if (isRegularVariableMod) {
                         boolean offsetContinue = false;
-                        for (String massOffset : ignorableMassOffsets) {
-                            if (peptides.get(i).contains(massOffset)) {
+                        for (MassOffsetGroup massOffset : ignorableMassOffsets) {
+                            if (massOffset.matches(peptides.get(i), peptideDeltaMasses[i])) {
                                 offsetContinue = true;
                                 break;
                             }
@@ -257,12 +253,12 @@ public class LoessUtilities {
                         if (offsetContinue) {
                             continue;
                         }
-                        if (peptides.get(i).contains(mass)) {
-                            thisExpValues.add(expValues.get(i));
-                            thisPredValues.add(predValues.get(i));
-                            thisEscores.add(eScores.get(i));
-                            finalPeptides.add(peptides.get(i));
-                        }
+                    }
+                    if (group.matches(peptides.get(i), peptideDeltaMasses[i])) {
+                        thisExpValues.add(expValues.get(i));
+                        thisPredValues.add(predValues.get(i));
+                        thisEscores.add(eScores.get(i));
+                        finalPeptides.add(peptides.get(i));
                     }
                 }
             }

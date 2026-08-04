@@ -20,6 +20,7 @@ import allconstants.NceConstants;
 import features.rtandim.IMFunctions;
 import features.rtandim.LinearEquation;
 import features.rtandim.LoessUtilities;
+import features.rtandim.MassOffsetGroup;
 import features.rtandim.RTFunctions;
 import java.util.function.DoubleUnaryOperator;
 import mainsteps.MzmlScanNumber;
@@ -45,6 +46,7 @@ import java.io.IOException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentSkipListMap;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
@@ -84,6 +86,13 @@ public class MzmlReader {
     public HashMap<String, ArrayList<String>> RTpeptides;
     public HashMap<String, ArrayList<String>> IMpeptides = new HashMap<>();
     public List<Future> futureList = new ArrayList<>(Constants.numThreads);
+    //parsed calibration groups, cached so each key is parsed once instead of once per PSM.
+    //read from the worker threads of the predict/calculate methods below, hence concurrent
+    private final ConcurrentHashMap<String, MassOffsetGroup> massOffsetGroups = new ConcurrentHashMap<>();
+
+    private MassOffsetGroup massOffsetGroup(String mass) {
+        return massOffsetGroups.computeIfAbsent(mass, MassOffsetGroup::of);
+    }
 
     public MzmlReader(String filename) throws FileParsingException, ExecutionException, InterruptedException {
         Path path = Paths.get(filename);
@@ -649,9 +658,10 @@ public class MzmlReader {
                         if (pep == null) {
                             break;
                         }
+                        double[] pepDeltaMasses = MassOffsetGroup.deltaMasses(pep.name);
                         double finalDelta = Double.MAX_VALUE;
                         for (String mass : LOESSRT.keySet()) {
-                            if (pep.name.contains(mass)) {
+                            if (massOffsetGroup(mass).matches(pep.name, pepDeltaMasses)) {
                                 double delta = Math.abs(LOESSRT.get(mass) - pep.RT);
                                 if (delta < finalDelta) {
                                     finalDelta = delta;
@@ -1074,21 +1084,19 @@ public class MzmlReader {
                         if (pep == null) {
                             break;
                         }
+                        double[] pepDeltaMasses = MassOffsetGroup.deltaMasses(pep.name);
                         double finalDelta = 1000;
                         boolean isNone = true;
                         for (String mass : LOESSRT.keySet()) {
-                            String[] masses = mass.split("&");
-                            for (String minimass : masses) {
-                                if (pep.name.contains(minimass)) {
-                                    isNone = false;
-                                    double rt = LOESSRT.get(mass);
-                                    double delta = Math.abs(rt - pep.RT);
-                                    if (delta < finalDelta) {
-                                        finalDelta = delta;
-                                        pep.calibratedRT = rt;
-                                        pep.predRTrealUnits = StatMethods.lookupInverse(irtToMinutes.get(mass), pep.RT);
-                                        pep.deltaRTLOESS_real = Math.abs(msn.RT - pep.predRTrealUnits);
-                                    }
+                            if (massOffsetGroup(mass).matches(pep.name, pepDeltaMasses)) {
+                                isNone = false;
+                                double rt = LOESSRT.get(mass);
+                                double delta = Math.abs(rt - pep.RT);
+                                if (delta < finalDelta) {
+                                    finalDelta = delta;
+                                    pep.calibratedRT = rt;
+                                    pep.predRTrealUnits = StatMethods.lookupInverse(irtToMinutes.get(mass), pep.RT);
+                                    pep.deltaRTLOESS_real = Math.abs(msn.RT - pep.predRTrealUnits);
                                 }
                             }
                         }
@@ -1147,18 +1155,16 @@ public class MzmlReader {
                             LOESSIM.put(mass, ImChargeEntry.get(mass).applyAsDouble(msn.IM));
                         }
 
+                        double[] pepDeltaMasses = MassOffsetGroup.deltaMasses(pep.name);
                         double finalDelta = 0.5;
                         boolean isNone = true;
                         for (String mass : LOESSIM.keySet()) {
-                            String[] masses = mass.split("&");
-                            for (String minimass : masses) {
-                                if (pep.name.contains(minimass)) {
-                                    isNone = false;
-                                    double im = LOESSIM.get(mass);
-                                    double delta = Math.abs(im - pep.IM);
-                                    if (delta < finalDelta) {
-                                        finalDelta = delta;
-                                    }
+                            if (massOffsetGroup(mass).matches(pep.name, pepDeltaMasses)) {
+                                isNone = false;
+                                double im = LOESSIM.get(mass);
+                                double delta = Math.abs(im - pep.IM);
+                                if (delta < finalDelta) {
+                                    finalDelta = delta;
                                 }
                             }
                         }

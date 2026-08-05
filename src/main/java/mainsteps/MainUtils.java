@@ -25,7 +25,7 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ScheduledThreadPoolExecutor;
 
 import static bestmodelsearch.ModelCollectionDecider.decideCollection;
-import static features.rtandim.LoessUtilities.gridSearchCV;
+import static features.rtandim.LoessUtilities.calibrationResiduals;
 import static utils.Print.*;
 
 public class MainUtils {
@@ -132,15 +132,7 @@ public class MainUtils {
                         rts[1][i] = Math.round(expRTs.get(i) * 100d) / 100d;
                     }
 
-                    //testing
-                    String[] bandwidths = Constants.loessBandwidth.split(",");
-                    float[] floatBandwidths = new float[bandwidths.length];
-                    for (int i = 0; i < bandwidths.length; i++) {
-                        floatBandwidths[i] = Float.parseFloat(bandwidths[i]);
-                    }
-                    Object[] bandwidth_loess_rtdiffs = gridSearchCV(rts, floatBandwidths, false);
-                    float[] rtdiffs = (float[]) bandwidth_loess_rtdiffs[2];
-                    datapointsRT.put(model, rtdiffs);
+                    datapointsRT.put(model, calibrationResiduals(rts));
                 }
 
                 //get best model
@@ -238,15 +230,7 @@ public class MainUtils {
                         ims[1][i] = Math.round(expIMs.get(i) * 100d) / 100d;
                     }
 
-                    //testing
-                    String[] bandwidths = Constants.loessBandwidth.split(",");
-                    float[] floatBandwidths = new float[bandwidths.length];
-                    for (int i = 0; i < bandwidths.length; i++) {
-                        floatBandwidths[i] = Float.parseFloat(bandwidths[i]);
-                    }
-                    Object[] bandwidth_loess_imdiffs = gridSearchCV(ims, floatBandwidths, false);
-                    float[] imdiffs = (float[]) bandwidth_loess_imdiffs[2];
-                    datapointsIM.put(model, imdiffs);
+                    datapointsIM.put(model, calibrationResiduals(ims));
                 }
 
                 //get best model //TODO: test which method is more accurate

@@ -22,6 +22,8 @@ import features.rtandim.LinearEquation;
 import features.rtandim.LoessUtilities;
 import features.rtandim.MassOffsetGroup;
 import features.rtandim.RTFunctions;
+import features.rtandim.fragalign.FragAlignRegression;
+import features.rtandim.fragalign.HermiteSpline;
 import java.util.function.DoubleUnaryOperator;
 import mainsteps.MzmlScanNumber;
 import mainsteps.PeptideObj;
@@ -55,8 +57,6 @@ import java.util.concurrent.Future;
 import static allconstants.Constants.minLinearRegressionSize;
 import static allconstants.Constants.minLoessRegressionSize;
 import static allconstants.FragmentIonConstants.allowedFragmentationTypes;
-import static features.rtandim.LoessUtilities.LOESS;
-import static features.rtandim.LoessUtilities.gridSearchCV;
 import static utils.Print.printInfo;
 import static utils.StatMethods.*;
 
@@ -835,7 +835,7 @@ public class MzmlReader {
         }
     }
 
-    public void setLOESS(int regressionSize, String bandwidth, int robustIters, String mode) throws FileParsingException {
+    public void setLOESS(int regressionSize, String mode) throws FileParsingException {
         //setting up calibrations for each mass
         ArrayList<String> masses = new ArrayList<>();
         if (Constants.massesForLoessCalibration.isEmpty()) {
@@ -843,12 +843,6 @@ public class MzmlReader {
         } else {
             masses.addAll(Arrays.asList(Constants.massesForLoessCalibration.split(",")));
             masses.add("others");
-        }
-
-        String[] bandwidths = bandwidth.split(",");
-        float[] floatBandwidths = new float[bandwidths.length];
-        for (int i = 0; i < bandwidths.length; i++) {
-            floatBandwidths[i] = Float.parseFloat(bandwidths[i]);
         }
 
         if (mode.equals("RT")) {
@@ -869,7 +863,6 @@ public class MzmlReader {
                 //linear regression if too few points
                 if (rts[0].length < minLoessRegressionSize) {
                     DoubleUnaryOperator RTLOESSentry = null;
-                    DoubleUnaryOperator RTLOESS_realUnitsentry = null;
                     if (rts[0].length >= minLinearRegressionSize) {
                         //get slope and intercept
                         float[] parameters = StatMethods.linearRegression(rts[0], rts[1]);
@@ -877,35 +870,17 @@ public class MzmlReader {
                         //create function class
                         //beta0 + beta1 * x
                         RTLOESSentry = new LinearEquation(parameters[1], parameters[0]).invoke();
-
-                        //now do in opposite direction
-                        parameters = StatMethods.linearRegression(rts[1], rts[0]);
                     }
                     RTLOESS.put(mass, RTLOESSentry);
                     continue;
                 }
 
-                //find best bandwidth if enough datapoints
-                Object[] gridSearchResults = gridSearchCV(rts, floatBandwidths, true);
-                float finalBandwidth = (float) gridSearchResults[0];
-
-                printInfo("Best average bandwidth for mass " + mass + " from grid search of " +
-                        Constants.loessBandwidth + " after " + Constants.regressionSplits + " iterations is " + finalBandwidth);
-
-                //final model trained on all data
-                while (true) {
-                    try {
-                        RTLOESS.put(mass, LOESS(rts, finalBandwidth, robustIters));
-                        break;
-                    } catch (Exception e) {
-                        if (finalBandwidth == 1) {
-                            printInfo("Regression still not possible with bandwidth 1. Setting RT score to 0");
-                            RTLOESS.put(mass, null);
-                            break;
-                        }
-                        finalBandwidth = Math.min(finalBandwidth * 2, 1);
-                        printInfo("Regression failed, retrying with double the bandwidth: " + finalBandwidth);
-                    }
+                HermiteSpline spline = FragAlignRegression.fit(rts[1], rts[0], null);
+                if (spline == null) {
+                    printInfo("RT regression failed for mass " + mass + ". Setting RT score to 0");
+                    RTLOESS.put(mass, null);
+                } else {
+                    RTLOESS.put(mass, spline::invert);
                 }
             }
         } else if (mode.equals("IM")) {
@@ -950,29 +925,13 @@ public class MzmlReader {
                         continue;
                     }
 
-                    //find best bandwidth if enough datapoints
-                    Object[] gridSearchResults = gridSearchCV(ims, floatBandwidths, true);
-                    float finalBandwidth = (float) gridSearchResults[0];
-
-                    printInfo("Best average bandwidth for mass " + mass + " from grid search of " +
-                            Constants.loessBandwidth + " after " + Constants.regressionSplits + " iterations is " + finalBandwidth);
-
-                    //final model trained on all data
-                    while (true) {
-                        try {
-                            IMLOESSmap.put(mass, LOESS(ims, finalBandwidth, robustIters));
-                            expAndPredIMsHashMap.put(charge, expAndPredIMs);
-                            break;
-                        } catch (Exception e) {
-                            if (finalBandwidth == 1) {
-                                printInfo("Regression still not possible with bandwidth 1. Setting IM score to 0");
-                                IMLOESSmap.put(mass, null);
-                                break;
-                            }
-                            finalBandwidth = Math.min(finalBandwidth * 2, 1);
-                            printInfo("Regression failed, retrying with double the bandwidth: " + finalBandwidth);
-                        }
+                    HermiteSpline spline = FragAlignRegression.fit(ims[0], ims[1], null);
+                    if (spline == null) {
+                        printInfo("IM regression failed for mass " + mass + ". Setting IM score to 0");
+                    } else {
+                        expAndPredIMsHashMap.put(charge, expAndPredIMs);
                     }
+                    IMLOESSmap.put(mass, spline);
                 }
                 IMLOESS.add(IMLOESSmap);
             }

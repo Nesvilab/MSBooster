@@ -188,8 +188,14 @@ public class Constants implements ConstantsInterface {
     public static Integer imLoessRegressionSize = 1000;
     public static Integer minLoessRegressionSize = 100;
     public static Integer minLinearRegressionSize = 10;
+    //Deprecated: the calibration fitter selects its own smoothing, so these are
+    //no longer read. They stay declared so an existing msbooster_params.txt or
+    //FragPipe workflow that still writes them is accepted rather than rejected.
+    @Deprecated
     public static String loessBandwidth = "0.01,0.05,0.1,0.2";
+    @Deprecated
     public static Integer robustIters = 2;
+    @Deprecated
     public static Integer regressionSplits = 5;
     public static String massesForLoessCalibration = "";
     public static String massOffsets = "";

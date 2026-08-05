@@ -15,10 +15,10 @@
 package features.rtandim;
 
 import allconstants.Constants;
-import java.util.function.DoubleUnaryOperator;
+import features.rtandim.fragalign.FragAlignRegression;
+import features.rtandim.fragalign.HermiteSpline;
 import mainsteps.MzmlScanNumber;
 import mainsteps.PeptideObj;
-import org.apache.commons.math3.analysis.interpolation.LoessInterpolator;
 import readers.datareaders.MzmlReader;
 import umich.ms.fileio.exceptions.FileParsingException;
 
@@ -27,18 +27,56 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.stream.IntStream;
 
 import static allconstants.Constants.minLinearRegressionSize;
-import static allconstants.Constants.minLoessRegressionSize;
 import static utils.Print.printError;
 import static utils.Print.printInfo;
-import static utils.StatMethods.*;
 
+/**
+ * Assembles the (experimental, predicted) anchor arrays used for RT and IM
+ * calibration, split by mass offset group.
+ *
+ * <p>Curve fitting itself lives in {@code features.rtandim.fragalign}.
+ */
 public class LoessUtilities {
+
+    /**
+     * Residual reported for every anchor when no calibration curve can be fit,
+     * large enough that the model ranks last but small enough that squaring it
+     * for an RMSE stays well inside float range.
+     */
+    private static final float UNFITTABLE_RESIDUAL = 1e6f;
+
+    /**
+     * Fits a calibration curve to the given anchors and returns each anchor's
+     * absolute residual, which is the per-model score {@code BestModelSearcher}
+     * ranks candidate prediction models by.
+     *
+     * <p>This replaces the bandwidth grid search that used to serve the same
+     * purpose. The fitter chooses its own smoothing, so a single fit per model
+     * is enough where the grid search needed one per bandwidth per split.
+     *
+     * @param xy {@code [0]} independent values, {@code [1]} dependent values
+     * @return per-anchor absolute residuals; all {@link #UNFITTABLE_RESIDUAL}
+     *         when the fit fails, so an unfittable model ranks last instead of
+     *         appearing perfect
+     */
+    public static float[] calibrationResiduals(double[][] xy) {
+        float[] residuals = new float[xy[0].length];
+        HermiteSpline spline = FragAlignRegression.fit(xy[0], xy[1], null);
+        if (spline == null) {
+            Arrays.fill(residuals, UNFITTABLE_RESIDUAL);
+            return residuals;
+        }
+        for (int i = 0; i < residuals.length; i++) {
+            residuals[i] = (float) Math.abs(spline.evaluate(xy[0][i]) - xy[1][i]);
+        }
+        return residuals;
+    }
+
     //getPSMs returns number of PSMs fitting all criteria except e value cutoff
     //private function only used by getArrays
     private static int getPSMs(MzmlReader mzml,
@@ -329,337 +367,4 @@ public class LoessUtilities {
         return new Object[] {massToDataMap, peptideMap};
     }
 
-    private static double getBandwidth(double bandwidth, int numDatapoints) {
-        if (numDatapoints < minLoessRegressionSize || bandwidth > 1) {
-            bandwidth = 1d; //linear regression
-        } else if (bandwidth < (double) 2 / numDatapoints) {
-            //the bandwidth must be larger than 2/n
-            //https://commons.apache.org/proper/commons-math/javadocs/api-3.6.1/org/apache/commons/math3/analysis/interpolation/LoessInterpolator.html
-            bandwidth = (double) 3 / numDatapoints;
-        }
-        return bandwidth;
-    }
-    public static DoubleUnaryOperator LOESS(double[][] bins, double bandwidth, int robustIters) {
-        //need to sort arrays (DIA-U mzml not in order)
-        int[] sortedIndices = IntStream.range(0, bins[0].length)
-                .boxed().sorted(Comparator.comparingDouble(k -> bins[0][k])).mapToInt(ele -> ele).toArray();
-        double[] newX = new double[sortedIndices.length];
-        double[] newY = new double[sortedIndices.length];
-        for (int i = 0; i < sortedIndices.length; i++) {
-            newX[i] = bins[0][sortedIndices[i]];
-        }
-        for (int i = 0; i < sortedIndices.length; i++) {
-            newY[i] = bins[1][sortedIndices[i]];
-        }
-
-        //solve monotonicity issue
-        double compare = -1;
-        for (int i = 0; i < newX.length; i++) {
-            double d = newX[i];
-            if (d == compare) {
-                newX[i] = newX[i - 1] + 0.00000001; //arbitrary increment to handle smooth method
-            } else {
-                compare = d;
-            }
-        }
-
-        //check bandwidth
-        bandwidth = getBandwidth(bandwidth, newX.length);
-
-        //fit loess
-        LoessInterpolator loessInterpolator = new LoessInterpolator(bandwidth, robustIters);
-        double[][] results = fittingRound(loessInterpolator, newX, newY, null, false);
-        double[] fittedY = results[0];
-        newX = results[1];
-        newY = results[2];
-
-        //remove Nan
-        ArrayList<Integer> nanIdx = new ArrayList<>();
-        int i = 0;
-        for (double yval : fittedY) {
-            if (Double.isNaN(yval)) {
-                nanIdx.add(i);
-            }
-            i += 1;
-        }
-
-        fittedY = removeIdx(fittedY, nanIdx);
-        newX = removeIdx(newX, nanIdx);
-        newY = removeIdx(newY, nanIdx);
-
-        DoubleUnaryOperator ir = isotonicRegressor(newX, fittedY);
-        for (i = 0; i < fittedY.length; i++) {
-            fittedY[i] = ir.applyAsDouble(newX[i]);
-        }
-        results = fittingRound(loessInterpolator, newX, newY, fittedY, true);
-        fittedY = results[0];
-        newX = results[1];
-
-        return isotonicRegressor(newX, fittedY);
-    }
-
-    /**
-     * Pool Adjacent Violators (PAV) isotonic regression enforcing non-decreasing monotonicity.
-     *
-     * Memory: O(n) pre-allocated primitive arrays; no per-point object allocation.
-     * Time:   O(n) for PAV; O(log n) per interpolator call via binary search.
-     *
-     * The returned interpolator assigns each original data point the block mean (standard PAV).
-     * Within a block the function is flat (step function); between adjacent blocks it ramps
-     * linearly between the two block boundary values. Outside the data range the slope of the
-     * first/last inter-block boundary is used for extrapolation.
-     *
-     * @param x sorted x-coordinates (must be non-decreasing)
-     * @param y y-coordinates to make monotone
-     */
-    private static DoubleUnaryOperator isotonicRegressor(double[] x, double[] y) {
-        int n = x.length;
-        if (n == 0) return v -> 0.0;
-        if (n == 1) { double y0 = y[0]; return v -> y0; }
-
-        // Stack-based PAV — one pass, O(n).
-        // sumY / cnt gives the mean of each block; we also track the start index so we
-        // can write block means back to the isoY array in a single forward pass.
-        double[] sumY    = new double[n];
-        int[]    cnt     = new int[n];
-        int[]    blockStart = new int[n]; // index of first point in each stack slot
-        int top = 0;
-
-        for (int i = 0; i < n; i++) {
-            sumY[top]       = y[i];
-            cnt[top]        = 1;
-            blockStart[top] = i;
-            top++;
-            // Merge while the newest block's mean < previous block's mean
-            while (top > 1 && sumY[top - 1] / cnt[top - 1] < sumY[top - 2] / cnt[top - 2]) {
-                top--;
-                sumY[top - 1]       += sumY[top];
-                cnt[top - 1]        += cnt[top];
-                // blockStart[top-1] already holds the earlier start index — no change needed
-            }
-        }
-
-        // Write block means into isoY at the original data positions
-        final double[] isoY = new double[n];
-        for (int k = 0; k < top; k++) {
-            double mean = sumY[k] / cnt[k];
-            int start   = blockStart[k];
-            int end     = (k + 1 < top) ? blockStart[k + 1] : n;
-            for (int i = start; i < end; i++) {
-                isoY[i] = mean;
-            }
-        }
-
-        // Build the interpolator over (x[i], isoY[i]).
-        // Within a block all isoY values are equal → the segment is flat.
-        // Between the last point of one block and the first point of the next the
-        // function ramps linearly, which avoids a hard discontinuity.
-        final double[] fx = x.clone();
-        final int N = n;
-
-        return v -> {
-            if (v <= fx[0]) {
-                // Left extrapolation: use slope between the first two distinct PAV block means.
-                // Skip points that share the same isoY as fx[0] (same PAV block) so we get
-                // the inter-block slope rather than the intra-block slope (which is 0).
-                int j = 1;
-                while (j < N && isoY[j] == isoY[0]) j++;
-                if (j == N) return isoY[0];
-                double slope = (isoY[j] - isoY[0]) / (fx[j] - fx[0]);
-                return isoY[0] + slope * (v - fx[0]);
-            }
-            if (v >= fx[N - 1]) {
-                // Right extrapolation: use slope between the last two distinct PAV block means.
-                // Skip points that share the same isoY as fx[N-1] (same PAV block) so we get
-                // the inter-block slope rather than the intra-block slope (which is 0).
-                int j = N - 2;
-                while (j >= 0 && isoY[j] == isoY[N - 1]) j--;
-                if (j < 0) return isoY[N - 1];
-                double slope = (isoY[N - 1] - isoY[j]) / (fx[N - 1] - fx[j]);
-                return isoY[N - 1] + slope * (v - fx[N - 1]);
-            }
-            // Binary search for the interval [fx[lo], fx[hi]] that straddles v
-            int lo = 0, hi = N - 1;
-            while (lo + 1 < hi) {
-                int mid = (lo + hi) >>> 1;
-                if (fx[mid] <= v) lo = mid; else hi = mid;
-            }
-            double denom = fx[hi] - fx[lo];
-            if (denom == 0.0) return (isoY[lo] + isoY[hi]) * 0.5;
-            return isoY[lo] + (v - fx[lo]) / denom * (isoY[hi] - isoY[lo]);
-        };
-    }
-
-    private static double[][] fittingRound(LoessInterpolator lr, double[] newX, double[] newY, double[] smoothedY,
-                                           boolean extra) {
-        double[] y;
-        if (smoothedY != null) {
-            y = smoothedY;
-        } else {
-            y = lr.smooth(newX, newY);
-        }
-        if (y.length > 100) {
-            if (extra) {
-                for (int i = 0; i < y.length; i++) {
-                    y[i] = y[i] - newY[i]; //y now represents difference
-                }
-
-                //remove outliers
-                float meanDiff = mean(y);
-                float stdDiff = (float) Math.sqrt(variance(y));
-                ArrayList<Integer> outliersIdx = new ArrayList<>();
-
-                for (int i = 0; i < y.length; i++) {
-                    if (Math.abs(zscore((float) y[i], meanDiff, stdDiff)) > 2) {
-                        outliersIdx.add(i);
-                    }
-                }
-                y = removeIdx(y, outliersIdx);
-                newX = removeIdx(newX, outliersIdx);
-                newY = removeIdx(newY, outliersIdx);
-            }
-
-            double[] weights = new double[y.length];
-            for (int i = 0; i < y.length; i++) {
-                int start = Math.max(i - y.length / 100, 0);
-                int end = Math.min(i + y.length / 100, y.length);
-                if (start != end) {
-                    weights[i] = Math.abs(median(Arrays.copyOfRange(y, start, end)));
-                } else {
-                    weights[i] = y[i];
-                }
-            }
-
-            //redo loess with weights
-            y = lr.smooth(newX, newY, weights); //weighting so ends become better fit
-        }
-        double[][] results = new double[3][];
-        results[0] = y;
-        results[1] = newX;
-        results[2] = newY;
-        return results;
-    }
-
-    private static double[] removeIdx(double[] array, ArrayList<Integer> idx) {
-        if (!idx.isEmpty()) {
-            ArrayList<Double> newX = new ArrayList<>();
-            for (int i = 0; i < array.length; i++) {
-                if (! idx.contains(i)) {
-                    newX.add(array[i]);
-                }
-            }
-            array = new double[newX.size()];
-            for (int i = 0; i < newX.size(); i++) {
-                array[i] = newX.get(i);
-            }
-        }
-        return array;
-    }
-
-    public static ArrayList<double[][][]> trainTestSplit(double[][] expAndPred) {
-        //arraylist of N splits
-        //train-test,exp-pred,data
-        double[] exp = expAndPred[0];
-        double[] pred = expAndPred[1];
-
-        ArrayList<double[][][]> splits = new ArrayList<>();
-
-        for (int rep = 0; rep < Constants.regressionSplits; rep++) {
-            //sort into train and test
-            List<Double> trainExpList = new ArrayList<>();
-            List<Double> trainPredList = new ArrayList<>();
-            List<Double> testExpList = new ArrayList<>();
-            List<Double> testPredList = new ArrayList<>();
-
-            for (int i = 0; i < exp.length; i++) {
-                if (i % Constants.regressionSplits != rep) {
-                    trainExpList.add(exp[i]);
-                    trainPredList.add(pred[i]);
-                } else {
-                    testExpList.add(exp[i]);
-                    testPredList.add(pred[i]);
-                }
-            }
-
-            double[][][] split = new double[2][2][];
-            split[0][0] = trainExpList.stream().mapToDouble(Double::doubleValue).toArray();
-            split[0][1] = trainPredList.stream().mapToDouble(Double::doubleValue).toArray();
-            split[1][0] = testExpList.stream().mapToDouble(Double::doubleValue).toArray();
-            split[1][1] = testPredList.stream().mapToDouble(Double::doubleValue).toArray();
-            splits.add(split);
-        }
-        return splits;
-    }
-
-    //finds the best bandwidth and absolute error between all points
-    public static Object[] gridSearchCV(double[][] rts, float[] bandwidths, boolean verbose) {
-        float[] bestBandwidths = new float[Constants.regressionSplits];
-
-        //divide into train and test sets
-        ArrayList<double[][][]> splits = trainTestSplit(rts);
-
-        if (verbose) {
-            System.out.print("Iteration ");
-        }
-        double bestMSE;
-        for (int Nsplit = 0; Nsplit < splits.size(); Nsplit++) {
-            bestMSE = Double.MAX_VALUE;
-            if (verbose) {
-                System.out.print(Nsplit + 1 + "...");
-            }
-            float bestBandwidth = 1f;
-
-            double[][][] split = splits.get(Nsplit);
-            double[][] train = split[0];
-            double[][] test = split[1];
-
-            for (float floatb : bandwidths) { //for bandwidth in grid search
-                //get the loess model
-                try {
-                    DoubleUnaryOperator loess = LOESS(train, floatb, Constants.robustIters);
-
-                    //calculate MSE by comparing calibrated expRT to predRT
-                    double[] calibratedRTs = new double[test[0].length];
-                    for (int i = 0; i < calibratedRTs.length; i++) {
-                        double rt = test[0][i];
-                        calibratedRTs[i] = loess.applyAsDouble(rt);
-                    }
-                    double mse = meanSquaredError(calibratedRTs, test[1]);
-
-                    //choose best model
-                    if (mse < bestMSE) {
-                        bestMSE = mse;
-                        bestBandwidth = (float) getBandwidth(floatb, train[0].length);
-                    }
-                } catch (Exception ignored) {} //bandwidth too small?
-            }
-            bestBandwidths[Nsplit] = bestBandwidth;
-        }
-        if (verbose) {
-            System.out.println();
-        }
-        float finalBandwidth = Float.parseFloat(String.format("%.4f", mean(bestBandwidths)));
-
-        //train one more loess and calculate mse
-        //or just have all indexes past 1 as rtDiffs
-        //final model trained on all data
-        bestMSE = Double.MAX_VALUE;
-        DoubleUnaryOperator loess = null;
-        while (true) {
-            try {
-                loess = LOESS(rts, finalBandwidth, Constants.robustIters);
-                float[] rtDiffs = new float[rts[0].length];
-                for (int i = 0; i < rtDiffs.length - 1; i++) {
-                    double rt = rts[0][i];
-                    rtDiffs[i] = (float) Math.abs(loess.applyAsDouble(rt) - rts[1][i]);
-                }
-                return new Object[]{finalBandwidth, loess, rtDiffs};
-            } catch (Exception e) {
-                if (finalBandwidth == 1) {
-                    return new Object[]{finalBandwidth, loess, (float) bestMSE};
-                }
-                finalBandwidth = Math.min(finalBandwidth * 2, 1);
-            }
-        }
-    }
 }

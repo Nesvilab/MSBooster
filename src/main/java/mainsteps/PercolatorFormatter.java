@@ -209,7 +209,7 @@ public class PercolatorFormatter {
 
                 if (featuresList.contains("deltaRTLOESS") || featuresList.contains("deltaRTLOESSnormalized") ||
                         featuresList.contains("deltaRTLOESSreal")) {
-                    mzml.setLOESS(Constants.rtLoessRegressionSize, Constants.loessBandwidth, Constants.robustIters, "RT");
+                    mzml.setLOESS(Constants.rtLoessRegressionSize, "RT");
                     mzml.setInverseLoess(executorService);
                     mzml.predictRTLOESS(executorService); //potentially only invoke once if normalized included
                     mzml.getBestCalibratedRTs();
@@ -354,7 +354,7 @@ public class PercolatorFormatter {
                     mzml.setKernelDensities(executorService, "RT");
                 }
                 if (featuresList.contains("deltaIMLOESS") || featuresList.contains("deltaIMLOESSnormalized")) {
-                    mzml.setLOESS(Constants.imLoessRegressionSize, Constants.loessBandwidth, Constants.robustIters, "IM");
+                    mzml.setLOESS(Constants.imLoessRegressionSize, "IM");
                     mzml.predictIMLOESS(executorService);
 
                     CalibrationFigure cf;

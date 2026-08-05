@@ -375,6 +375,12 @@ public class StatMethods {
         double y0 = lower.getKey(), x0 = lower.getValue();
         double y1 = upper.getKey(), x1 = upper.getValue();
 
+        // An exact hit makes floorEntry and ceilingEntry the same entry, so the
+        // interpolation below would compute 0/0 and return NaN. That NaN then
+        // fails both the FeatureCalculator and PinWriter range gates, which
+        // leaves the PSM unscored but still written, and the pin writer throws.
+        if (y1 == y0) return x0;
+
         // Linear interpolation
         double ratio = (yTarget - y0) / (y1 - y0);
         return x0 + ratio * (x1 - x0);

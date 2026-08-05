@@ -6,7 +6,7 @@
 
     <groupId>org.nesvilab</groupId>
     <artifactId>MSBooster</artifactId>
-    <version>1.5.2</version>
+    <version>1.5.3</version>
 
     <properties>
         <maven.compiler.source>11</maven.compiler.source>

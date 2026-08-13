@@ -103,9 +103,14 @@ public class PinWriter {
                     writer.addValue(pin.header[j], row[j]);
                 }
                 //add extra protein columns
+                //each one needs its own output index: header.size() is loop-invariant, so
+                //reusing it made every extra column overwrite the previous one and only the
+                //last of N survived (a PIN may legally carry the protein IDs across several
+                //tab-separated trailing columns).
                 if (pin.getRow().length > pin.header.length) {
+                    int extraIdx = header.size();
                     for (int j = pin.header.length; j < pin.getRow().length; j++) {
-                        writer.addValue(header.size(), row[j]);
+                        writer.addValue(extraIdx++, row[j]);
                     }
                 }
 

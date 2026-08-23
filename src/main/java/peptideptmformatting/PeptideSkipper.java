@@ -15,6 +15,7 @@
 package peptideptmformatting;
 
 import allconstants.Constants;
+import allconstants.FragCastCharges;
 
 public class PeptideSkipper {
     //provide peptide and see if it may be problematic
@@ -54,6 +55,13 @@ public class PeptideSkipper {
             return true;
         }
         if (model.contains("prosit") && chargeInt > 6) { //predfull can handle charge up to 30
+            return true;
+        }
+        //FragCast encodes charge as a six-way one-hot and its build-library refuses a range past it,
+        //so these precursors are never predicted and must be recognized as unsupported rather than
+        //looked up and found missing
+        if (model.contains("fragcast")
+                && (chargeInt < FragCastCharges.LOWEST || chargeInt > FragCastCharges.HIGHEST)) {
             return true;
         }
         //string length

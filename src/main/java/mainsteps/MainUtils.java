@@ -38,18 +38,25 @@ public class MainUtils {
     static PredictionEntryHashMap runLocalBestModel(String model, String inputFile,
                                                     ArrayList<PeptideFormatter> peptides) throws Exception {
         if (FragCastModels.isFragCast(model)) {
+            //peptide<TAB>charge, so FragCast predicts exactly these precursors rather than
+            //expanding each peptide across a charge range
             FileWriter myWriter = new FileWriter(inputFile);
             myWriter.write("peptide" + "\t" + "charge\n");
             HashSet<String> seen = new HashSet<>();
             for (PeptideFormatter pf : peptides) {
+                if (!FragCastCharges.canPredict(pf.getCharge())) {
+                    continue; //naming a charge FragCast cannot represent fails the whole run
+                }
                 String line = pf.getBase() + "\t" + pf.getCharge() + "\n";
                 if (seen.add(line)) {
                     myWriter.write(line);
                 }
             }
             myWriter.close();
+            //score the candidate under the weights this job will actually predict with, so findBest
+            //never picks a model on numbers a fine-tuned run would not reproduce
             String predFileString = FragCastModelCaller.callModel(inputFile, false,
-                    FragCastModels.usesFastSpecModel(model));
+                    FragCastModels.usesFastSpecModel(model), FragCastWeights.fromConstants());
             //no pin files here, so the whole (small best-model) library is read without precursor filtering
             return LibraryPredictionMapper.createLibraryPredictionMapper(
                     predFileString, model, MainClass.executorService).getPreds();
@@ -675,12 +682,12 @@ public class MainUtils {
     //one invocation of a local executable predictor, as a seam: the caching in localPredFile is what
     //keeps a job to one run per predictor, and it is testable without an installed executable
     interface LocalPredictorRunner {
-        String run(String model, boolean fragCastFast) throws Exception;
+        String run(String model, boolean fragCastFast, FragCastWeights weights) throws Exception;
     }
 
-    static final LocalPredictorRunner DEFAULT_LOCAL_PREDICTOR = (model, fragCastFast) ->
+    static final LocalPredictorRunner DEFAULT_LOCAL_PREDICTOR = (model, fragCastFast, weights) ->
             FragCastModels.isFragCast(model)
-                    ? FragCastModelCaller.callModel(Constants.spectraRTPrefix + ".tsv", true, fragCastFast)
+                    ? FragCastModelCaller.callModel(Constants.spectraRTPrefix + ".tsv", true, fragCastFast, weights)
                     : DiannModelCaller.callModel(Constants.spectraRTPrefix + ".tsv", true);
 
     /**
@@ -690,12 +697,12 @@ public class MainUtils {
      * job naming both — fast spectra with Conformer RT/IM — runs FragCast once and reads all three
      * properties from that library; RT and IM are identical under either set of Spec weights.
      */
-    static String localPredFile(String model, boolean fragCastFast, HashMap<String, String> cache,
-                                LocalPredictorRunner runner) throws Exception {
-        String key = FragCastModels.predictionKey(model);
+    static String localPredFile(String model, boolean fragCastFast, FragCastWeights weights,
+                                HashMap<String, String> cache, LocalPredictorRunner runner) throws Exception {
+        String key = FragCastModels.predictionKey(model, weights);
         String predFilePath = cache.get(key);
         if (predFilePath == null) {
-            predFilePath = runner.run(model, fragCastFast);
+            predFilePath = runner.run(model, fragCastFast, weights);
             cache.put(key, predFilePath);
         }
         return predFilePath;
@@ -708,6 +715,9 @@ public class MainUtils {
         HashMap<String, String> localPredFilePaths = new HashMap<>();
         //FragCast runs at most once per job, so its Spec weights are chosen once, up front
         boolean fragCastFast = FragCastModels.jobUsesFastSpecModel(models);
+        //the weights this pass loads: whatever the params name, which is the pretrained set unless
+        //the user is reusing a model an earlier fine-tune produced
+        FragCastWeights fragCastWeights = FragCastWeights.fromConstants();
         ArrayList<String> predFilePaths = new ArrayList<>(); //replace "koina" with final name later
 
         boolean ranKoina = false;
@@ -722,8 +732,8 @@ public class MainUtils {
                 predFilePaths.add("koina" + currentModel);
                 klrs.add(klr);
             } else { //local executable predictor (FragCast or DIA-NN)
-                predFilePaths.add(localPredFile(currentModel, fragCastFast, localPredFilePaths,
-                        DEFAULT_LOCAL_PREDICTOR));
+                predFilePaths.add(localPredFile(currentModel, fragCastFast, fragCastWeights,
+                        localPredFilePaths, DEFAULT_LOCAL_PREDICTOR));
             }
         }
         PredictionEntryHashMap koinaPreds = new PredictionEntryHashMap();

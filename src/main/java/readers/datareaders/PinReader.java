@@ -15,12 +15,14 @@
 package readers.datareaders;
 
 import allconstants.Constants;
+import allconstants.FragCastCharges;
 import allconstants.NceConstants;
 import org.apache.commons.lang3.ArrayUtils;
 import peptideptmformatting.PTMhandler;
 import peptideptmformatting.PeptideFormatter;
 import peptideptmformatting.PeptideSkipper;
 import umich.ms.fileio.exceptions.FileParsingException;
+import utils.ProteinLabels;
 
 import java.io.BufferedInputStream;
 import java.io.BufferedReader;
@@ -109,6 +111,33 @@ public class PinReader {
 
     public void attachMzml(MzmlReader mzml) {
         this.mzml = mzml;
+    }
+
+    /**
+     * This row's protein labels in {@link ProteinLabels} form, or empty when the pin has no such
+     * column. A pin without one still describes perfectly good peptides, so it should predict an
+     * unlabelled library rather than fail: {@link #getColumn} would index at -1 and throw.
+     *
+     * <p>Normalised rather than passed through because MSFragger's pin terminates every entry with a
+     * ';' - see {@link ProteinLabels} for what that costs a predicted library.
+     *
+     * <p>A pin may instead spread its protein IDs across extra tab-separated trailing columns (see
+     * {@code PinWriter}), which the header does not name. Those are folded in too - reading only the
+     * named column would drop every protein after the first and call a shared peptide proteotypic,
+     * the same defect in the other direction. Only a {@code Proteins} column that ends the header can
+     * carry them, so nothing else is ever swallowed.
+     */
+    private String proteinsOrEmpty() {
+        final int colNum = idxMap.containsKey("Proteins")
+                ? idxMap.get("Proteins")
+                : ArrayUtils.indexOf(header, "Proteins");
+        idxMap.put("Proteins", colNum);
+        final String[] row = getRow();
+        if (colNum < 0 || colNum >= row.length) {
+            return "";
+        }
+        final int end = colNum == header.length - 1 ? row.length : colNum + 1;
+        return ProteinLabels.normalize(Arrays.copyOfRange(row, colNum, end));
     }
 
     public String getColumn(String col) {
@@ -284,10 +313,28 @@ public class PinReader {
 
     //FragCast reads delta-mass peptides (e.g. C[57.0215]) and resolves them against its full UniMod
     //table, so feed it the base format rather than DIA-NN's (which is restricted to DIA-NN's mod set).
+    //Naming the charge per row is what keeps the predicted library to the precursors the search
+    //actually found: FragCast expands only the rows that leave it blank, across
+    //--min-charge..--max-charge. A charge it cannot represent is left out rather than named, since
+    //naming one is a hard error that would fail the whole prediction (see FragCastCharges).
     public void createFragCastList(Set<String> hSetHits) throws IOException {
         while (next(true)) {
             PeptideFormatter pf = getPep();
-            hSetHits.add(pf.getBase() + "\t" + pf.getCharge());
+            //Same guard the AlphaPeptDeep writer carries. It costs nothing while rescoring, where
+            //keepDecoys is 1 and the decoys are the point, and is what keeps them out of a predicted
+            //spectral library, where a run that asked for targets would otherwise get half decoys.
+            if (Constants.keepDecoys == 0 && getTD() == 0) {
+                continue;
+            }
+            if (FragCastCharges.canPredict(pf.getCharge())) {
+                //The proteins column only goes in when the peptide file is being made for a library,
+                //which is what createPredFileOnly means. FragCast fills ProteinId, GeneName and
+                //Proteotypic from it, and the AlphaPeptDeep writer above carries it for the same
+                //reason. Rescoring never reads those columns, so its input keeps the two it had.
+                hSetHits.add(Boolean.TRUE.equals(Constants.createPredFileOnly)
+                        ? pf.getBase() + "\t" + pf.getCharge() + "\t" + proteinsOrEmpty()
+                        : pf.getBase() + "\t" + pf.getCharge());
+            }
         }
     }
 
@@ -312,9 +359,11 @@ public class PinReader {
             if (Constants.keepDecoys == 0 && getTD() == 0) {
                 continue;
             }
+            //the same normalised list the FragCast writer gets: both backends read this column the
+            //same way, so they must not be told two different things about the same pin
             hSetHits.add(pf.getStripped() + "," + pf.getAlphapeptdeepMods() + "," + pf.getModPositions() + "," +
                     pf.getCharge() + "," + NceConstants.getNCE() + "," + Constants.instrument + "," +
-                    pf.getLibrarytsv() + "," + getColumn("Proteins") + "," + -1 * (getTD() - 1));
+                    pf.getLibrarytsv() + "," + proteinsOrEmpty() + "," + -1 * (getTD() - 1));
         }
     }
 

@@ -17,6 +17,7 @@ package modelcallers;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.util.HashMap;
@@ -24,6 +25,7 @@ import java.util.List;
 
 import allconstants.Constants;
 import allconstants.FragCastModels;
+import allconstants.FragCastWeights;
 import allconstants.LowercaseModelMapper;
 import allconstants.ModelCollections;
 import bestmodelsearch.ModelCollectionDecider;
@@ -35,6 +37,7 @@ import utils.Model;
 // a user may select, and the command line handed to the FragCast executable. Neither test starts a
 // process - buildCommand is the seam.
 public class FragCastModelCallerTest {
+
 
     @BeforeEach
     public void setExecutablePath() {
@@ -135,7 +138,8 @@ public class FragCastModelCallerTest {
 
     @Test
     public void fastAddsTheFlagToTheBuildLibraryCall() {
-        List<String> fast = FragCastModelCaller.buildCommand("spectraRT.tsv", "out.parquet", true);
+        List<String> fast = FragCastModelCaller.buildCommand("spectraRT.tsv", "out.parquet", true,
+                FragCastWeights.base());
         assertEquals(List.of("fragcast", "--task", "build-library", "--fast", "--in", "spectraRT.tsv"),
                 fast.subList(0, 6));
         assertTrue(fast.containsAll(List.of("--out", "out.parquet", "--format", "parquet")));
@@ -143,7 +147,8 @@ public class FragCastModelCallerTest {
 
     @Test
     public void theDefaultCallIsUnchangedAndPassesNoFastFlag() {
-        List<String> conformer = FragCastModelCaller.buildCommand("spectraRT.tsv", "out.parquet", false);
+        List<String> conformer = FragCastModelCaller.buildCommand("spectraRT.tsv", "out.parquet",
+                false, FragCastWeights.base());
         assertFalse(conformer.contains("--fast"));
         assertEquals(List.of("fragcast", "--task", "build-library", "--in", "spectraRT.tsv"),
                 conformer.subList(0, 5));
@@ -154,16 +159,102 @@ public class FragCastModelCallerTest {
                 conformer.get(conformer.indexOf("--top-n") + 1));
     }
 
+    // The prefix is on the database token of a protein label, so a library that read the accession
+    // alone would write a decoy under its target's identity. FragCast can only keep it if it is told
+    // what it is, and it must be the same prefix the rest of the run uses.
+    @Test
+    public void theDecoyPrefixIsNamedSoDecoysStayDistinguishable() {
+        String before = Constants.decoyPrefix;
+        try {
+            Constants.decoyPrefix = "DECOY_";
+            List<String> command = FragCastModelCaller.buildCommand("spectraRT.tsv", "out.parquet",
+                    false, FragCastWeights.base());
+            assertEquals("DECOY_", command.get(command.indexOf("--decoy-tag") + 1));
+        } finally {
+            Constants.decoyPrefix = before;
+        }
+    }
+
     // A job runs one variant, but findBest scores both against each other and a rerun may switch
     // variants while keeping its predictions; sharing an output path would mix the two libraries up.
     @Test
     public void theTwoVariantsWriteToDifferentFiles() {
-        String conformer = FragCastModelCaller.predictionFile("spectraRT.tsv", false);
-        String fast = FragCastModelCaller.predictionFile("spectraRT.tsv", true);
+        String conformer = FragCastModelCaller.predictionFile("spectraRT.tsv", false,
+                FragCastWeights.base());
+        String fast = FragCastModelCaller.predictionFile("spectraRT.tsv", true,
+                FragCastWeights.base());
         assertEquals("spectraRT.predicted.parquet", conformer);
         assertEquals("spectraRT.fast.predicted.parquet", fast);
         assertNotEquals(conformer, fast);
         // ParquetSpeclibReader is chosen by extension, so both must stay .parquet
         assertTrue(fast.endsWith(".parquet"));
+    }
+
+    // Custom weights are what a locally fine-tuned model reaches prediction through. The pretrained
+    // case above must stay byte-identical - that is the compatibility pin - so these tests only ever
+    // exercise the extra arguments, never the ones that were always there.
+    @Test
+    public void pretrainedWeightsChangeNeitherTheCommandNorTheFileName() {
+        List<String> withBase = FragCastModelCaller.buildCommand("spectraRT.tsv", "out.parquet", false,
+                FragCastWeights.base());
+        for (String flag : List.of("--rt-onnx", "--im-onnx", "--spec-onnx")) {
+            assertFalse(withBase.contains(flag), "pretrained weights passed " + flag);
+        }
+        assertEquals("spectraRT.predicted.parquet",
+                FragCastModelCaller.predictionFile("spectraRT.tsv", false, FragCastWeights.base()));
+    }
+
+    @Test
+    public void eachCustomModelAddsExactlyItsOwnFlag() {
+        List<String> command = FragCastModelCaller.buildCommand("spectraRT.tsv", "out.parquet", false,
+                FragCastWeights.of("/models/rt.onnx", "", "/models/spec.onnx"));
+        assertTrue(command.containsAll(List.of("--rt-onnx", "/models/rt.onnx",
+                "--spec-onnx", "/models/spec.onnx")));
+        assertFalse(command.contains("--im-onnx"), "an unset property named a weights file");
+        // appended after the flags FragCast has always been given, which keep their positions
+        assertEquals(List.of("fragcast", "--task", "build-library", "--in", "spectraRT.tsv"),
+                command.subList(0, 5));
+    }
+
+    // Within one job the fine-tuned pass and the pretrained pass both run FragCast on the same
+    // peptide list; sharing an output path would hand the second the first one's library.
+    @Test
+    public void aFineTunedPassWritesSomewhereElse() {
+        String base = FragCastModelCaller.predictionFile("spectraRT.tsv", false, FragCastWeights.base());
+        String tuned = FragCastModelCaller.predictionFile("spectraRT.tsv", false,
+                FragCastWeights.base().withRt("/models/rt.onnx"));
+        assertNotEquals(base, tuned);
+        assertTrue(tuned.endsWith(".predicted.parquet"), tuned);
+        assertEquals(tuned, FragCastModelCaller.predictionFile("spectraRT.tsv", false,
+                FragCastWeights.base().withRt("/models/rt.onnx")), "the file name is not stable");
+    }
+
+    // FragCast refuses --fast alongside --spec-onnx: both name the Spec weights. The weights win,
+    // because the ONNX declares its own architecture - which is what lets a run predict with a
+    // fine-tuned fast model at all.
+    @Test
+    public void namedMs2WeightsReplaceTheFastFlagRatherThanClashingWithIt() {
+        List<String> tuned = FragCastModelCaller.buildCommand("spectraRT.tsv", "out.parquet", true,
+                FragCastWeights.base().withSpec("/models/FragCast-Spec-Fast.finetuned.onnx"));
+        assertFalse(tuned.contains("--fast"), "--fast survived alongside --spec-onnx: " + tuned);
+        assertEquals("/models/FragCast-Spec-Fast.finetuned.onnx",
+                tuned.get(tuned.indexOf("--spec-onnx") + 1));
+
+        // with no MS2 weights named, --fast is still how the fast model is selected
+        assertTrue(FragCastModelCaller.buildCommand("spectraRT.tsv", "out.parquet", true,
+                FragCastWeights.base().withRt("/models/rt.onnx")).contains("--fast"));
+        assertFalse(FragCastModelCaller.buildCommand("spectraRT.tsv", "out.parquet", false,
+                FragCastWeights.base().withSpec("/models/spec.onnx")).contains("--fast"));
+    }
+
+    // The list names a charge per row, so FragCast predicts exactly those precursors. Passing a
+    // range as well would only be reported as overridden, and would matter if a row ever omitted
+    // its charge - which MSBooster never does, since the pin always knows it.
+    @Test
+    public void theCommandLeavesTheChargeToTheList() {
+        List<String> command = FragCastModelCaller.buildCommand("spectraRT.tsv", "out.parquet",
+                false, FragCastWeights.base());
+        assertFalse(command.contains("--min-charge"), "a charge range was passed: " + command);
+        assertFalse(command.contains("--max-charge"), "a charge range was passed: " + command);
     }
 }

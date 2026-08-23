@@ -56,15 +56,61 @@ imBestModelSearchMetric = top
 spectraBestModelSearchMetric = median
 
 ############################################################
-# Local predictors (FragCast is the default; DIA-NN optional)
+# Local predictors (name one with spectraModel/rtModel/imModel;
+# DIA-NN is what runs when none is named)
 ############################################################
 FragCast = null                                  # path to the FragCast executable (selectable via spectraModel/rtModel/imModel = FragCast)
-FragCastModelDir =                               # dir with FragCast-{RT,IM,Spec}.onnx; empty -> resolved beside the exe
+FragCastModelDir =                               # dir with FragCast-{RT,IM,Spec}(-Spec-Fast).onnx; empty -> resolved beside the exe
 fragCastTopN = 20                                # build-library: top-N fragments per precursor by intensity
 fragCastMinFragMz = 200.0                        # build-library: drop fragments below this m/z
 fragCastMinRelIntensity = 0.01                   # build-library: drop fragments below this relative intensity
 fragCastMinFragSize = 2                          # build-library: minimum fragment length in residues
 DiaNN = null                                     # path to the DIA-NN executable (only when spectraModel/rtModel/imModel = DIA-NN)
+
+############################################################
+# FragCast local transfer learning (CPU only, no server)
+#
+# Fine-tunes FragCast on a spectral library you supply, producing one zip that
+# holds every model it wrote. Everything runs through the same FragCast
+# executable on this machine; nothing is uploaded. Every fine-tuned model is
+# kept, whatever it scored.
+#
+# Fine-tuning is its own run, and rescoring with the result is another:
+#   java -cp MSBooster.jar transferlearn.FragCastLocalWorkflow \
+#        --paramsList msbooster_params.txt --library library.tsv
+# names a FragCastModelZip; give that to a later run to rescore with it. The zip
+# goes where --output-dir says, or beside the library. For server-based transfer
+# learning instead, see transferlearn.SecondPassWorkflow.
+#
+# One library is all it needs. FragCast holds out its own slice of it and
+# selects the best epoch against that - so there is no second library to supply
+# and no holdout fraction to choose.
+#
+# Nothing about HOW the fine-tune runs is settable here: epochs, learning rate,
+# batch size, warmup, training depth and seed are FragCast's own, and MSBooster
+# omits those flags so each task trains the way the executable considers right.
+#
+# The library's headers must be the ones FragCast's fine-tune reads:
+# ModifiedPeptideSequence and PrecursorCharge are required; NormalizedRetentionTime,
+# PrecursorIonMobility and LibraryIntensity/FragmentType/FragmentCharge/
+# FragmentSeriesNumber supply the rt, im and spec targets respectively. Exports
+# that name these columns differently must be renamed, not guessed at.
+############################################################
+
+# Custom FragCast weights for prediction (--rt-onnx/--im-onnx/--spec-onnx).
+# Empty = the pretrained models in FragCastModelDir. Set them to rescore with a
+# model a fine-tune produced, without fine-tuning again - usually you want
+# FragCastModelZip below instead, which names all three at once.
+FragCastRtOnnx =
+FragCastImOnnx =
+FragCastSpecOnnx =                               # supersedes FragCast-Fast: the weights file decides which MS2 model runs
+
+# The same three models as one file, and what a fine-tune produces: it gathers
+# the ONNX files it exported into this zip and then removes them, so the zip is
+# the whole product. Naming it here unpacks it and fills in whichever of the
+# three parameters above was left empty. Anything named above wins over it, and
+# the run says so rather than overriding it quietly.
+FragCastModelZip =
 
 ############################################################
 # Reusing existing prediction files (skip if regenerating)
@@ -82,7 +128,7 @@ numKoinaAttempts = 5
 initialKoinaMillisecondsToWaitRtIm = 30000
 initialKoinaMillisecondsToWaitMs2 = 60000
 numPSMsToCalibrate = 1000
-fragpredPeptidePredictionLimit = 2000000
+diannPeptidePredictionLimit = 2000000
 
 ############################################################
 # MS/MS spectral matching

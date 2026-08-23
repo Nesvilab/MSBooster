@@ -89,6 +89,18 @@ public class Constants implements ConstantsInterface {
     public static Double fragCastMinFragMz = 200.0; //build-library: drop fragments below this m/z
     public static Double fragCastMinRelIntensity = 0.01; //build-library: drop fragments below this relative intensity
     public static Integer fragCastMinFragSize = 2; //build-library: minimum fragment length in residues
+
+    //Custom FragCast weights used for prediction (--rt-onnx/--im-onnx/--spec-onnx). Empty = the
+    //pretrained weights in FragCastModelDir. A fine-tune (mainsteps.FragCastTransferLearner) writes
+    //its models where its --output-dir says, and a later run points at them to rescore without
+    //fine-tuning again.
+    public static String FragCastRtOnnx = "";
+    public static String FragCastImOnnx = "";
+    public static String FragCastSpecOnnx = ""; //illegal alongside the FragCast-Fast model
+    //One zip holding the RT, IM and MS2 models together, as written by a fine-tune
+    //(transferlearn.fragcast.FragCastModelBundle). Unpacked once at startup, after which it supplies
+    //whichever of the three parameters above was left empty; anything named there wins over it.
+    public static String FragCastModelZip = "";
     public static String spectraModel = "";
     public static String rtModel = "";
     public static String imModel = "";

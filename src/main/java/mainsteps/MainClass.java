@@ -18,6 +18,8 @@ import allconstants.*;
 
 import koinaclasses.KoinaMethods;
 
+import transferlearn.fragcast.FragCastModelBundle;
+
 import utils.Model;
 import utils.MyFileUtils;
 
@@ -85,6 +87,19 @@ public class MainClass {
 
             //adding to different constants classes, and setting input/output paths
             updateConstants(params);
+
+            //A model bundle names the weights every later prediction loads, so it is opened here,
+            //before any model is selected: setMS2model and its siblings below read the per-property
+            //parameters it fills in. Naming an unreadable one is an error rather than something to
+            //carry on past - the run would otherwise silently rescore with the pretrained models the
+            //user was replacing.
+            try {
+                FragCastModelBundle.applyToConstants();
+            } catch (IOException e) {
+                printError(e.getMessage());
+                printError("Exiting");
+                System.exit(1);
+            }
 
             //defining num threads
             if (Constants.numThreads <= 0) {
@@ -202,24 +217,43 @@ public class MainClass {
             ) {
                 km.getTopPeptides();
             }
+            //Custom FragCast weights are named per property, and FragCast rejects naming its MS2
+            //weights alongside the flag that selects its built-in fast ones. The same check runs
+            //inside buildCommand, which a best-model search reaches before this block finishes, so
+            //both are caught here and reported as the parameter conflict they are rather than as a
+            //stack trace out of a candidate evaluation.
             ArrayList<Model> models = new ArrayList<>();
-            Model spectraModel = setMS2model(km);
-            if (!spectraModel.name.isEmpty()) {
-                models.add(spectraModel);
+            try {
+                Model spectraModel = setMS2model(km);
+                if (!spectraModel.name.isEmpty()) {
+                    models.add(spectraModel);
+                }
+                Model rtModel = setRTmodel(km, pmMatcher);
+                if (!rtModel.name.isEmpty()) {
+                    models.add(rtModel);
+                }
+                Model imModel = setIMmodel(km, pmMatcher);
+                if (!imModel.name.isEmpty()) {
+                    models.add(imModel);
+                }
+                Model auxSpectraModel = setAuxMS2model();
+                if (!auxSpectraModel.name.isEmpty()) {
+                    models.add(auxSpectraModel);
+                }
+                Constants.foundBest = true;
+                if (FragCastWeights.fromConstants().supersedesFastFlag(
+                        FragCastModels.jobUsesFastSpecModel(models))) {
+                    //not an error: the ONNX declares its own architecture, so a fine-tuned fast
+                    //model runs fast. Said out loud because a Conformer file put here would quietly
+                    //run the Conformer for a job that asked for the fast model.
+                    printInfo("FragCastSpecOnnx names the MS2 weights, so " + FragCastModels.FAST +
+                            " selects nothing further; the weights file decides which model runs.");
+                }
+            } catch (IllegalArgumentException e) {
+                printError(e.getMessage());
+                printError("Exiting");
+                System.exit(1);
             }
-            Model rtModel = setRTmodel(km, pmMatcher);
-            if (!rtModel.name.isEmpty()) {
-                models.add(rtModel);
-            }
-            Model imModel = setIMmodel(km, pmMatcher);
-            if (!imModel.name.isEmpty()) {
-                models.add(imModel);
-            }
-            Model auxSpectraModel = setAuxMS2model();
-            if (!auxSpectraModel.name.isEmpty()) {
-                models.add(auxSpectraModel);
-            }
-            Constants.foundBest = true;
             if (ModelCollections.KoinaRTmodels.contains(Constants.rtModel) ||
                     ModelCollections.KoinaMS2models.contains(Constants.spectraModel) ||
                     ModelCollections.KoinaIMmodels.contains(Constants.imModel)) {

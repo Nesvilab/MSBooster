@@ -69,6 +69,22 @@ public class FragCastModels {
     }
 
     /**
+     * The key a job caches a model's prediction <i>file</i> under once weights can differ.
+     *
+     * <p>{@link #predictionKey(String)} answers "which executable produces this model's library",
+     * which is the right question for the peptide input file — that file is the same whatever
+     * weights are loaded. It is the wrong question for the library itself, whose <i>name</i> carries
+     * {@link FragCastWeights#fileTag()}: a key that left the weights out would stand for two
+     * different files, so a model loaded under one weight set could be served a library predicted
+     * under another. Folding the same tag in keeps the key and the file name saying the same thing,
+     * and leaves the pretrained key byte-identical to what it always was.
+     */
+    public static String predictionKey(String model, FragCastWeights weights) {
+        String key = predictionKey(model);
+        return isFragCast(model) ? key + weights.fileTag() : key;
+    }
+
+    /**
      * Which Spec weights the job's single FragCast run should load, given the models it will run.
      *
      * <p>Only the MS2 intensities depend on the choice, so the spectra model makes it. When no

@@ -18,6 +18,7 @@ import allconstants.Constants;
 import jakarta.xml.bind.JAXBException;
 import mainsteps.MainClass;
 import mainsteps.PinMzmlMatcher;
+import allconstants.FragCastCharges;
 import peptideptmformatting.PeptideFormatter;
 import peptideptmformatting.PeptideSkipper;
 import readers.datareaders.MzmlReader;
@@ -244,16 +245,21 @@ public class PeptideFileCreator {
                         }
                         break;
                     case "FragCast":
-                        //FragCast takes one precursor per line as peptide<TAB>charge (charge is mandatory
-                        //per row); the peptides carry their mods as delta masses (getBase), which FragCast
-                        //resolves against its full UniMod table. hSetHits is already "peptide\tcharge".
+                        //FragCast takes one precursor per line as peptide<TAB>charge. The charge is
+                        //optional to FragCast - it expands rows that omit it across a charge range -
+                        //so naming it is what keeps the library to the precursors actually searched.
+                        //The peptides carry their mods as delta masses (getBase), which FragCast
+                        //resolves against its full UniMod table. hSetHits is already "peptide<TAB>charge".
                         printInfo("Writing FragCast input file");
                         myWriter = new FileWriter(outfile);
-                        myWriter.write("peptide" + "\t" + "charge\n");
+                        myWriter.write(Boolean.TRUE.equals(Constants.createPredFileOnly)
+                                ? "peptide" + "\t" + "charge" + "\t" + "proteins\n"
+                                : "peptide" + "\t" + "charge\n");
                         for (String hSetHit : hSetHits) {
                             myWriter.write(hSetHit + "\n");
                         }
                         myWriter.close();
+                        FragCastCharges.reportSkipped();
                         break;
                     case "PredFull":
                         printInfo("Writing PredFull input file");

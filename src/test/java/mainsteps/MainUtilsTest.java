@@ -15,12 +15,14 @@
 package mainsteps;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
 
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 
 import allconstants.FragCastModels;
+import allconstants.FragCastWeights;
 import org.junit.jupiter.api.Test;
 import utils.Model;
 
@@ -35,23 +37,30 @@ public class MainUtilsTest {
         final ArrayList<String> runs = new ArrayList<>();
 
         @Override
-        public String run(String model, boolean fast) {
+        public String run(String model, boolean fast, FragCastWeights weights) {
             if (!FragCastModels.isFragCast(model)) { //DIA-NN
                 runs.add(model);
                 return "spectraRT.predicted.bin";
             }
-            runs.add(model + (fast ? " --fast" : ""));
-            return "spectraRT" + (fast ? ".fast" : "") + ".predicted.parquet";
+            runs.add(model + (fast ? " --fast" : "") + weights.fileTag());
+            return "spectraRT" + (fast ? ".fast" : "") + weights.fileTag() + ".predicted.parquet";
         }
     }
 
     private static ArrayList<String> resolveAll(List<Model> models, boolean fragCastFast,
                                                 MainUtils.LocalPredictorRunner predictor)
             throws Exception {
+        return resolveAll(models, fragCastFast, FragCastWeights.base(), predictor);
+    }
+
+    private static ArrayList<String> resolveAll(List<Model> models, boolean fragCastFast,
+                                                FragCastWeights weights,
+                                                MainUtils.LocalPredictorRunner predictor)
+            throws Exception {
         HashMap<String, String> cache = new HashMap<>();
         ArrayList<String> predFiles = new ArrayList<>();
         for (Model model : models) {
-            predFiles.add(MainUtils.localPredFile(model.name, fragCastFast, cache, predictor));
+            predFiles.add(MainUtils.localPredFile(model.name, fragCastFast, weights, cache, predictor));
         }
         return predFiles;
     }
@@ -165,5 +174,39 @@ public class MainUtilsTest {
                 new Model("DIA-NN", "IM"));
 
         assertEquals(List.of(FragCastModels.FAST, "DIA-NN"), inputFileModelNames(models));
+    }
+
+    // The library's file name carries the weights that produced it, so the key it is cached under
+    // has to as well. Both are "FragCast"; a key that left the weights out would stand for two
+    // different files, and a run loading fine-tuned weights could be handed the pretrained library.
+    @Test
+    public void aFineTunedPassIsNotServedThePretrainedLibrary() throws Exception {
+        List<Model> models = List.of(new Model(FragCastModels.CONFORMER, "spectra"));
+        RecordingPredictor predictor = new RecordingPredictor();
+        HashMap<String, String> cache = new HashMap<>();
+
+        FragCastWeights base = FragCastWeights.base();
+        FragCastWeights tuned = base.withRt("/models/rt.onnx");
+        String first = MainUtils.localPredFile(models.get(0).name, false, base, cache, predictor);
+        String second = MainUtils.localPredFile(models.get(0).name, false, tuned, cache, predictor);
+
+        assertEquals(2, predictor.runs.size(), "FragCast did not run again for the fine-tuned weights");
+        assertNotEquals(first, second, "both passes were given the same library");
+    }
+
+    // The collapsing that already existed must survive: one weight set, one run, however many
+    // properties it serves.
+    @Test
+    public void oneWeightSetStillRunsFragCastOnce() throws Exception {
+        List<Model> models = List.of(
+                new Model(FragCastModels.CONFORMER, "spectra"),
+                new Model(FragCastModels.CONFORMER, "RT"),
+                new Model(FragCastModels.CONFORMER, "IM"));
+        RecordingPredictor predictor = new RecordingPredictor();
+        ArrayList<String> predFiles = resolveAll(models, false,
+                FragCastWeights.base().withRt("/models/rt.onnx"), predictor);
+
+        assertEquals(1, predictor.runs.size(), "FragCast ran more than once: " + predictor.runs);
+        assertEquals(predFiles.get(0), predFiles.get(2));
     }
 }

@@ -15,8 +15,10 @@
 package modelcallers;
 
 import allconstants.Constants;
+import allconstants.FragCastWeights;
 
-import java.io.*;
+import java.io.File;
+import java.io.IOException;
 import java.nio.file.Files;
 import java.util.ArrayList;
 import java.util.List;
@@ -43,30 +45,43 @@ import static utils.Print.printInfo;
  * different files: the name records which Spec weights produced a library, so findBest scoring them
  * against each other, and a rerun that switches variants while keeping its predictions, never read
  * or overwrite the other's.
+ *
+ * <p>{@link FragCastWeights} extends that naming rule to custom per-property weights, which is how
+ * a locally fine-tuned model is used for prediction (see {@link mainsteps.FragCastTransferLearner}).
+ * The pretrained weights carry an empty tag, so a job that fine-tunes nothing writes exactly the
+ * files it always did.
  */
 public class FragCastModelCaller {
     /**
      * The output library path for an input peptide file: {@code spectraRT.tsv} ->
      * {@code spectraRT.predicted.parquet}, or {@code spectraRT.fast.predicted.parquet} under
-     * {@code fast}. The two Spec variants must not share a path — the name is what says which
-     * weights wrote a library.
+     * {@code fast}, plus {@link FragCastWeights#fileTag()} for custom weights. Nothing predicted
+     * under different weights may share a path — the name is what says which weights wrote a
+     * library, so neither the two Spec variants nor a fine-tuned pass and the pretrained one can
+     * overwrite, or be mistaken for, each other.
      */
-    static String predictionFile(String inputFile, boolean fast) {
+    static String predictionFile(String inputFile, boolean fast, FragCastWeights weights) {
         return inputFile.substring(0, inputFile.length() - 4) //strip the trailing ".tsv"
-                + (fast ? ".fast" : "") + ".predicted.parquet";
+                + (fast ? ".fast" : "") + weights.fileTag() + ".predicted.parquet";
     }
 
     /**
      * The FragCast command line. Every flag here exists in FragCast's {@code build-library} task;
      * {@code --fast} swaps the Conformer Spec weights for the small/fast ones and is FragCast's only
-     * way to choose between them (there is no per-property task to call).
+     * way to choose between them (there is no per-property task to call). A
+     * {@code --rt-onnx}/{@code --im-onnx}/{@code --spec-onnx} flag follows for each property with
+     * custom weights, appended last so the flags FragCast has always been given keep their positions.
      */
-    static List<String> buildCommand(String inputFile, String predFileString, boolean fast) {
+    static List<String> buildCommand(String inputFile, String predFileString, boolean fast,
+                                     FragCastWeights weights) {
         List<String> command = new ArrayList<>();
         command.add(Constants.FragCast);
         command.add("--task");
         command.add("build-library");
-        if (fast) {
+        //--fast is shorthand for one bundled weights file, and FragCast refuses it alongside
+        //--spec-onnx because the two would both be naming the Spec weights. Named weights win: the
+        //ONNX itself declares which architecture it is, so a fine-tuned fast model still runs fast
+        if (fast && !weights.supersedesFastFlag(true)) {
             command.add("--fast");
         }
         command.add("--in");
@@ -85,60 +100,64 @@ public class FragCastModelCaller {
         command.add(String.valueOf(Constants.fragCastMinRelIntensity));
         command.add("--min-frag-size");
         command.add(String.valueOf(Constants.fragCastMinFragSize));
+        //The decoy prefix is on the database token of a protein label (rev_sp|P1|A_HUMAN), so reading
+        //the accession out of it drops the prefix and a decoy is labelled exactly like the target it
+        //was reversed from. Naming it here is what lets FragCast keep it, as the AlphaPeptDeep server
+        //keeps its own decoy_tag - the two backends must not disagree about which entries are decoys.
+        command.add("--decoy-tag");
+        command.add(Constants.decoyPrefix);
+        //no --min-charge/--max-charge: every row of the list names its own charge, so FragCast
+        //predicts exactly those precursors and the range would only be reported as overridden
+        weights.appendFlags(command);
         return command;
     }
 
-    public static String callModel(String inputFile, boolean verbose, boolean fast) {
+    /**
+     * Predict one library and hand back what FragCast reported, without judging it.
+     *
+     * <p>{@link #callModel} is the rescoring path: a failure there is fatal, so it exits. This
+     * returns the outcome instead, so a caller can treat a failed prediction as "do not trust this
+     * model" rather than "abandon the run".
+     *
+     * <p>FragCast's own output is echoed as it arrives. This builds the run's product and is the
+     * longest thing in it - hours, on a peptide list digested from a FASTA - and FragCast is the only
+     * one of the two that knows how far along it is. Captured and shown only on failure, as it used
+     * to be, the size of a run was reported solely in its post-mortem: a list of 15.8 million
+     * precursors looked exactly like one of 61 thousand until the four hours were already spent.
+     */
+    public static FragCastProcess.Result predictLibrary(String inputFile, String outputFile,
+                                                        boolean fast, FragCastWeights weights)
+            throws IOException, InterruptedException {
+        return FragCastProcess.run(buildCommand(inputFile, outputFile, fast, weights), true);
+    }
+
+    public static String callModel(String inputFile, boolean verbose, boolean fast, FragCastWeights weights) {
         long startTime = System.nanoTime();
-        String predFileString = predictionFile(inputFile, fast);
+        String predFileString = predictionFile(inputFile, fast, weights);
         try {
             if (Constants.FragCast == null) {
                 printError("path to FragCast executable must be provided (set the FragCast parameter)");
                 System.exit(1);
             }
             if (verbose) {
-                printInfo("Generating FragCast predictions" + (fast ? " (small/fast Spec model)" : ""));
+                printInfo("Generating FragCast predictions" + (fast ? " (small/fast Spec model)" : "") +
+                        (weights.isBase() ? "" : " using " + weights));
             }
 
-            ProcessBuilder builder = new ProcessBuilder(buildCommand(inputFile, predFileString, fast));
-            //Tell FragCast where its pretrained ONNX weights live via FRAGCAST_MODEL_DIR. An explicit
-            //FragCastModelDir param wins; otherwise we derive a "pretrained_models" directory from the
-            //executable's location (e.g. tools/FragCast/pretrained_models when the exe is in
-            //tools/FragCast/windows). If neither resolves, FragCast falls back to its own lookup.
-            String modelDir = resolveModelDir();
-            if (modelDir != null && !modelDir.isEmpty()) {
-                builder.environment().put("FRAGCAST_MODEL_DIR", modelDir);
-                if (verbose) {
-                    printInfo("Using FragCast model directory " + modelDir);
-                }
-            }
-            //FragCast links the OpenMP build of OpenBLAS and parallelizes across peptides with its own
-            //thread pool, so BLAS itself must stay single-threaded. The OpenMP pool is governed by
-            //these env vars (read before the runtime initializes); without them every worker spawns a
-            //full BLAS pool and oversubscribes the cores, which is orders of magnitude slower.
-            builder.environment().put("OMP_NUM_THREADS", "1");
-            builder.environment().put("OPENBLAS_NUM_THREADS", "1");
-            if (verbose) {
-                printInfo(String.join(" ", builder.command()));
-            }
-            builder.redirectErrorStream(true);
-            Process process = builder.start();
-
-            //print FragCast output while running
-            try (BufferedReader reader = new BufferedReader(new InputStreamReader(process.getInputStream()))) {
-                String line;
-                while ((line = reader.readLine()) != null) {
-                    if (verbose) {
-                        printInfo(line);
-                    }
-                }
-            }
-
-            int termination = process.waitFor();
-            if (termination != 0) {
-                printError("Abnormal FragCast termination: " + termination + ", please run the " +
+            List<String> command = buildCommand(inputFile, predFileString, fast, weights);
+            FragCastProcess.Result result = FragCastProcess.run(command, verbose);
+            if (!result.succeeded()) {
+                printError("Abnormal FragCast termination: " + result.exitCode + ", please run the " +
                         "following command from the command line for more information\n" +
-                        String.join(" ", builder.command()));
+                        String.join(" ", command));
+                if (!result.diagnosis().isEmpty()) {
+                    printError(result.diagnosis());
+                }
+                //a quiet call captured its output instead of streaming it, so this is the only place
+                //it can be seen; a verbose one already printed every line as it arrived
+                if (!verbose) {
+                    printError(result.tail(10));
+                }
                 System.exit(1);
             }
 
@@ -162,39 +181,5 @@ public class FragCastModelCaller {
         }
 
         return predFileString;
-    }
-
-    /**
-     * Resolve the directory holding FragCast's pretrained ONNX weights, to be exported as
-     * {@code FRAGCAST_MODEL_DIR}. An explicit {@link Constants#FragCastModelDir} param takes
-     * precedence; otherwise a {@code pretrained_models} folder is derived from the FragCast
-     * executable's location: first beside the exe, then one level up (so an exe at
-     * {@code tools/FragCast/windows/fragcast.exe} finds {@code tools/FragCast/pretrained_models}).
-     * Each candidate must actually contain {@code FragCast-RT.onnx}. Returns {@code null} when
-     * nothing resolves, leaving FragCast to fall back to its own bundled-model lookup.
-     */
-    private static String resolveModelDir() {
-        if (Constants.FragCastModelDir != null && !Constants.FragCastModelDir.isEmpty()) {
-            return Constants.FragCastModelDir;
-        }
-        if (Constants.FragCast == null || Constants.FragCast.isEmpty()) {
-            return null;
-        }
-        File exeDir = new File(Constants.FragCast).getAbsoluteFile().getParentFile();
-        if (exeDir == null) {
-            return null;
-        }
-        List<File> candidates = new ArrayList<>();
-        candidates.add(new File(exeDir, "pretrained_models"));
-        File parent = exeDir.getParentFile();
-        if (parent != null) {
-            candidates.add(new File(parent, "pretrained_models"));
-        }
-        for (File c : candidates) {
-            if (new File(c, "FragCast-RT.onnx").isFile()) {
-                return c.getPath();
-            }
-        }
-        return null;
     }
 }

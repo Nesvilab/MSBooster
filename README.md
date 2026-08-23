@@ -1,5 +1,5 @@
 # MSBooster
-Last updated: 1/14/2026
+Last updated: 8/22/2026
 
 ## Overview
 MSBooster is a tool for incorporating spectral libary predictions into peptide-spectrum match (PSM) 
@@ -61,10 +61,15 @@ MSBooster is equipped to handle multiple input file formats and models:
 | .pin |
 | .pepXML (in progress) |
 
-| Prediction model                             |
-|----------------------------------------------|
-| [DIA-NN](https://github.com/vdemichev/DiaNN) |
-| [Koina models](Koina.md)                     |
+| Prediction model                                                      |
+|----------------------------------------------------------------------|
+| FragCast (local, CPU only; RT, ion mobility and MS/MS at once)        |
+| FragCast-Fast (as above, ~5x cheaper MS/MS at ~0.01-0.02 lower cosine) |
+| [DIA-NN](https://github.com/vdemichev/DiaNN)                          |
+| [Koina models](Koina.md)                                              |
+
+Only FragCast can be fine-tuned on your own data; see
+[Local transfer learning](#local-transfer-learning-fragcast).
 
 ## Installation and running guide
 ### In FragPipe
@@ -76,9 +81,16 @@ retention time features with "Predict RT" and MS/MS spectral features with "Pred
 
 ### On the command line
 If using standalone MSBooster to run in the command line, please download the latest jar file from 
-Releases. MSBooster also requires DIA-NN for MS/MS and RT prediction. Please install 
-[DIA-NN](https://github.com/vdemichev/DiaNN) and take note of the path to the DIA-NN executable 
-(ex. DiaNN.exe for Windows, diann-1.8.1.8 for Linux).
+Releases. A prediction model is also needed, and two of them run locally:
+
+ - **FragCast**, a single executable that predicts retention time, ion mobility and MS/MS in one
+   pass, on the CPU. Nothing else to install. Select it with
+   `spectraModel`/`rtModel`/`imModel = FragCast` and point the `FragCast` parameter at the executable.
+ - **[DIA-NN](https://github.com/vdemichev/DiaNN)**, which is what MSBooster uses when no model is
+   named. Install it and take note of the path to the executable (ex. DiaNN.exe for Windows,
+   diann-1.8.1.8 for Linux).
+
+[Koina models](Koina.md) are the third option, and are served over the network rather than locally.
 
 You can run MSBooster using a command similar to the following: 
 
@@ -86,7 +98,9 @@ You can run MSBooster using a command similar to the following:
     
 The minimum parameters needing to be passed are:
 
-    - DiaNN (String): path to DIA-NN executable (if using DIA-NN model, which is the MSBooster default)
+    - DiaNN (String): path to the DIA-NN executable, which is what runs when no model is named;
+      or FragCast (String): path to the FragCast executable, alongside
+      spectraModel/rtModel/imModel = FragCast
     - mzmlDirectory (String): path to mzML/mgf files. Accepts multiple space-separated folder and files
     - pinPepXMLDirectory (String): path to pin files. Accepts multiple space-separated folder and files.
       If using in FragPipe, place the pin and pepXML files in the same folder
@@ -141,6 +155,40 @@ location here
 </details>
 
 <details>
+<summary>FragCast (local RT/IM/MS2 predictor)</summary>
+<ul>
+  <li><code>FragCast (String)</code>: path to the FragCast executable. Required whenever
+<code>spectraModel</code>, <code>rtModel</code> or <code>imModel</code> is <code>FragCast</code> or
+<code>FragCast-Fast</code>
+  <li><code>FragCastModelDir (String)</code>: directory holding the pretrained
+<code>FragCast-{RT,IM,Spec}.onnx</code> weights, plus <code>FragCast-Spec-Fast.onnx</code> for the
+<code>FragCast-Fast</code> model. Empty by default, in which case the directory is resolved from the
+executable's own location
+  <li><code>fragCastTopN (int)</code>: keep this many predicted fragments per precursor, by intensity
+(default 20)
+  <li><code>fragCastMinFragMz (double)</code>: drop predicted fragments below this m/z (default 200.0)
+  <li><code>fragCastMinRelIntensity (double)</code>: drop predicted fragments below this relative
+intensity (default 0.01)
+  <li><code>fragCastMinFragSize (int)</code>: minimum fragment length in residues (default 2)
+  <li><code>FragCastModelZip (String)</code>: a fine-tuned model bundle to predict with, as written by
+<code>transferlearn.FragCastLocalWorkflow</code>. It is unpacked once at startup, after which it
+supplies whichever of the three parameters below was left empty
+  <li><code>FragCastRtOnnx (String)</code>, <code>FragCastImOnnx (String)</code>,
+<code>FragCastSpecOnnx (String)</code>: individual weights files, one per property, for predicting with
+a model that was never bundled. Anything named here wins over <code>FragCastModelZip</code>, and the
+run says so rather than overriding it quietly. <code>FragCastSpecOnnx</code> supersedes the
+<code>FragCast-Fast</code> model: an ONNX declares its own architecture, so the weights file is what
+decides which MS2 model runs
+</ul>
+</details>
+
+MSBooster names the charge of every precursor it sends to FragCast, so a predicted library holds
+exactly the precursors the search found rather than every peptide at every charge in a range. Charges
+outside 1-6 cannot be represented by FragCast's models at all, and naming one is a hard error that
+fails the whole prediction - so those PSMs are counted, reported, and left out, the same way
+MSBooster handles every other model's limits.
+
+<details>
 <summary>MS/MS spectral processing</summary>
 <ul>
   <li><code>ppmTolerance (float)</code>: fragment error ppm tolerance (default 20ppm)
@@ -176,14 +224,148 @@ is comma-separated with no spaces in between. The masses should be written to th
 </ul>
 </details>
 
+## Local transfer learning (FragCast)
+
+MSBooster can fine-tune the FragCast prediction models on your own data, on the CPU of the machine it
+is already running on. Nothing is uploaded: no server, no URL, no API key, no queue. This is an
+alternative to the server-based transfer learning in `transferlearn.SecondPassWorkflow`, which
+remains unchanged.
+
+What it learns from is a spectral library you supply, as `.tsv`, `.csv` or `.parquet`, passed to
+FragCast as it stands. Its headers must be the ones FragCast's fine-tune reads:
+`ModifiedPeptideSequence` and
+`PrecursorCharge` are required, and `NormalizedRetentionTime`, `PrecursorIonMobility` and
+`LibraryIntensity` + `FragmentType`/`FragmentCharge`/`FragmentSeriesNumber` supply the `rt`, `im` and
+`spec` targets. A FragCast-predicted or FragPipe/EasyPQP library already uses these names; a DIA-NN or
+Spectronaut export may not, and its headers have to be **renamed rather than guessed at** - a column
+called `RT` may hold gradient minutes where `NormalizedRetentionTime` holds an index, and training on
+the wrong one produces a model that is confidently wrong. A missing required column is reported by
+name; a missing target column is reported as the reason that task was skipped.
+
+Fine-tuning is its own run. It reads the library, trains each task FragCast can serve, and writes
+one zip holding every model it produced:
+
+```
+java -cp MSBooster.jar transferlearn.FragCastLocalWorkflow --paramsList msbooster_params.txt --library library.tsv
+```
+
+It prints the path of that zip as `FragCastModelZip`. Rescoring with it is a separate run, given
+that parameter; FragPipe queues the two as the separate steps they are. `--output-dir` chooses where
+the zip is written and `--basename` its stem; `--custom-mods` names modifications outside UniMod, so
+that FragCast resolves them instead of dropping the precursors carrying them.
+
+Each task prints what it measured. This is the run log, not a verdict on the model:
+
+```
+rt:   train=2697 eval=303 Pearson 0.7800 -> 0.9200 MAE 34.688 -> 12.400 s
+im:   skipped: the library carries nothing the im model can be trained on
+spec: train=2684 eval=302 cosine 0.3381 -> 0.4083
+```
+
+Retention time and ion mobility report a correlation and a mean absolute error in the target's own
+units; MS/MS reports cosine similarity and measures no error. The two are worth reading together,
+because correlation is scale-invariant and can improve while the predictions drift away from the
+measurements.
+
+Your library is only ever read, and nothing is written beside it. Peptides FragCast cannot represent
+as written - a residue outside its alphabet, a length past 64, a charge outside 1-6, a delta mass it
+cannot resolve - are refused by FragCast itself, which reports how many it refused rather than
+training on them. One library is all that is needed: FragCast holds out its own slice of it for model
+selection, so there is no second library to supply.
+
+The zip is what you keep, copy, or hand to FragPipe's MSBooster panel as a **Custom** model. Its
+path is deliberately not written back into your parameter file, so a rerun never quietly adapts a
+model on top of a previous adaptation. The loose ONNX files the fine-tune wrote are removed once the
+zip holds them; if the zip could not be written they are kept and named instead.
+
+### Predicting a library, locally
+
+Rescoring a search with the fine-tuned model needs nothing but `FragCastModelZip` in the parameter
+file. Predicting a whole spectral library from it is a separate entry point,
+`transferlearn.FragCastPredictor` - the local counterpart to the server-based
+`transferlearn.Predictor`, taking the same flags:
+
+```
+java -cp MSBooster.jar transferlearn.FragCastPredictor --paramsList msbooster_params.txt \
+     --model FragCast-finetuned.zip --peptide-list-to-predict peptide_list.parquet \
+     --fasta proteome.fasta --output-format speclib --basename fragpipe-predicted-speclib
+```
+
+The peptides come from `--peptide-list-to-predict`, or from this run's own pin files when that flag
+is absent. `--output-format` takes `parquet`, `librarytsv` or `speclib`; the latter two need
+`--fasta`, which is where gene names come from - neither backend returns them. `--model` is optional,
+and without it the pretrained weights predict. `--min-charge`/`--max-charge` expand only those
+peptide-list rows that do not already name a charge.
+
+Two things differ from the server predictor, and both come from FragCast rather than from MSBooster.
+There is no `mgf` output: FragCast writes TSV and Parquet only, and the MGF a prediction server
+returns is written by that server. And there is no per-property flag: one FragCast run predicts
+retention time, ion mobility and MS/MS together, and all three are kept.
+
+Costs and caveats worth knowing:
+
+ - The MS2 fine-tune is by far the slowest of the three tasks.
+ - Every task is trained, and a task is skipped when the library carries no measurement for it - so
+   a library with no ion-mobility column simply skips ion mobility, and says so.
+ - Fine-tuning benefits from data, and nothing here rules on whether it got enough: FragCast selects
+   the best epoch against its own held-out slice, and whatever it then exports goes into the zip -
+   MSBooster never withholds a model the user asked for on account of the numbers it reports.
+ - **How the fine-tune runs is FragCast's decision, not MSBooster's.** Epochs, learning rate, batch
+   size, warmup, training depth, seed and the held-out fraction are not exposed as parameters:
+   MSBooster omits those flags entirely, so each task trains the way the executable considers right
+   for it and the tuned values move with FragCast rather than being frozen at whatever this
+   integration was written against. MSBooster checks only that a model was actually written.
+ - Both MS2 models fine-tune, the `FragCast-Fast` one through FragCast's CPU BPTT backward. Which
+   of the two a fine-tune starts from follows the `spectraModel` in your parameter file, so it
+   patches the weights you actually predict with. Predicting with the result names those weights
+   rather than passing `--fast`: an ONNX declares its own architecture, so a fine-tuned fast model
+   still runs fast.
+ - A task that fails costs only that task. Fine-tuning is its own run and rescores nothing, so a
+   task that cannot be trained - no ion mobility in the library, a FragCast error, no weights file
+   written - is reported and skipped, and the zip holds whatever the other tasks produced. A run in
+   which every task was skipped writes no zip and says so, leaving the pretrained models in place.
+
+Three things about the method are worth understanding before relying on it:
+
+ - **Where your library came from decides whether the FDR stays honest.** A library built from the
+   very run you are rescoring is made of confident target identifications; decoys are not in it. A
+   model that fits those targets better than it fits decoys separates the two more sharply for
+   reasons unrelated to the peptides being real, which can make the target-decoy FDR estimate
+   optimistic. The held-out split keeps *eval* peptides out of training, but the rescoring pass still
+   scores peptides that were trained on. Fine-tuning on a library from a different dataset - or from
+   an earlier experiment on the same instrument and protocol - avoids this entirely, and is the safer
+   default.
+ - **The retention times in your library are trained on as they stand.** MSBooster does not rescale
+   the `NormalizedRetentionTime` column, so a library holding gradient minutes teaches the model to
+   predict that gradient's minutes rather than an index meaning the same thing in every run. Nothing
+   downstream will catch that for you - train on a library whose retention times are already indexed
+   (iRT), as DIA-NN, Spectronaut and FragCast libraries are.
+ - **Nothing here measures identifications.** Every model FragCast exports is used, and the
+   correlation and error printed alongside it describe how well it predicted held-out peptides -
+   a good proxy for better rescoring, not a guarantee of it, and not something MSBooster withholds a
+   model over. The honest check is to compare identifications at your FDR threshold with and without
+   the fine-tuned model.
+
+Nothing about the fine-tune itself is a parameter - it is driven entirely by the flags above. The
+parameters for *predicting* with what it produced (`FragCastModelZip`, `FragCastRtOnnx` and its
+siblings) are documented in [msbooster_params.txt](msbooster_params.txt) and under
+[Optional parameters](#optional-parameters).
+
 ## Output files
  - .pin file with new features. By default, new pin files will be produced ending in "_edited.pin". The
  default features used are "unweighted_spectral_entropy", "delta_RT_loess", and "pred_RT_real_units". If ion mobility
  features are enabled, "delta_IM_loess" and "ion_mobility" will also be included
- - spectraRT.tsv and spectraRT_full.tsv: input files for DIA-NN prediction model
- - spectraRT.predicted.bin: a binary file with predictions from DIA-NN to be used by MSBooster for 
+ - spectraRT.tsv and spectraRT_full.tsv: the input file for the local prediction model. DIA-NN and
+ FragCast each read their own dialect of it - FragCast takes one precursor per line as
+ `peptide<TAB>charge`, so the predicted library holds exactly the precursors the search found rather
+ than every peptide across a charge range
+ - spectraRT.predicted.bin: a binary file with predictions from DIA-NN to be used by MSBooster for
 feature calculation. If using FragPipe-PDV, these files are used to generate mirror plots of experimental
 and predicted spectra
+ - spectraRT.predicted.parquet: the same thing from FragCast, as a spectral library in Parquet. The
+ name records which weights wrote it - `.fast` for the `FragCast-Fast` model, and a short `.ft-` tag
+ when custom or fine-tuned weights were named - so libraries predicted under different weights never
+ overwrite one another
 
 ## Graphical output files
 MSBooster produces multiple graphs that can be used to further examine how your data compares to model

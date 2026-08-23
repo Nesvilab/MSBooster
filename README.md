@@ -94,7 +94,7 @@ Releases. A prediction model is also needed, and two of them run locally:
 
 You can run MSBooster using a command similar to the following: 
 
-    java -jar MSBooster-1.2.1.jar --paramsList msbooster_params.txt
+    java -jar MSBooster-1.6.0.jar --paramsList msbooster_params.txt
     
 The minimum parameters needing to be passed are:
 

@@ -68,10 +68,10 @@ public class FragCastChargesTest {
     // The count is what turns "fewer predictions than expected" into a stated reason.
     @Test
     public void theskippedCountIsReportedOnlyOnceAndOnlyWhenThereIsSomethingToReport() {
-        FragCastCharges.reportSkipped();
+        FragCastCharges.reportSkipped("PSMs");
         FragCastCharges.canPredict(9);
         assertEquals(1, FragCastCharges.unrepresentableCount());
-        FragCastCharges.reportSkipped();
-        FragCastCharges.reportSkipped();
+        FragCastCharges.reportSkipped("PSMs");
+        FragCastCharges.reportSkipped("PSMs");
     }
 }

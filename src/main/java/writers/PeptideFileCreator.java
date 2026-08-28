@@ -119,7 +119,7 @@ public class PeptideFileCreator {
         for (Future future : futureList) {
             future.get();
         }
-        printInfo(hSetHits.size() + " PSMs for prediction");
+        printInfo(hSetHits.size() + " precursors for prediction");
 
         //want to see what mods were assigned
         if (modelFormat.equals("alphapeptdeep")) {
@@ -259,7 +259,7 @@ public class PeptideFileCreator {
                             myWriter.write(hSetHit + "\n");
                         }
                         myWriter.close();
-                        FragCastCharges.reportSkipped();
+                        FragCastCharges.reportSkipped("PSMs");
                         break;
                     case "PredFull":
                         printInfo("Writing PredFull input file");

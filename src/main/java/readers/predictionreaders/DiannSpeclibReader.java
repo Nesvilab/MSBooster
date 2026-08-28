@@ -89,7 +89,7 @@ public class DiannSpeclibReader implements LibraryPredictionMapper {
                 try (BufferedReader counter = new BufferedReader(new FileReader(textFile))) {
                     while (counter.readLine() != null) totalEntries++;
                 }
-                Print.printInfo("Reading " + totalEntries + " entries from binary spectral library");
+                Print.printInfo("Reading " + totalEntries + " precursors from binary spectral library");
                 ProgressReporter pr = new ProgressReporter(totalEntries);
 
                 InputStream is = new FileInputStream(bFile);
@@ -164,7 +164,7 @@ public class DiannSpeclibReader implements LibraryPredictionMapper {
                 is.close();
 
                 if (TSVReader.readLine() != null) {
-                    printError("Prediction file is missing some entries. Please rerun MSBooster");
+                    printError("Prediction file is missing some precursors. Please rerun MSBooster");
                     System.exit(1);
                 }
                 TSVReader.close();
@@ -174,7 +174,7 @@ public class DiannSpeclibReader implements LibraryPredictionMapper {
                 try (BufferedReader counter = new BufferedReader(new FileReader(textFile))) {
                     while (counter.readLine() != null) totalFullEntries++;
                 }
-                Print.printInfo("Reading " + totalFullEntries + " entries from full TSV");
+                Print.printInfo("Reading " + totalFullEntries + " precursors from full TSV");
                 ProgressReporter prFull = new ProgressReporter(totalFullEntries);
 
                 TSVReader = new BufferedReader(new FileReader(textFile));

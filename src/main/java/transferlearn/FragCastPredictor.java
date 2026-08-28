@@ -386,7 +386,7 @@ public class FragCastPredictor {
                     "SELECT COUNT(*) FROM read_parquet('" + peptideListParquet.replace("'", "''") + "')");
             count.next();
             final int rows = count.getInt(1);
-            printInfo(rows + " entries to convert");
+            printInfo(rows + " peptides to convert");
             final ProgressReporter pr = new ProgressReporter(rows);
 
             //The same three things the AlphaPeptDeep input carries, in FragCast's own dialect:
@@ -422,7 +422,7 @@ public class FragCastPredictor {
                 }
             }
         }
-        FragCastCharges.reportSkipped();
+        FragCastCharges.reportSkipped("precursors");
     }
 
     private static void writeOne(BufferedWriter writer, String peptide, String charge, String proteins,

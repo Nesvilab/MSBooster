@@ -196,7 +196,7 @@ public class KoinaModelCaller {
                 XYChart chart = new XYChartBuilder().width(500).height(500).build();
                 chart.setTitle("Koina timing");
                 chart.setXAxisTitle("Time (sec)");
-                chart.setYAxisTitle("Peptides predicted in " + JSONWriter.maxJsonLength + "'s");
+                chart.setYAxisTitle("Precursors predicted in " + JSONWriter.maxJsonLength + "'s");
                 chart.getStyler().setLegendPosition(Styler.LegendPosition.InsideNW);
                 chart.getStyler().setYAxisDecimalPattern("0");
                 chart.addSeries(model, xData, yData);

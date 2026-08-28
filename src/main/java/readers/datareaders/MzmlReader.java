@@ -391,7 +391,7 @@ public class MzmlReader {
         String currentScanNum = "-1";
         setScanNumPepObj task = null;
         int limit = pin.scanNumIdx + 2;
-        printInfo("Setting pin entries");
+        printInfo("Matching pin PSMs to scans");
         while (pin.next(false)) {
             try {
                 //get scanNum as string
@@ -430,7 +430,7 @@ public class MzmlReader {
             skipped += msn.skippedPSMs.get();
         }
         if (skipped != 0) {
-            printInfo(pin.name + " had " + skipped + " PSMs with peptides not available in the predictions");
+            printInfo(pin.name + " had " + skipped + " PSMs whose precursors are not in the predictions");
         }
 
         //set RT filter

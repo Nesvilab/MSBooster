@@ -68,20 +68,27 @@ public final class FragCastCharges {
         }
     }
 
-    /** How many precursors were left out because FragCast cannot represent their charge. */
+    /**
+     * How many PSMs (pin path) or precursors (peptide-list path) were left out because FragCast
+     * cannot represent their charge. One count per {@link #canPredict} call, so it is a PSM count
+     * when the charges came off pin rows and a precursor count when they came off a peptide list.
+     */
     public static int unrepresentableCount() {
         return unrepresentable.get();
     }
 
     /**
-     * Say once how many precursors were left out. The generic "peptides not available in the
-     * predictions" tally at the end of a run would otherwise be the only trace, and it does not say
-     * why.
+     * Say once how many PSMs or precursors were left out. The generic "PSMs whose precursors are
+     * not in the predictions" tally at the end of a run would otherwise be the only trace, and it
+     * does not say why.
+     *
+     * @param unit what the tally counted: "PSMs" when {@link #canPredict} was asked once per pin
+     *             row, "precursors" when it was asked once per peptide-list row
      */
-    public static void reportSkipped() {
+    public static void reportSkipped(String unit) {
         int skipped = unrepresentableCount();
         if (skipped > 0 && reported.compareAndSet(0, 1)) {
-            printInfo(skipped + " PSMs carry a precursor charge outside " + LOWEST + "-" + HIGHEST +
+            printInfo(skipped + " " + unit + " carry a precursor charge outside " + LOWEST + "-" + HIGHEST +
                     ", which FragCast's models cannot represent; they are left unpredicted");
         }
     }

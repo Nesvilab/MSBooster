@@ -239,14 +239,14 @@ public final class FragCastModelBundle {
                     || name.contains("..") || name.trim().isEmpty()) {
                 // a bundle is flat by construction, so anything that could escape destDir is not a
                 // path to be sanitised - it is a bundle this reader did not write
-                throw new IOException(describe(zip) + " holds the entry " + name +
+                throw new IOException(describe(zip) + " holds the file " + name +
                         ", but a FragCast model bundle contains only plain file names");
             }
             if (entries.put(name, entry) != null) {
-                throw new IOException(describe(zip) + " holds two entries named " + name);
+                throw new IOException(describe(zip) + " holds two files named " + name);
             }
             if (entries.size() > MAX_ENTRIES) {
-                throw new IOException(describe(zip) + " holds more than " + MAX_ENTRIES + " entries");
+                throw new IOException(describe(zip) + " holds more than " + MAX_ENTRIES + " files");
             }
             final long size = entry.getSize();
             if (size > MAX_ENTRY_BYTES) {

@@ -235,7 +235,7 @@ public class Helpers {
             rs.next();
             int lines = rs.getInt(1);
             ProgressReporter pr = new ProgressReporter(lines);
-            Print.printInfo(lines + " entries to convert");
+            Print.printInfo(lines + " peptides to convert");
 
             //split into even groups of max size maxSize
             Multithreader mt = new Multithreader(lines, (int) Math.ceil((double) lines / (double) maxSize));

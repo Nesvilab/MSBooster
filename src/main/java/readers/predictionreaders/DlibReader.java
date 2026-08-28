@@ -117,7 +117,7 @@ public class DlibReader implements LibraryPredictionMapper {
         }
 
         //for pin in pin files
-        printInfo("generating modified and decoy peptides");
+        printInfo("generating predictions for modified and decoy precursors");
         PinMzmlMatcher pmm = new PinMzmlMatcher(Constants.mzmlDirectory, Constants.pinPepXMLDirectory);
         for (File f : pmm.pinFiles) {
             PinReader pin = new PinReader(f.getCanonicalPath());

@@ -209,7 +209,7 @@ public class PredictionEntryHashMap extends ConcurrentHashMap<String, Prediction
                         if (PeptideSkipper.skipPeptide(pf, klr.modelType)) {
                             skipPeptide = true;
                         } else {
-                            printError("Missing peptide to transfer prediction onto " + l + ": " + modelSpecificBaseCharge);
+                            printError("Missing precursor to transfer prediction onto " + l + ": " + modelSpecificBaseCharge);
                             printError("Exiting now.");
                             System.exit(1);
                         }

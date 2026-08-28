@@ -125,7 +125,7 @@ public class MzmlScanNumber {
         //cover every PSM in the pin (the library is not a superset of the search results). Degrade
         //gracefully instead of dereferencing null and calling System.exit(1): build a zero-vector
         //PeptideObj (so nothing matches, similarity 0) and tally it as a skipped PSM. The count is
-        //reported once at the end ("had N PSMs with peptides not available in the predictions").
+        //reported once at the end ("had N PSMs whose precursors are not in the predictions").
         if (predictionEntry == null) {
             newPepObj = new PeptideObj(this, name.getBaseCharge(), rank, targetORdecoy, escore,
                     zeroFloatArray, zeroFloatArray, zeroStringArray, 0f, 0f, false);

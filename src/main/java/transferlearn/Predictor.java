@@ -50,7 +50,7 @@ public class Predictor {
                 "--paramsList msbooster_params.txt --url http://localhost:8001 --peptide-list-to-dict peptides.csv " +
                 "--min-charge 1 --max-charge 4 " +
                 "(For all peptides in peptides.csv, predicts precursors with charge 1 to 4, rather than default 2 to 3." +
-                "In peptides.csv, columns must be peptides,proteins,is_decoy. " +
+                "In peptides.csv, columns must be peptide,proteins,is_decoy. " +
                 "Peptides must be formatted as PEPTIDE[PTM mass]R." +
                 "'is_decoy' is either 0 or 1)");
         System.exit(1);

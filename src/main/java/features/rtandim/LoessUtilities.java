@@ -309,7 +309,7 @@ public class LoessUtilities {
             //if negative, use all
             //can consider e score cutoff in constants
             int sizeLimit = thisExpValues.size();
-            StringBuilder messageEnding = new StringBuilder(" PSMs");
+            StringBuilder messageEnding = new StringBuilder(" precursors");
             String defaultValue = "0";
             if (mode.equals("IM")) {
                 messageEnding.append(" for charge ").append(charge);
@@ -318,12 +318,12 @@ public class LoessUtilities {
             if (sizeLimit < minLinearRegressionSize) { //hard coded
                 if (numPSMsIgnoreEvalue != 0) {
                     if (mass.isEmpty() || mass.equals("others")) {
-                        printInfo("Warning: not enough target PSMs (" + sizeLimit + ") are available for regression" +
+                        printInfo("Warning: not enough target precursors (" + sizeLimit + ") are available for regression" +
                                 ", setting " + mode + " scores equal to " + defaultValue);
                         //just so that there's an output
                         massToDataMap.put(mass, null);
                     } else {
-                        printInfo("Warning: not enough target PSMs (" + sizeLimit + ") are available for regression" +
+                        printInfo("Warning: not enough target precursors (" + sizeLimit + ") are available for regression" +
                                 " for mass " + mass + ", will use " + mode + " calibration curve for regular peptides if available");
                     }
                 }

@@ -107,7 +107,7 @@ public class ParameterUtils {
                     }
                     break;
                 //the bare tag, not ">" + val: every consumer compares it against bare protein
-                //labels (pin proteins, library ProteinId, FragCast's --decoy-tag, the prediction
+                //labels (pin proteins, library ProteinId, FragCast's --decoy-prefix, the prediction
                 //server's decoy_tag), and the FASTA readers strip the header's ">" before comparing.
                 //A ">rev_" here matched nothing and silently unmarked every decoy downstream.
                 case "decoy_prefix":

@@ -104,7 +104,7 @@ public class FragCastModelCaller {
         //the accession out of it drops the prefix and a decoy is labelled exactly like the target it
         //was reversed from. Naming it here is what lets FragCast keep it, as the AlphaPeptDeep server
         //keeps its own decoy_tag - the two backends must not disagree about which entries are decoys.
-        command.add("--decoy-tag");
+        command.add("--decoy-prefix");
         command.add(Constants.decoyPrefix);
         //FragCast drops rows the input marks is_decoy unless told otherwise. Forwarding keepDecoys is
         //what lets a whole-FASTA peptide list that was digested with its decoys put them in the

@@ -26,7 +26,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
 // Pins how the decoy tag reaches Constants.decoyPrefix. Every consumer compares it against bare
-// protein labels (pin proteins, library ProteinId, FragCast's --decoy-tag, the prediction server's
+// protein labels (pin proteins, library ProteinId, FragCast's --decoy-prefix, the prediction server's
 // decoy_tag), so any path that stores something other than the bare tag silently unmarks every
 // decoy downstream.
 public class ParameterUtilsTest {
@@ -59,7 +59,7 @@ public class ParameterUtilsTest {
 
     // The ordering Predictor and FragCastPredictor rely on: the params file is expanded the moment
     // --paramsList is read, so a --decoyPrefix placed after it outranks the file's own decoyPrefix
-    // line. Predictor used to assign --decoy-tag to Constants before the file was read, which let
+    // line. Predictor used to assign --decoy-prefix to Constants before the file was read, which let
     // the file overwrite it.
     @Test
     public void aDecoyPrefixAfterParamsListOutranksTheFile() throws Exception {

@@ -169,7 +169,7 @@ public class FragCastModelCallerTest {
             Constants.decoyPrefix = "DECOY_";
             List<String> command = FragCastModelCaller.buildCommand("spectraRT.tsv", "out.parquet",
                     false, FragCastWeights.base());
-            assertEquals("DECOY_", command.get(command.indexOf("--decoy-tag") + 1));
+            assertEquals("DECOY_", command.get(command.indexOf("--decoy-prefix") + 1));
         } finally {
             Constants.decoyPrefix = before;
         }

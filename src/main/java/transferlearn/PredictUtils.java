@@ -27,7 +27,7 @@ import static utils.Print.printInfo;
 
 public class PredictUtils {
     //decoyTag is forwarded as --decoyPrefix after --paramsList in both branches, so the caller's
-    //--decoy-tag outranks a decoyPrefix line in the parameter file and lands in
+    //--decoy-prefix outranks a decoyPrefix line in the parameter file and lands in
     //Constants.decoyPrefix, which is what sendPredRequest uploads as decoy_tag - the same ordering
     //FragCastPredictor uses for the same reason.
     public static File[] createPredictInputFiles(String peptideList, String params, String keepDecoys,

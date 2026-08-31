@@ -84,7 +84,7 @@ public class FragCastPredictor {
                 "--output-format <parquet|librarytsv|speclib> " +
                 "optional: --model <model.zip> --output-dir <dir> --basename <stem> --fasta <fasta> " +
                 "--peptide-list-to-predict <peptides.parquet> --min-charge <int> --max-charge <int> " +
-                "--decoy-tag <tag> --keep-decoys <0|1> --custom-mods <spec>");
+                "--decoy-prefix <tag> --keep-decoys <0|1> --custom-mods <spec>");
         printError("Example: java -cp MSBooster.jar transferlearn.FragCastPredictor " +
                 "--paramsList msbooster_params.txt --model FragCast-finetuned.zip " +
                 "--peptide-list-to-predict peptide_list.parquet --fasta proteome.fasta " +
@@ -157,7 +157,7 @@ public class FragCastPredictor {
                 case "--keep-decoys":
                     keepDecoys = args[i + 1];
                     break;
-                case "--decoy-tag":
+                case "--decoy-prefix":
                     decoyTag = args[i + 1];
                     break;
                 case "--min-charge":

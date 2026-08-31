@@ -144,7 +144,7 @@ public class Predictor {
                 //re-reads the parameter file, and a decoyPrefix line in it would overwrite an
                 //assignment made now. Forwarded as a command-line override instead, which is applied
                 //after the file and wins - the same ordering FragCastPredictor relies on.
-                case "--decoy-tag":
+                case "--decoy-prefix":
                     decoyTag = args[i + 1];
                     break;
                 case "--output-format":

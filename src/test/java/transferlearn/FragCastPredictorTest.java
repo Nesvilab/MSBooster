@@ -188,10 +188,11 @@ public class FragCastPredictorTest {
                 tmp.toAbsolutePath().toString().replace("\\", "/"));
         String zip = tmp.resolve("finetuned.zip").toAbsolutePath().toString();
 
-        applyAsPredictorWould(FragCastPredictor.peptideListArgs(params.getAbsolutePath(), zip, "DECOY_"));
+        applyAsPredictorWould(FragCastPredictor.peptideListArgs(params.getAbsolutePath(), "1", zip, "DECOY_"));
 
         assertEquals(zip, allconstants.Constants.FragCastModelZip);
         assertEquals("DECOY_", allconstants.Constants.decoyPrefix);
+        assertEquals(Integer.valueOf(1), allconstants.Constants.keepDecoys);
     }
 
     @Test
@@ -257,7 +258,7 @@ public class FragCastPredictorTest {
         File params = paramsFileNaming("FragCastModelZip = /from/the/file.zip",
                 "outputDirectory = " + tmp.toAbsolutePath().toString().replace("\\", "/"));
 
-        applyAsPredictorWould(FragCastPredictor.peptideListArgs(params.getAbsolutePath(), "", "rev_"));
+        applyAsPredictorWould(FragCastPredictor.peptideListArgs(params.getAbsolutePath(), "1", "", "rev_"));
 
         assertEquals("/from/the/file.zip", allconstants.Constants.FragCastModelZip);
     }
@@ -404,9 +405,10 @@ public class FragCastPredictorTest {
         }
     }
     @Test
-    public void marksDecoysSoFragCastLeavesThemOut() throws Exception {
-        // the peptide list is roughly half decoys; the server drops them and FragCast does too, but
-        // only if it is told which ones they are
+    public void marksDecoysSoFragCastCanTellThemApart() throws Exception {
+        // the peptide list is roughly half decoys; is_decoy is what lets FragCast keep them under
+        // --keep-decoys and leave them out without it, so the marking must survive the conversion
+        // truthfully either way
         File parquet = tmp.resolve("mixed.parquet").toFile();
         try (Connection conn = DriverManager.getConnection("jdbc:duckdb:");
              Statement stmt = conn.createStatement()) {

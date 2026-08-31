@@ -175,6 +175,24 @@ public class FragCastModelCallerTest {
         }
     }
 
+    // FragCast drops rows the input marks is_decoy unless told otherwise. Forwarding keepDecoys is
+    // what lets a whole-FASTA peptide list that was digested with its decoys keep them in the
+    // library; with keepDecoys = 0 the flag stays off and FragCast leaves them out.
+    @Test
+    public void keepDecoysIsForwardedToTheBuildLibraryCall() {
+        Integer before = Constants.keepDecoys;
+        try {
+            Constants.keepDecoys = 1;
+            assertTrue(FragCastModelCaller.buildCommand("spectraRT.tsv", "out.parquet", false,
+                    FragCastWeights.base()).contains("--keep-decoys"));
+            Constants.keepDecoys = 0;
+            assertFalse(FragCastModelCaller.buildCommand("spectraRT.tsv", "out.parquet", false,
+                    FragCastWeights.base()).contains("--keep-decoys"));
+        } finally {
+            Constants.keepDecoys = before;
+        }
+    }
+
     // A job runs one variant, but findBest scores both against each other and a rerun may switch
     // variants while keeping its predictions; sharing an output path would mix the two libraries up.
     @Test

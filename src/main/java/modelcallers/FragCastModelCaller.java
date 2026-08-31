@@ -106,6 +106,13 @@ public class FragCastModelCaller {
         //keeps its own decoy_tag - the two backends must not disagree about which entries are decoys.
         command.add("--decoy-tag");
         command.add(Constants.decoyPrefix);
+        //FragCast drops rows the input marks is_decoy unless told otherwise. Forwarding keepDecoys is
+        //what lets a whole-FASTA peptide list that was digested with its decoys put them in the
+        //library, as the AlphaPeptDeep server does. A pin-path or rescoring input carries no is_decoy
+        //column - its decoy filtering already happened in PinReader - so the flag is inert there.
+        if (Constants.keepDecoys == 1) {
+            command.add("--keep-decoys");
+        }
         //no --min-charge/--max-charge: every row of the list names its own charge, so FragCast
         //predicts exactly those precursors and the range would only be reported as overridden
         weights.appendFlags(command);

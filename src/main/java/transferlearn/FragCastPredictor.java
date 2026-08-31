@@ -318,7 +318,7 @@ public class FragCastPredictor {
         }
 
         final HashMap<String, String> paramsMap = new HashMap<>();
-        ParameterUtils.processCommandLineInputs(peptideListArgs(params, model, decoyTag), paramsMap);
+        ParameterUtils.processCommandLineInputs(peptideListArgs(params, keepDecoys, model, decoyTag), paramsMap);
         ParameterUtils.updateConstants(paramsMap);
         FragCastModelBundle.applyToConstants();
 
@@ -369,10 +369,16 @@ public class FragCastPredictor {
         return spectraModel != null && FragCastModels.FAST.equalsIgnoreCase(spectraModel.trim());
     }
 
-    /** As above, for the run that reads a peptide list instead of this job's pin files. */
-    static String[] peptideListArgs(String params, String model, String decoyTag) {
+    /**
+     * As above, for the run that reads a peptide list instead of this job's pin files. keepDecoys is
+     * forwarded so {@code Constants.keepDecoys} says what this command line asked: the prediction
+     * derives FragCast's {@code --keep-decoys} flag from it, which is what decides whether the
+     * list's {@code is_decoy} rows reach the library.
+     */
+    static String[] peptideListArgs(String params, String keepDecoys, String model, String decoyTag) {
         final List<String> args = new ArrayList<>(Arrays.asList(
                 "--paramsList", params,
+                "--keepDecoys", keepDecoys,
                 "--requirePinMzml", "false",
                 "--decoyPrefix", decoyTag));
         addModelZip(args, model);
@@ -421,7 +427,9 @@ public class FragCastPredictor {
 
             //The same three things the AlphaPeptDeep input carries, in FragCast's own dialect:
             //proteins is what it fills ProteinId, AllMappedProteins and Proteotypic from, and
-            //is_decoy is what makes it leave the decoys out of the library, as the server does.
+            //is_decoy is what tells it which rows are decoys - kept in the library under
+            //--keep-decoys (see FragCastModelCaller.buildCommand), left out without it. The server
+            //keeps them either way; the decoy prefix on the protein labels marks them in both.
             writer.write("peptide" + "\t" + "charge" + "\t" + "proteins" + "\t" +
                     "is_decoy" + "\n");
             try (ResultSet rs = stmt.executeQuery("SELECT peptide, proteins, is_decoy FROM read_parquet('" +

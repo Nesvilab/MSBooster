@@ -94,11 +94,12 @@ public class FastaReader {
             while (header != null) {
                 String[] headerSplit = header.split(" ");
                 String protID = headerSplit[0];
+                if (protID.startsWith(">")) { //compare and store the bare label, as everywhere else
+                    protID = protID.substring(1);
+                }
                 protToGene.put(protID, headerSplit[1]);
 
                 if (!protID.startsWith(Constants.decoyPrefix)) {
-                    protID = protID.substring(1); //remove >
-
                     //split by whatever is digestion rules
                     int start = 0;
                     for (int i = 0; i < protein.length(); i++) {

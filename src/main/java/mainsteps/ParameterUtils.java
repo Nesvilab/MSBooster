@@ -106,8 +106,12 @@ public class ParameterUtils {
                         ppmToDa = true;
                     }
                     break;
+                //the bare tag, not ">" + val: every consumer compares it against bare protein
+                //labels (pin proteins, library ProteinId, FragCast's --decoy-tag, the prediction
+                //server's decoy_tag), and the FASTA readers strip the header's ">" before comparing.
+                //A ">rev_" here matched nothing and silently unmarked every decoy downstream.
                 case "decoy_prefix":
-                    params.put("decoyPrefix", ">" + val);
+                    params.put("decoyPrefix", val);
                     break;
                 case "search_enzyme_cutafter":
                     params.put("cutAfter", val);
@@ -234,6 +238,7 @@ public class ParameterUtils {
                     }
             }
         }
+        reader.close();
 
         float tol = Float.parseFloat(params.get("ppmTolerance"));
         if (ppmToDa) { //read in from msfragger params. Low res tolerance used for all matching

@@ -26,14 +26,20 @@ import static transferlearn.Predictor.waitTime;
 import static utils.Print.printInfo;
 
 public class PredictUtils {
-    public static File[] createPredictInputFiles(String peptideList, String params, String keepDecoys) throws Exception {
+    //decoyTag is forwarded as --decoyPrefix after --paramsList in both branches, so the caller's
+    //--decoy-tag outranks a decoyPrefix line in the parameter file and lands in
+    //Constants.decoyPrefix, which is what sendPredRequest uploads as decoy_tag - the same ordering
+    //FragCastPredictor uses for the same reason.
+    public static File[] createPredictInputFiles(String peptideList, String params, String keepDecoys,
+                                                 String decoyTag) throws Exception {
         File[] inputFiles;
         if (peptideList.isEmpty()) { //predict all peptides in pin files
             Constants.spectraModel = "alphapeptdeep";
             Constants.rtModel = "alphapeptdeep";
             Constants.imModel = "alphapeptdeep";
             Constants.createPredFileOnly = true;
-            MainClass.main(new String[]{"--paramsList", params, "--keepDecoys", keepDecoys});
+            MainClass.main(new String[]{"--paramsList", params, "--keepDecoys", keepDecoys,
+                    "--decoyPrefix", decoyTag});
             File inputFile = new File(Constants.spectraRTPrefix + ".csv");
 
             //convert input to parquet
@@ -44,8 +50,8 @@ public class PredictUtils {
             inputFiles = new File[]{inputFile};
         } else { //predict everything in peptide list
             HashMap<String, String> paramsMap = new HashMap<>();
-            ParameterUtils.processCommandLineInputs(new String[]{"--paramsList", params, "--requirePinMzml", "false"},
-                    paramsMap);
+            ParameterUtils.processCommandLineInputs(new String[]{"--paramsList", params, "--requirePinMzml", "false",
+                    "--decoyPrefix", decoyTag}, paramsMap);
             ParameterUtils.updateConstants(paramsMap);
 
             //if using peptide list, nce and instrument should be provided

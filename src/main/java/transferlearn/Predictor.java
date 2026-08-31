@@ -87,6 +87,7 @@ public class Predictor {
         String outputFormat = "parquet";
         String outputDir = "";
         String keepDecoys = "1";
+        String decoyTag = "rev_"; //as FragCastPredictor and Constants.decoyPrefix default it
 
         for (int i = 0; i < args.length; i++) {
             switch (args[i]) {
@@ -139,8 +140,12 @@ public class Predictor {
                 case "--keep-decoys":
                     keepDecoys = args[i + 1];
                     break;
+                //held locally rather than assigned to Constants here: createPredictInputFiles
+                //re-reads the parameter file, and a decoyPrefix line in it would overwrite an
+                //assignment made now. Forwarded as a command-line override instead, which is applied
+                //after the file and wins - the same ordering FragCastPredictor relies on.
                 case "--decoy-tag":
-                    Constants.decoyPrefix = args[i + 1];
+                    decoyTag = args[i + 1];
                     break;
                 case "--output-format":
                     outputFormat = args[i + 1];
@@ -180,7 +185,7 @@ public class Predictor {
             maxCharge = 0;
         }
 
-        File[] inputFiles = PredictUtils.createPredictInputFiles(peptideList, params, keepDecoys);
+        File[] inputFiles = PredictUtils.createPredictInputFiles(peptideList, params, keepDecoys, decoyTag);
         if (outputDir.isEmpty()) {
             outputDir = inputFiles[0].getParent();
         }

@@ -206,13 +206,18 @@ public class FragCastPredictor {
 
         printInfo(Constants.versionNumber + " FragCast Local Library Prediction");
 
+        //Read before createInputFiles because the pin path hands MainClass explicit model overrides
+        //- whatever follows --paramsList wins - so the file's own fast choice has to be captured
+        //here and forwarded, not recovered from Constants afterwards.
+        final boolean fastRequested = requestsFastSpecModel(params);
+
         //Everything the command line names is handed on as a command-line override rather than
         //written into Constants here. processCommandLineInputs applies the parameter file the moment
         //it reads --paramsList and whatever follows overrides it, so assigning a static first would
         //simply be undone: the shipped template carries an empty "FragCastModelZip =" line, and an
         //empty value is a value.
         final File inputFile = createInputFiles(peptideList, params, keepDecoys, model, decoyTag,
-                minCharge, maxCharge);
+                minCharge, maxCharge, fastRequested);
         if (outputDir.isEmpty()) {
             outputDir = inputFile.getParent();
         }
@@ -222,7 +227,10 @@ public class FragCastPredictor {
 
         //the weights the bundle supplied, or the pretrained ones when no bundle was named
         final FragCastWeights weights = FragCastWeights.fromConstants();
-        final boolean fast = FragCastModels.usesFastSpecModel(Constants.spectraModel);
+        //what the file asked for, not Constants: the pin path just overrode Constants.spectraModel
+        //with what was forwarded, and the peptide-list path applied the file's own casing - the
+        //pre-read value is the one answer both paths agree on
+        final boolean fast = fastRequested;
         printInfo("Predicting with " + weights);
 
         //Clear last run's outputs first. FragCast's COPY overwrites, but a library left from an
@@ -301,10 +309,11 @@ public class FragCastPredictor {
      * to collect them and stop, exactly as the server path asks it to.
      */
     private static File createInputFiles(String peptideList, String params, String keepDecoys,
-                                           String model, String decoyTag, int minCharge, int maxCharge)
+                                           String model, String decoyTag, int minCharge, int maxCharge,
+                                           boolean fast)
             throws Exception {
         if (peptideList.isEmpty()) {
-            MainClass.main(pinPathArgs(params, keepDecoys, model, decoyTag));
+            MainClass.main(pinPathArgs(params, keepDecoys, model, decoyTag, fast));
             return new File(Constants.spectraRTPrefix + ".tsv");
         }
 
@@ -326,17 +335,38 @@ public class FragCastPredictor {
      * why they are passed rather than assigned to {@link Constants} beforehand: the shipped template
      * carries an empty {@code FragCastModelZip =} line, and an empty value is a value.
      */
-    static String[] pinPathArgs(String params, String keepDecoys, String model, String decoyTag) {
+    static String[] pinPathArgs(String params, String keepDecoys, String model, String decoyTag,
+                                boolean fast) {
+        //The collection run must be told a FragCast model whatever the file names, but which Spec
+        //variant only matters to the prediction that follows - so the file's own fast choice is
+        //forwarded rather than flattened to the Conformer, keeping Constants.spectraModel saying
+        //which weights this run actually loads. RT and IM stay under the plain name: only the MS2
+        //weights come in a fast variant.
         final List<String> args = new ArrayList<>(Arrays.asList(
                 "--paramsList", params,
                 "--keepDecoys", keepDecoys,
                 "--decoyPrefix", decoyTag,
                 "--createPredFileOnly", "true",
-                "--spectraModel", FragCastModels.CONFORMER,
+                "--spectraModel", fast ? FragCastModels.FAST : FragCastModels.CONFORMER,
                 "--rtModel", FragCastModels.CONFORMER,
                 "--imModel", FragCastModels.CONFORMER));
         addModelZip(args, model);
         return args.toArray(new String[0]);
+    }
+
+    /**
+     * Does the parameter file ask for FragCast's small/fast Spec model
+     * ({@code spectraModel = FragCast-Fast})? That line is how a caller with no command line into
+     * FragCast - FragPipe's transfer-learning step above all - picks the Spec variant, for the
+     * prediction here and for {@link FragCastLocalWorkflow}'s choice of base weights alike.
+     */
+    static boolean requestsFastSpecModel(String paramsList) throws java.io.IOException {
+        final HashMap<String, String> fileParams = new HashMap<>();
+        ParameterUtils.processCommandLineInputs(new String[]{"--paramsList", paramsList}, fileParams);
+        //case-insensitively, as a rescoring run reads the same line through LowercaseModelMapper -
+        //the two entry points must not disagree about what a hand-written file means
+        final String spectraModel = fileParams.get("spectraModel");
+        return spectraModel != null && FragCastModels.FAST.equalsIgnoreCase(spectraModel.trim());
     }
 
     /** As above, for the run that reads a peptide list instead of this job's pin files. */

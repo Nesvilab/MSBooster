@@ -200,11 +200,55 @@ public class FragCastPredictorTest {
                 "outputDirectory = " + tmp.toAbsolutePath().toString().replace("\\", "/"));
         String zip = tmp.resolve("finetuned.zip").toAbsolutePath().toString();
 
-        applyAsPredictorWould(FragCastPredictor.pinPathArgs(params.getAbsolutePath(), "0", zip, "DECOY_"));
+        applyAsPredictorWould(FragCastPredictor.pinPathArgs(params.getAbsolutePath(), "0", zip, "DECOY_", false));
 
         assertEquals(zip, allconstants.Constants.FragCastModelZip);
         assertEquals(allconstants.FragCastModels.CONFORMER, allconstants.Constants.spectraModel);
         assertEquals(Integer.valueOf(0), allconstants.Constants.keepDecoys);
+    }
+
+    // --- the parameter file's fast choice must survive the pin path's model overrides --------
+
+    @Test
+    public void theParameterFileCanAskForTheFastSpecModel() throws Exception {
+        File params = paramsFileNaming("spectraModel = " + allconstants.FragCastModels.FAST);
+        assertTrue(FragCastPredictor.requestsFastSpecModel(params.getAbsolutePath()));
+    }
+
+    @Test
+    public void theFastRequestReadsLikeARescoringRunWould() throws Exception {
+        // MainClass reads the same line through LowercaseModelMapper, so a hand-written
+        // "fragcast-fast" runs fast when rescoring; this entry point must agree with it
+        File params = paramsFileNaming("spectraModel = fragcast-fast");
+        assertTrue(FragCastPredictor.requestsFastSpecModel(params.getAbsolutePath()));
+    }
+
+    @Test
+    public void anyOtherSpecModelIsNotAFastRequest() throws Exception {
+        assertFalse(FragCastPredictor.requestsFastSpecModel(
+                paramsFileNaming("spectraModel = " + allconstants.FragCastModels.CONFORMER).getAbsolutePath()));
+        assertFalse(FragCastPredictor.requestsFastSpecModel(
+                paramsFileNaming("spectraModel = DIA-NN").getAbsolutePath()));
+        assertFalse(FragCastPredictor.requestsFastSpecModel(
+                paramsFileNaming("decoyPrefix = rev_").getAbsolutePath()),
+                "a file naming no Spec model asks for nothing");
+    }
+
+    @Test
+    public void thePinPathForwardsTheFastChoiceForSpectraOnly() throws Exception {
+        // Without this the pin path flattened the file's choice to the Conformer, and the run
+        // silently predicted with weights the user never picked. RT and IM stay under the plain
+        // name: only the MS2 weights come in a fast variant.
+        File params = paramsFileNaming("spectraModel = " + allconstants.FragCastModels.FAST,
+                "outputDirectory = " + tmp.toAbsolutePath().toString().replace("\\", "/"));
+
+        applyAsPredictorWould(FragCastPredictor.pinPathArgs(params.getAbsolutePath(), "0", "", "rev_", true));
+
+        assertEquals(allconstants.FragCastModels.FAST, allconstants.Constants.spectraModel);
+        assertEquals(allconstants.FragCastModels.CONFORMER, allconstants.Constants.rtModel);
+        assertEquals(allconstants.FragCastModels.CONFORMER, allconstants.Constants.imModel);
+        assertTrue(allconstants.FragCastModels.usesFastSpecModel(allconstants.Constants.spectraModel),
+                "the prediction derives FragCast's --fast flag from what Constants now says");
     }
 
     @Test

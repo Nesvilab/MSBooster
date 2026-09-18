@@ -16,6 +16,7 @@ package transferlearn;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.io.File;
 import java.nio.charset.StandardCharsets;
@@ -186,7 +187,7 @@ public class HelpersTest {
                     "'PEPTIDEK' AS PeptideSequence, 'PEPTIDEK' AS ModifiedPeptideSequence, " +
                     "CAST(2 AS SMALLINT) AS PrecursorCharge, CAST(10000 AS FLOAT) AS LibraryIntensity, " +
                     "CAST(-17.75 AS FLOAT) AS NormalizedRetentionTime, " +
-                    "CAST('' AS VARCHAR) AS PrecursorIonMobility, 'y' AS FragmentType, " +
+                    "CAST(0.7984 AS FLOAT) AS PrecursorIonMobility, 'y' AS FragmentType, " +
                     "CAST(1 AS SMALLINT) AS FragmentCharge, CAST(6 AS SMALLINT) AS FragmentSeriesNumber, " +
                     "'' AS FragmentLossType, " + extra +
                     "CAST(0 AS SMALLINT) AS Proteotypic) TO '" +
@@ -225,6 +226,44 @@ public class HelpersTest {
         assertEquals(group, row[16], "the group is the only place a shared peptide's other proteins live");
         assertEquals("GENEA;GENEB", row[17]);
         assertEquals("0", row[18]);
+    }
+
+    // The same through a library FragCast itself wrote in the schema (a real build-library output,
+    // fragcast_lib_narrow.parquet), which reaches this converter without having been rewritten
+    // first. It carries no gene columns of its own, so each gene column must appear exactly once -
+    // a file that still had FragCast's two would come out with GeneName twice - and every row has to
+    // line up with the 19-column header.
+    @Test
+    public void aLibraryFragCastWroteInTheSchemaConvertsStraightToTheTsv(@TempDir Path dir) throws Exception {
+        File parquet = dir.resolve("narrow.parquet").toFile();
+        Files.copy(new File("src/test/resources/fragcast_lib_narrow.parquet").toPath(), parquet.toPath());
+        HashMap<String, String> map = Helpers.mapProteinsListToGenes(
+                peptideList(dir, "sp|P12345|TEST_HUMAN", "sp|O75747|P3C2G_HUMAN;sp|Q7Z4L5|TT21B_HUMAN")
+                        .getAbsolutePath(),
+                fasta("P12345", "TESTGENE", "O75747", "PIK3C2G", "Q7Z4L5", "TTC21B"));
+
+        String tsv = dir.resolve("narrow.tsv").toString();
+        try (Connection conn = DriverManager.getConnection("jdbc:duckdb:")) {
+            Helpers.convertParquetToLibraryTsv(parquet.getAbsolutePath(), tsv, map, conn);
+        }
+        List<String> lines = Files.readAllLines(Paths.get(tsv), StandardCharsets.UTF_8);
+
+        assertEquals(FRAGSPECLIB_HEADER, lines.get(0));
+        assertEquals(268 + 1, lines.size(), "every row of the library, under one header");
+        boolean sawGroup = false;
+        for (String line : lines.subList(1, lines.size())) {
+            String[] row = line.split("\t", -1);
+            assertEquals(19, row.length, line);
+            if (row[16].equals("sp|O75747|P3C2G_HUMAN;sp|Q7Z4L5|TT21B_HUMAN")) {
+                sawGroup = true;
+                assertEquals("O75747", row[3]);
+                assertEquals("PIK3C2G", row[4]);
+                //the gene, not the TT21B an entry name would give
+                assertEquals("PIK3C2G;TTC21B", row[17]);
+                assertEquals("0", row[18]);
+            }
+        }
+        assertTrue(sawGroup, "the fixture's shared peptides went missing");
     }
 
     // A protein group the map has no entry for still answers with accessions rather than mnemonics,

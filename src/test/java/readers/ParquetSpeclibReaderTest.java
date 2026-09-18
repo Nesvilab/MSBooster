@@ -58,14 +58,26 @@ class ParquetSpeclibReaderTest {
 
     @Test
     void parquetMatchesTsv() throws Exception {
+        parquetMatchesTsv("fragcast_lib");
+    }
+
+    // The library FragCast writes now: 17 columns, float32 m/z, intensities, RT and ion mobility,
+    // int16 charges and series numbers. Rescoring reads this file directly, so every one of those
+    // has to come through as the number the TSV of the same run holds.
+    @Test
+    void theNarrowParquetMatchesTsv() throws Exception {
+        parquetMatchesTsv("fragcast_lib_narrow");
+    }
+
+    private static void parquetMatchesTsv(String fixture) throws Exception {
         Constants.unimodObo = res("unimod.obo");
         ScheduledThreadPoolExecutor es = new ScheduledThreadPoolExecutor(
                 Math.max(1, Runtime.getRuntime().availableProcessors() - 1));
 
         PredictionEntryHashMap tsv =
-                new LibraryTsvReader(res("fragcast_lib.tsv"), es, "unimod.obo").getPreds();
+                new LibraryTsvReader(res(fixture + ".tsv"), es, "unimod.obo").getPreds();
         PredictionEntryHashMap pq =
-                new ParquetSpeclibReader(res("fragcast_lib.parquet"), es, new HashSet<>()).getPreds();
+                new ParquetSpeclibReader(res(fixture + ".parquet"), es, new HashSet<>()).getPreds();
 
         assertFalse(tsv.isEmpty(), "TSV reader produced no predictions");
         assertEquals(tsv.keySet(), pq.keySet(), "precursor key sets differ");
@@ -75,16 +87,18 @@ class ParquetSpeclibReaderTest {
             PredictionEntry b = pq.get(key);
             assertEquals(a.RT, b.RT, 1e-4f, "RT differs for " + key);
             assertEquals(a.IM, b.IM, 1e-4f, "IM differs for " + key);
+            //a column that was not read comes back as 0, which a loose comparison could let through
+            assertTrue(b.IM != 0f, "IM was not read for " + key);
             assertEquals(fragTuples(a), fragTuples(b), "fragments differ for " + key);
         }
-        System.out.println("Parquet == TSV for " + tsv.keySet().size() + " precursors");
+        System.out.println("Parquet == TSV for " + tsv.keySet().size() + " precursors (" + fixture + ")");
 
         // allowedPrecursors filtering: restrict to a single precursor
         String one = tsv.keySet().iterator().next();
         HashSet<String> allowed = new HashSet<>();
         allowed.add(one);
         PredictionEntryHashMap filtered =
-                new ParquetSpeclibReader(res("fragcast_lib.parquet"), es, allowed).getPreds();
+                new ParquetSpeclibReader(res(fixture + ".parquet"), es, allowed).getPreds();
         assertEquals(1, filtered.keySet().size(), "allowedPrecursors filter not applied");
         assertTrue(filtered.containsKey(one));
         es.shutdown();

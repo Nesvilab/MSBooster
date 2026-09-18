@@ -56,7 +56,10 @@ public class ParquetSpeclibReader implements LibraryPredictionMapper {
     //PeptideFormatter (which expects brackets) yields the same canonical key as the TSV reader.
     private static final Pattern UNIMOD_PARENS = Pattern.compile("\\(UniMod:(\\d+)\\)");
 
-    //the subset of the 19-column library schema we actually need (column projection -> faster reads)
+    //the subset of the library schema we actually need (column projection -> faster reads). Read by
+    //name and through dbl()/intv(), so it is the same to this reader whether FragCast wrote its older
+    //19 double/int32 columns or the 17 float/smallint ones it writes now - or whether an ion mobility
+    //arrives as a number or, as older converted libraries hold it, as text
     private static final String MODSEQ = "ModifiedPeptideSequence", CHARGE = "PrecursorCharge",
             PRODMZ = "ProductMz", INTENSITY = "LibraryIntensity", RT = "NormalizedRetentionTime",
             IM = "PrecursorIonMobility", FTYPE = "FragmentType", FCHARGE = "FragmentCharge",

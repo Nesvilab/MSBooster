@@ -328,8 +328,8 @@ public class PinReader {
             }
             if (FragCastCharges.canPredict(pf.getCharge())) {
                 //The proteins column only goes in when the peptide file is being made for a library,
-                //which is what createPredFileOnly means. FragCast fills ProteinId, GeneName and
-                //Proteotypic from it, and the AlphaPeptDeep writer above carries it for the same
+                //which is what createPredFileOnly means. FragCast fills ProteinId, AllMappedProteins
+                //and Proteotypic from it, and the AlphaPeptDeep writer above carries it for the same
                 //reason. Rescoring never reads those columns, so its input keeps the two it had.
                 hSetHits.add(Boolean.TRUE.equals(Constants.createPredFileOnly)
                         ? pf.getBase() + "\t" + pf.getCharge() + "\t" + proteinsOrEmpty()

@@ -34,8 +34,10 @@ import static utils.Print.printInfo;
  * modifications as delta masses (e.g. {@code C[57.0215]}); FragCast resolves those against its full
  * UniMod table, so every modification MSBooster knows is preserved. FragCast's {@code build-library}
  * reads the peptide and charge columns (the charge is mandatory per row). A single call predicts RT,
- * IM and MS2 at once and writes a 19-column DIA-NN/Spectronaut spectral library as Parquet, read back
- * by {@link readers.predictionreaders.ParquetSpeclibReader}.
+ * IM and MS2 at once and writes a DIA-NN/Spectronaut-style spectral library as Parquet - 17 columns
+ * in the float/smallint schema the library prediction hands on unchanged, 19 double/int ones from a
+ * FragCast older than that - read back by name, either way, by
+ * {@link readers.predictionreaders.ParquetSpeclibReader}.
  *
  * <p>{@code fast} selects FragCast's small/fast Spec model (its {@code --fast} flag,
  * {@code FragCast-Spec-Fast.onnx}) instead of the default Conformer; see

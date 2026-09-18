@@ -23,6 +23,7 @@ import java.nio.file.StandardOpenOption;
 import java.sql.*;
 import java.util.Arrays;
 import java.util.HashMap;
+import java.util.Locale;
 import java.util.Map;
 
 import static utils.Print.printInfo;
@@ -57,6 +58,22 @@ public class Helpers {
                 "THEN (CASE WHEN starts_with(x, '" + prefix + "') THEN '" + prefix + "' ELSE '' END) " +
                 "|| string_split(x, '|')[2] " +
                 "ELSE x END), ';')";
+    }
+
+    /**
+     * A file's size in words, for a log line saying how much a step is about to read or has written.
+     * The unit is chosen by what the number rounds to, so a size just under a boundary reads as
+     * "1.00 GB" rather than "1000.0 MB".
+     */
+    static String fileSize(File file) {
+        final double bytes = file.length();
+        if (bytes >= 999.95e6) {
+            return String.format(Locale.US, "%.2f GB", bytes / 1e9);
+        }
+        if (bytes >= 999.95e3) {
+            return String.format(Locale.US, "%.1f MB", bytes / 1e6);
+        }
+        return String.format(Locale.US, "%.1f KB", bytes / 1e3);
     }
 
     static HttpURLConnection setUpConnection(String serverString, URL serverURL) throws IOException {
@@ -140,8 +157,6 @@ public class Helpers {
                 }
             }
 
-            Print.printInfo("Converting parquet to library.tsv format");
-
             // Fetch column names from parquet
             try (ResultSet rs = stmt.executeQuery(
                     String.format("SELECT * FROM read_parquet('%s') LIMIT 1", parquet.replace("'", "''")))) {
@@ -196,6 +211,14 @@ public class Helpers {
 
                 // Write to temp file using native DuckDB COPY (no JDBC row iteration)
                 Path tmpTsv = Files.createTempFile("apd_chunk_", ".tsv");
+                //Two whole passes, each said out loud and by file name: the parquet is read and
+                //written as a temporary tsv, and that tsv is then appended to the library. On a
+                //FASTA-scale library both are minutes, and the temporary one is on the system drive.
+                final File parquetFile = new File(parquet);
+                Print.printInfo("Converting parquet to library.tsv format: reading " +
+                        parquetFile.getAbsolutePath() + " (" + fileSize(parquetFile) +
+                        ") and writing temporary tsv " + tmpTsv);
+                final long startTime = System.nanoTime();
                 try {
                     //The group's genes are looked up under the group's own key, which the map holds
                     //alongside the per-protein ones - the accessions in the order the predictor was
@@ -213,12 +236,19 @@ public class Helpers {
                             tmpTsv.toString().replace("\\", "/")
                     );
                     stmt.execute(query);
+                    Print.printInfo("Writing temporary tsv " + tmpTsv + " (" + fileSize(tmpTsv.toFile()) +
+                            ") took " + (System.nanoTime() - startTime) / 1000000 +
+                            " milliseconds; appending it to " + tsvFile.getAbsolutePath());
 
                     // Append temp file to TSV
+                    final long appendStart = System.nanoTime();
                     try (OutputStream out = Files.newOutputStream(Paths.get(tsv),
                             StandardOpenOption.APPEND, StandardOpenOption.CREATE)) {
                         Files.copy(tmpTsv, out);
                     }
+                    Print.printInfo("Appending to " + tsvFile.getAbsolutePath() + " took " +
+                            (System.nanoTime() - appendStart) / 1000000 + " milliseconds, file is now " +
+                            fileSize(tsvFile));
                 } finally {
                     Files.deleteIfExists(tmpTsv);
                 }

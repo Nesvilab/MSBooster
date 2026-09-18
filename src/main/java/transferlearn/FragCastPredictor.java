@@ -44,7 +44,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
 
-import static transferlearn.Helpers.convertParquetToLibraryTsv;
+import static transferlearn.Helpers.writeLibraryTsv;
 import static transferlearn.Helpers.mapProteinsListToGenes;
 import static utils.Print.printError;
 import static utils.Print.printInfo;
@@ -288,7 +288,7 @@ public class FragCastPredictor {
         if (outputFormat.equals("librarytsv")) {
             final String tsv = new File(outputDir, basename + ".tsv").getAbsolutePath();
             try (Connection conn = DriverManager.getConnection("jdbc:duckdb:")) {
-                convertParquetToLibraryTsv(merged.getAbsolutePath(), tsv, protMap, conn);
+                writeLibraryTsv(merged.getAbsolutePath(), tsv, protMap, conn);
             }
             printInfo("Total file at " + tsv);
         } else {

@@ -16,21 +16,27 @@ package transferlearn;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.io.File;
+import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.sql.Connection;
 import java.sql.DriverManager;
+import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
@@ -176,7 +182,11 @@ public class HelpersTest {
      * fills.
      */
     private static File library(Path dir, String proteinId, String group) throws Exception {
-        File parquet = dir.resolve(group == null ? "server.parquet" : "fragcast.parquet").toFile();
+        return library(dir, group == null ? "server.parquet" : "fragcast.parquet", proteinId, group);
+    }
+
+    private static File library(Path dir, String name, String proteinId, String group) throws Exception {
+        File parquet = dir.resolve(name).toFile();
         String extra = group == null ? ""
                 : "'' AS AverageExperimentalRetentionTime, '" + group + "' AS AllMappedProteins, ";
         try (Connection conn = DriverManager.getConnection("jdbc:duckdb:");
@@ -196,11 +206,16 @@ public class HelpersTest {
         return parquet;
     }
 
+    /** Each fixture through the path that produces it: FragCast's writer, or the server's appender. */
     private static String[] writeAndRead(Path dir, File parquet, HashMap<String, String> map,
                                          List<String> header) throws Exception {
         String tsv = dir.resolve(parquet.getName() + ".tsv").toString();
         try (Connection conn = DriverManager.getConnection("jdbc:duckdb:")) {
-            Helpers.convertParquetToLibraryTsv(parquet.getAbsolutePath(), tsv, map, conn);
+            if (parquet.getName().startsWith("server")) {
+                Helpers.convertParquetToLibraryTsv(parquet.getAbsolutePath(), tsv, map, conn);
+            } else {
+                Helpers.writeLibraryTsv(parquet.getAbsolutePath(), tsv, map, conn);
+            }
         }
         List<String> lines = Files.readAllLines(Paths.get(tsv), StandardCharsets.UTF_8);
         header.add(lines.get(0));
@@ -244,7 +259,7 @@ public class HelpersTest {
 
         String tsv = dir.resolve("narrow.tsv").toString();
         try (Connection conn = DriverManager.getConnection("jdbc:duckdb:")) {
-            Helpers.convertParquetToLibraryTsv(parquet.getAbsolutePath(), tsv, map, conn);
+            Helpers.writeLibraryTsv(parquet.getAbsolutePath(), tsv, map, conn);
         }
         List<String> lines = Files.readAllLines(Paths.get(tsv), StandardCharsets.UTF_8);
 
@@ -288,5 +303,113 @@ public class HelpersTest {
         assertEquals(16, row.length);
         assertFalse(header.get(0).contains("AllMapped"), header.get(0));
         assertEquals("GENEA", row[4]);
+    }
+    // --- where each path writes -------------------------------------------------------------
+
+    private static Set<String> names(Path dir) throws IOException {
+        try (Stream<Path> files = Files.list(dir)) {
+            return files.map(p -> p.getFileName().toString()).collect(Collectors.toSet());
+        }
+    }
+
+    // The local FragCast path: one parquet becomes the library in one pass, under its own name.
+    // No staging copy of a FASTA-scale library on the system drive, no second copy anywhere, and
+    // one line ending throughout because one writer wrote every line. Nothing but the library is
+    // left in the folder.
+    @Test
+    public void aFragCastLibraryIsWrittenInOnePassWithNothingLeftBeside(@TempDir Path dir) throws Exception {
+        File parquet = library(dir, "P1", "sp|P1|A_HUMAN;sp|P2|B_HUMAN");
+        Path tsv = dir.resolve("fresh.tsv");
+        try (Connection conn = DriverManager.getConnection("jdbc:duckdb:")) {
+            Helpers.writeLibraryTsv(parquet.getAbsolutePath(), tsv.toString(),
+                    fasta("P1", "GENEA", "P2", "GENEB"), conn);
+        }
+
+        List<String> lines = Files.readAllLines(tsv, StandardCharsets.UTF_8);
+        assertEquals(FRAGSPECLIB_HEADER, lines.get(0));
+        assertEquals(2, lines.size());
+        assertEquals("GENEA", lines.get(1).split("\t", -1)[4]);
+        assertFalse(new String(Files.readAllBytes(tsv), StandardCharsets.UTF_8).contains("\r"),
+                "one writer, one line ending");
+        assertEquals(new HashSet<>(Arrays.asList("fragcast.parquet", "fresh.tsv")), names(dir));
+    }
+
+    // The server path stages each chunk beside the library it joins - in its folder, never in
+    // java.io.tmpdir, whose drive has nothing to do with the size of the library - under a fixed
+    // name, so what a killed run leaves is overwritten next time rather than piling up.
+    @Test
+    public void aChunkIsStagedBesideItsLibrary(@TempDir Path dir) throws Exception {
+        assertEquals(dir.toAbsolutePath().resolve("library.tsv" + Helpers.CHUNK),
+                Helpers.chunkOf(dir.resolve("library.tsv")));
+    }
+
+    // The server client converts each downloaded chunk into the one library it is building: the
+    // first chunk brings the header, the next joins under it, in the order the chunks came, and
+    // no chunk's staging copy is left behind - not even what a killed run left under the chunk's
+    // name, which only a chunk staged under that same name overwrites.
+    @Test
+    public void aSecondChunkIsAppendedUnderTheOneHeader(@TempDir Path dir) throws Exception {
+        Path tsv = dir.resolve("total.tsv");
+        Files.write(Helpers.chunkOf(tsv), "half a chunk\n".getBytes(StandardCharsets.UTF_8));
+        HashMap<String, String> map = fasta("P1", "GENEA", "P2", "GENEB");
+        try (Connection conn = DriverManager.getConnection("jdbc:duckdb:")) {
+            Helpers.convertParquetToLibraryTsv(library(dir, "first.parquet", "P1", null).getAbsolutePath(),
+                    tsv.toString(), map, conn);
+            Helpers.convertParquetToLibraryTsv(library(dir, "second.parquet", "P2", null).getAbsolutePath(),
+                    tsv.toString(), map, conn);
+        }
+
+        List<String> lines = Files.readAllLines(tsv, StandardCharsets.UTF_8);
+        assertEquals(3, lines.size(), "one header, one row per chunk: " + lines);
+        assertTrue(lines.get(0).startsWith("PrecursorMz\t"), lines.get(0));
+        assertEquals("P1", lines.get(1).split("\t", -1)[3]);
+        assertEquals("P2", lines.get(2).split("\t", -1)[3]);
+        assertEquals("GENEB", lines.get(2).split("\t", -1)[4]);
+        assertFalse(String.join("\n", lines).contains("half a chunk"), "the stale chunk was appended");
+        assertEquals(new HashSet<>(Arrays.asList("first.parquet", "second.parquet", "total.tsv")), names(dir));
+    }
+
+    /**
+     * A gene map that binds but cannot be joined: the converter loads its map only into an empty
+     * mapping table, so one already holding an INTEGER key makes DuckDB fail on the first ProteinId
+     * it tries to cast - in the middle of the COPY, as a chunk is being staged.
+     */
+    private static Connection poisoned() throws Exception {
+        Connection conn = DriverManager.getConnection("jdbc:duckdb:");
+        try (Statement stmt = conn.createStatement()) {
+            stmt.execute("CREATE TABLE mapping (key INTEGER, value VARCHAR)");
+            stmt.execute("INSERT INTO mapping VALUES (1, 'GENEA')");
+        }
+        return conn;
+    }
+
+    // A chunk whose staging fails midway is removed - whatever was under its name, since a one-row
+    // COPY may fail before it writes - and the library is left exactly as it was.
+    @Test
+    public void aChunkThatFailsMidwayIsRemovedAndTheLibraryLeftAsItWas(@TempDir Path dir) throws Exception {
+        Path tsv = dir.resolve("total.tsv");
+        try (Connection conn = DriverManager.getConnection("jdbc:duckdb:")) {
+            Helpers.convertParquetToLibraryTsv(library(dir, "first.parquet", "P1", null).getAbsolutePath(),
+                    tsv.toString(), fasta("P1", "GENEA"), conn);
+        }
+        byte[] before = Files.readAllBytes(tsv);
+
+        File second = library(dir, "second.parquet", "P2", null);
+        Files.write(dir.resolve("total.tsv" + Helpers.CHUNK), "half a chunk\n".getBytes(StandardCharsets.UTF_8));
+        try (Connection conn = poisoned()) {
+            assertThrows(SQLException.class, () -> Helpers.convertParquetToLibraryTsv(
+                    second.getAbsolutePath(), tsv.toString(), fasta("P2", "GENEB"), conn));
+        }
+
+        assertTrue(Arrays.equals(before, Files.readAllBytes(tsv)), "the library was touched");
+        assertEquals(new HashSet<>(Arrays.asList("first.parquet", "second.parquet", "total.tsv")), names(dir));
+    }
+
+    // The server path's other scratch file, the CSV each peptide chunk is written as before DuckDB
+    // turns it into a parquet, is named beside that parquet for the same reason.
+    @Test
+    public void aPeptideChunksCsvIsNamedBesideTheParquetItBecomes(@TempDir Path dir) throws Exception {
+        assertEquals(dir.toAbsolutePath().resolve("spectraRT0.apd.csv"),
+                Helpers.apdCsvOf(dir.resolve("spectraRT0").toString()));
     }
 }

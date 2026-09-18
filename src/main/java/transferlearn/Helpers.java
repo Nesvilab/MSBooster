@@ -130,129 +130,176 @@ public class Helpers {
         }
     }
 
+    /** What a chunk joining a library is staged under, beside it: appended, then removed. */
+    static final String CHUNK = ".chunk";
+
+    /** A library with no rows yet: not there, or there and empty. */
+    private static boolean isFresh(Path library) throws IOException {
+        return !Files.exists(library) || Files.size(library) == 0;
+    }
+
+    /**
+     * Where a chunk of {@code library} is staged: in the library's own folder, on the drive that is
+     * holding the library anyway - never {@code java.io.tmpdir}, whose drive has nothing to do with
+     * how large a library is. A fixed name, so what a killed run leaves is overwritten next time.
+     */
+    static Path chunkOf(Path library) {
+        final Path whole = library.toAbsolutePath();
+        return whole.resolveSibling(whole.getFileName() + CHUNK);
+    }
+
+    /**
+     * The CSV a peptide chunk is written as on its way to {@code <parquetBasename>.parquet}: beside
+     * that parquet, never in {@code java.io.tmpdir}, and under a fixed name for the same reason.
+     */
+    static Path apdCsvOf(String parquetBasename) {
+        return Paths.get(parquetBasename + ".apd.csv").toAbsolutePath();
+    }
+
+    /**
+     * Writes {@code parquet} as the library {@code tsv} - the local FragCast path.
+     *
+     * <p>FragCast predicts the whole library into one parquet, so this is one COPY, header and all,
+     * straight into the library: no staging file anywhere, no second copy of a FASTA-scale library,
+     * one pass where the server path's staging takes two. What a failed run leaves under the
+     * library's name is of no use, and the next run clears it like any other stale output.
+     */
+    static void writeLibraryTsv(String parquet, String tsv, HashMap<String, String> protToGene,
+                                Connection conn) throws SQLException, IOException {
+        try (Statement stmt = conn.createStatement()) {
+            loadMapping(conn, stmt, protToGene);
+            final Path library = Paths.get(tsv).toAbsolutePath();
+            final File parquetFile = new File(parquet);
+            //Said out loud and by file name: on a FASTA-scale library it is minutes with nothing
+            //else printed.
+            Print.printInfo("Converting parquet to library.tsv format: reading " +
+                    parquetFile.getAbsolutePath() + " (" + fileSize(parquetFile) + ") and writing " + library);
+            final long startTime = System.nanoTime();
+            stmt.execute(libraryCopy(stmt, parquet, library, true));
+            Print.printInfo("Writing " + library + " (" + fileSize(library.toFile()) + ") took " +
+                    (System.nanoTime() - startTime) / 1000000 + " milliseconds");
+        }
+    }
+
+    /**
+     * Appends {@code parquet} to the library {@code tsv} - the server path.
+     *
+     * <p>The server predicts one job of 500000 peptides at a time, and each downloaded chunk joins
+     * the one library as it arrives. COPY cannot append, so the chunk is staged first - beside the
+     * library (see {@link #chunkOf}), never in {@code java.io.tmpdir} - then appended and removed.
+     * The first chunk's staging carries the header; the later ones join under it.
+     */
     static void convertParquetToLibraryTsv(String parquet, String tsv, HashMap<String, String> protToGene,
                                            Connection conn) throws SQLException, IOException {
         try (Statement stmt = conn.createStatement()) {
-
-            stmt.execute("CREATE TABLE IF NOT EXISTS mapping (key VARCHAR, value VARCHAR)");
-
-            try (ResultSet check = stmt.executeQuery("SELECT COUNT(*) FROM mapping")) {
-                check.next();
-                if (check.getLong(1) == 0) {
-                    Print.printInfo("Loading fasta to sql");
-                    conn.setAutoCommit(false);
-                    try (PreparedStatement pstmt = conn.prepareStatement("INSERT INTO mapping VALUES (?, ?)")) {
-                        int count = 0;
-                        for (Map.Entry<String, String> entry : protToGene.entrySet()) {
-                            pstmt.setString(1, entry.getKey());
-                            pstmt.setString(2, entry.getValue());
-                            pstmt.addBatch();
-                            if (++count % 10000 == 0) pstmt.executeBatch();
-                        }
-                        pstmt.executeBatch();
-                    }
-                    conn.commit();
-                    conn.setAutoCommit(true);
-                    stmt.execute("CREATE INDEX IF NOT EXISTS mapping_idx ON mapping(key)");
+            loadMapping(conn, stmt, protToGene);
+            final Path library = Paths.get(tsv).toAbsolutePath();
+            final Path chunk = chunkOf(library);
+            final File parquetFile = new File(parquet);
+            //Two passes, each said out loud and by file name: the chunk is written, then appended.
+            Print.printInfo("Converting parquet to library.tsv format: reading " +
+                    parquetFile.getAbsolutePath() + " (" + fileSize(parquetFile) + ") and writing chunk " +
+                    chunk + " to append to " + library);
+            final long startTime = System.nanoTime();
+            try {
+                stmt.execute(libraryCopy(stmt, parquet, chunk, isFresh(library)));
+                Print.printInfo("Writing chunk " + chunk + " (" + fileSize(chunk.toFile()) + ") took " +
+                        (System.nanoTime() - startTime) / 1000000 + " milliseconds; appending it to " + library);
+                final long appendStart = System.nanoTime();
+                try (OutputStream out = Files.newOutputStream(library,
+                        StandardOpenOption.APPEND, StandardOpenOption.CREATE)) {
+                    Files.copy(chunk, out);
                 }
+                Print.printInfo("Appending to " + library + " took " +
+                        (System.nanoTime() - appendStart) / 1000000 + " milliseconds, file is now " +
+                        fileSize(library.toFile()));
+            } finally {
+                Files.deleteIfExists(chunk);
+            }
+        }
+    }
+
+    /** Loads the protein-to-gene map into the connection's mapping table, once per connection. */
+    private static void loadMapping(Connection conn, Statement stmt, HashMap<String, String> protToGene)
+            throws SQLException {
+        stmt.execute("CREATE TABLE IF NOT EXISTS mapping (key VARCHAR, value VARCHAR)");
+
+        try (ResultSet check = stmt.executeQuery("SELECT COUNT(*) FROM mapping")) {
+            check.next();
+            if (check.getLong(1) == 0) {
+                Print.printInfo("Loading fasta to sql");
+                conn.setAutoCommit(false);
+                try (PreparedStatement pstmt = conn.prepareStatement("INSERT INTO mapping VALUES (?, ?)")) {
+                    int count = 0;
+                    for (Map.Entry<String, String> entry : protToGene.entrySet()) {
+                        pstmt.setString(1, entry.getKey());
+                        pstmt.setString(2, entry.getValue());
+                        pstmt.addBatch();
+                        if (++count % 10000 == 0) pstmt.executeBatch();
+                    }
+                    pstmt.executeBatch();
+                }
+                conn.commit();
+                conn.setAutoCommit(true);
+                stmt.execute("CREATE INDEX IF NOT EXISTS mapping_idx ON mapping(key)");
+            }
+        }
+    }
+
+    /**
+     * The COPY that writes {@code parquet}'s rows to {@code target} as library.tsv rows, each gene
+     * column looked up from the mapping table. The header, when asked for, is the select list's own
+     * names, so it cannot fall out of step with the columns. USE_TMP_FILE false: DuckDB otherwise
+     * writes a tmp_<name> sibling and renames it whenever the target already exists, as a stale
+     * chunk does.
+     */
+    private static String libraryCopy(Statement stmt, String parquet, Path target, boolean header)
+            throws SQLException {
+        // Fetch column names from parquet
+        try (ResultSet rs = stmt.executeQuery(
+                String.format("SELECT * FROM read_parquet('%s') LIMIT 1", parquet.replace("'", "''")))) {
+
+            ResultSetMetaData meta = rs.getMetaData();
+            int colCount = meta.getColumnCount();
+
+            //Only FragCast returns a protein group; the server has no such column, and then there
+            //is no group to name genes for. Whether this library has one falls out of building
+            //the select, so it is not looked for twice.
+            final String groupKey = accessionsOfGroup();
+            boolean hasGroup = false;
+
+            //Each gene column follows the protein column it names, and is derived here rather than
+            //kept from the predictor: a predictor reads its gene off the protein header, which
+            //gives the entry mnemonic and not the gene. Both come from the FASTA instead.
+            StringBuilder select = new StringBuilder();
+            for (int i = 1; i <= colCount; i++) {
+                String col = meta.getColumnName(i);
+                select.append("p.").append(col);
+                if (PROTEIN_ID.equals(col)) {
+                    select.append(", COALESCE(m.value, p.").append(PROTEIN_ID).append(") AS GeneName");
+                } else if (ALL_MAPPED_PROTEINS.equals(col)) {
+                    hasGroup = true;
+                    select.append(", COALESCE(g.value, ").append(groupKey).append(") AS AllMappedGenes");
+                }
+                if (i != colCount) select.append(", ");
             }
 
-            // Fetch column names from parquet
-            try (ResultSet rs = stmt.executeQuery(
-                    String.format("SELECT * FROM read_parquet('%s') LIMIT 1", parquet.replace("'", "''")))) {
-
-                ResultSetMetaData meta = rs.getMetaData();
-                int colCount = meta.getColumnCount();
-
-                //Only FragCast returns a protein group; the server has no such column, and then there
-                //is no group to name genes for. Whether this library has one falls out of building
-                //the select, so it is not looked for twice.
-                final String groupKey = accessionsOfGroup();
-                boolean hasGroup = false;
-
-                //Each gene column follows the protein column it names, and is derived here rather than
-                //kept from the predictor: a predictor reads its gene off the protein header, which
-                //gives the entry mnemonic and not the gene. Both come from the FASTA instead.
-                StringBuilder select = new StringBuilder();
-                for (int i = 1; i <= colCount; i++) {
-                    String col = meta.getColumnName(i);
-                    select.append("p.").append(col);
-                    if (PROTEIN_ID.equals(col)) {
-                        select.append(", COALESCE(m.value, p.").append(PROTEIN_ID).append(") AS GeneName");
-                    } else if (ALL_MAPPED_PROTEINS.equals(col)) {
-                        hasGroup = true;
-                        select.append(", COALESCE(g.value, ").append(groupKey).append(") AS AllMappedGenes");
-                    }
-                    if (i != colCount) select.append(", ");
-                }
-
-                // Write header if file is new/empty
-                File tsvFile = new File(tsv);
-                if (!tsvFile.exists() || tsvFile.length() == 0) {
-                    try (BufferedWriter writer = Files.newBufferedWriter(Paths.get(tsv),
-                            StandardCharsets.UTF_8, StandardOpenOption.CREATE)) {
-                        //Built from the same two rules the select is, so the two cannot fall out of
-                        //step and shift every column of the library one place against its name.
-                        StringBuilder header = new StringBuilder();
-                        for (int i = 1; i <= colCount; i++) {
-                            String col = meta.getColumnName(i);
-                            if (i > 1) header.append('\t');
-                            header.append(col);
-                            if (PROTEIN_ID.equals(col)) {
-                                header.append('\t').append("GeneName");
-                            } else if (ALL_MAPPED_PROTEINS.equals(col)) {
-                                header.append('\t').append("AllMappedGenes");
-                            }
-                        }
-                        writer.write(header.toString());
-                        writer.newLine();
-                    }
-                }
-
-                // Write to temp file using native DuckDB COPY (no JDBC row iteration)
-                Path tmpTsv = Files.createTempFile("apd_chunk_", ".tsv");
-                //Two whole passes, each said out loud and by file name: the parquet is read and
-                //written as a temporary tsv, and that tsv is then appended to the library. On a
-                //FASTA-scale library both are minutes, and the temporary one is on the system drive.
-                final File parquetFile = new File(parquet);
-                Print.printInfo("Converting parquet to library.tsv format: reading " +
-                        parquetFile.getAbsolutePath() + " (" + fileSize(parquetFile) +
-                        ") and writing temporary tsv " + tmpTsv);
-                final long startTime = System.nanoTime();
-                try {
-                    //The group's genes are looked up under the group's own key, which the map holds
-                    //alongside the per-protein ones - the accessions in the order the predictor was
-                    //given them, which is the order it wrote AllMappedProteins in.
-                    String groupJoin = hasGroup ? " LEFT JOIN mapping g ON g.key = " + groupKey : "";
-                    String query = String.format(
-                            "COPY (" +
-                                    "SELECT %s " +
-                                    "FROM read_parquet('%s') p " +
-                                    "LEFT JOIN mapping m ON p.ProteinId = m.key%s" +
-                                    ") TO '%s' (FORMAT CSV, DELIMITER '\t', HEADER false);",
-                            select,
-                            parquet.replace("'", "''"),
-                            groupJoin,
-                            tmpTsv.toString().replace("\\", "/")
-                    );
-                    stmt.execute(query);
-                    Print.printInfo("Writing temporary tsv " + tmpTsv + " (" + fileSize(tmpTsv.toFile()) +
-                            ") took " + (System.nanoTime() - startTime) / 1000000 +
-                            " milliseconds; appending it to " + tsvFile.getAbsolutePath());
-
-                    // Append temp file to TSV
-                    final long appendStart = System.nanoTime();
-                    try (OutputStream out = Files.newOutputStream(Paths.get(tsv),
-                            StandardOpenOption.APPEND, StandardOpenOption.CREATE)) {
-                        Files.copy(tmpTsv, out);
-                    }
-                    Print.printInfo("Appending to " + tsvFile.getAbsolutePath() + " took " +
-                            (System.nanoTime() - appendStart) / 1000000 + " milliseconds, file is now " +
-                            fileSize(tsvFile));
-                } finally {
-                    Files.deleteIfExists(tmpTsv);
-                }
-            }
+            //The group's genes are looked up under the group's own key, which the map holds
+            //alongside the per-protein ones - the accessions in the order the predictor was
+            //given them, which is the order it wrote AllMappedProteins in.
+            String groupJoin = hasGroup ? " LEFT JOIN mapping g ON g.key = " + groupKey : "";
+            return String.format(
+                    "COPY (" +
+                            "SELECT %s " +
+                            "FROM read_parquet('%s') p " +
+                            "LEFT JOIN mapping m ON p.ProteinId = m.key%s" +
+                            ") TO '%s' (FORMAT CSV, DELIMITER '\t', HEADER %s, USE_TMP_FILE false);",
+                    select,
+                    parquet.replace("'", "''"),
+                    groupJoin,
+                    target.toString().replace("\\", "/").replace("'", "''"),
+                    header
+            );
         }
     }
 
@@ -294,8 +341,10 @@ public class Helpers {
         try (Connection conn = DriverManager.getConnection("jdbc:duckdb:");
              Statement stmt = conn.createStatement()) {
 
-            // Create temp CSV file
-            tmpCsv = Files.createTempFile("alphapeptdeep_", ".csv");
+            //Beside the parquet it becomes: the results folder, never java.io.tmpdir. Deleted on
+            //exit as well as below, because the catch exits before the finally can run.
+            tmpCsv = apdCsvOf(outputParquetBasename);
+            tmpCsv.toFile().deleteOnExit();
 
             // Prepare writer to CSV
             try (BufferedWriter writer = Files.newBufferedWriter(tmpCsv)) {
@@ -339,7 +388,8 @@ public class Helpers {
                 }
             }
 
-            stmt.execute("CREATE TABLE tmp AS SELECT * FROM read_csv_auto('" + tmpCsv + "')");
+            stmt.execute("CREATE TABLE tmp AS SELECT * FROM read_csv_auto('" +
+                    tmpCsv.toString().replace("'", "''") + "')");
             stmt.execute("COPY tmp TO '" + outputParquetPath + "' (FORMAT PARQUET)");
             return new File(outputParquetPath);
         } catch (Exception e) {

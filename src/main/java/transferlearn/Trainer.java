@@ -298,6 +298,7 @@ public class Trainer {
             endJob.ended = true;
             Print.printError(String.valueOf(map));
             Print.printError(connection.getResponseMessage());
+            System.exit(1);
             return "";
         }
     }

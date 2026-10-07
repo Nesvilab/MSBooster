@@ -15,6 +15,8 @@
 package mainsteps;
 
 import allconstants.Constants;
+import readers.datareaders.IsfAnnotation;
+import readers.datareaders.IsfPepXmlReader;
 import readers.datareaders.MzmlReader;
 import readers.datareaders.PinReader;
 import umich.ms.datatypes.LCMSDataSubset;
@@ -28,8 +30,10 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.ExecutionException;
 import java.util.stream.Collectors;
 
@@ -41,6 +45,8 @@ public class PinMzmlMatcher {
     public File[] mzmlFiles;
     public File[] pinFiles;
     public MzmlReader[] mzmlReaders;
+    //MSFragger's in-source fragment annotations per pin, parallel to pinFiles; read on first use
+    private final List<Map<String, IsfAnnotation>> isfAnnotations;
 
     //mini method that assigns files to one of two pin file lists
     private void addPinFiles(String fileName,
@@ -163,6 +169,7 @@ public class PinMzmlMatcher {
         //add files to array
         pinFileList.sort(String::compareToIgnoreCase);
         pinFiles = new File[pinFileList.size()];
+        isfAnnotations = new ArrayList<>(Collections.nCopies(pinFiles.length, null));
         mzmlFiles = new File[pinFileList.size()];
         for (int i = 0; i < pinFiles.length; i++) {
             pinFiles[i] = new File(pinFileList.get(i));
@@ -200,5 +207,16 @@ public class PinMzmlMatcher {
                 mzmlReaders[j] = mzml;
             }
         }
+    }
+
+    /**
+     * The in-source fragment annotations of {@code pinFiles[i]}, read from the pepXML beside it the
+     * first time they are asked for, since both best-model selection and pin editing need them.
+     */
+    public synchronized Map<String, IsfAnnotation> isfAnnotations(int i) {
+        if (isfAnnotations.get(i) == null) {
+            isfAnnotations.set(i, IsfPepXmlReader.readForPin(pinFiles[i]));
+        }
+        return isfAnnotations.get(i);
     }
 }

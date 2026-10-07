@@ -21,6 +21,7 @@ import peptideptmformatting.PeptideFormatter;
 import peptideptmformatting.PeptideSkipper;
 import predictions.PredictionEntry;
 import predictions.PredictionEntryHashMap;
+import readers.datareaders.IsfAnnotation;
 import umich.ms.datatypes.scan.IScan;
 import umich.ms.datatypes.scan.props.PrecursorInfo;
 import umich.ms.datatypes.spectrum.ISpectrum;
@@ -118,7 +119,36 @@ public class MzmlScanNumber {
 
     public PeptideObj setPeptideObject(PeptideFormatter name, int rank, int targetORdecoy, String escore,
                                        PredictionEntryHashMap allPreds, boolean set) throws IOException, URISyntaxException {
+        return setPeptideObject(name, rank, targetORdecoy, escore, allPreds, set, null, null);
+    }
+
+    /**
+     * @param isf         MSFragger's in-source fragment annotation of this PSM, or null when it is not one
+     * @param isfOverride finds the parent prediction of an ISF PSM and counts it; may be null only when {@code isf} is
+     */
+    public PeptideObj setPeptideObject(PeptideFormatter name, int rank, int targetORdecoy, String escore,
+                                       PredictionEntryHashMap allPreds, boolean set,
+                                       IsfAnnotation isf, IsfRtOverride isfOverride)
+            throws IOException, URISyntaxException {
         PredictionEntry predictionEntry = allPreds.get(name.getBaseCharge());
+
+        //the single point where a PSM's predicted RT is chosen; an ISF PSM takes its parent's
+        PredictionEntry parent = isf == null ? null : isfOverride.parentPrediction(isf, allPreds);
+        float predRT = parent != null ? parent.RT : predictionEntry == null ? 0f : predictionEntry.RT;
+
+        PeptideObj newPepObj = createPeptideObject(name, rank, targetORdecoy, escore, predictionEntry, predRT, set);
+        if (newPepObj != null) {
+            newPepObj.isISF = isf != null;
+            if (parent != null) {
+                newPepObj.rtPeptide = isf.parentBaseCharge;
+            }
+        }
+        return newPepObj;
+    }
+
+    private PeptideObj createPeptideObject(PeptideFormatter name, int rank, int targetORdecoy, String escore,
+                                           PredictionEntry predictionEntry, float predRT, boolean set)
+            throws IOException, URISyntaxException {
         PeptideObj newPepObj = null;
 
         //No prediction for this precursor. This happens when a provided spectral library does not
@@ -128,7 +158,7 @@ public class MzmlScanNumber {
         //reported once at the end ("had N PSMs whose precursors are not in the predictions").
         if (predictionEntry == null) {
             newPepObj = new PeptideObj(this, name.getBaseCharge(), rank, targetORdecoy, escore,
-                    zeroFloatArray, zeroFloatArray, zeroStringArray, 0f, 0f, false);
+                    zeroFloatArray, zeroFloatArray, zeroStringArray, predRT, 0f, false);
             if (set) {
                 peptideObjects.add(newPepObj);
             }
@@ -168,7 +198,6 @@ public class MzmlScanNumber {
                 predFragmentIonTypes = predictionEntry.getFragmentIonTypes();
             }
 
-            float predRT = predictionEntry.RT;
             float predIM = predictionEntry.IM;
 
             //filter out predicted fragments if not in range
@@ -203,11 +232,9 @@ public class MzmlScanNumber {
                 peptideObjects.add(newPepObj);
             }
         } catch (Exception e) { //TODO: percolator imputation
-            float predRT = 0f;
             float predIM = 0f;
             boolean daltonMatching = false;
             if (predictionEntry != null) {
-                predRT = predictionEntry.RT; //best option?
                 predIM = predictionEntry.IM; //best option?
                 daltonMatching = predictionEntry.daltonMatching;
             }

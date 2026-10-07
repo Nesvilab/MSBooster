@@ -96,6 +96,11 @@ public class RTFunctions {
                 if (pep == null) {
                     continue;
                 }
+                //an in-source fragment's predicted RT is its parent's; it is scored against these bins
+                //(and the kernel densities built from them) but must not shape them
+                if (pep.isISF) {
+                    continue;
+                }
 
                 int instances = Math.max(1, -1 * (int) Math.ceil(Math.log10(Double.parseDouble(pep.escore)))); //this version avoids empty bins
                 for (int j = 0; j < instances; j++) {

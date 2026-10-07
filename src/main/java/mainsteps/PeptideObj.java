@@ -78,6 +78,13 @@ public class PeptideObj {
 
     public boolean daltonMatching = false;
 
+    //MSFragger marked this PSM as an in-source fragment of a co-eluting parent. Its RT is the parent's
+    //prediction, so it is scored like any PSM but never used to build an RT calibration.
+    public boolean isISF = false;
+    //the base|charge key of the peptide whose prediction RT is: the PSM's own name, or an ISF's parent.
+    //In a mass-offset search it picks the RT calibration curve, which must be the one RT lives on.
+    public String rtPeptide;
+
     public PeptideObj(MzmlScanNumber scanNumObj, String name, int rank, int targetORdecoy, String escore,
                       float[] predMZs, float[] predIntensities, String[] predFragmentIonTypes,
                       float predRT, Float predIM, boolean daltonMatching) throws IOException, URISyntaxException {
@@ -94,6 +101,7 @@ public class PeptideObj {
                     predMZs, predIntensities, predFragmentIonTypes, true);
         }
         this.RT = predRT;
+        this.rtPeptide = name;
         this.IM = predIM;
 //        if (Constants.useMatchedIntensities || Constants.usePeakCounts || Constants.useIntensitiesDifference ||
 //                Constants.usePredIntensities || Constants.useIndividualSpectralSimilarities ||

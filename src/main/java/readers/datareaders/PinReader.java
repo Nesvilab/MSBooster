@@ -83,6 +83,7 @@ public class PinReader {
 
     //reload from start
     public void reset() throws IOException {
+        in.close(); //no-op when already closed; otherwise the replaced reader's file handle leaks
         in = new BufferedReader(new FileReader(name));
         String line = in.readLine();
     }
@@ -214,12 +215,18 @@ public class PinReader {
     public int getScanNum() {return Integer.parseInt(row[scanNumIdx]);}
 
     public int getRank() {
-        try {
-            return Integer.parseInt(row[rankIdx]);
-        } catch (Exception e) {
-            String[] specIdxSplit = row[specIdx].split("_");
-            return Integer.parseInt(specIdxSplit[specIdxSplit.length - 1]);
+        return rankOf(row, rankIdx, specIdx);
+    }
+
+    /** A pin row's rank: the rank column, or the SpecId's "_<rank>" suffix when there is none. */
+    public static int rankOf(String[] row, int rankIdx, int specIdx) {
+        if (rankIdx >= 0 && rankIdx < row.length) {
+            try {
+                return Integer.parseInt(row[rankIdx]);
+            } catch (NumberFormatException ignored) {}
         }
+        String[] specIdxSplit = row[specIdx].split("_");
+        return Integer.parseInt(specIdxSplit[specIdxSplit.length - 1]);
     }
 
     //public String getEScore() {return String.valueOf(Math.pow(10, Double.parseDouble(row[eScoreIdx])));}
@@ -413,6 +420,14 @@ public class PinReader {
     }
 
     public LinkedList[] getTopPSMs(int num, boolean charge2forIM) throws IOException {
+        return getTopPSMs(num, charge2forIM, Collections.emptySet());
+    }
+
+    /**
+     * @param excludedScanRanks "scan|rank" keys ({@link IsfAnnotation#key}) of PSMs that must not be
+     *                          picked, such as in-source fragments, whose RT is borrowed from a parent
+     */
+    public LinkedList[] getTopPSMs(int num, boolean charge2forIM, Set<String> excludedScanRanks) throws IOException {
         LinkedList<PeptideFormatter> PSMs = new LinkedList<>();
         LinkedList<Integer> scanNums = new LinkedList<>();
 
@@ -424,6 +439,9 @@ public class PinReader {
                     continue;
                 }
             }
+            if (isExcluded(excludedScanRanks)) {
+                continue;
+            }
             float escore = Float.parseFloat(getEScore());
             if (topEscores.size() < num) {
                 topEscores.offer(escore);
@@ -433,6 +451,9 @@ public class PinReader {
             }
         }
         reset();
+        if (topEscores.isEmpty()) {
+            return new LinkedList[]{PSMs, scanNums};
+        }
         float eScoreCutoff = topEscores.peek();
 
         while (next(true) && PSMs.size() < num) {
@@ -440,6 +461,9 @@ public class PinReader {
                 if (getColumn("charge_2").equals("0")) {
                     continue;
                 }
+            }
+            if (isExcluded(excludedScanRanks)) {
+                continue;
             }
             float escore = Float.parseFloat(getEScore());
             if (escore <= eScoreCutoff) {
@@ -450,6 +474,10 @@ public class PinReader {
         }
         reset();
         return new LinkedList[]{PSMs, scanNums};
+    }
+
+    private boolean isExcluded(Set<String> excludedScanRanks) {
+        return !excludedScanRanks.isEmpty() && excludedScanRanks.contains(IsfAnnotation.key(getScanNum(), getRank()));
     }
 
     public LinkedList[] getDecoyPSMs(int num) throws IOException {

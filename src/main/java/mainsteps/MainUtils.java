@@ -95,15 +95,15 @@ public class MainUtils {
 
                         PeptideFileCreator.createPartialFile(
                                 jsonOutFolder + File.separator + model + File.separator + "spectraRT_full.tsv",
-                                model, km.peptideArraylist);
+                                model, km.peptideArrayListRT);
                         String inputFile = jsonOutFolder + File.separator + model + File.separator + "spectraRT.tsv";
-                        rtPreds = runLocalBestModel(model, inputFile, km.peptideArraylist);
+                        rtPreds = runLocalBestModel(model, inputFile, km.peptideArrayListRT);
                     } else { //mode for koina
                         PeptideFileCreator.createPartialFile(
                                 jsonOutFolder + File.separator + model + "_full.tsv",
-                                model, km.peptideArraylist);
-                        HashSet<String> allHits = KoinaMethods.createPartialKoinaSet(model, km.peptideArraylist);
-                        for (PeptideFormatter pf : km.peptideArraylist) {
+                                model, km.peptideArrayListRT);
+                        HashSet<String> allHits = KoinaMethods.createPartialKoinaSet(model, km.peptideArrayListRT);
+                        for (PeptideFormatter pf : km.peptideArrayListRT) {
                             pf.foundUnimods.clear();
                         }
                         rtPreds = km.getKoinaPredictions(allHits, model, 30,
@@ -116,8 +116,8 @@ public class MainUtils {
                     ArrayList<Float> predRTs = new ArrayList<>();
                     for (int j = 0; j < pmMatcher.mzmlReaders.length; j++) {
                         MzmlReader mzmlReader = pmMatcher.mzmlReaders[j];
-                        LinkedList<Integer> thisScanNums = km.scanNums.get(pmMatcher.mzmlFiles[j].getName());
-                        LinkedList<PeptideFormatter> thisPeptides = km.peptides.get(pmMatcher.mzmlFiles[j].getName());
+                        LinkedList<Integer> thisScanNums = km.scanNumsRT.get(pmMatcher.mzmlFiles[j].getName());
+                        LinkedList<PeptideFormatter> thisPeptides = km.peptidesRT.get(pmMatcher.mzmlFiles[j].getName());
 
                         for (int k = 0; k < thisScanNums.size(); k++) {
                             try {

@@ -25,6 +25,7 @@ import features.rtandim.RTFunctions;
 import features.rtandim.fragalign.FragAlignRegression;
 import features.rtandim.fragalign.HermiteSpline;
 import java.util.function.DoubleUnaryOperator;
+import mainsteps.IsfRtOverride;
 import mainsteps.MzmlScanNumber;
 import mainsteps.PeptideObj;
 import peptideptmformatting.PeptideFormatter;
@@ -330,9 +331,11 @@ public class MzmlReader {
         private final int eScoreIdx;
         private final boolean calcEvalue;
         private final ProgressReporter pr;
+        private final Map<String, IsfAnnotation> isfAnnotations;
+        private final IsfRtOverride isfOverride;
         public setScanNumPepObj(String scanNum, PredictionEntryHashMap allPreds,
                                 int specIdx, int pepIdx, int rankIdx, int labelIdx, int eScoreIdx, boolean calcEvalue,
-                                ProgressReporter pr) {
+                                ProgressReporter pr, Map<String, IsfAnnotation> isfAnnotations, IsfRtOverride isfOverride) {
             this.scanNum = Integer.parseInt(scanNum);
             this.allPreds = allPreds;
             this.specIdx = specIdx;
@@ -342,6 +345,8 @@ public class MzmlReader {
             this.eScoreIdx = eScoreIdx;
             this.calcEvalue = calcEvalue;
             this.pr = pr;
+            this.isfAnnotations = isfAnnotations;
+            this.isfOverride = isfOverride;
         }
 
         //TODO move this to parallel part
@@ -356,13 +361,7 @@ public class MzmlReader {
                 String[] periodSplit = row[specIdx].split("\\.");
                 PeptideFormatter pep = new PeptideFormatter(row[pepIdx],
                         periodSplit[periodSplit.length - 1].split("_")[0], "pin");
-                int rank;
-                try {
-                    rank = Integer.parseInt(row[rankIdx]);
-                } catch (Exception e) {
-                    String[] specIdxSplit = row[specIdx].split("_");
-                    rank = Integer.parseInt(specIdxSplit[specIdxSplit.length - 1]);
-                }
+                int rank = PinReader.rankOf(row, rankIdx, specIdx);
                 int td = Math.max(0, Integer.parseInt(row[labelIdx]));
                 String escore;
                 if (calcEvalue) {
@@ -372,7 +371,8 @@ public class MzmlReader {
                 }
 
                 try {
-                    getScanNumObject(scanNum).setPeptideObject(pep, rank, td, escore, allPreds, true);
+                    getScanNumObject(scanNum).setPeptideObject(pep, rank, td, escore, allPreds, true,
+                            isfAnnotations.get(IsfAnnotation.key(scanNum, rank)), isfOverride);
                 } catch (Exception e) {
                     throw new RuntimeException(e);
                 }
@@ -380,8 +380,14 @@ public class MzmlReader {
             }
         }
     }
-    public void setPinEntries(PinReader pin, PredictionEntryHashMap allPreds, ExecutorService executorService)
-            throws AssertionError, Exception {
+    /**
+     * @param isfAnnotations MSFragger's in-source fragment annotations of this pin's PSMs, keyed by
+     *                       {@link IsfAnnotation#key}; an annotated PSM is scored against its parent's
+     *                       predicted RT
+     */
+    public void setPinEntries(PinReader pin, PredictionEntryHashMap allPreds, ExecutorService executorService,
+                              Map<String, IsfAnnotation> isfAnnotations) throws AssertionError, Exception {
+        IsfRtOverride isfOverride = new IsfRtOverride();
         allPreds.preprocessPredictedSpectra(executorService,
                 FragmentIonConstants.primaryFragmentIonTypes, FragmentIonConstants.auxFragmentIonTypes);
         ProgressReporter pr = new ProgressReporter(pin.getLength());
@@ -405,7 +411,8 @@ public class MzmlReader {
                     //make new setScanNumPepObj
                     currentScanNum = scanNum;
                     task = new setScanNumPepObj(currentScanNum, allPreds,
-                            pin.specIdx, pin.pepIdx, pin.rankIdx, pin.labelIdx, pin.eScoreIdx, pin.calcEvalue, pr);
+                            pin.specIdx, pin.pepIdx, pin.rankIdx, pin.labelIdx, pin.eScoreIdx, pin.calcEvalue, pr,
+                            isfAnnotations, isfOverride);
                 }
                 //add to it
                 task.add(pin.line);
@@ -432,6 +439,7 @@ public class MzmlReader {
         if (skipped != 0) {
             printInfo(pin.name + " had " + skipped + " PSMs whose precursors are not in the predictions");
         }
+        isfOverride.log(pin.name, isfAnnotations.size());
 
         //set RT filter
         float maxRT = pin.getRT();
@@ -658,10 +666,11 @@ public class MzmlReader {
                         if (pep == null) {
                             break;
                         }
-                        double[] pepDeltaMasses = MassOffsetGroup.deltaMasses(pep.name);
+                        //the curve of the peptide whose prediction pep.RT is (an ISF's parent)
+                        double[] pepDeltaMasses = MassOffsetGroup.deltaMasses(pep.rtPeptide);
                         double finalDelta = Double.MAX_VALUE;
                         for (String mass : LOESSRT.keySet()) {
-                            if (massOffsetGroup(mass).matches(pep.name, pepDeltaMasses)) {
+                            if (massOffsetGroup(mass).matches(pep.rtPeptide, pepDeltaMasses)) {
                                 double delta = Math.abs(LOESSRT.get(mass) - pep.RT);
                                 if (delta < finalDelta) {
                                     finalDelta = delta;
@@ -1043,11 +1052,12 @@ public class MzmlReader {
                         if (pep == null) {
                             break;
                         }
-                        double[] pepDeltaMasses = MassOffsetGroup.deltaMasses(pep.name);
+                        //the curve of the peptide whose prediction pep.RT is (an ISF's parent)
+                        double[] pepDeltaMasses = MassOffsetGroup.deltaMasses(pep.rtPeptide);
                         double finalDelta = 1000;
                         boolean isNone = true;
                         for (String mass : LOESSRT.keySet()) {
-                            if (massOffsetGroup(mass).matches(pep.name, pepDeltaMasses)) {
+                            if (massOffsetGroup(mass).matches(pep.rtPeptide, pepDeltaMasses)) {
                                 isNone = false;
                                 double rt = LOESSRT.get(mass);
                                 double delta = Math.abs(rt - pep.RT);

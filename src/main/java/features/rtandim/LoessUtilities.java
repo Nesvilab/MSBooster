@@ -107,6 +107,11 @@ public class LoessUtilities {
                 if (mode.equals("IM") && pep.charge != charge) {
                     continue;
                 }
+                //an in-source fragment's predicted RT is its parent's, so it would anchor the parent
+                //twice; its IM is its own and stays
+                if (mode.equals("RT") && pep.isISF) {
+                    continue;
+                }
                 numPSMsIgnoreEvalue++;
 
                 float e = Float.parseFloat(pep.escore);

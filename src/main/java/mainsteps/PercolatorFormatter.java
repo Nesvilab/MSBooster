@@ -205,7 +205,7 @@ public class PercolatorFormatter {
                 }
 
                 //Special preparations dependent on features we require
-                mzml.setPinEntries(pin, allPreds, executorService);
+                mzml.setPinEntries(pin, allPreds, executorService, pmMatcher.isfAnnotations(i));
 
                 if (featuresList.contains("deltaRTLOESS") || featuresList.contains("deltaRTLOESSnormalized") ||
                         featuresList.contains("deltaRTLOESSreal")) {

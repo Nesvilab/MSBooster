@@ -46,6 +46,10 @@ public class KoinaMethods {
     public ArrayList<PeptideFormatter> peptideArraylist = new ArrayList<>();
     public HashMap<String, LinkedList<Integer>> scanNums = new HashMap<>();
     public HashMap<String, LinkedList<PeptideFormatter>> peptides = new HashMap<>();
+    //the RT model is picked without in-source fragment PSMs, which borrow their parent's RT
+    public ArrayList<PeptideFormatter> peptideArrayListRT = new ArrayList<>();
+    public HashMap<String, LinkedList<Integer>> scanNumsRT = new HashMap<>();
+    public HashMap<String, LinkedList<PeptideFormatter>> peptidesRT = new HashMap<>();
     public ArrayList<PeptideFormatter> peptideArrayListIM = new ArrayList<>();
     public HashMap<String, LinkedList<Integer>> scanNumsIM = new HashMap<>();
     public HashMap<String, LinkedList<PeptideFormatter>> peptidesIM = new HashMap<>();
@@ -75,16 +79,34 @@ public class KoinaMethods {
         for (int j = 0; j < pmMatcher.pinFiles.length; j++) {
             File pinFile = pmMatcher.pinFiles[j];
             PinReader pinReader = new PinReader(pinFile.getAbsolutePath());
-            LinkedList[] topPSMs = pinReader.getTopPSMs(numTopPSMs, false);
-            peptideArraylist.addAll(topPSMs[0]);
-            scanNums.put(pmMatcher.mzmlFiles[j].getName(), topPSMs[1]);
-            peptides.put(pmMatcher.mzmlFiles[j].getName(), topPSMs[0]);
-            if (Constants.useIM) {
-                LinkedList[] topPSMsIM = pinReader.getTopPSMs(numTopPSMs, true);
-                peptideArrayListIM.addAll(topPSMsIM[0]);
-                scanNumsIM.put(pmMatcher.mzmlFiles[j].getName(), topPSMsIM[1]);
-                peptidesIM.put(pmMatcher.mzmlFiles[j].getName(), topPSMsIM[0]);
-            }
+            addTopPSMs(pmMatcher.mzmlFiles[j].getName(), pinReader, numTopPSMs, pmMatcher.isfAnnotations(j).keySet());
+        }
+    }
+
+    /**
+     * Adds one pin's top PSMs to the lists the models are picked and calibrated with. An in-source
+     * fragment's spectrum and IM are its own, so the MS2/NCE and IM lists keep it; its RT is borrowed
+     * from its parent, so the RT list leaves it out.
+     *
+     * @param isfKeys the "scan|rank" keys ({@link readers.datareaders.IsfAnnotation#key}) of the pin's
+     *                in-source fragment PSMs
+     */
+    void addTopPSMs(String mzmlName, PinReader pinReader, int numTopPSMs, Set<String> isfKeys) throws IOException {
+        LinkedList[] topPSMs = pinReader.getTopPSMs(numTopPSMs, false);
+        peptideArraylist.addAll(topPSMs[0]);
+        scanNums.put(mzmlName, topPSMs[1]);
+        peptides.put(mzmlName, topPSMs[0]);
+        if (Constants.useRT) {
+            LinkedList[] topPSMsRT = isfKeys.isEmpty() ? topPSMs : pinReader.getTopPSMs(numTopPSMs, false, isfKeys);
+            peptideArrayListRT.addAll(topPSMsRT[0]);
+            scanNumsRT.put(mzmlName, topPSMsRT[1]);
+            peptidesRT.put(mzmlName, topPSMsRT[0]);
+        }
+        if (Constants.useIM) {
+            LinkedList[] topPSMsIM = pinReader.getTopPSMs(numTopPSMs, true);
+            peptideArrayListIM.addAll(topPSMsIM[0]);
+            scanNumsIM.put(mzmlName, topPSMsIM[1]);
+            peptidesIM.put(mzmlName, topPSMsIM[0]);
         }
     }
 

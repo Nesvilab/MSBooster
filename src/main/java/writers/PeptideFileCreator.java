@@ -30,6 +30,7 @@ import java.io.FileWriter;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashSet;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
@@ -63,11 +64,12 @@ public class PeptideFileCreator {
         Set<String> hSetHits = ConcurrentHashMap.newKeySet();
 
         printInfo("Creating input file for " + modelFormat);
-        List<Future> futureList = new ArrayList<>();
+        List<Future<Set<String>>> futureList = new ArrayList<>();
         ExecutorService executorService = MainClass.executorService;
         for (int i = 0; i < pinFiles.length; i++) {
             int finalI = i;
             futureList.add(executorService.submit(() -> {
+                Set<String> fileHits = new LinkedHashSet<>();
                 try {
                     File f = pinFiles[finalI];
                     File mzmlf = mzmlFiles[finalI];
@@ -76,48 +78,50 @@ public class PeptideFileCreator {
                     PinReader pin = new PinReader(fileName);
                     switch (modelFormat) {
                         case "pDeep2":
-                            pin.createPDeep2List(hSetHits);
+                            pin.createPDeep2List(fileHits);
                             break;
                         case "pDeep3":
-                            pin.createPDeep3List(hSetHits);
+                            pin.createPDeep3List(fileHits);
                             break;
                         case "DeepMSPeptide": //ignores charge and mods
-                            pin.createDeepMSPeptideList(hSetHits);
+                            pin.createDeepMSPeptideList(fileHits);
                             break;
                         case "DeepMSPeptideAll": //ignores charge and mods
-                            pin.createDeepMSPeptideList(hSetHits);
+                            pin.createDeepMSPeptideList(fileHits);
                             break;
                         case "Diann":
-                            pin.createDiannList(hSetHits);
+                            pin.createDiannList(fileHits);
                             break;
                         case "FragCast":
-                            pin.createFragCastList(hSetHits);
+                            pin.createFragCastList(fileHits);
                             break;
                         case "Prosit":
-                            pin.createPrositList(hSetHits);
+                            pin.createPrositList(fileHits);
                             break;
                         case "PrositTMT":
-                            pin.createPrositTMTList(hSetHits);
+                            pin.createPrositTMTList(fileHits);
                             break;
                         case "createFull":
-                            pin.createFull(hSetHits);
+                            pin.createFull(fileHits);
                             break;
                         case "alphapeptdeep":
-                            pin.createAlphapeptdeepList(hSetHits);
+                            pin.createAlphapeptdeepList(fileHits);
                             break;
                     }
                     if (KoinaModels.contains(modelFormat)) {
-                        pin.createJSON(modelFormat, hSetHits);
+                        pin.createJSON(modelFormat, fileHits);
                     }
                     pin.close();
                 } catch (Exception e) {
                     e.printStackTrace();
                     System.exit(1);
                 }
+                return fileHits;
             }));
         }
-        for (Future future : futureList) {
-            future.get();
+        // add in submission order, rows in file order, so the set's iteration order does not depend on thread timing
+        for (Future<Set<String>> future : futureList) {
+            hSetHits.addAll(future.get());
         }
         printInfo(hSetHits.size() + " precursors for prediction");
 

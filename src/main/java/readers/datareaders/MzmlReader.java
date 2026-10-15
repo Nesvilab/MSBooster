@@ -969,21 +969,29 @@ public class MzmlReader {
             if (function != null) {
                 ConcurrentSkipListMap<Double, Double> map = new ConcurrentSkipListMap<>();
 
+                // x as one thread steps it; y in parallel; puts in x order on this thread, so equal y
+                // (the clamped ends of the curve) keep the same x whatever the thread timing
+                double[] xs = new double[numIncrements];
+                double[] ys = new double[numIncrements];
+                double x = minExpRT;
+                for (int j = 0; j < numIncrements; j++) {
+                    xs[j] = x;
+                    x += increment;
+                }
                 Multithreader mt = new Multithreader(numIncrements, Constants.numThreads);
                 for (int i = 0; i < Constants.numThreads; i++) {
                     int finalI = i;
-                    float finalMinExpRT = minExpRT;
                     futureList.add(executorService.submit(() -> {
-                        double x = finalMinExpRT + mt.indices[finalI] * increment;
                         for (int j = mt.indices[finalI]; j < mt.indices[finalI + 1]; j++) {
-                            double y = function.applyAsDouble(x);
-                            map.put(y, x);
-                            x += increment;
+                            ys[j] = function.applyAsDouble(xs[j]);
                         }
                     }));
                 }
                 for (Future future : futureList) {
                     future.get();
+                }
+                for (int j = 0; j < numIncrements; j++) {
+                    map.put(ys[j], xs[j]);
                 }
                 irtToMinutes.put(mass, map);
 

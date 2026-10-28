@@ -384,20 +384,13 @@ public class PinReader {
             }
 
             if (Constants.features.contains("peptideCounts")) {
+                //the pin files are read in parallel. A check and then a put let two of them replace each
+                //other's set, so create the set atomically and lock it to add this run
+                HashSet<String> peptideSet = Constants.peptideCounter.computeIfAbsent(pf.getStripped(),
+                        k -> new HashSet<>());
                 if (Float.valueOf(getColumn("hyperscore")) > 10) {
-                    if (Constants.peptideCounter.containsKey(pf.getStripped())) {
-                        HashSet<String> peptideSet = Constants.peptideCounter.get(pf.getStripped());
+                    synchronized (peptideSet) {
                         peptideSet.add(name);
-                        Constants.peptideCounter.put(pf.getStripped(), peptideSet);
-                    } else {
-                        HashSet<String> peptideSet = new HashSet<>();
-                        peptideSet.add(name);
-                        Constants.peptideCounter.put(pf.getStripped(), peptideSet);
-                    }
-                } else {
-                    if (! Constants.peptideCounter.containsKey(pf.getStripped())) {
-                        HashSet<String> peptideSet = new HashSet<>();
-                        Constants.peptideCounter.put(pf.getStripped(), peptideSet);
                     }
                 }
             }

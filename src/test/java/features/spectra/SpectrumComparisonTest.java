@@ -14,11 +14,13 @@
 
 package features.spectra;
 
+import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import allconstants.Constants;
 import allconstants.FragmentIonConstants;
+import java.util.Random;
 import mainsteps.MzmlScanNumber;
 import mainsteps.PeptideObj;
 import org.junit.jupiter.api.BeforeEach;
@@ -100,5 +102,21 @@ class SpectrumComparisonTest {
         double expected = (Math.log(11) + Math.log(21) + Math.log(31) + Math.log(101))
                 / (float) Math.log(101);
         assertEquals(expected, score, 1e-6, "ordinary spectra must keep their existing normalization");
+    }
+
+    // bootstrapSimilarity draws the fragments of every bootstrap from a Random seeded with the scan
+    // number, so that its score does not depend on the threads: one seed must always draw the same ones
+    @Test
+    void pickedPredictedDrawsTheSameFragmentsForOneSeed() {
+        SpectrumComparison sc = compare(new float[]{10f, 20f, 30f, 100f}, new float[]{100f, 200f, 300f, 400f});
+
+        for (long seed = 0; seed < 20; seed++) {
+            SpectrumComparison first = sc.pickedPredicted(new Random(seed));
+            SpectrumComparison second = sc.pickedPredicted(new Random(seed));
+
+            assertTrue(first.predIntensities.length > 0, "seed " + seed + " drew no fragments");
+            assertArrayEquals(first.predIntensities, second.predIntensities, "seed " + seed);
+            assertArrayEquals(first.matchedIntensities, second.matchedIntensities, "seed " + seed);
+        }
     }
 }

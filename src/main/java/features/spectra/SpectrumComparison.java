@@ -130,13 +130,13 @@ public class SpectrumComparison {
 //    }
 
     //TODO sort
-    public SpectrumComparison pickedPredicted() {
+    public SpectrumComparison pickedPredicted(Random random) {
         SpectrumComparison sc = new SpectrumComparison();
 
         sc.predIntensities = new float[(int) (predIntensities.length * Constants.bootstrapFragmentProportion)];
         sc.matchedIntensities = new float[sc.predIntensities.length];
 
-        int[] rand = new Random().ints(0, predIntensities.length).distinct().
+        int[] rand = random.ints(0, predIntensities.length).distinct().
                 limit(sc.predIntensities.length).toArray();
 
 

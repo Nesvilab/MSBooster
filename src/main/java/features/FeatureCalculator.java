@@ -16,7 +16,6 @@ package features;
 
 import allconstants.Constants;
 import allconstants.FragmentIonConstants;
-import features.spectra.SpectrumComparison;
 import mainsteps.PeptideObj;
 import mainsteps.PercolatorFormatter;
 import org.apache.commons.math3.stat.correlation.PearsonsCorrelation;
@@ -24,7 +23,6 @@ import peptideptmformatting.PeptideFormatter;
 import readers.datareaders.MzmlReader;
 import readers.datareaders.PinReader;
 import umich.ms.fileio.exceptions.FileParsingException;
-import utils.Multithreader;
 import utils.NumericUtils;
 import utils.ProgressReporter;
 import utils.StatMethods;
@@ -34,9 +32,9 @@ import java.net.URISyntaxException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.Random;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 
 import static allconstants.FragmentIonConstants.fragmentGroups;
@@ -68,7 +66,6 @@ public class FeatureCalculator {
         private final int pepIdx;
         private final int scanNumIdx;
         private final ProgressReporter pr;
-        final ExecutorService executorService = Executors.newFixedThreadPool(2);
         public calcFeat(String line, int specIdx, int pepIdx, int scanNumIdx, ProgressReporter pr) {
             this.line = line;
             this.specIdx = specIdx;
@@ -190,23 +187,16 @@ public class FeatureCalculator {
 
                         case "bootstrapSimilarity":
                             if (pepObj.spectralSimObj.spectrumComparisons.isEmpty()) {
-                                mzml.futureList.clear();
-                                Multithreader mt = new Multithreader(Constants.bootstraps, Constants.numThreads);
-                                for (int j = 0; j < Constants.numThreads; j++) {
-                                    int finalI = j;
-                                    PeptideObj finalPepObj = pepObj;
-                                    mzml.futureList.add(executorService.submit(() -> {
-                                        SpectrumComparison sc;
-                                        ArrayList<Double> scores = new ArrayList<>();
-                                        for (int i = mt.indices[finalI]; i < mt.indices[finalI + 1]; i++) {
-                                            sc = finalPepObj.spectralSimObj.pickedPredicted();
-                                            scores.add(sc.unweightedSpectralEntropy());
-                                        }
-                                        Collections.sort(scores);
-                                        finalPepObj.spectralSimObj.scores.put(feature,
-                                                (scores.get(scores.size() / 2) + scores.get(scores.size() / 2 - 1)) / 2);
-                                    }));
+                                //one median over all bootstraps, computed in this task, which already runs in
+                                //parallel with those of the other PSMs. The fragments are drawn from a Random
+                                //seeded with the scan number, so the score does not depend on the threads
+                                Random random = new Random(scanNum);
+                                ArrayList<Double> scores = new ArrayList<>();
+                                for (int i = 0; i < Constants.bootstraps; i++) {
+                                    scores.add(pepObj.spectralSimObj.pickedPredicted(random)
+                                            .unweightedSpectralEntropy());
                                 }
+                                pepObj.spectralSimObj.scores.put(feature, StatMethods.medianDouble(scores));
                             }
                             break;
                         case "adjacentSimilarity":

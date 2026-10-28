@@ -81,7 +81,8 @@ retention time features with "Predict RT" and MS/MS spectral features with "Pred
 
 ### On the command line
 If using standalone MSBooster to run in the command line, please download the latest jar file from 
-Releases. A prediction model is also needed, and two of them run locally:
+Releases. MSBooster needs Java 17 or higher. A prediction model is also needed, and two of them run
+locally:
 
  - **FragCast**, a single executable that predicts retention time, ion mobility and MS/MS in one
    pass, on the CPU. Nothing else to install. Select it with

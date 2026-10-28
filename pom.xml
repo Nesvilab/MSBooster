@@ -34,14 +34,12 @@
             <artifactId>batmass-io</artifactId>
             <version>${ver.batmass.io}</version>
             <scope>${lib.scope}</scope>
+            <!--lib/batmass-io-*.jar is a fat jar that already holds the classes of its dependencies, so take
+                none of them from its POM-->
             <exclusions>
                 <exclusion>
-                    <groupId>org.slf4j</groupId>
-                    <artifactId>slf4j-api</artifactId>
-                </exclusion>
-                <exclusion>
-                    <groupId>ch.qos.logback</groupId>
-                    <artifactId>logback-classic</artifactId>
+                    <groupId>*</groupId>
+                    <artifactId>*</artifactId>
                 </exclusion>
             </exclusions>
         </dependency>

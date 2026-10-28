@@ -30,6 +30,7 @@ import java.io.FileWriter;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashSet;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
@@ -61,6 +62,13 @@ public class PeptideFileCreator {
         //filter out redundant peptides
         //this step can reduce number of predictions needed to 1/3, decreasing prediction time
         Set<String> hSetHits = ConcurrentHashMap.newKeySet();
+        //each pin file is read into its own set, and the sets go into hSetHits in pin file order. hSetHits
+        //is written out in its iteration order, and the predictions change slightly with the order of the
+        //input file, so that order must not depend on how the threads reading the pin files interleave
+        List<Set<String>> pinHits = new ArrayList<>();
+        for (int i = 0; i < pinFiles.length; i++) {
+            pinHits.add(new LinkedHashSet<>());
+        }
 
         printInfo("Creating input file for " + modelFormat);
         List<Future> futureList = new ArrayList<>();
@@ -71,43 +79,44 @@ public class PeptideFileCreator {
                 try {
                     File f = pinFiles[finalI];
                     File mzmlf = mzmlFiles[finalI];
+                    Set<String> hits = pinHits.get(finalI);
 
                     String fileName = f.getCanonicalPath();
                     PinReader pin = new PinReader(fileName);
                     switch (modelFormat) {
                         case "pDeep2":
-                            pin.createPDeep2List(hSetHits);
+                            pin.createPDeep2List(hits);
                             break;
                         case "pDeep3":
-                            pin.createPDeep3List(hSetHits);
+                            pin.createPDeep3List(hits);
                             break;
                         case "DeepMSPeptide": //ignores charge and mods
-                            pin.createDeepMSPeptideList(hSetHits);
+                            pin.createDeepMSPeptideList(hits);
                             break;
                         case "DeepMSPeptideAll": //ignores charge and mods
-                            pin.createDeepMSPeptideList(hSetHits);
+                            pin.createDeepMSPeptideList(hits);
                             break;
                         case "Diann":
-                            pin.createDiannList(hSetHits);
+                            pin.createDiannList(hits);
                             break;
                         case "FragCast":
-                            pin.createFragCastList(hSetHits);
+                            pin.createFragCastList(hits);
                             break;
                         case "Prosit":
-                            pin.createPrositList(hSetHits);
+                            pin.createPrositList(hits);
                             break;
                         case "PrositTMT":
-                            pin.createPrositTMTList(hSetHits);
+                            pin.createPrositTMTList(hits);
                             break;
                         case "createFull":
-                            pin.createFull(hSetHits);
+                            pin.createFull(hits);
                             break;
                         case "alphapeptdeep":
-                            pin.createAlphapeptdeepList(hSetHits);
+                            pin.createAlphapeptdeepList(hits);
                             break;
                     }
                     if (KoinaModels.contains(modelFormat)) {
-                        pin.createJSON(modelFormat, hSetHits);
+                        pin.createJSON(modelFormat, hits);
                     }
                     pin.close();
                 } catch (Exception e) {
@@ -118,6 +127,9 @@ public class PeptideFileCreator {
         }
         for (Future future : futureList) {
             future.get();
+        }
+        for (Set<String> hits : pinHits) {
+            hSetHits.addAll(hits);
         }
         printInfo(hSetHits.size() + " precursors for prediction");
 

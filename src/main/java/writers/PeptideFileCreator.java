@@ -125,11 +125,12 @@ public class PeptideFileCreator {
                 }
             }));
         }
-        for (Future future : futureList) {
-            future.get();
-        }
-        for (Set<String> hits : pinHits) {
-            hSetHits.addAll(hits);
+        //merge each pin file's set once its task is done, in pin file order, and let it go, so a set is not
+        //held after it is merged
+        for (int i = 0; i < futureList.size(); i++) {
+            futureList.get(i).get();
+            hSetHits.addAll(pinHits.get(i));
+            pinHits.set(i, null);
         }
         printInfo(hSetHits.size() + " precursors for prediction");
 

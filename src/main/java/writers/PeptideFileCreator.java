@@ -36,6 +36,7 @@ import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 
 import static allconstants.ModelCollections.KoinaModels;
@@ -72,9 +73,17 @@ public class PeptideFileCreator {
             pinHits.add(new LinkedHashSet<>());
         }
 
+        //the alphapept, deeplc, im2deep and alphapeptdeep formats give a mass the UniMod code already used for
+        //it in this run, if there is one (PeptideFormatter.foundUnimods), so the code a peptide gets depends on
+        //the peptides formatted before it. For these, read the pin files one at a time, in pin file order
+        String lowerModelFormat = modelFormat.toLowerCase();
+        boolean usesFoundUnimods = lowerModelFormat.contains("alphapept") || lowerModelFormat.contains("deeplc") ||
+                lowerModelFormat.contains("im2deep");
+
         printInfo("Creating input file for " + modelFormat);
         List<Future> futureList = new ArrayList<>();
-        ExecutorService executorService = MainClass.executorService;
+        ExecutorService executorService = usesFoundUnimods ? Executors.newSingleThreadExecutor() :
+                MainClass.executorService;
         for (int i = 0; i < pinFiles.length; i++) {
             int finalI = i;
             futureList.add(executorService.submit(() -> {
@@ -126,6 +135,10 @@ public class PeptideFileCreator {
                     System.exit(1);
                 }
             }));
+        }
+        if (usesFoundUnimods) {
+            //the tasks already submitted still run, then the thread ends
+            executorService.shutdown();
         }
         //merge each pin file's set once its task is done, in pin file order, and let it go, so a set is not
         //held after it is merged

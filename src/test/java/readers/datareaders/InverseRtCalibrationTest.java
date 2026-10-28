@@ -35,7 +35,8 @@ import readers.MgfFileReader;
  * setInverseLoess tabulates the RT calibration curve (minutes to predicted RT) on a grid of minutes,
  * split across Constants.numThreads tasks, and stores it inverted (predicted RT to minutes). Where the
  * curve is flat, many minutes share one predicted RT, and the minute stored for it must be the one a
- * single-threaded loop keeps (the last, i.e. the largest), not the one of whichever task wrote last.
+ * single-threaded loop keeps (the last, i.e. the largest), not the one of whichever task wrote last. The
+ * grid itself must also be the one a single-threaded loop steps through, whatever Constants.numThreads is.
  */
 class InverseRtCalibrationTest {
     private static final int THREADS = 8;
@@ -104,6 +105,22 @@ class InverseRtCalibrationTest {
             ConcurrentSkipListMap<Double, Double> actual = mzml.irtToMinutes.get("");
             assertEquals(flat.getValue(), actual.get(FLAT_UNTIL), "repeat " + i);
             assertTrue(expected.equals(actual), "repeat " + i + ": the inverse curve differs from the sequential one");
+        }
+    }
+
+    @Test
+    void curveIsTheSameForAnyNumberOfThreads() throws Exception {
+        Constants.numThreads = 1;
+        MzmlReader singleTaskMzml = flatStartReader();
+        singleTaskMzml.setInverseLoess(sequential);
+        ConcurrentSkipListMap<Double, Double> expected = singleTaskMzml.irtToMinutes.get("");
+
+        for (int threads : new int[] {2, 3, 7, THREADS, 11}) {
+            Constants.numThreads = threads;
+            MzmlReader mzml = flatStartReader();
+            mzml.setInverseLoess(parallel);
+            assertTrue(expected.equals(mzml.irtToMinutes.get("")),
+                    threads + " threads: the inverse curve differs from the single-task one");
         }
     }
 }

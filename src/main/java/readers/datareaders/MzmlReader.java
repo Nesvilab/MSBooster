@@ -974,7 +974,12 @@ public class MzmlReader {
                     int finalI = i;
                     float finalMinExpRT = minExpRT;
                     futureList.add(executorService.submit(() -> {
-                        double x = finalMinExpRT + mt.indices[finalI] * increment;
+                        //reach this task's first x with the same additions a single loop over the whole grid
+                        //makes, so the grid, and the curve, do not depend on Constants.numThreads
+                        double x = finalMinExpRT;
+                        for (int j = 0; j < mt.indices[finalI]; j++) {
+                            x += increment;
+                        }
                         for (int j = mt.indices[finalI]; j < mt.indices[finalI + 1]; j++) {
                             double y = function.applyAsDouble(x);
                             //where the curve is flat, many x share one y. Keep the largest x, as a

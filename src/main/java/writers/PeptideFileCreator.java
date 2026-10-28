@@ -62,9 +62,11 @@ public class PeptideFileCreator {
         //filter out redundant peptides
         //this step can reduce number of predictions needed to 1/3, decreasing prediction time
         Set<String> hSetHits = ConcurrentHashMap.newKeySet();
-        //each pin file is read into its own set, and the sets go into hSetHits in pin file order. hSetHits
-        //is written out in its iteration order, and the predictions change slightly with the order of the
-        //input file, so that order must not depend on how the threads reading the pin files interleave
+        //hSetHits is written out in its iteration order, and the predictions change slightly with the order
+        //of the input file, so that order must not depend on how the threads reading the pin files
+        //interleave: each pin file is read into its own set, and the sets go into hSetHits in pin file order.
+        //Only this thread writes to hSetHits, but it stays a ConcurrentHashMap set, because its iteration
+        //order is the order the input files have always had (a LinkedHashSet would reorder them)
         List<Set<String>> pinHits = new ArrayList<>();
         for (int i = 0; i < pinFiles.length; i++) {
             pinHits.add(new LinkedHashSet<>());

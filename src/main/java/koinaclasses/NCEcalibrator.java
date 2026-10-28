@@ -105,8 +105,8 @@ public class NCEcalibrator {
             }
             similarities = new TreeMap<>(concurrentSimilarities);
 
-            //pick the best NCE after all tasks are done, in NCE order (a tie goes to the lower NCE). Picking it
-            //inside the tasks made it depend on the order in which they finished
+            //pick the best NCE once all tasks are done, going through the NCEs in ascending order, so the choice
+            //does not depend on the order in which the tasks finish. A tie goes to the lower NCE
             for (Map.Entry<Integer, ArrayList<Double>> entry : similarities.entrySet()) {
                 double median = StatMethods.medianDouble(entry.getValue());
                 if (median > bestMedianDouble) {

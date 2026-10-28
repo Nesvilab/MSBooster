@@ -384,8 +384,8 @@ public class PinReader {
             }
 
             if (Constants.features.contains("peptideCounts")) {
-                //the pin files are read in parallel. A check and then a put let two of them replace each
-                //other's set, so create the set atomically and lock it to add this run
+                //the pin files are read in parallel, so a peptide's set is created atomically and is locked
+                //while this run is added to it
                 HashSet<String> peptideSet = Constants.peptideCounter.computeIfAbsent(pf.getStripped(),
                         k -> new HashSet<>());
                 if (Float.valueOf(getColumn("hyperscore")) > 10) {

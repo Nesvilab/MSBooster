@@ -32,7 +32,6 @@ import java.net.URISyntaxException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
-import java.util.Random;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Future;
@@ -187,16 +186,10 @@ public class FeatureCalculator {
 
                         case "bootstrapSimilarity":
                             if (pepObj.spectralSimObj.spectrumComparisons.isEmpty()) {
-                                //one median over all bootstraps, computed in this task, which already runs in
-                                //parallel with those of the other PSMs. The fragments are drawn from a Random
-                                //seeded with the scan number, so the score does not depend on the threads
-                                Random random = new Random(scanNum);
-                                ArrayList<Double> scores = new ArrayList<>();
-                                for (int i = 0; i < Constants.bootstraps; i++) {
-                                    scores.add(pepObj.spectralSimObj.pickedPredicted(random)
-                                            .unweightedSpectralEntropy());
-                                }
-                                pepObj.spectralSimObj.scores.put(feature, StatMethods.medianDouble(scores));
+                                //computed in this task, which already runs in parallel with those of the other
+                                //PSMs, with the fragments drawn from a Random seeded with the scan number
+                                pepObj.spectralSimObj.scores.put(feature,
+                                        pepObj.spectralSimObj.bootstrapSimilarity(scanNum));
                             }
                             break;
                         case "adjacentSimilarity":

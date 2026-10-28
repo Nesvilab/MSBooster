@@ -16,15 +16,19 @@ package features.spectra;
 
 import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import allconstants.Constants;
 import allconstants.FragmentIonConstants;
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Random;
 import mainsteps.MzmlScanNumber;
 import mainsteps.PeptideObj;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import utils.StatMethods;
 
 class SpectrumComparisonTest {
 
@@ -117,6 +121,42 @@ class SpectrumComparisonTest {
             assertTrue(first.predIntensities.length > 0, "seed " + seed + " drew no fragments");
             assertArrayEquals(first.predIntensities, second.predIntensities, "seed " + seed);
             assertArrayEquals(first.matchedIntensities, second.matchedIntensities, "seed " + seed);
+        }
+    }
+
+    // bootstrapSimilarity must be one median over all Constants.bootstraps draws from one Random seeded with
+    // the scan number, whatever Constants.numThreads is. It used to be the median of one thread's share
+    @Test
+    void bootstrapSimilarityIsOneMedianOverAllBootstraps() {
+        float[] expMZs = {100f, 200f, 300f, 400f, 500f, 600f, 700f, 800f};
+        float[] expIntensities = {10f, 50f, 20f, 80f, 5f, 40f, 30f, 60f};
+        MzmlScanNumber scan = new MzmlScanNumber(1, expMZs, expIntensities, 1.0f, 0f);
+        PeptideObj pepObj = new PeptideObj();
+        pepObj.scanNumObj = scan;
+        String[] fragmentIonTypes = new String[10];
+        Arrays.fill(fragmentIonTypes, "y");
+        SpectrumComparison sc = new SpectrumComparison(pepObj, scan.getExpMZs(), scan.getExpIntensities(),
+                new float[]{100f, 200f, 300f, 400f, 500f, 600f, 700f, 800f, 900f, 1000f},
+                new float[]{1f, 0.3f, 0.7f, 0.2f, 0.9f, 0.5f, 0.1f, 0.6f, 0.8f, 0.4f}, fragmentIonTypes, false);
+        long seed = 1234;
+
+        Random random = new Random(seed);
+        ArrayList<Double> scores = new ArrayList<>();
+        for (int i = 0; i < Constants.bootstraps; i++) {
+            scores.add(sc.pickedPredicted(random).unweightedSpectralEntropy());
+        }
+        double expected = StatMethods.medianDouble(new ArrayList<>(scores));
+        double oneShareOfEight = StatMethods.medianDouble(new ArrayList<>(scores.subList(0, Constants.bootstraps / 8)));
+        assertNotEquals(expected, oneShareOfEight, "the spectrum must tell one thread's share of 8 from all bootstraps");
+
+        Integer numThreads = Constants.numThreads;
+        try {
+            for (int threads : new int[]{1, 8}) {
+                Constants.numThreads = threads;
+                assertEquals(expected, sc.bootstrapSimilarity(seed), "numThreads " + threads);
+            }
+        } finally {
+            Constants.numThreads = numThreads;
         }
     }
 }

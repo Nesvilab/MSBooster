@@ -39,6 +39,7 @@ import static utils.NumericUtils.sum;
 import static utils.Print.printError;
 import static utils.Print.printInfo;
 import static utils.StatMethods.mean;
+import static utils.StatMethods.medianDouble;
 
 //TODO: also square root intensities? Squaring intensities may help for single cell data
 public class SpectrumComparison {
@@ -146,6 +147,17 @@ public class SpectrumComparison {
         }
 
         return sc;
+    }
+
+    //median unweightedSpectralEntropy over Constants.bootstraps draws of the predicted fragments, all from one
+    //Random seeded with seed, so the score depends neither on the threads nor on how many there are
+    public double bootstrapSimilarity(long seed) {
+        Random random = new Random(seed);
+        ArrayList<Double> scores = new ArrayList<>();
+        for (int i = 0; i < Constants.bootstraps; i++) {
+            scores.add(pickedPredicted(random).unweightedSpectralEntropy());
+        }
+        return medianDouble(scores);
     }
 
     private void squareRootPredIntensities() {

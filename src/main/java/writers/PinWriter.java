@@ -199,19 +199,11 @@ public class PinWriter {
 
                         //experimental features
                         case "bootstrapSimilarity":
-//                        if (pepObj.spectralSimObj.spectrumComparisons.size() == 0) {
-//                            double score = pepObj.spectralSimObj.scores.get(feature);
-//
-//                            SpectrumComparison sc;
-//                            String score = "";
-//                            for (int i = 0; i < Constants.bootstraps; i++) {
-//                                sc = pepObj.spectralSimObj.pickedPredicted();
-//                                score += sc.unweightedSpectralEntropy() + ",";
-//                            }
-//
-//                            writer.addValue("bootstrap_similarity",
-//                                    score.substring(0, score.length() - 1));
-//                        }
+                            //FeatureCalculator computes it only when the fragments are not divided into groups
+                            if (pepObj.spectralSimObj.spectrumComparisons.isEmpty()) {
+                                double score = pepObj.spectralSimObj.scores.get(feature);
+                                formattedWrite(camelToUnderscore.get(feature), score);
+                            }
                             break;
                         case "bestScan":
 //                        double score = pepObj.spectralSimObj.scores.get(feature);

@@ -153,9 +153,7 @@ public class PeptideFileCreator {
         if (modelFormat.equals("alphapeptdeep")) {
             PeptideFormatter pf = new PeptideFormatter();
             printInfo(modelFormat + " input file creation found peptides with the following mods: " + pf.getAlphapeptdeepModsSet());
-        } else if (modelFormat.toLowerCase().contains("alphapept") ||
-                modelFormat.toLowerCase().contains("deeplc") ||
-                modelFormat.toLowerCase().contains("im2deep")) {
+        } else if (usesFoundUnimods) {
             HashSet<String> unimodCodes = new HashSet<>();
             for (String hit : hSetHits) {
                 String[] unimodSplit = hit.split(",")[0].split("UNIMOD:");

@@ -16,7 +16,6 @@ package koinaclasses;
 
 import allconstants.Constants;
 import allconstants.NceConstants;
-import com.google.common.util.concurrent.AtomicDouble;
 import mainsteps.MainClass;
 import mainsteps.PeptideObj;
 import org.knowm.xchart.BoxChart;
@@ -36,11 +35,11 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Map;
 import java.util.TreeMap;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
-import java.util.concurrent.atomic.AtomicInteger;
 
 import static allconstants.Constants.figureDirectory;
 import static figures.ExtensionPlotter.plot;
@@ -72,8 +71,6 @@ public class NCEcalibrator {
             //iterate through every NCE
             //TODO: make this into one method, taking a model and iterating through all NCEs
             ConcurrentHashMap<Integer, ArrayList<Double>> concurrentSimilarities = new ConcurrentHashMap<>();
-            AtomicDouble bestMedian = new AtomicDouble(0);
-            AtomicInteger bestNCE = new AtomicInteger();
             ProgressReporter pr = new ProgressReporter(NceConstants.maxNCE - NceConstants.minNCE + 1);
 
             List<Future> futureList = new ArrayList<>(Constants.numThreads);
@@ -99,13 +96,7 @@ public class NCEcalibrator {
                         throw new RuntimeException(e);
                     }
 
-                    //calculate median
                     concurrentSimilarities.put(finalNCE, similarity);
-                    double median = StatMethods.medianDouble(similarity);
-                    if (median > bestMedian.get()) {
-                        bestMedian.set(median);
-                        bestNCE.set(finalNCE);
-                    }
                     pr.progress();
                 }));
             }
@@ -114,17 +105,25 @@ public class NCEcalibrator {
             }
             similarities = new TreeMap<>(concurrentSimilarities);
 
-            printInfo("Best NCE for " + currentModel + " after calibration is " + bestNCE);
-            bestMedianDouble = bestMedian.get();
+            //pick the best NCE after all tasks are done, in NCE order (a tie goes to the lower NCE). Picking it
+            //inside the tasks made it depend on the order in which they finished
+            for (Map.Entry<Integer, ArrayList<Double>> entry : similarities.entrySet()) {
+                double median = StatMethods.medianDouble(entry.getValue());
+                if (median > bestMedianDouble) {
+                    bestMedianDouble = median;
+                    bestNCEint = entry.getKey();
+                }
+            }
+
+            printInfo("Best NCE for " + currentModel + " after calibration is " + bestNCEint);
             if (verbose) {
                 printInfo("Median similarity for " + currentModel + " is " + String.format("%.4f", bestMedianDouble));
             }
-            if (bestNCE.get() == NceConstants.minNCE) {
+            if (bestNCEint == NceConstants.minNCE) {
                 printInfo("Consider lowering minNCE below " + NceConstants.minNCE);
-            } else if (bestNCE.get() == NceConstants.maxNCE) {
+            } else if (bestNCEint == NceConstants.maxNCE) {
                 printInfo("Consider increasing maxNCE above " + NceConstants.maxNCE);
             }
-            bestNCEint = bestNCE.get();
         }
         return new Object[]{similarities, bestMedianDouble, bestNCEint};
         //similarities is ordered map of NCE and list of similarities for PSMs

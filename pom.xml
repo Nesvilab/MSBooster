@@ -13,7 +13,7 @@
         <maven.compiler.target>11</maven.compiler.target>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
 
-        <ver.batmass.io>1.37.3</ver.batmass.io>
+        <ver.batmass.io>1.38.0</ver.batmass.io>
         <lib.scope>compile</lib.scope>
         <kotlin.version>2.1.20</kotlin.version>
         <ver.speclib.io>1.0.0</ver.speclib.io>
@@ -148,8 +148,8 @@
             </plugin>
 
             <plugin>
-                <!--The existing maven-assembly-plugin configuration does not work with the latest grpc.-->
-                <!--But maven-shade-plugin has an existing solution:-->
+                <!--maven-shade-plugin builds the fat jar and merges META-INF/services files-->
+                <!--(ServicesResourceTransformer), which the old maven-assembly-plugin configuration did not:-->
                 <!--https://stackoverflow.com/q/73227867-->
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-shade-plugin</artifactId>

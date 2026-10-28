@@ -977,7 +977,9 @@ public class MzmlReader {
                         double x = finalMinExpRT + mt.indices[finalI] * increment;
                         for (int j = mt.indices[finalI]; j < mt.indices[finalI + 1]; j++) {
                             double y = function.applyAsDouble(x);
-                            map.put(y, x);
+                            //where the curve is flat, many x share one y. Keep the largest x, as a
+                            //sequential loop would, rather than that of whichever task writes last
+                            map.merge(y, x, Math::max);
                             x += increment;
                         }
                     }));

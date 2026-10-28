@@ -205,12 +205,8 @@
                 <executions>
                     <execution>
                         <configuration>
-                            <artifactId>batmass-io</artifactId>
                             <file>${basedir}/lib/batmass-io-${ver.batmass.io}.jar</file>
-                            <generatePom>true</generatePom>
-                            <groupId>com.github.chhh</groupId>
-                            <packaging>jar</packaging>
-                            <version>${ver.batmass.io}</version>
+                            <pomFile>${basedir}/lib/batmass-io-${ver.batmass.io}.pom</pomFile>
                         </configuration>
                         <goals>
                             <goal>install-file</goal>

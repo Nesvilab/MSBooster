@@ -122,6 +122,19 @@ public class FragCastModelCaller {
     }
 
     /**
+     * The command that predicts a spectral library to keep: {@link #buildCommand}'s, then
+     * {@code libraryArgs} exactly as given - the enzyme options and {@code --fasta} FragCast records
+     * in the library's Parquet footer. Only a library prediction carries them. The rescoring path's
+     * {@link #callModel} predicts a file nothing outside this run reads, so it is never handed them.
+     */
+    static List<String> buildLibraryCommand(String inputFile, String outputFile, boolean fast,
+                                            FragCastWeights weights, List<String> libraryArgs) {
+        List<String> command = buildCommand(inputFile, outputFile, fast, weights);
+        command.addAll(libraryArgs);
+        return command;
+    }
+
+    /**
      * Predict one library and hand back what FragCast reported, without judging it.
      *
      * <p>{@link #callModel} is the rescoring path: a failure there is fatal, so it exits. This
@@ -133,11 +146,16 @@ public class FragCastModelCaller {
      * one of the two that knows how far along it is. Captured and shown only on failure, as it used
      * to be, the size of a run was reported solely in its post-mortem: a list of 15.8 million
      * precursors looked exactly like one of 61 thousand until the four hours were already spent.
+     *
+     * @param libraryArgs appended to FragCast's command line as given (see
+     *                    {@link #buildLibraryCommand}); empty when there is nothing to record
      */
     public static FragCastProcess.Result predictLibrary(String inputFile, String outputFile,
-                                                        boolean fast, FragCastWeights weights)
+                                                        boolean fast, FragCastWeights weights,
+                                                        List<String> libraryArgs)
             throws IOException, InterruptedException {
-        return FragCastProcess.run(buildCommand(inputFile, outputFile, fast, weights), true);
+        return FragCastProcess.run(buildLibraryCommand(inputFile, outputFile, fast, weights, libraryArgs),
+                true);
     }
 
     public static String callModel(String inputFile, boolean verbose, boolean fast, FragCastWeights weights) {

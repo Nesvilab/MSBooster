@@ -17,11 +17,14 @@ package transferlearn;
 import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.io.File;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
+import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashMap;
 import java.nio.file.Path;
 import java.sql.Connection;
@@ -29,11 +32,19 @@ import java.sql.DriverManager;
 import java.sql.Statement;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 
+import blue.strategic.parquet.ParquetWriter;
+import org.apache.parquet.schema.LogicalTypeAnnotation;
+import org.apache.parquet.schema.MessageType;
+import org.apache.parquet.schema.PrimitiveType.PrimitiveTypeName;
+import org.apache.parquet.schema.Type;
+import org.apache.parquet.schema.Types;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
+import testutils.ParquetFooters;
 
 /**
  * The peptide list arrives with each precursor's charge glued onto the end of its peptide, and the
@@ -331,7 +342,8 @@ public class FragCastPredictorTest {
      * its writer gives them - the ion mobility a float, which is what the server writes whenever it
      * predicts one, and the only type FragDIA takes one in - plus the two only FragCast can fill. Those two sit where the
      * experimental library FragSpecLib writes puts them - after FragmentLossType, before Proteotypic -
-     * so a predicted library and an experimental one line up column for column.
+     * so a predicted library and an experimental one line up column for column. The experimental
+     * retention time is a float, as FragSpecLib writes its measured one; a predicted library's is null.
      */
     private static final String[][] LIBRARY_SCHEMA = {
             {"PrecursorMz", "FLOAT"}, {"ProductMz", "FLOAT"}, {"Annotation", "VARCHAR"},
@@ -341,8 +353,88 @@ public class FragCastPredictorTest {
             {"PrecursorIonMobility", "FLOAT"}, {"FragmentType", "VARCHAR"},
             {"FragmentCharge", "SMALLINT"}, {"FragmentSeriesNumber", "SMALLINT"},
             {"FragmentLossType", "VARCHAR"},
-            {"AverageExperimentalRetentionTime", "VARCHAR"}, {"AllMappedProteins", "VARCHAR"},
+            {"AverageExperimentalRetentionTime", "FLOAT"}, {"AllMappedProteins", "VARCHAR"},
             {"Proteotypic", "SMALLINT"}};
+
+    private static final String AVERAGE_EXPERIMENTAL_RT = "AverageExperimentalRetentionTime";
+
+    /** What a run that names neither an enzyme nor a FASTA records in a library's footer. */
+    private static final Map<String, String> NO_FOOTER = Collections.emptyMap();
+
+    /** The options FragPipe passes for strict trypsin. */
+    private static EnzymeOptions strictTrypsin() {
+        EnzymeOptions enzyme = new EnzymeOptions();
+        String[] args = {"--enzyme-name", "stricttrypsin", "--cut", "KR", "--no-cut", "@", "--sense", "C",
+                "--num-enzyme-termini", "2", "--clip-n-term-m", "1"};
+        for (int i = 0; i < args.length; i += 2) {
+            assertTrue(enzyme.accept(args[i], args[i + 1]));
+        }
+        enzyme.validate();
+        return enzyme;
+    }
+
+    /**
+     * A copy of fragcast_lib_narrow.parquet: a real build-library output, in the 17 columns of the
+     * schema, from the FragCast before AverageExperimentalRetentionTime became a float - it holds the
+     * text "" there.
+     */
+    private File olderFragCastLibrary() throws Exception {
+        File copy = tmp.resolve("narrow.parquet").toFile();
+        Files.copy(new File("src/test/resources/fragcast_lib_narrow.parquet").toPath(), copy.toPath());
+        return copy;
+    }
+
+    /**
+     * A library in the schema as FragCast writes it now, by a writer other than DuckDB: the rows of
+     * the real build-library output above, written by parquet-java with every column required - as
+     * parquet-rs writes FragCast's - except AverageExperimentalRetentionTime, an optional float that
+     * holds nothing. A stand-in until a build-library output from that FragCast is committed.
+     */
+    private File inTheSchemaFromAnotherWriter() throws Exception {
+        List<Type> fields = new ArrayList<>();
+        for (String[] column : LIBRARY_SCHEMA) {
+            Type.Repetition repetition = column[0].equals(AVERAGE_EXPERIMENTAL_RT)
+                    ? Type.Repetition.OPTIONAL : Type.Repetition.REQUIRED;
+            switch (column[1]) {
+                case "FLOAT":
+                    fields.add(Types.primitive(PrimitiveTypeName.FLOAT, repetition).named(column[0]));
+                    break;
+                case "SMALLINT":
+                    fields.add(Types.primitive(PrimitiveTypeName.INT32, repetition)
+                            .as(LogicalTypeAnnotation.intType(16, true)).named(column[0]));
+                    break;
+                default:
+                    fields.add(Types.primitive(PrimitiveTypeName.BINARY, repetition)
+                            .as(LogicalTypeAnnotation.stringType()).named(column[0]));
+                    break;
+            }
+        }
+        MessageType schema = new MessageType("library", fields);
+
+        File out = tmp.resolve("in_the_schema.parquet").toFile();
+        try (Connection conn = DriverManager.getConnection("jdbc:duckdb:");
+             Statement stmt = conn.createStatement();
+             java.sql.ResultSet rs = stmt.executeQuery("SELECT * REPLACE (CAST(NULL AS FLOAT) AS " +
+                     AVERAGE_EXPERIMENTAL_RT + ") FROM read_parquet('" +
+                     olderFragCastLibrary().getAbsolutePath().replace("\\", "/") + "')");
+             ParquetWriter<Object[]> writer = ParquetWriter.writeFile(schema, out, (row, values) -> {
+                 for (int i = 0; i < LIBRARY_SCHEMA.length; i++) {
+                     if (row[i] != null) {
+                         values.write(LIBRARY_SCHEMA[i][0], row[i]);
+                     }
+                 }
+             })) {
+            while (rs.next()) {
+                Object[] row = new Object[LIBRARY_SCHEMA.length];
+                for (int i = 0; i < row.length; i++) {
+                    Object value = rs.getObject(i + 1);
+                    row[i] = value instanceof Short ? Integer.valueOf((Short) value) : value;
+                }
+                writer.write(row);
+            }
+        }
+        return out;
+    }
 
     /** A copy of the committed real FragCast library, which carries FragCast's own 19 columns. */
     private File fragCastLibrary() throws Exception {
@@ -370,7 +462,7 @@ public class FragCastPredictorTest {
     @Test
     public void theLibraryEndsUpInTheServersSchema() throws Exception {
         File lib = fragCastLibrary();
-        FragCastPredictor.toLibrarySchema(lib);
+        FragCastPredictor.toLibrarySchema(lib, NO_FOOTER);
         assertLibrarySchema(lib);
     }
 
@@ -380,37 +472,145 @@ public class FragCastPredictorTest {
     @Test
     public void aLibraryAlreadyInTheSchemaIsNotRewritten() throws Exception {
         File lib = fragCastLibrary();
-        FragCastPredictor.toLibrarySchema(lib); //an older FragCast's 19 columns, brought into the schema
+        FragCastPredictor.toLibrarySchema(lib, NO_FOOTER); //an older FragCast's 19 columns, brought into the schema
         assertLibrarySchema(lib); //or the second call below would be skipping for the wrong reason
         byte[] inTheSchema = Files.readAllBytes(lib.toPath());
         long longAgo = 1_000_000_000_000L; //2001: any rewrite, even to identical bytes, moves this
         assertTrue(lib.setLastModified(longAgo));
 
-        FragCastPredictor.toLibrarySchema(lib);
+        FragCastPredictor.toLibrarySchema(lib, NO_FOOTER);
 
         assertEquals(longAgo, lib.lastModified(), "a library already in the schema was written again");
         assertArrayEquals(inTheSchema, Files.readAllBytes(lib.toPath()));
         assertFalse(new File(lib.getAbsolutePath() + ".apd.parquet").exists());
     }
 
-    // The same, for the file this is really about: a library FragCast itself wrote in the schema
-    // (fragcast_lib_narrow.parquet, a real build-library output). The one above was written by
-    // DuckDB; this one has parquet-rs's non-nullable int16/float32 columns and its own encodings,
-    // and has to be recognised just the same - or the six minutes are spent after all.
+    // The same, for the file this is really about: a library FragCast itself wrote in the schema.
+    // The one above was written by DuckDB; FragCast's has non-nullable int16/float32 columns, one
+    // nullable float, and a writer's own encodings, and has to be recognised just the same - or the
+    // six minutes are spent after all. Whatever FragCast recorded in its footer stays with it.
     @Test
     public void aLibraryFragCastWroteInTheSchemaIsLeftAsItIs() throws Exception {
-        File lib = tmp.resolve("narrow.parquet").toFile();
-        Files.copy(new File("src/test/resources/fragcast_lib_narrow.parquet").toPath(), lib.toPath());
+        File lib = inTheSchemaFromAnotherWriter();
         byte[] asWritten = Files.readAllBytes(lib.toPath());
+        Map<String, String> ownFooter = ParquetFooters.read(lib);
         long longAgo = 1_000_000_000_000L;
         assertTrue(lib.setLastModified(longAgo));
 
         assertLibrarySchema(lib); //FragCast's own output is the schema, before anything touches it
-        FragCastPredictor.toLibrarySchema(lib);
+        FragCastPredictor.toLibrarySchema(lib, strictTrypsin().footer("/data/human.fasta"));
 
         assertEquals(longAgo, lib.lastModified(), "FragCast's own library was written again");
         assertArrayEquals(asWritten, Files.readAllBytes(lib.toPath()));
+        assertEquals(ownFooter, ParquetFooters.read(lib));
         assertFalse(new File(lib.getAbsolutePath() + ".apd.parquet").exists());
+    }
+
+    // The FragCast before this one wrote AverageExperimentalRetentionTime as the text "", so its
+    // library - a real build-library output - is not the schema any more and is converted. DuckDB
+    // refuses to cast '' to a float, so the empty text has to become null rather than fail the run;
+    // nothing else about the library changes.
+    @Test
+    public void anOlderFragCastsEmptyTextRetentionTimeBecomesNull() throws Exception {
+        File original = olderFragCastLibrary();
+        File lib = tmp.resolve("converted.parquet").toFile();
+        Files.copy(original.toPath(), lib.toPath());
+
+        FragCastPredictor.toLibrarySchema(lib, NO_FOOTER);
+
+        assertLibrarySchema(lib);
+        assertEquals(rowCount(original), rowCount(lib));
+        String others = "SELECT * EXCLUDE (" + AVERAGE_EXPERIMENTAL_RT + ") FROM read_parquet('%s')";
+        try (Connection conn = DriverManager.getConnection("jdbc:duckdb:");
+             Statement stmt = conn.createStatement();
+             java.sql.ResultSet rs = stmt.executeQuery("SELECT " +
+                     "(SELECT COUNT(" + AVERAGE_EXPERIMENTAL_RT + ") FROM read_parquet('" + path(lib) + "')) AS kept, " +
+                     "(SELECT COUNT(*) FROM (" + String.format(others, path(original)) + " EXCEPT ALL " +
+                     String.format(others, path(lib)) + ")) AS changed")) {
+            rs.next();
+            assertEquals(0, rs.getLong("kept"), "a predicted library has no experimental retention time");
+            assertEquals(0, rs.getLong("changed"), "another column changed in the conversion");
+        }
+    }
+
+    // Only the EMPTY text is read as null. Text that is a number is that number, and text that is
+    // neither still fails the conversion, rather than quietly becoming null.
+    @Test
+    public void aTextRetentionTimeMustStillBeANumberOrEmpty() throws Exception {
+        String narrow = path(olderFragCastLibrary());
+        File numbers = tmp.resolve("numbers.parquet").toFile();
+        File words = tmp.resolve("words.parquet").toFile();
+        try (Connection conn = DriverManager.getConnection("jdbc:duckdb:");
+             Statement stmt = conn.createStatement()) {
+            stmt.execute("COPY (SELECT * REPLACE (CASE WHEN FragmentSeriesNumber = 2 THEN '12.5' ELSE '' END " +
+                    "AS " + AVERAGE_EXPERIMENTAL_RT + ") FROM read_parquet('" + narrow + "')) TO '" +
+                    path(numbers) + "' (FORMAT PARQUET)");
+            stmt.execute("COPY (SELECT * REPLACE ('n/a' AS " + AVERAGE_EXPERIMENTAL_RT + ") FROM read_parquet('" +
+                    narrow + "')) TO '" + path(words) + "' (FORMAT PARQUET)");
+        }
+
+        FragCastPredictor.toLibrarySchema(numbers, NO_FOOTER);
+        assertLibrarySchema(numbers);
+        try (Connection conn = DriverManager.getConnection("jdbc:duckdb:");
+             Statement stmt = conn.createStatement();
+             java.sql.ResultSet rs = stmt.executeQuery("SELECT COUNT(*) FILTER (WHERE FragmentSeriesNumber = 2) " +
+                     "AS twos, COUNT(" + AVERAGE_EXPERIMENTAL_RT + ") AS kept, MIN(" + AVERAGE_EXPERIMENTAL_RT +
+                     ") AS lo, MAX(" + AVERAGE_EXPERIMENTAL_RT + ") AS hi FROM read_parquet('" + path(numbers) + "')")) {
+            rs.next();
+            assertTrue(rs.getLong("twos") > 0);
+            assertEquals(rs.getLong("twos"), rs.getLong("kept"));
+            assertEquals(12.5f, rs.getFloat("lo"));
+            assertEquals(12.5f, rs.getFloat("hi"));
+        }
+
+        assertThrows(java.sql.SQLException.class, () -> FragCastPredictor.toLibrarySchema(words, NO_FOOTER));
+        assertFalse(new File(words.getAbsolutePath() + ".apd.parquet").exists());
+    }
+
+    // --- the library's footer --------------------------------------------------------------
+
+    // A COPY carries no key-value metadata across, so a library the conversion rewrites would lose
+    // the footer FragCast wrote into it - the enzyme FragDIA digests with among it. It is given the
+    // same keys instead, from the same options, and nothing else: FragCast's own arrow schema goes.
+    @Test
+    public void aRewrittenLibraryCarriesTheEnzymeAndFasta() throws Exception {
+        File lib = fragCastLibrary();
+        assertTrue(ParquetFooters.read(lib).containsKey("ARROW:schema"), "the fixture changed");
+        Map<String, String> footer = strictTrypsin().footer("C:\\fasta\\human.fasta");
+
+        FragCastPredictor.toLibrarySchema(lib, footer);
+
+        assertLibrarySchema(lib);
+        assertEquals(footer, ParquetFooters.read(lib));
+    }
+
+    // With no enzyme and no FASTA there is nothing to record, and nothing is: the conversion writes
+    // the library it always wrote.
+    @Test
+    public void aRewriteWithNothingToRecordRecordsNothing() throws Exception {
+        File lib = fragCastLibrary();
+        FragCastPredictor.toLibrarySchema(lib, NO_FOOTER);
+        assertTrue(ParquetFooters.read(lib).isEmpty(), ParquetFooters.read(lib).toString());
+    }
+
+    // FragCast is told what to record exactly as this command line gave it, the FASTA after the
+    // enzyme; told nothing when neither was given, so its command line is the one it always had.
+    @Test
+    public void fragCastIsHandedTheEnzymeAndTheFastaAsGiven() {
+        EnzymeOptions trypsin = strictTrypsin();
+        List<String> expected = new ArrayList<>(trypsin.builderArgs());
+        expected.addAll(Arrays.asList("--fasta", "C:\\fasta\\human.fasta"));
+        assertEquals(expected, FragCastPredictor.libraryArgs(trypsin, "C:\\fasta\\human.fasta"));
+
+        assertEquals(trypsin.builderArgs(), FragCastPredictor.libraryArgs(trypsin, ""));
+        assertEquals(Arrays.asList("--fasta", "/data/human.fasta"),
+                FragCastPredictor.libraryArgs(new EnzymeOptions(), "/data/human.fasta"),
+                "a FASTA is recorded with or without an enzyme");
+        assertTrue(FragCastPredictor.libraryArgs(new EnzymeOptions(), "").isEmpty());
+    }
+
+    private static String path(File file) {
+        return file.getAbsolutePath().replace("\\", "/");
     }
 
     // Nor is it enough for the schema to be in there somewhere. A library with a column more than the
@@ -429,11 +629,11 @@ public class FragCastPredictorTest {
                     shortOne.getAbsolutePath().replace("\\", "/") + "' (FORMAT PARQUET)");
         }
 
-        FragCastPredictor.toLibrarySchema(extra);
+        FragCastPredictor.toLibrarySchema(extra, NO_FOOTER);
         assertLibrarySchema(extra);
 
         java.sql.SQLException missing = org.junit.jupiter.api.Assertions.assertThrows(
-                java.sql.SQLException.class, () -> FragCastPredictor.toLibrarySchema(shortOne));
+                java.sql.SQLException.class, () -> FragCastPredictor.toLibrarySchema(shortOne, NO_FOOTER));
         assertTrue(missing.getMessage().contains("Proteotypic"), missing.getMessage());
         assertFalse(missing.getMessage().toLowerCase().contains("self"),
                 "a missing column was reported as a self-reference: " + missing.getMessage());
@@ -458,7 +658,7 @@ public class FragCastPredictorTest {
         }
         long before = rowCount(wide);
 
-        FragCastPredictor.toLibrarySchema(wide);
+        FragCastPredictor.toLibrarySchema(wide, NO_FOOTER);
 
         assertLibrarySchema(wide);
         assertEquals(before, rowCount(wide));
@@ -468,7 +668,7 @@ public class FragCastPredictorTest {
     public void theConversionKeepsEveryRow() throws Exception {
         File lib = fragCastLibrary();
         long before = rowCount(lib);
-        FragCastPredictor.toLibrarySchema(lib);
+        FragCastPredictor.toLibrarySchema(lib, NO_FOOTER);
         assertEquals(before, rowCount(lib));
         assertTrue(before > 0);
     }
@@ -476,7 +676,7 @@ public class FragCastPredictorTest {
     @Test
     public void everyPropertyIsKept() throws Exception {
         File lib = fragCastLibrary();
-        FragCastPredictor.toLibrarySchema(lib);
+        FragCastPredictor.toLibrarySchema(lib, NO_FOOTER);
         try (Connection conn = DriverManager.getConnection("jdbc:duckdb:");
              Statement stmt = conn.createStatement();
              java.sql.ResultSet rs = stmt.executeQuery(

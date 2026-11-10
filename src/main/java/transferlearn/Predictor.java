@@ -12,11 +12,11 @@ import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.sql.Connection;
 import java.sql.DriverManager;
-import java.sql.Statement;
+import java.sql.SQLException;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Locale;
-import java.util.stream.Collectors;
+import java.util.Map;
 
 import static allconstants.Constants.allowParquetMerging;
 import static allconstants.Constants.versionNumber;
@@ -33,7 +33,10 @@ public class Predictor {
                 "--url <server url> --model <path/to/model/weights> " +
                 "optional: --peptide-list-to-dict <path/to/csv> --basename <output base name>  --output-dir <output directory> " +
                 "--ms2 <predict ms2> --rt <predict rt> --im <predict ccs> " +
-                "--min-charge <int> max-charge <int> --output-format <'parquet' or 'mgf' or 'librarytsv'>");
+                "--min-charge <int> max-charge <int> --output-format <'parquet' or 'mgf' or 'librarytsv'> " +
+                "--fasta <fasta> " +
+                EnzymeOptions.USAGE + "; a parquet library records them in its footer");
+        Print.printError(EnzymeOptions.FASTA_USAGE);
         Print.printError("Example: java -cp MSBooster.jar src.main.java.transferlearn.Predictor " +
                 "--paramsList msbooster_params.txt --url http://localhost:8001 --model model.zip " +
                 "--ms2 true --rt true --im false --output_format mgf " +
@@ -87,6 +90,11 @@ public class Predictor {
         String outputDir = "";
         String keepDecoys = "1";
         String decoyTag = "rev_"; //as FragCastPredictor and Constants.decoyPrefix default it
+        final EnzymeOptions enzyme = new EnzymeOptions();
+        //The enzyme options are taken out first, pair by pair, each with its value. This loop visits
+        //values as well as flags, so taking them here would read a value that looks like a flag (an
+        //--enzyme-name of "--cut") as one; what is left it parses as it always has.
+        args = EnzymeOptions.extract(args, enzyme);
 
         for (int i = 0; i < args.length; i++) {
             switch (args[i]) {
@@ -170,6 +178,18 @@ public class Predictor {
                 (fasta.isEmpty() && outputFormat.equals("librarytsv"))) {
             Print.printError("At least one of params, url, model, fasta, or apiKey is missing.");
             errorMessage();
+        }
+        try {
+            enzyme.validate();
+        } catch (IllegalArgumentException e) {
+            Print.printError(e.getMessage());
+            errorMessage();
+        }
+        //The server is told nothing about the enzyme: it predicts the peptides it is given. The
+        //options are recorded in the library's Parquet footer, which is where FragDIA reads them.
+        final Map<String, String> footer = enzyme.footer(fasta);
+        if (outputFormat.equals("parquet")) {
+            printInfo(enzyme.describe());
         }
 
         //use precursor charge states from MSFragger results
@@ -323,40 +343,50 @@ public class Predictor {
         }
 
         if (outputFormat.equals("parquet")) {
-            if (subFilePaths.length > 1) {
-                if (allowParquetMerging) {
-                    Print.printInfo("Merging parquet files"); //TODO: too much RAM and too slow for multiple precursor charges
-                                                                //If needed, use Hadoop
-                    try (Connection conn = DriverManager.getConnection("jdbc:duckdb:");
-                         Statement stmt = conn.createStatement()) {
-
-                        String fileList = Arrays.stream(subFilePaths)
-                                .map(p -> "'" + p.replace("\\", "/") + "'")
-                                .collect(Collectors.joining(", "));
-
-                        stmt.execute("COPY (SELECT * FROM read_parquet([" + fileList + "])) " +
-                                "TO '" + totalPredFileInitiatorParquet.getAbsolutePath().replace("\\", "/") +
-                                "' (FORMAT PARQUET)");
-                    }
-
-                    //delete old files
-                    for (String subFilePath : subFilePaths) {
-                        File subFile = new File(subFilePath);
-                        if (subFile.exists()) {
-                            subFile.delete();
-                        }
-                    }
-                }
-            } else {
-                String oneParquet = outputDir + File.separator + basename + ".parquet";
-                Files.move(Paths.get(subFilePaths[0]), Paths.get(oneParquet));
-                Print.printInfo(subFilePaths[0] + " moved to " + oneParquet);
-            }
+            finishParquet(subFilePaths, totalPredFileInitiatorParquet, allowParquetMerging, footer);
         }
         if (outputFormat.equals("mgf") || outputFormat.equals("librarytsv")) {
             Print.printInfo("Total file at " + totalFilePath);
         }
 
         System.exit(0);
+    }
+
+    /**
+     * Leave the Parquet chunks the server returned as this run's library, every file of it carrying
+     * {@code footer}.
+     *
+     * <p>One chunk becomes {@code total}. Several are merged into it when {@code merge} is set, and
+     * otherwise stay where they are as the library's shards. Whichever it is, each file the run leaves
+     * records the enzyme and FASTA in its footer, since FragDIA reads the enzyme from there and
+     * compares it across a directory's shards. The merge writes the footer as it writes the file; a
+     * file the server wrote has to be rewritten to get one, which {@link Helpers#writeFooter} skips
+     * when there is nothing to record.
+     */
+    static void finishParquet(String[] subFilePaths, File total, boolean merge, Map<String, String> footer)
+            throws IOException, SQLException {
+        if (subFilePaths.length > 1) {
+            if (merge) {
+                Print.printInfo("Merging parquet files"); //TODO: too much RAM and too slow for multiple precursor charges
+                                                            //If needed, use Hadoop
+                Helpers.mergeParquet(Arrays.asList(subFilePaths), total, footer);
+
+                //delete old files
+                for (String subFilePath : subFilePaths) {
+                    File subFile = new File(subFilePath);
+                    if (subFile.exists()) {
+                        subFile.delete();
+                    }
+                }
+            } else {
+                for (String subFilePath : subFilePaths) {
+                    Helpers.writeFooter(new File(subFilePath), footer);
+                }
+            }
+        } else {
+            Files.move(Paths.get(subFilePaths[0]), total.toPath());
+            Print.printInfo(subFilePaths[0] + " moved to " + total.getPath());
+            Helpers.writeFooter(total, footer);
+        }
     }
 }

@@ -298,6 +298,32 @@ where gene names come from - neither backend returns them. `--model` is optional
 and without it the pretrained weights predict. `--min-charge`/`--max-charge` expand only those
 peptide-list rows that do not already name a charge.
 
+The enzyme the peptides were digested with is recorded in the library itself, because FragDIA reads
+it from the Parquet footer and takes no digestion flags of its own. Both predictors take it as the
+same options every library builder takes, with no defaults:
+
+```
+--enzyme-name stricttrypsin --cut KR --no-cut @ --sense C --num-enzyme-termini 2 --clip-n-term-m 1
+```
+
+`--cut` names the residues an enzyme cuts at, as uppercase letters, or `@` for an enzyme that cuts
+nothing (nonspecific); give it once per enzyme, at most twice. `--no-cut` (residues that block the
+cut, `@` for none) and `--sense` (`C` to cut after the residue, `N` before it) are given once per
+`--cut`, paired with it by order, and `--enzyme-name` once per `--cut` or not at all.
+`--num-enzyme-termini` (0-3) and `--clip-n-term-m` (0 or 1) are given once. Every value is checked
+and then recorded exactly as given, and anything else - a lower-case residue, a `--sense` with no
+`--cut` - is an error. Without `--cut` none of them may be given, and the library records no enzyme;
+FragDIA then digests with its default (strict trypsin) and says so.
+
+The Parquet library's footer then holds `search_enzyme_cut_1`, `search_enzyme_nocut_1`,
+`search_enzyme_sense_1` (and `search_enzyme_name_1` when names were given; the same with `_2` for a
+second enzyme), `num_enzyme_termini` and `clip_nTerm_M`, plus `database_name` - the `--fasta` path as
+given - whenever `--fasta` is. Unlike the enzyme options, `--fasta` is not checked: an empty one
+counts as none, so nothing is recorded, and one given more than once counts its last.
+`transferlearn.FragCastPredictor` hands the options and `--fasta` to FragCast, which writes the footer; `transferlearn.Predictor` writes it itself, since the prediction
+server is told nothing about the enzyme - which costs one more pass over a Parquet library the server
+returned. A library.tsv or MGF has no footer, and is written exactly as before.
+
 Two things differ from the server predictor, and both come from FragCast rather than from MSBooster.
 There is no `mgf` output: FragCast writes TSV and Parquet only, and the MGF a prediction server
 returns is written by that server. And there is no per-property flag: one FragCast run predicts

@@ -275,4 +275,34 @@ public class FragCastModelCallerTest {
         assertFalse(command.contains("--min-charge"), "a charge range was passed: " + command);
         assertFalse(command.contains("--max-charge"), "a charge range was passed: " + command);
     }
+
+    // A library prediction is told what to record in its Parquet footer - the enzyme and the FASTA -
+    // and is told it after everything the command has always carried, values untouched. The
+    // rescoring command is built by buildCommand alone, which has no way to be given them.
+    @Test
+    public void aLibraryPredictionAppendsWhatItRecordsAndNothingElseChanges() {
+        List<String> recorded = List.of("--enzyme-name", "stricttrypsin", "--cut", "KR", "--no-cut", "@",
+                "--sense", "C", "--num-enzyme-termini", "2", "--clip-n-term-m", "1",
+                "--fasta", "C:\\fasta\\human.fasta");
+        List<String> rescoring = FragCastModelCaller.buildCommand("spectraRT.tsv", "out.parquet", true,
+                FragCastWeights.base().withRt("/models/rt.onnx"));
+        List<String> library = FragCastModelCaller.buildLibraryCommand("spectraRT.tsv", "out.parquet", true,
+                FragCastWeights.base().withRt("/models/rt.onnx"), recorded);
+
+        assertEquals(rescoring, library.subList(0, rescoring.size()));
+        assertEquals(recorded, library.subList(rescoring.size(), library.size()));
+        for (String flag : new String[] {"--cut", "--no-cut", "--sense", "--enzyme-name",
+                "--num-enzyme-termini", "--clip-n-term-m", "--fasta"}) {
+            assertFalse(rescoring.contains(flag), flag + " reached the rescoring command: " + rescoring);
+        }
+    }
+
+    // Nothing to record is nothing passed: the library command is then the one it always was.
+    @Test
+    public void aLibraryPredictionWithNothingToRecordIsTheUsualCommand() {
+        assertEquals(FragCastModelCaller.buildCommand("spectraRT.tsv", "out.parquet", false,
+                        FragCastWeights.base()),
+                FragCastModelCaller.buildLibraryCommand("spectraRT.tsv", "out.parquet", false,
+                        FragCastWeights.base(), List.of()));
+    }
 }

@@ -31,6 +31,7 @@ import utils.ProteinLabels;
 
 import java.io.BufferedWriter;
 import java.io.File;
+import java.io.IOException;
 import java.nio.file.Files;
 import java.sql.Connection;
 import java.sql.DriverManager;
@@ -40,8 +41,10 @@ import java.sql.Statement;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
+import java.util.Map;
 
 import static transferlearn.Helpers.writeLibraryTsv;
 import static transferlearn.Helpers.mapProteinsListToGenes;
@@ -72,6 +75,11 @@ import static utils.Print.printInfo;
  * {@code Proteotypic} from it, and nothing here labels the library afterwards. The two gene columns
  * of a library.tsv are the exception: they come from the FASTA, because a predictor can only read
  * an entry name off the protein label, and FragCast's Parquet library does not carry them at all.
+ *
+ * <p>The enzyme travels inside the library, since FragDIA reads it from the Parquet footer and takes
+ * no digestion flags of its own. The enzyme options ({@link EnzymeOptions}) and {@code --fasta} are
+ * forwarded to FragCast's {@code build-library}, which writes them into the footer, and the one
+ * rewrite this side may make of the library ({@link #toLibrarySchema}) writes the same keys.
  */
 public class FragCastPredictor {
     /** Flags that belong to the server workflow, refused here rather than quietly ignored. */
@@ -84,11 +92,15 @@ public class FragCastPredictor {
                 "--output-format <parquet|librarytsv> " +
                 "optional: --model <model.zip> --output-dir <dir> --basename <stem> --fasta <fasta> " +
                 "--peptide-list-to-predict <peptides.parquet> --min-charge <int> --max-charge <int> " +
-                "--decoy-prefix <tag> --keep-decoys <0|1> --custom-mods <spec>");
+                "--decoy-prefix <tag> --keep-decoys <0|1> --custom-mods <spec> " +
+                EnzymeOptions.USAGE);
+        printError(EnzymeOptions.FASTA_USAGE);
         printError("Example: java -cp MSBooster.jar transferlearn.FragCastPredictor " +
                 "--paramsList msbooster_params.txt --model FragCast-finetuned.zip " +
                 "--peptide-list-to-predict peptide_list.parquet --fasta proteome.fasta " +
-                "--output-format librarytsv --basename fragpipe-predicted-library");
+                "--output-format librarytsv --basename fragpipe-predicted-library " +
+                "--enzyme-name stricttrypsin --cut KR --no-cut @ --sense C " +
+                "--num-enzyme-termini 2 --clip-n-term-m 1");
         printError("For server-based prediction, use transferlearn.Predictor instead.");
         System.exit(1);
     }
@@ -116,6 +128,9 @@ public class FragCastPredictor {
         String decoyTag = "rev_";
         int minCharge = 2;
         int maxCharge = 3;
+        final EnzymeOptions enzyme = new EnzymeOptions();
+        //the enzyme options are taken out first, each with its value; the loop below parses the rest
+        args = EnzymeOptions.extract(args, enzyme);
 
         for (int i = 0; i < args.length; i += 2) {
             if (SERVER_FLAGS.contains(args[i])) {
@@ -187,6 +202,12 @@ public class FragCastPredictor {
             printError("--paramsList is required.");
             errorMessage();
         }
+        try {
+            enzyme.validate();
+        } catch (IllegalArgumentException e) {
+            printError(e.getMessage());
+            errorMessage();
+        }
         if (outputFormat.equals("mgf")) {
             printError("FragCast writes tsv and parquet only, so it cannot produce an MGF library. " +
                     "Choose parquet or librarytsv, or predict with transferlearn.Predictor " +
@@ -231,6 +252,7 @@ public class FragCastPredictor {
         //pre-read value is the one answer both paths agree on
         final boolean fast = fastRequested;
         printInfo("Predicting with " + weights);
+        printInfo(enzyme.describe());
 
         //Clear last run's outputs first. FragCast's COPY overwrites, but a library left from an
         //earlier run under a format this one is not writing would sit there looking current, and
@@ -249,7 +271,8 @@ public class FragCastPredictor {
         final File merged = new File(outputDir, basename + ".parquet");
         printInfo("Predicting into " + merged);
         final FragCastProcess.Result result = FragCastModelCaller.predictLibrary(
-                inputFile.getAbsolutePath(), merged.getAbsolutePath(), fast, weights);
+                inputFile.getAbsolutePath(), merged.getAbsolutePath(), fast, weights,
+                libraryArgs(enzyme, fasta));
         if (!result.succeeded() || !merged.isFile()) {
             printError("FragCast did not produce a library for " + inputFile +
                     " (exit code " + result.exitCode + ")");
@@ -264,8 +287,9 @@ public class FragCastPredictor {
 
         //From here on this run takes the same code the server path runs: the library is put into the
         //schema everything downstream reads, which is the server's plus the two columns only FragCast
-        //can fill. The converter reads whatever its input holds, so one path serves both.
-        toLibrarySchema(merged);
+        //can fill. The converter reads whatever its input holds, so one path serves both. A library
+        //it rewrites gets the footer FragCast was asked to write, since the rewrite drops FragCast's.
+        toLibrarySchema(merged, enzyme.footer(fasta));
 
         if (!annotated) {
             printInfo("Total parquet file at " + merged.getAbsolutePath());
@@ -374,6 +398,24 @@ public class FragCastPredictor {
                 "--decoyPrefix", decoyTag));
         addModelZip(args, model);
         return args.toArray(new String[0]);
+    }
+
+    /**
+     * What FragCast's {@code build-library} is told to record in the library's Parquet footer: the
+     * enzyme options exactly as this command line gave them, then {@code --fasta} when one was named.
+     * Each only when given, so a run that names neither hands FragCast the command line it always
+     * had. {@code fasta} is what this class's loop left of {@code --fasta}, which keeps the leniency
+     * {@link EnzymeOptions} describes: the last one when it was given more than once, and empty - so
+     * not passed on - when it was given empty. The FASTA is recorded as {@code database_name},
+     * provenance only; the gene names a {@code librarytsv} library takes from it are still read here.
+     */
+    static List<String> libraryArgs(EnzymeOptions enzyme, String fasta) {
+        final List<String> args = new ArrayList<>(enzyme.builderArgs());
+        if (!fasta.isEmpty()) {
+            args.add("--fasta");
+            args.add(fasta);
+        }
+        return args;
     }
 
     /**
@@ -489,18 +531,37 @@ public class FragCastPredictor {
      * wider than the server does. The ion mobility is narrowed with the rest, to the float the
      * server writes whenever it predicts one (it falls back to a text column only for a model with
      * no ion mobility to give) - which is also the only type FragDIA reads an ion mobility from.
+     * {@code AverageExperimentalRetentionTime} is a float too, the type FragSpecLib writes its
+     * measured one in; a predicted library has none to give, so it holds nulls. An older FragCast
+     * wrote it as the empty text {@code ""}, and a float column that arrives as text has its empty
+     * cells read as null rather than failing the cast.
      *
      * <p>Wrote, because FragCast now writes this schema itself, and a library that arrives in it is
      * left exactly as it is. The conversion is a whole pass over the file - every row read and
      * written again, six minutes of a 192-million-row library - so it is kept only for the FragCast
-     * binaries that still write their own 19 double-precision columns.
+     * binaries that write anything else: their own 19 double-precision columns, or the 17 with the
+     * text {@code AverageExperimentalRetentionTime} of the FragCast before it became a float.
+     *
+     * <p>A library left as it is keeps the footer FragCast wrote into it, which records the enzyme
+     * and FASTA it was handed (see {@link #libraryArgs}). A COPY carries no key-value metadata over,
+     * so a rewritten library is given {@code footer} instead: the same keys, from the same options.
+     *
+     * <p>A rewritten library is written beside the original and then moved over it
+     * ({@link Helpers#replaceFile}), so the original is never deleted to make room: a conversion that
+     * fails leaves it as it was and removes what was written, and a move that fails leaves it as it
+     * was with the converted library beside it, which the error names.
+     *
+     * @param footer the library's Parquet footer ({@link EnzymeOptions#footer}); empty for none
+     * @throws SQLException when the library cannot be read or converted
+     * @throws IOException  when the converted library cannot be moved over the original
      */
-    static void toLibrarySchema(File parquet) throws SQLException {
+    static void toLibrarySchema(File parquet, Map<String, String> footer) throws SQLException, IOException {
         final File projected = new File(parquet.getAbsolutePath() + ".apd.parquet");
         final long startTime = System.nanoTime();
         try (Connection conn = DriverManager.getConnection("jdbc:duckdb:");
              Statement stmt = conn.createStatement()) {
-            if (inLibrarySchema(stmt, parquet)) {
+            final Map<String, String> columns = columnTypes(stmt, parquet);
+            if (inLibrarySchema(columns)) {
                 printInfo(parquet.getAbsolutePath() + " (" + Helpers.fileSize(parquet) + ") is already " +
                         "in the library schema: no parquet-to-parquet conversion needed");
                 return;
@@ -510,16 +571,19 @@ public class FragCastPredictor {
             //printed look like a hang.
             printInfo("Converting the library to the library schema: reading " + parquet.getAbsolutePath() +
                     " (" + Helpers.fileSize(parquet) + ") and writing " + projected.getAbsolutePath());
-            stmt.execute("COPY (SELECT " + librarySelect() +
+            stmt.execute("COPY (SELECT " + librarySelect(columns) +
                     " FROM read_parquet('" + sql(parquet.getAbsolutePath()) + "') " + SOURCE + ") TO '" +
-                    sql(projected.getAbsolutePath()) + "' (FORMAT PARQUET)");
+                    sql(projected.getAbsolutePath()) + "' (FORMAT PARQUET" +
+                    EnzymeOptions.kvMetadataOption(footer) + ")");
         } catch (SQLException e) {
             projected.delete();
             throw e;
         }
-        if (!parquet.delete() || !projected.renameTo(parquet)) {
-            throw new SQLException("Could not replace " + parquet + " with the converted library at " +
-                    projected);
+        try {
+            Helpers.replaceFile(projected, parquet);
+        } catch (IOException e) {
+            throw new IOException("Could not replace " + parquet + " with the converted library at " +
+                    projected, e);
         }
         printInfo("Library schema conversion took " + (System.nanoTime() - startTime) / 1000000 +
                 " milliseconds; " + projected.getName() + " (" + Helpers.fileSize(parquet) +
@@ -538,50 +602,66 @@ public class FragCastPredictor {
             {"LibraryIntensity", "FLOAT"}, {"NormalizedRetentionTime", "FLOAT"},
             {"PrecursorIonMobility", "FLOAT"}, {"FragmentType", "VARCHAR"},
             {"FragmentCharge", "SMALLINT"}, {"FragmentSeriesNumber", "SMALLINT"},
-            {"FragmentLossType", "VARCHAR"}, {"AverageExperimentalRetentionTime", "VARCHAR"},
+            {"FragmentLossType", "VARCHAR"}, {"AverageExperimentalRetentionTime", "FLOAT"},
             {"AllMappedProteins", "VARCHAR"}, {"Proteotypic", "SMALLINT"}};
 
     /** The alias the library is read under, so a column of it cannot be taken for a select alias. */
     private static final String SOURCE = "lib";
 
     /**
-     * The schema as a select list. A cast to the type a column already has costs nothing. Each
-     * column is named through {@link #SOURCE}: unqualified, a column the file lacks would bind to
-     * the alias of the same name being defined, and DuckDB would complain of a self-reference
-     * where the truth is that the column is not there.
+     * The schema as a select list, for a library whose columns are {@code columns}. A cast to the
+     * type a column already has costs nothing. A float column that arrives as text has its empty
+     * cells read as null - DuckDB refuses to cast {@code ''} to a float, and an older FragCast wrote
+     * {@code AverageExperimentalRetentionTime} as nothing but {@code ''}; any other text still has to
+     * be a number. Each column is named through {@link #SOURCE}: unqualified, a column the file lacks
+     * would bind to the alias of the same name being defined, and DuckDB would complain of a
+     * self-reference where the truth is that the column is not there.
      */
-    private static String librarySelect() {
+    private static String librarySelect(Map<String, String> columns) {
         final StringBuilder select = new StringBuilder();
         for (String[] column : LIBRARY_SCHEMA) {
             if (select.length() > 0) {
                 select.append(", ");
             }
-            select.append("CAST(").append(SOURCE).append('.').append(column[0]).append(" AS ")
-                    .append(column[1]).append(") AS ").append(column[0]);
+            final String source = SOURCE + '.' + column[0];
+            final boolean emptyTextIsNull = column[1].equals("FLOAT") && "VARCHAR".equals(columns.get(column[0]));
+            select.append("CAST(").append(emptyTextIsNull ? "NULLIF(" + source + ", '')" : source)
+                    .append(" AS ").append(column[1]).append(") AS ").append(column[0]);
         }
         return select.toString();
     }
 
     /**
-     * Whether the library's columns are already the schema's: the same names, in the same order, in
-     * the same types. Anything else - a column more, a double where a float belongs - is converted.
-     * Describing a Parquet file reads its footer and none of its rows, so asking costs milliseconds
-     * whatever the library's size.
+     * The library's columns and their DuckDB types, in file order. Describing a Parquet file reads
+     * its footer and none of its rows, so asking costs milliseconds whatever the library's size.
      */
-    private static boolean inLibrarySchema(Statement stmt, File parquet) throws SQLException {
+    private static Map<String, String> columnTypes(Statement stmt, File parquet) throws SQLException {
+        final Map<String, String> columns = new LinkedHashMap<>();
         try (ResultSet rs = stmt.executeQuery("DESCRIBE SELECT * FROM read_parquet('" +
                 sql(parquet.getAbsolutePath()) + "')")) {
-            int i = 0;
             while (rs.next()) {
-                if (i >= LIBRARY_SCHEMA.length
-                        || !LIBRARY_SCHEMA[i][0].equals(rs.getString("column_name"))
-                        || !LIBRARY_SCHEMA[i][1].equals(rs.getString("column_type"))) {
-                    return false;
-                }
-                i++;
+                columns.put(rs.getString("column_name"), rs.getString("column_type"));
             }
-            return i == LIBRARY_SCHEMA.length;
         }
+        return columns;
+    }
+
+    /**
+     * Whether the library's columns are already the schema's: the same names, in the same order, in
+     * the same types. Anything else - a column more, a double where a float belongs - is converted.
+     */
+    private static boolean inLibrarySchema(Map<String, String> columns) {
+        if (columns.size() != LIBRARY_SCHEMA.length) {
+            return false;
+        }
+        int i = 0;
+        for (Map.Entry<String, String> column : columns.entrySet()) {
+            if (!LIBRARY_SCHEMA[i][0].equals(column.getKey()) || !LIBRARY_SCHEMA[i][1].equals(column.getValue())) {
+                return false;
+            }
+            i++;
+        }
+        return true;
     }
 
     private static String stripZip(String name) {

@@ -16,15 +16,19 @@ import java.lang.reflect.Type;
 import java.net.HttpURLConnection;
 import java.net.URL;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.AtomicMoveNotSupportedException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.nio.file.StandardCopyOption;
 import java.nio.file.StandardOpenOption;
 import java.sql.*;
 import java.util.Arrays;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 import static utils.Print.printInfo;
 
@@ -34,6 +38,14 @@ public class Helpers {
 
     /** The column naming a peptide's whole protein group; only FragCast returns one. */
     private static final String ALL_MAPPED_PROTEINS = "AllMappedProteins";
+
+    /**
+     * The experimental retention time FragSpecLib's library carries and a predicted one has none of;
+     * only FragCast returns the column. It used to arrive as the text {@code ''} and now arrives as a
+     * float column of nulls - and DuckDB writes the two differently to a library.tsv: an empty text
+     * as {@code ""}, a null as nothing at all. The TSV keeps the {@code ""} it has always had.
+     */
+    private static final String AVERAGE_EXPERIMENTAL_RT = "AverageExperimentalRetentionTime";
 
     /**
      * That group reduced to the form the gene map is keyed in: {@code sp|P1|A_HUMAN;sp|P2|B_HUMAN}
@@ -128,6 +140,92 @@ public class Helpers {
             e.printStackTrace();
             throw new RuntimeException(e);
         }
+    }
+
+    /**
+     * Writes the rows of {@code sources}, in order, as the one Parquet file {@code target}, with
+     * {@code footer} as its key-value metadata - the server path's merge of the chunks it downloaded.
+     */
+    static void mergeParquet(List<String> sources, File target, Map<String, String> footer)
+            throws SQLException {
+        final String fileList = sources.stream()
+                .map(p -> "'" + sqlPath(p) + "'")
+                .collect(Collectors.joining(", "));
+        try (Connection conn = DriverManager.getConnection("jdbc:duckdb:");
+             Statement stmt = conn.createStatement()) {
+            stmt.execute("COPY (SELECT * FROM read_parquet([" + fileList + "])) TO '" +
+                    sqlPath(target.getAbsolutePath()) + "' (FORMAT PARQUET" +
+                    EnzymeOptions.kvMetadataOption(footer) + ")");
+        }
+    }
+
+    /**
+     * Gives the Parquet file {@code parquet} {@code footer} as its key-value metadata - what the
+     * server path does to a library the server wrote, which carries no enzyme of its own. A Parquet
+     * footer cannot be edited where it is, so the library is copied whole, with the footer, to a file
+     * staged beside it, and that file is then moved over it with {@link #replaceFile}. The library is
+     * never deleted to make room: a copy that fails leaves it as it was and removes what was staged,
+     * and a move that fails leaves it as it was with the staged copy beside it, which the error names.
+     * Whatever key-value metadata the library had is replaced. Nothing is done when the footer is
+     * empty: a library that records nothing is left exactly as it was downloaded.
+     *
+     * @throws SQLException when the copy fails
+     * @throws IOException  when the copy cannot be moved over the library
+     */
+    static void writeFooter(File parquet, Map<String, String> footer) throws SQLException, IOException {
+        if (footer.isEmpty()) {
+            return;
+        }
+        final File staged = new File(parquet.getAbsolutePath() + ".footer.parquet");
+        //a whole pass over the library, so said out loud and by file name
+        Print.printInfo("Recording the library's enzyme and FASTA in its Parquet footer: rewriting " +
+                parquet.getAbsolutePath() + " (" + fileSize(parquet) + ")");
+        final long startTime = System.nanoTime();
+        try (Connection conn = DriverManager.getConnection("jdbc:duckdb:");
+             Statement stmt = conn.createStatement()) {
+            stmt.execute("COPY (SELECT * FROM read_parquet('" + sqlPath(parquet.getAbsolutePath()) +
+                    "')) TO '" + sqlPath(staged.getAbsolutePath()) + "' (FORMAT PARQUET" +
+                    EnzymeOptions.kvMetadataOption(footer) + ")");
+        } catch (SQLException e) {
+            staged.delete();
+            throw e;
+        }
+        try {
+            replaceFile(staged, parquet);
+        } catch (IOException e) {
+            throw new IOException("Could not replace " + parquet + " with " + staged +
+                    ", the same library with its footer", e);
+        }
+        Print.printInfo("Rewriting " + parquet.getAbsolutePath() + " took " +
+                (System.nanoTime() - startTime) / 1000000 + " milliseconds");
+    }
+
+    /**
+     * Moves {@code staged} over {@code target}, replacing it: a library rewritten beside itself put
+     * in its own place.
+     *
+     * <p>The move is atomic, so {@code target} is never deleted before its replacement is in place:
+     * at every moment it is one whole file, the original until the move and the replacement after
+     * it, and a move that fails leaves the original where it was and {@code staged} beside it.
+     *
+     * <p>Only when the file system refuses an atomic move does this fall back to an ordinary replacing
+     * move, and that one is weaker: the JDK carries it out by deleting {@code target} first, so a
+     * failure part-way can leave {@code staged} as the only copy. The JDK refuses an atomic move only
+     * between file stores, and a file staged in its target's own directory is on the same one, so
+     * the fallback is there for a file system that departs from that, not for the files written here.
+     */
+    static void replaceFile(File staged, File target) throws IOException {
+        try {
+            Files.move(staged.toPath(), target.toPath(),
+                    StandardCopyOption.REPLACE_EXISTING, StandardCopyOption.ATOMIC_MOVE);
+        } catch (AtomicMoveNotSupportedException e) {
+            Files.move(staged.toPath(), target.toPath(), StandardCopyOption.REPLACE_EXISTING);
+        }
+    }
+
+    /** A path as a DuckDB string literal's content: forward slashes, single quotes doubled. */
+    private static String sqlPath(String path) {
+        return path.replace("\\", "/").replace("'", "''");
     }
 
     /** What a chunk joining a library is staged under, beside it: appended, then removed. */
@@ -274,7 +372,11 @@ public class Helpers {
             StringBuilder select = new StringBuilder();
             for (int i = 1; i <= colCount; i++) {
                 String col = meta.getColumnName(i);
-                select.append("p.").append(col);
+                if (AVERAGE_EXPERIMENTAL_RT.equals(col)) {
+                    select.append("COALESCE(CAST(p.").append(col).append(" AS VARCHAR), '') AS ").append(col);
+                } else {
+                    select.append("p.").append(col);
+                }
                 if (PROTEIN_ID.equals(col)) {
                     select.append(", COALESCE(m.value, p.").append(PROTEIN_ID).append(") AS GeneName");
                 } else if (ALL_MAPPED_PROTEINS.equals(col)) {

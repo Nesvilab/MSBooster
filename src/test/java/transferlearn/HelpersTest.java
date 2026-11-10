@@ -186,9 +186,18 @@ public class HelpersTest {
     }
 
     private static File library(Path dir, String name, String proteinId, String group) throws Exception {
+        return library(dir, name, proteinId, group, "CAST(NULL AS FLOAT)");
+    }
+
+    /**
+     * As above, with the experimental retention time a FragCast library holds given outright: the
+     * float column of nulls FragCast writes now, or the text {@code ''} it wrote before.
+     */
+    private static File library(Path dir, String name, String proteinId, String group,
+                                String averageExperimentalRt) throws Exception {
         File parquet = dir.resolve(name).toFile();
         String extra = group == null ? ""
-                : "'' AS AverageExperimentalRetentionTime, '" + group + "' AS AllMappedProteins, ";
+                : averageExperimentalRt + " AS AverageExperimentalRetentionTime, '" + group + "' AS AllMappedProteins, ";
         try (Connection conn = DriverManager.getConnection("jdbc:duckdb:");
              Statement stmt = conn.createStatement()) {
             stmt.execute("COPY (SELECT " +
@@ -243,7 +252,7 @@ public class HelpersTest {
         assertEquals("0", row[18]);
     }
 
-    // The same through a library FragCast itself wrote in the schema (a real build-library output,
+    // The same through a library FragCast itself wrote in the 17 columns (a real build-library output,
     // fragcast_lib_narrow.parquet), which reaches this converter without having been rewritten
     // first. It carries no gene columns of its own, so each gene column must appear exactly once -
     // a file that still had FragCast's two would come out with GeneName twice - and every row has to
@@ -279,6 +288,37 @@ public class HelpersTest {
             }
         }
         assertTrue(sawGroup, "the fixture's shared peptides went missing");
+    }
+
+    // FragCast now writes the experimental retention time as a float column of nulls where it wrote
+    // the text '' before, and DuckDB puts the two in a TSV differently: '' as "", a null as nothing.
+    // The library.tsv must not notice: byte for byte the file it always was, through either writer.
+    @Test
+    public void aNullRetentionTimeWritesTheTsvTheEmptyTextDid(@TempDir Path dir) throws Exception {
+        String group = "sp|P1|A_HUMAN;sp|P2|B_HUMAN";
+        HashMap<String, String> map = fasta("P1", "GENEA", "P2", "GENEB");
+        File asText = library(dir, "text.parquet", "P1", group, "''");
+        File asNull = library(dir, "null.parquet", "P1", group, "CAST(NULL AS FLOAT)");
+
+        for (boolean appended : new boolean[] {false, true}) {
+            byte[][] tsvs = new byte[2][];
+            File[] libraries = {asText, asNull};
+            for (int i = 0; i < 2; i++) {
+                Path tsv = dir.resolve(libraries[i].getName() + appended + ".tsv");
+                try (Connection conn = DriverManager.getConnection("jdbc:duckdb:")) {
+                    if (appended) {
+                        Helpers.convertParquetToLibraryTsv(libraries[i].getAbsolutePath(), tsv.toString(), map, conn);
+                    } else {
+                        Helpers.writeLibraryTsv(libraries[i].getAbsolutePath(), tsv.toString(), map, conn);
+                    }
+                }
+                tsvs[i] = Files.readAllBytes(tsv);
+            }
+            assertTrue(Arrays.equals(tsvs[0], tsvs[1]), (appended ? "appended" : "written") + ":\n" +
+                    new String(tsvs[0], StandardCharsets.UTF_8) + "\nbecame\n" + new String(tsvs[1], StandardCharsets.UTF_8));
+            String row = new String(tsvs[1], StandardCharsets.UTF_8).split("\n")[1];
+            assertEquals("\"\"", row.split("\t", -1)[15], "the cell the TSV has always held");
+        }
     }
 
     // A protein group the map has no entry for still answers with accessions rather than mnemonics,

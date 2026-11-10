@@ -3,7 +3,6 @@ package transferlearn;
 import allconstants.Constants;
 import peptideptmformatting.PTMhandler;
 import readers.datareaders.FastaReader;
-import speclib.io.ParquetToSpecLib;
 import utils.Print;
 
 import java.io.*;
@@ -151,10 +150,9 @@ public class Predictor {
                     outputFormat = args[i + 1];
                     if (outputFormat.equals("parquet") ||
                             outputFormat.equals("mgf") ||
-                            outputFormat.equals("librarytsv") ||
-                            outputFormat.equals("speclib")) {} else {
+                            outputFormat.equals("librarytsv")) {} else {
                         Print.printError("Unknown output format: " + outputFormat + ". " +
-                                "Must be one of mgf, parquet, speclib, or librarytsv");
+                                "Must be one of mgf, parquet, or librarytsv");
                         errorMessage();
                     }
                     break;
@@ -169,14 +167,9 @@ public class Predictor {
         }
 
         if (params.isEmpty() || url.isEmpty() || apiKey.isEmpty() ||
-                (fasta.isEmpty() && (outputFormat.equals("librarytsv") || outputFormat.equals("speclib")))) {
+                (fasta.isEmpty() && outputFormat.equals("librarytsv"))) {
             Print.printError("At least one of params, url, model, fasta, or apiKey is missing.");
             errorMessage();
-        }
-
-        if (!allowParquetMerging && outputFormat.equals("speclib") && !peptideList.isEmpty()) {
-            Print.printError("Library prediction in speclib format is currently not supported for full fasta digestion. Exiting");
-            System.exit(1);
         }
 
         //use precursor charge states from MSFragger results
@@ -243,7 +236,7 @@ public class Predictor {
         //read fasta if needed
         FastaReader fastaReader = new FastaReader(fasta);
         HashMap<String, String> protMap = new HashMap<>();
-        if (outputFormat.equals("librarytsv") ||  outputFormat.equals("speclib")) {
+        if (outputFormat.equals("librarytsv")) {
             Print.printInfo("Reading FASTA file");
             fastaReader.mapProtToGene();
 
@@ -258,9 +251,6 @@ public class Predictor {
         switch (outputFormat) {
             case "librarytsv":
                 downloadExtension = ".tsv";
-                break;
-            case "speclib":
-                downloadExtension = ".speclib";
                 break;
             case "parquet":
                 downloadExtension = ".parquet";
@@ -332,7 +322,7 @@ public class Predictor {
             System.exit(1);
         }
 
-        if (outputFormat.equals("speclib") || outputFormat.equals("parquet")) {
+        if (outputFormat.equals("parquet")) {
             if (subFilePaths.length > 1) {
                 if (allowParquetMerging) {
                     Print.printInfo("Merging parquet files"); //TODO: too much RAM and too slow for multiple precursor charges
@@ -363,18 +353,8 @@ public class Predictor {
                 Print.printInfo(subFilePaths[0] + " moved to " + oneParquet);
             }
         }
-        if (outputFormat.equals("speclib")) {
-            Print.printInfo("Converting parquet to speclib format");
-            ParquetToSpecLib ptsl = new ParquetToSpecLib(totalPredFileInitiatorParquet.getAbsolutePath(), protMap, -3,
-                    true, true, true);
-            String speclibPath = totalPredFileInitiator.getAbsolutePath();
-            ptsl.convertAndWrite(speclibPath);
-
-            Print.printInfo("Total speclib file at " + speclibPath);
-        } else {
-            if (outputFormat.equals("mgf") || outputFormat.equals("librarytsv")) {
-                Print.printInfo("Total file at " + totalFilePath);
-            }
+        if (outputFormat.equals("mgf") || outputFormat.equals("librarytsv")) {
+            Print.printInfo("Total file at " + totalFilePath);
         }
 
         System.exit(0);

@@ -16,7 +16,6 @@
         <ver.batmass.io>1.38.2</ver.batmass.io>
         <lib.scope>compile</lib.scope>
         <kotlin.version>2.1.20</kotlin.version>
-        <ver.speclib.io>1.0.0</ver.speclib.io>
     </properties>
 
     <profiles>
@@ -110,10 +109,12 @@
             <artifactId>snakeyaml</artifactId>
             <version>2.4</version>
         </dependency>
+        <!-- The jdbc:duckdb: driver that transferlearn uses to read and merge Parquet files and to
+             write library.tsv files. -->
         <dependency>
-            <groupId>org.nesvilab</groupId>
-            <artifactId>speclibio</artifactId>
-            <version>${ver.speclib.io}</version>
+            <groupId>org.duckdb</groupId>
+            <artifactId>duckdb_jdbc</artifactId>
+            <version>1.4.2.0</version>
         </dependency>
         <!-- Reads FragCast's Parquet spectral libraries (build-library format=parquet).
              parquet-floor is a thin, Hadoop-free wrapper over parquet-java (LocalInputFile). -->
@@ -174,11 +175,11 @@
                                     <!--Only bundle the DuckDB JNI natives we support: keep
                                         libduckdb_java.so_linux_amd64 and libduckdb_java.so_windows_amd64;
                                         drop the macOS (osx_*) and ARM64 (*_arm64) builds. These natives
-                                        are shaded into the vendored speclibio jar at its root, so they
-                                        must be excluded here rather than via a normal Maven exclusion.
+                                        sit at the root of the duckdb_jdbc jar, so they must be excluded
+                                        here rather than via a normal Maven exclusion.
                                         DuckDB selects its native at runtime by os.name/os.arch with no
                                         cross-platform fallback, so this only drops macOS/Linux-ARM64.-->
-                                    <artifact>org.nesvilab:speclibio</artifact>
+                                    <artifact>org.duckdb:duckdb_jdbc</artifact>
                                     <excludes>
                                         <exclude>libduckdb_java.so_osx_*</exclude>
                                         <exclude>libduckdb_java.so_*_arm64</exclude>
@@ -210,21 +211,6 @@
                             <goal>install-file</goal>
                         </goals>
                         <id>install-external1</id>
-                        <phase>clean</phase>
-                    </execution>
-                    <execution>
-                        <configuration>
-                            <artifactId>speclibio</artifactId>
-                            <file>${basedir}/lib/speclibio-${ver.speclib.io}.jar</file>
-                            <generatePom>true</generatePom>
-                            <groupId>org.nesvilab</groupId>
-                            <packaging>jar</packaging>
-                            <version>${ver.speclib.io}</version>
-                        </configuration>
-                        <goals>
-                            <goal>install-file</goal>
-                        </goals>
-                        <id>install-external2</id>
                         <phase>clean</phase>
                     </execution>
                 </executions>

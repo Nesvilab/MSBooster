@@ -220,11 +220,11 @@ public class PTMhandler {
     public static Map<Integer, Double> unimodOboToModMass;
 
     public static void setUnimodObo() {
-        try { //only do this when library tsv or fragpipe speclib predicted library is specified
+        try { //only do this when a library tsv or parquet predicted library is specified
             unimodOboToModMass = new HashMap<>();
             File f = new File(Constants.unimodObo);
             if (! f.exists()) {
-                printError("When uploading prediction in spectral library in tsv or speclib format, " +
+                printError("When uploading prediction in spectral library in tsv or parquet format, " +
                         "a unimod.obo file must be provided. " +
                         "In the command line, provide a path at --unimodObo. Exiting.");
                 System.exit(1);

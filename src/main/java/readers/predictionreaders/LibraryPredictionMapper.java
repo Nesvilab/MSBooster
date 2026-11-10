@@ -103,10 +103,9 @@ public interface LibraryPredictionMapper {
                 }
                 return new ParquetSpeclibReader(file, executorService, parquetPrecursors);
             }
-            case "speclib":
-                return new FragPipeSpeclibReader(file);
             default:
-                printError(extension + " is not a valid prediction file format");
+                printError(file + ": ." + extension + " is not a valid prediction file format. " +
+                        "Use one of .bin, .mgf, .msp, .dlib, .tsv, .parquet or .pq.");
                 return null;
         }
     }

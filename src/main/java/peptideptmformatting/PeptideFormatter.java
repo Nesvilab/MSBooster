@@ -101,12 +101,6 @@ public class PeptideFormatter {
         base = PTMhandler.formatPeptideSpecificToBase(peptide, unimodOboToModMass, "[]");
     }
 
-    private void fragpipeSpeclibToBase(String peptide) {
-        base = PTMhandler.formatPeptideSpecificToBase(peptide, unimodOboToModMass, "()");
-        base = base.replace("(", "[");
-        base = base.replace(")", "]");
-    }
-
     private void predfullTObase(String peptide) {
         //remove (O) and add [57] to C
         base = peptide.replace("(O)", "[" + PTMhandler.oxidationMass + "]")
@@ -495,9 +489,6 @@ public class PeptideFormatter {
                 break;
             case "unimod.obo":
                 unimodoboTObase(peptide);
-                break;
-            case "fragpipeSpeclib":
-                fragpipeSpeclibToBase(peptide);
                 break;
         }
 

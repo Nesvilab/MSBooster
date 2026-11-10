@@ -41,10 +41,10 @@ import java.util.stream.Stream;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
-// The gene map answers three different lookups, and only one of them asks about a whole protein
-// group: the librarytsv join matches ProteinId, which FragCast writes as the FIRST protein of the
-// group, and ParquetToSpecLib splits ProteinId and looks its parts up one at a time. A map holding
-// group keys alone misses both, and a gene name degrades to the accession it was meant to replace.
+// The gene map answers two different lookups, and only one of them asks about a whole protein
+// group: the librarytsv join matches ProteinId, which the server writes as the whole group and
+// FragCast as the FIRST protein of the group. A map holding group keys alone misses FragCast's, and
+// a gene name degrades to the accession it was meant to replace.
 public class HelpersTest {
     /** A peptide list in the form both predictors' inputs take: a proteins column, one row each. */
     private static File peptideList(Path dir, String... proteins) throws Exception {
@@ -74,7 +74,7 @@ public class HelpersTest {
                 fasta("P1", "GENEA", "P2", "GENEB"));
 
         assertEquals("GENEA", map.get("P1"), "FragCast names ProteinId after the first protein only");
-        assertEquals("GENEB", map.get("P2"), "the speclib writer looks the group up one protein at a time");
+        assertEquals("GENEB", map.get("P2"), "every protein of the group is a key, not only the first");
         assertEquals("GENEA;GENEB", map.get("P1;P2"), "the server writes the whole group as ProteinId");
     }
 

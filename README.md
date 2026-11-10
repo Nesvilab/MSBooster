@@ -289,12 +289,12 @@ file. Predicting a whole spectral library from it is a separate entry point,
 ```
 java -cp MSBooster.jar transferlearn.FragCastPredictor --paramsList msbooster_params.txt \
      --model FragCast-finetuned.zip --peptide-list-to-predict peptide_list.parquet \
-     --fasta proteome.fasta --output-format speclib --basename fragpipe-predicted-speclib
+     --fasta proteome.fasta --output-format librarytsv --basename fragpipe-predicted-library
 ```
 
 The peptides come from `--peptide-list-to-predict`, or from this run's own pin files when that flag
-is absent. `--output-format` takes `parquet`, `librarytsv` or `speclib`; the latter two need
-`--fasta`, which is where gene names come from - neither backend returns them. `--model` is optional,
+is absent. `--output-format` takes `parquet` or `librarytsv`; `librarytsv` needs `--fasta`, which is
+where gene names come from - neither backend returns them. `--model` is optional,
 and without it the pretrained weights predict. `--min-charge`/`--max-charge` expand only those
 peptide-list rows that do not already name a charge.
 

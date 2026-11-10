@@ -6,7 +6,6 @@ import com.google.gson.Gson;
 import com.google.gson.reflect.TypeToken;
 import mainsteps.MainClass;
 import mainsteps.ParameterUtils;
-import speclib.io.ParquetToSpecLib;
 import utils.Print;
 
 import java.io.*;

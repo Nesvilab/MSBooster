@@ -25,7 +25,6 @@ import modelcallers.FragCastProcess;
 import peptideptmformatting.PTMhandler;
 import peptideptmformatting.PeptideFormatter;
 import readers.datareaders.FastaReader;
-import speclib.io.ParquetToSpecLib;
 import transferlearn.fragcast.FragCastModelBundle;
 import utils.ProgressReporter;
 import utils.ProteinLabels;
@@ -82,14 +81,14 @@ public class FragCastPredictor {
     private static void errorMessage() {
         printError("Usage: java -cp MSBooster.jar transferlearn.FragCastPredictor " +
                 "--paramsList <msbooster parameters> " +
-                "--output-format <parquet|librarytsv|speclib> " +
+                "--output-format <parquet|librarytsv> " +
                 "optional: --model <model.zip> --output-dir <dir> --basename <stem> --fasta <fasta> " +
                 "--peptide-list-to-predict <peptides.parquet> --min-charge <int> --max-charge <int> " +
                 "--decoy-prefix <tag> --keep-decoys <0|1> --custom-mods <spec>");
         printError("Example: java -cp MSBooster.jar transferlearn.FragCastPredictor " +
                 "--paramsList msbooster_params.txt --model FragCast-finetuned.zip " +
                 "--peptide-list-to-predict peptide_list.parquet --fasta proteome.fasta " +
-                "--output-format speclib --basename fragpipe-predicted-speclib");
+                "--output-format librarytsv --basename fragpipe-predicted-library");
         printError("For server-based prediction, use transferlearn.Predictor instead.");
         System.exit(1);
     }
@@ -190,14 +189,13 @@ public class FragCastPredictor {
         }
         if (outputFormat.equals("mgf")) {
             printError("FragCast writes tsv and parquet only, so it cannot produce an MGF library. " +
-                    "Choose parquet, librarytsv or speclib, or predict with transferlearn.Predictor " +
+                    "Choose parquet or librarytsv, or predict with transferlearn.Predictor " +
                     "against a prediction server.");
             System.exit(1);
         }
-        final boolean annotated = outputFormat.equals("speclib") || outputFormat.equals("librarytsv");
+        final boolean annotated = outputFormat.equals("librarytsv");
         if (!annotated && !outputFormat.equals("parquet")) {
-            printError("Unknown output format " + outputFormat + ". Must be one of parquet, " +
-                    "librarytsv, or speclib.");
+            printError("Unknown output format " + outputFormat + ". Must be parquet or librarytsv.");
             System.exit(1);
         }
         if (annotated && fasta.isEmpty()) {
@@ -237,7 +235,7 @@ public class FragCastPredictor {
         //Clear last run's outputs first. FragCast's COPY overwrites, but a library left from an
         //earlier run under a format this one is not writing would sit there looking current, and
         //the server path clears the same files for the same reason.
-        for (String extension : new String[]{".parquet", ".tsv", ".speclib"}) {
+        for (String extension : new String[]{".parquet", ".tsv"}) {
             final File stale = new File(outputDir, basename + extension);
             if (stale.isFile() && !stale.delete()) {
                 printError("Could not remove the previous " + stale + "; delete it and run again.");
@@ -285,19 +283,11 @@ public class FragCastPredictor {
                 peptideList.isEmpty() ? inputFile.getAbsolutePath() : peptideList,
                 fastaReader.protToGene);
 
-        if (outputFormat.equals("librarytsv")) {
-            final String tsv = new File(outputDir, basename + ".tsv").getAbsolutePath();
-            try (Connection conn = DriverManager.getConnection("jdbc:duckdb:")) {
-                writeLibraryTsv(merged.getAbsolutePath(), tsv, protMap, conn);
-            }
-            printInfo("Total file at " + tsv);
-        } else {
-            printInfo("Converting parquet to speclib format");
-            final String speclib = new File(outputDir, basename + ".speclib").getAbsolutePath();
-            new ParquetToSpecLib(merged.getAbsolutePath(), protMap, -3, true, true, true)
-                    .convertAndWrite(speclib);
-            printInfo("Total speclib file at " + speclib);
+        final String tsv = new File(outputDir, basename + ".tsv").getAbsolutePath();
+        try (Connection conn = DriverManager.getConnection("jdbc:duckdb:")) {
+            writeLibraryTsv(merged.getAbsolutePath(), tsv, protMap, conn);
         }
+        printInfo("Total file at " + tsv);
         System.exit(0);
     }
 

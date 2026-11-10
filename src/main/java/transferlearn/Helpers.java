@@ -526,12 +526,11 @@ public class Helpers {
     /**
      * Key a shared peptide's group by each of its proteins as well as by the group as a whole.
      *
-     * <p>The group entry alone answers only the question the AlphaPeptDeep server asks. Both other
-     * lookups are per protein: FragCast names a library's {@code ProteinId} after the FIRST protein
-     * of the group, so the librarytsv join sees {@code P1} where the map held {@code P1;P2}, and
-     * {@code ParquetToSpecLib} splits {@code ProteinId} and looks its parts up one at a time
-     * whichever backend wrote it. Both miss, and a gene name silently degrades to the accession it
-     * was supposed to replace.
+     * <p>The group entry alone answers only the question the AlphaPeptDeep server asks. FragCast
+     * names a library's {@code ProteinId} after the FIRST protein of the group, so the librarytsv
+     * join sees {@code P1} where the map held {@code P1;P2}, misses, and a gene name silently
+     * degrades to the accession it was supposed to replace. Every protein of the group is keyed, not
+     * only the first, so the join does not depend on which one a predictor puts first.
      *
      * <p>The two strings are built in lockstep by {@link #transformProteins}, so their parts pair up
      * by position; a length that disagrees means something was not built that way, and is left alone

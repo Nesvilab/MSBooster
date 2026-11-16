@@ -144,7 +144,8 @@ public class Helpers {
 
     /**
      * Writes the rows of {@code sources}, in order, as the one Parquet file {@code target}, with
-     * {@code footer} as its key-value metadata - the server path's merge of the chunks it downloaded.
+     * {@code footer} as its key-value metadata in {@code footer}'s order - the server path's merge of
+     * the chunks it downloaded.
      */
     static void mergeParquet(List<String> sources, File target, Map<String, String> footer)
             throws SQLException {
@@ -155,19 +156,20 @@ public class Helpers {
              Statement stmt = conn.createStatement()) {
             stmt.execute("COPY (SELECT * FROM read_parquet([" + fileList + "])) TO '" +
                     sqlPath(target.getAbsolutePath()) + "' (FORMAT PARQUET" +
-                    EnzymeOptions.kvMetadataOption(footer) + ")");
+                    MetaFile.kvMetadataOption(footer) + ")");
         }
     }
 
     /**
-     * Gives the Parquet file {@code parquet} {@code footer} as its key-value metadata - what the
-     * server path does to a library the server wrote, which carries no enzyme of its own. A Parquet
-     * footer cannot be edited where it is, so the library is copied whole, with the footer, to a file
-     * staged beside it, and that file is then moved over it with {@link #replaceFile}. The library is
-     * never deleted to make room: a copy that fails leaves it as it was and removes what was staged,
-     * and a move that fails leaves it as it was with the staged copy beside it, which the error names.
-     * Whatever key-value metadata the library had is replaced. Nothing is done when the footer is
-     * empty: a library that records nothing is left exactly as it was downloaded.
+     * Gives the Parquet file {@code parquet} {@code footer} as its key-value metadata, in
+     * {@code footer}'s order - what the server path does to a library the server wrote, which carries
+     * none of the meta file's pairs of its own. A Parquet footer cannot be edited where it is, so the
+     * library is copied whole, with the footer, to a file staged beside it, and that file is then
+     * moved over it with {@link #replaceFile}. The library is never deleted to make room: a copy that
+     * fails leaves it as it was and removes what was staged, and a move that fails leaves it as it
+     * was with the staged copy beside it, which the error names. Whatever key-value metadata the
+     * library had is replaced. Nothing is done when the footer is empty: a library that records
+     * nothing is left exactly as it was downloaded.
      *
      * @throws SQLException when the copy fails
      * @throws IOException  when the copy cannot be moved over the library
@@ -178,14 +180,14 @@ public class Helpers {
         }
         final File staged = new File(parquet.getAbsolutePath() + ".footer.parquet");
         //a whole pass over the library, so said out loud and by file name
-        Print.printInfo("Recording the library's enzyme and FASTA in its Parquet footer: rewriting " +
-                parquet.getAbsolutePath() + " (" + fileSize(parquet) + ")");
+        Print.printInfo("Recording the " + MetaFile.FLAG + " pairs in the library's Parquet footer: " +
+                "rewriting " + parquet.getAbsolutePath() + " (" + fileSize(parquet) + ")");
         final long startTime = System.nanoTime();
         try (Connection conn = DriverManager.getConnection("jdbc:duckdb:");
              Statement stmt = conn.createStatement()) {
             stmt.execute("COPY (SELECT * FROM read_parquet('" + sqlPath(parquet.getAbsolutePath()) +
                     "')) TO '" + sqlPath(staged.getAbsolutePath()) + "' (FORMAT PARQUET" +
-                    EnzymeOptions.kvMetadataOption(footer) + ")");
+                    MetaFile.kvMetadataOption(footer) + ")");
         } catch (SQLException e) {
             staged.delete();
             throw e;

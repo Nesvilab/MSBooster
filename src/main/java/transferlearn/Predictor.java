@@ -34,9 +34,9 @@ public class Predictor {
                 "optional: --peptide-list-to-dict <path/to/csv> --basename <output base name>  --output-dir <output directory> " +
                 "--ms2 <predict ms2> --rt <predict rt> --im <predict ccs> " +
                 "--min-charge <int> max-charge <int> --output-format <'parquet' or 'mgf' or 'librarytsv'> " +
-                "--fasta <fasta> " +
-                EnzymeOptions.USAGE + "; a parquet library records them in its footer");
-        Print.printError(EnzymeOptions.FASTA_USAGE);
+                "--fasta <fasta> " + MetaFile.USAGE);
+        Print.printError("--fasta <fasta>: required for librarytsv output, whose gene names come from it.");
+        Print.printError(MetaFile.FORMAT_USAGE);
         Print.printError("Example: java -cp MSBooster.jar src.main.java.transferlearn.Predictor " +
                 "--paramsList msbooster_params.txt --url http://localhost:8001 --model model.zip " +
                 "--ms2 true --rt true --im false --output_format mgf " +
@@ -90,11 +90,7 @@ public class Predictor {
         String outputDir = "";
         String keepDecoys = "1";
         String decoyTag = "rev_"; //as FragCastPredictor and Constants.decoyPrefix default it
-        final EnzymeOptions enzyme = new EnzymeOptions();
-        //The enzyme options are taken out first, pair by pair, each with its value. This loop visits
-        //values as well as flags, so taking them here would read a value that looks like a flag (an
-        //--enzyme-name of "--cut") as one; what is left it parses as it always has.
-        args = EnzymeOptions.extract(args, enzyme);
+        final MetaFile meta = new MetaFile();
 
         for (int i = 0; i < args.length; i++) {
             switch (args[i]) {
@@ -144,6 +140,14 @@ public class Predictor {
                 case "--fasta":
                     fasta = args[i + 1];
                     break;
+                case MetaFile.FLAG:
+                    try {
+                        meta.accept(args[i + 1]);
+                    } catch (IllegalArgumentException e) {
+                        Print.printError(e.getMessage());
+                        errorMessage();
+                    }
+                    break;
                 case "--keep-decoys":
                     keepDecoys = args[i + 1];
                     break;
@@ -179,17 +183,25 @@ public class Predictor {
             Print.printError("At least one of params, url, model, fasta, or apiKey is missing.");
             errorMessage();
         }
+        //Read now, whatever the output format, so a meta file that cannot be used stops the run
+        //before anything is uploaded. The server is told nothing of it: it predicts the peptides it
+        //is given, and the pairs are recorded in the library's Parquet footer, which is where FragDIA
+        //reads the enzyme. That footer is written here, by DuckDB, so a parquet library also needs
+        //every pair to be one DuckDB can record.
         try {
-            enzyme.validate();
+            meta.read();
+            if (outputFormat.equals("parquet")) {
+                meta.checkWritable();
+            }
         } catch (IllegalArgumentException e) {
             Print.printError(e.getMessage());
-            errorMessage();
+            System.exit(1);
         }
-        //The server is told nothing about the enzyme: it predicts the peptides it is given. The
-        //options are recorded in the library's Parquet footer, which is where FragDIA reads them.
-        final Map<String, String> footer = enzyme.footer(fasta);
+        final Map<String, String> footer = meta.footer();
         if (outputFormat.equals("parquet")) {
-            printInfo(enzyme.describe());
+            printInfo(meta.describe());
+        } else if (meta.isSet()) {
+            printInfo("A " + outputFormat + " library has no footer: " + MetaFile.FLAG + " is ignored");
         }
 
         //use precursor charge states from MSFragger results
@@ -358,10 +370,12 @@ public class Predictor {
      *
      * <p>One chunk becomes {@code total}. Several are merged into it when {@code merge} is set, and
      * otherwise stay where they are as the library's shards. Whichever it is, each file the run leaves
-     * records the enzyme and FASTA in its footer, since FragDIA reads the enzyme from there and
-     * compares it across a directory's shards. The merge writes the footer as it writes the file; a
-     * file the server wrote has to be rewritten to get one, which {@link Helpers#writeFooter} skips
-     * when there is nothing to record.
+     * records the meta file's pairs in its footer, in the file's order, since FragDIA reads the
+     * enzyme from there and FragPipe requires a library's shards to carry the same footer. The merge
+     * writes the footer as it writes the file; a file the server wrote has to be rewritten to get
+     * one, which {@link Helpers#writeFooter} skips when there is nothing to record.
+     *
+     * @param footer the meta file's pairs ({@link MetaFile#footer}); empty for none
      */
     static void finishParquet(String[] subFilePaths, File total, boolean merge, Map<String, String> footer)
             throws IOException, SQLException {

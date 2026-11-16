@@ -123,9 +123,10 @@ public class FragCastModelCaller {
 
     /**
      * The command that predicts a spectral library to keep: {@link #buildCommand}'s, then
-     * {@code libraryArgs} exactly as given - the enzyme options and {@code --fasta} FragCast records
-     * in the library's Parquet footer. Only a library prediction carries them. The rescoring path's
-     * {@link #callModel} predicts a file nothing outside this run reads, so it is never handed them.
+     * {@code libraryArgs} exactly as given - the {@code --meta} file whose key-value pairs FragCast
+     * records in the library's Parquet footer. Only a library prediction carries it. The rescoring
+     * path's {@link #callModel} predicts a file nothing outside this run reads, so it is never handed
+     * one.
      */
     static List<String> buildLibraryCommand(String inputFile, String outputFile, boolean fast,
                                             FragCastWeights weights, List<String> libraryArgs) {

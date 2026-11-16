@@ -289,7 +289,8 @@ file. Predicting a whole spectral library from it is a separate entry point,
 ```
 java -cp MSBooster.jar transferlearn.FragCastPredictor --paramsList msbooster_params.txt \
      --model FragCast-finetuned.zip --peptide-list-to-predict peptide_list.parquet \
-     --fasta proteome.fasta --output-format librarytsv --basename fragpipe-predicted-library
+     --fasta proteome.fasta --output-format librarytsv --basename fragpipe-predicted-library \
+     --meta fragcast.meta
 ```
 
 The peptides come from `--peptide-list-to-predict`, or from this run's own pin files when that flag
@@ -298,31 +299,54 @@ where gene names come from - neither backend returns them. `--model` is optional
 and without it the pretrained weights predict. `--min-charge`/`--max-charge` expand only those
 peptide-list rows that do not already name a charge.
 
-The enzyme the peptides were digested with is recorded in the library itself, because FragDIA reads
-it from the Parquet footer and takes no digestion flags of its own. Both predictors take it as the
-same options every library builder takes, with no defaults:
+What a library records about itself - above all the enzyme its peptides were digested with, which
+FragDIA reads from the Parquet footer because it takes no digestion flags of its own - comes from a
+text file named with `--meta`, which both predictors take, as every library builder does. FragPipe
+writes it as `fragcast.meta` in the transfer-learning output directory:
 
 ```
---enzyme-name stricttrypsin --cut KR --no-cut @ --sense C --num-enzyme-termini 2 --clip-n-term-m 1
+# Library footer, written by FragPipe
+search_enzyme_name_1 = stricttrypsin
+search_enzyme_cut_1 = KR
+search_enzyme_nocut_1 = @
+search_enzyme_sense_1 = C
+num_enzyme_termini = 2
+clip_nTerm_M = 1
+database_name = C:\fasta\human.fasta
 ```
 
-`--cut` names the residues an enzyme cuts at, as uppercase letters, or `@` for an enzyme that cuts
-nothing (nonspecific); give it once per enzyme, at most twice. `--no-cut` (residues that block the
-cut, `@` for none) and `--sense` (`C` to cut after the residue, `N` before it) are given once per
-`--cut`, paired with it by order, and `--enzyme-name` once per `--cut` or not at all.
-`--num-enzyme-termini` (0-3) and `--clip-n-term-m` (0 or 1) are given once. Every value is checked
-and then recorded exactly as given, and anything else - a lower-case residue, a `--sense` with no
-`--cut` - is an error. Without `--cut` none of them may be given, and the library records no enzyme;
-FragDIA then digests with its default (strict trypsin) and says so.
+Every pair is written into the Parquet library's footer as it stands, in the file's order. MSBooster
+knows no key names and checks no values: the keys above are the ones FragPipe writes and FragDIA
+reads, and checking them is FragDIA's business. The file is read by these rules, the same in every
+builder:
 
-The Parquet library's footer then holds `search_enzyme_cut_1`, `search_enzyme_nocut_1`,
-`search_enzyme_sense_1` (and `search_enzyme_name_1` when names were given; the same with `_2` for a
-second enzyme), `num_enzyme_termini` and `clip_nTerm_M`, plus `database_name` - the `--fasta` path as
-given - whenever `--fasta` is. Unlike the enzyme options, `--fasta` is not checked: an empty one
-counts as none, so nothing is recorded, and one given more than once counts its last.
-`transferlearn.FragCastPredictor` hands the options and `--fasta` to FragCast, which writes the footer; `transferlearn.Predictor` writes it itself, since the prediction
-server is told nothing about the enzyme - which costs one more pass over a Parquet library the server
-returned. A library.tsv or MGF has no footer, and is written exactly as before.
+ - UTF-8, and a file that is not is an error. One leading byte order mark is skipped.
+ - Lines end at `\n`. Each is trimmed of spaces, tabs and carriage returns at both ends (exactly
+   those, so `\r\n` lines read like `\n` ones), and a line that is then empty or starts with `#` is
+   skipped. There are no inline comments: a `#` anywhere else is part of the key or the value, as it
+   can be in a FASTA path.
+ - Every other line is `key = value`, split at its first `=`, so a value may contain `=`. Key and
+   value are trimmed the same way. An empty value is recorded as an empty string.
+ - A line with no `=`, an empty key, or a key given twice is an error naming the file and the line;
+   so is a file that cannot be read, and an empty `--meta`. `--meta` may be given only once.
+ - Without `--meta`, or with a file that holds no pairs, the library has no footer.
+
+The file is read before anything is predicted, so a bad one stops the run at once.
+`transferlearn.FragCastPredictor` hands the path to FragCast, which writes the footer;
+`transferlearn.Predictor` writes it itself, since the prediction server is told nothing about it -
+which costs one more pass over a Parquet library the server returned, and over each of its shards
+when they are not merged. A library.tsv or MGF has no footer, and `--meta` is then ignored with a log
+line; `transferlearn.FragCastPredictor`'s library.tsv is written beside the Parquet library FragCast
+predicted, which records it. `--fasta` is only where the gene names of a library.tsv come from: it is
+not passed to FragCast, and what the footer says about the FASTA comes from the meta file.
+
+MSBooster writes a footer with DuckDB - always for `transferlearn.Predictor`, and for
+`transferlearn.FragCastPredictor` when a library from an older FragCast has to be converted - and
+DuckDB cannot record two things the format allows: two keys that differ only in the case of ASCII
+letters (`database_name` and `Database_Name`), which it takes for one key, and a key holding U+0000.
+So both predictors refuse such a file before predicting anything, naming the file and the line,
+whenever they may write the footer (`transferlearn.Predictor` for Parquet output only). FragCast and
+FragSpecLib record both, and FragPipe writes neither.
 
 Two things differ from the server predictor, and both come from FragCast rather than from MSBooster.
 There is no `mgf` output: FragCast writes TSV and Parquet only, and the MGF a prediction server

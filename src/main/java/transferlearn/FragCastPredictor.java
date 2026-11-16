@@ -76,10 +76,11 @@ import static utils.Print.printInfo;
  * of a library.tsv are the exception: they come from the FASTA, because a predictor can only read
  * an entry name off the protein label, and FragCast's Parquet library does not carry them at all.
  *
- * <p>The enzyme travels inside the library, since FragDIA reads it from the Parquet footer and takes
- * no digestion flags of its own. The enzyme options ({@link EnzymeOptions}) and {@code --fasta} are
- * forwarded to FragCast's {@code build-library}, which writes them into the footer, and the one
- * rewrite this side may make of the library ({@link #toLibrarySchema}) writes the same keys.
+ * <p>What the library records about itself - the enzyme FragDIA digests with among it - travels in
+ * its Parquet footer, as the key-value pairs of the {@code --meta} file ({@link MetaFile}). The path
+ * is forwarded to FragCast's {@code build-library}, which writes the pairs into the footer, and the
+ * one rewrite this side may make of the library ({@link #toLibrarySchema}) writes the same pairs.
+ * {@code --fasta} is not forwarded: it is read here, for gene names, and nowhere else.
  */
 public class FragCastPredictor {
     /** Flags that belong to the server workflow, refused here rather than quietly ignored. */
@@ -93,14 +94,14 @@ public class FragCastPredictor {
                 "optional: --model <model.zip> --output-dir <dir> --basename <stem> --fasta <fasta> " +
                 "--peptide-list-to-predict <peptides.parquet> --min-charge <int> --max-charge <int> " +
                 "--decoy-prefix <tag> --keep-decoys <0|1> --custom-mods <spec> " +
-                EnzymeOptions.USAGE);
-        printError(EnzymeOptions.FASTA_USAGE);
+                MetaFile.USAGE);
+        printError("--fasta <fasta>: required for librarytsv output, whose gene names come from it.");
+        printError(MetaFile.FORMAT_USAGE);
         printError("Example: java -cp MSBooster.jar transferlearn.FragCastPredictor " +
                 "--paramsList msbooster_params.txt --model FragCast-finetuned.zip " +
                 "--peptide-list-to-predict peptide_list.parquet --fasta proteome.fasta " +
                 "--output-format librarytsv --basename fragpipe-predicted-library " +
-                "--enzyme-name stricttrypsin --cut KR --no-cut @ --sense C " +
-                "--num-enzyme-termini 2 --clip-n-term-m 1");
+                "--meta fragcast.meta");
         printError("For server-based prediction, use transferlearn.Predictor instead.");
         System.exit(1);
     }
@@ -128,9 +129,7 @@ public class FragCastPredictor {
         String decoyTag = "rev_";
         int minCharge = 2;
         int maxCharge = 3;
-        final EnzymeOptions enzyme = new EnzymeOptions();
-        //the enzyme options are taken out first, each with its value; the loop below parses the rest
-        args = EnzymeOptions.extract(args, enzyme);
+        final MetaFile meta = new MetaFile();
 
         for (int i = 0; i < args.length; i += 2) {
             if (SERVER_FLAGS.contains(args[i])) {
@@ -155,6 +154,14 @@ public class FragCastPredictor {
                     break;
                 case "--fasta":
                     fasta = args[i + 1];
+                    break;
+                case MetaFile.FLAG:
+                    try {
+                        meta.accept(args[i + 1]);
+                    } catch (IllegalArgumentException e) {
+                        printError(e.getMessage());
+                        errorMessage();
+                    }
                     break;
                 case "--output-dir":
                     outputDir = args[i + 1];
@@ -202,11 +209,16 @@ public class FragCastPredictor {
             printError("--paramsList is required.");
             errorMessage();
         }
+        //Read now, so a meta file that cannot be used stops the run before anything is predicted.
+        //FragCast writes the footer, but a library toLibrarySchema has to convert gets it from DuckDB
+        //here, which cannot record every pair FragCast can - and whether there is one to convert is
+        //known only once FragCast has written it - so the pairs are checked against DuckDB now.
         try {
-            enzyme.validate();
+            meta.read();
+            meta.checkWritable();
         } catch (IllegalArgumentException e) {
             printError(e.getMessage());
-            errorMessage();
+            System.exit(1);
         }
         if (outputFormat.equals("mgf")) {
             printError("FragCast writes tsv and parquet only, so it cannot produce an MGF library. " +
@@ -252,7 +264,12 @@ public class FragCastPredictor {
         //pre-read value is the one answer both paths agree on
         final boolean fast = fastRequested;
         printInfo("Predicting with " + weights);
-        printInfo(enzyme.describe());
+        printInfo(meta.describe());
+        if (annotated && meta.isSet()) {
+            //FragCast predicts into a parquet library either way, and that file is left beside the
+            //library.tsv: it is the one that records the footer
+            printInfo("A library.tsv has no footer: only " + basename + ".parquet records " + MetaFile.FLAG);
+        }
 
         //Clear last run's outputs first. FragCast's COPY overwrites, but a library left from an
         //earlier run under a format this one is not writing would sit there looking current, and
@@ -272,7 +289,7 @@ public class FragCastPredictor {
         printInfo("Predicting into " + merged);
         final FragCastProcess.Result result = FragCastModelCaller.predictLibrary(
                 inputFile.getAbsolutePath(), merged.getAbsolutePath(), fast, weights,
-                libraryArgs(enzyme, fasta));
+                libraryArgs(meta));
         if (!result.succeeded() || !merged.isFile()) {
             printError("FragCast did not produce a library for " + inputFile +
                     " (exit code " + result.exitCode + ")");
@@ -289,7 +306,7 @@ public class FragCastPredictor {
         //schema everything downstream reads, which is the server's plus the two columns only FragCast
         //can fill. The converter reads whatever its input holds, so one path serves both. A library
         //it rewrites gets the footer FragCast was asked to write, since the rewrite drops FragCast's.
-        toLibrarySchema(merged, enzyme.footer(fasta));
+        toLibrarySchema(merged, meta.footer());
 
         if (!annotated) {
             printInfo("Total parquet file at " + merged.getAbsolutePath());
@@ -401,21 +418,15 @@ public class FragCastPredictor {
     }
 
     /**
-     * What FragCast's {@code build-library} is told to record in the library's Parquet footer: the
-     * enzyme options exactly as this command line gave them, then {@code --fasta} when one was named.
-     * Each only when given, so a run that names neither hands FragCast the command line it always
-     * had. {@code fasta} is what this class's loop left of {@code --fasta}, which keeps the leniency
-     * {@link EnzymeOptions} describes: the last one when it was given more than once, and empty - so
-     * not passed on - when it was given empty. The FASTA is recorded as {@code database_name},
-     * provenance only; the gene names a {@code librarytsv} library takes from it are still read here.
+     * What FragCast's {@code build-library} is told to record in the library's Parquet footer:
+     * {@code --meta} with the path exactly as this command line gave it, which FragCast reads by the
+     * same rules {@link MetaFile} does. Nothing when it was not given, so such a run hands FragCast the
+     * command line it always had. {@code --fasta} is never passed on: the gene names a
+     * {@code librarytsv} library takes from it are read here, and whatever the footer says about the
+     * FASTA comes from the meta file.
      */
-    static List<String> libraryArgs(EnzymeOptions enzyme, String fasta) {
-        final List<String> args = new ArrayList<>(enzyme.builderArgs());
-        if (!fasta.isEmpty()) {
-            args.add("--fasta");
-            args.add(fasta);
-        }
-        return args;
+    static List<String> libraryArgs(MetaFile meta) {
+        return meta.builderArgs();
     }
 
     /**
@@ -542,16 +553,16 @@ public class FragCastPredictor {
      * binaries that write anything else: their own 19 double-precision columns, or the 17 with the
      * text {@code AverageExperimentalRetentionTime} of the FragCast before it became a float.
      *
-     * <p>A library left as it is keeps the footer FragCast wrote into it, which records the enzyme
-     * and FASTA it was handed (see {@link #libraryArgs}). A COPY carries no key-value metadata over,
-     * so a rewritten library is given {@code footer} instead: the same keys, from the same options.
+     * <p>A library left as it is keeps the footer FragCast wrote into it from the meta file it was
+     * handed (see {@link #libraryArgs}). A COPY carries no key-value metadata over, so a rewritten
+     * library is given {@code footer} instead: the same pairs, from the same file, in the same order.
      *
      * <p>A rewritten library is written beside the original and then moved over it
      * ({@link Helpers#replaceFile}), so the original is never deleted to make room: a conversion that
      * fails leaves it as it was and removes what was written, and a move that fails leaves it as it
      * was with the converted library beside it, which the error names.
      *
-     * @param footer the library's Parquet footer ({@link EnzymeOptions#footer}); empty for none
+     * @param footer the library's Parquet footer ({@link MetaFile#footer}); empty for none
      * @throws SQLException when the library cannot be read or converted
      * @throws IOException  when the converted library cannot be moved over the original
      */
@@ -574,7 +585,7 @@ public class FragCastPredictor {
             stmt.execute("COPY (SELECT " + librarySelect(columns) +
                     " FROM read_parquet('" + sql(parquet.getAbsolutePath()) + "') " + SOURCE + ") TO '" +
                     sql(projected.getAbsolutePath()) + "' (FORMAT PARQUET" +
-                    EnzymeOptions.kvMetadataOption(footer) + ")");
+                    MetaFile.kvMetadataOption(footer) + ")");
         } catch (SQLException e) {
             projected.delete();
             throw e;

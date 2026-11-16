@@ -358,19 +358,34 @@ public class FragCastPredictorTest {
 
     private static final String AVERAGE_EXPERIMENTAL_RT = "AverageExperimentalRetentionTime";
 
-    /** What a run that names neither an enzyme nor a FASTA records in a library's footer. */
+    /** What a run given no --meta records in a library's footer. */
     private static final Map<String, String> NO_FOOTER = Collections.emptyMap();
 
-    /** The options FragPipe passes for strict trypsin. */
-    private static EnzymeOptions strictTrypsin() {
-        EnzymeOptions enzyme = new EnzymeOptions();
-        String[] args = {"--enzyme-name", "stricttrypsin", "--cut", "KR", "--no-cut", "@", "--sense", "C",
-                "--num-enzyme-termini", "2", "--clip-n-term-m", "1"};
-        for (int i = 0; i < args.length; i += 2) {
-            assertTrue(enzyme.accept(args[i], args[i + 1]));
-        }
-        enzyme.validate();
-        return enzyme;
+    /**
+     * The --meta FragPipe passes for strict trypsin searched against {@code fasta}: the file written,
+     * taken and read as the predictor's own loop takes and reads it.
+     */
+    private MetaFile strictTrypsin(String fasta) throws Exception {
+        File file = tmp.resolve("fragcast.meta").toFile();
+        Files.write(file.toPath(), String.join("\n",
+                "# Library footer, written by FragPipe",
+                "search_enzyme_name_1 = stricttrypsin",
+                "search_enzyme_cut_1 = KR",
+                "search_enzyme_nocut_1 = @",
+                "search_enzyme_sense_1 = C",
+                "num_enzyme_termini = 2",
+                "clip_nTerm_M = 1",
+                "database_name = " + fasta,
+                "").getBytes(StandardCharsets.UTF_8));
+        MetaFile meta = new MetaFile();
+        meta.accept(file.getAbsolutePath());
+        meta.read();
+        return meta;
+    }
+
+    /** A footer as an ordered list, so that a comparison sees the order of its pairs as well. */
+    private static List<Map.Entry<String, String>> inOrder(Map<String, String> footer) {
+        return new ArrayList<>(footer.entrySet());
     }
 
     /**
@@ -498,7 +513,7 @@ public class FragCastPredictorTest {
         assertTrue(lib.setLastModified(longAgo));
 
         assertLibrarySchema(lib); //FragCast's own output is the schema, before anything touches it
-        FragCastPredictor.toLibrarySchema(lib, strictTrypsin().footer("/data/human.fasta"));
+        FragCastPredictor.toLibrarySchema(lib, strictTrypsin("/data/human.fasta").footer());
 
         assertEquals(longAgo, lib.lastModified(), "FragCast's own library was written again");
         assertArrayEquals(asWritten, Files.readAllBytes(lib.toPath()));
@@ -571,21 +586,26 @@ public class FragCastPredictorTest {
 
     // A COPY carries no key-value metadata across, so a library the conversion rewrites would lose
     // the footer FragCast wrote into it - the enzyme FragDIA digests with among it. It is given the
-    // same keys instead, from the same options, and nothing else: FragCast's own arrow schema goes.
+    // meta file's pairs instead, in the file's order, and nothing else: FragCast's own arrow schema
+    // goes.
     @Test
-    public void aRewrittenLibraryCarriesTheEnzymeAndFasta() throws Exception {
+    public void aRewrittenLibraryCarriesTheMetaFilesPairsInOrder() throws Exception {
         File lib = fragCastLibrary();
         assertTrue(ParquetFooters.read(lib).containsKey("ARROW:schema"), "the fixture changed");
-        Map<String, String> footer = strictTrypsin().footer("C:\\fasta\\human.fasta");
+        Map<String, String> footer = strictTrypsin("C:\\fasta\\human.fasta").footer();
 
         FragCastPredictor.toLibrarySchema(lib, footer);
 
         assertLibrarySchema(lib);
-        assertEquals(footer, ParquetFooters.read(lib));
+        assertEquals(Arrays.asList("search_enzyme_name_1", "search_enzyme_cut_1", "search_enzyme_nocut_1",
+                        "search_enzyme_sense_1", "num_enzyme_termini", "clip_nTerm_M", "database_name"),
+                new ArrayList<>(ParquetFooters.read(lib).keySet()));
+        assertEquals(inOrder(footer), inOrder(ParquetFooters.read(lib)));
+        assertEquals("C:\\fasta\\human.fasta", ParquetFooters.read(lib).get("database_name"));
     }
 
-    // With no enzyme and no FASTA there is nothing to record, and nothing is: the conversion writes
-    // the library it always wrote.
+    // With no --meta there is nothing to record, and nothing is: the conversion writes the library it
+    // always wrote.
     @Test
     public void aRewriteWithNothingToRecordRecordsNothing() throws Exception {
         File lib = fragCastLibrary();
@@ -593,20 +613,18 @@ public class FragCastPredictorTest {
         assertTrue(ParquetFooters.read(lib).isEmpty(), ParquetFooters.read(lib).toString());
     }
 
-    // FragCast is told what to record exactly as this command line gave it, the FASTA after the
-    // enzyme; told nothing when neither was given, so its command line is the one it always had.
+    // FragCast is handed the meta file exactly as this command line named it, and reads it itself;
+    // nothing when none was named, so its command line is the one it always had. The FASTA the gene
+    // names come from is never passed on: what the footer says of it is in the meta file.
     @Test
-    public void fragCastIsHandedTheEnzymeAndTheFastaAsGiven() {
-        EnzymeOptions trypsin = strictTrypsin();
-        List<String> expected = new ArrayList<>(trypsin.builderArgs());
-        expected.addAll(Arrays.asList("--fasta", "C:\\fasta\\human.fasta"));
-        assertEquals(expected, FragCastPredictor.libraryArgs(trypsin, "C:\\fasta\\human.fasta"));
+    public void fragCastIsHandedTheMetaFileAsGiven() throws Exception {
+        MetaFile trypsin = strictTrypsin("C:\\fasta\\human.fasta");
+        assertEquals(Arrays.asList("--meta", tmp.resolve("fragcast.meta").toFile().getAbsolutePath()),
+                FragCastPredictor.libraryArgs(trypsin));
 
-        assertEquals(trypsin.builderArgs(), FragCastPredictor.libraryArgs(trypsin, ""));
-        assertEquals(Arrays.asList("--fasta", "/data/human.fasta"),
-                FragCastPredictor.libraryArgs(new EnzymeOptions(), "/data/human.fasta"),
-                "a FASTA is recorded with or without an enzyme");
-        assertTrue(FragCastPredictor.libraryArgs(new EnzymeOptions(), "").isEmpty());
+        MetaFile none = new MetaFile();
+        none.read();
+        assertTrue(FragCastPredictor.libraryArgs(none).isEmpty());
     }
 
     private static String path(File file) {

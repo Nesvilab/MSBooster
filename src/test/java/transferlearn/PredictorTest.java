@@ -29,6 +29,7 @@ import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.ResultSet;
 import java.sql.Statement;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashSet;
@@ -42,9 +43,10 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 import testutils.ParquetFooters;
 
-// The server predicts the peptides it is given and knows nothing of the enzyme, so the library it
-// returns records none. FragDIA reads the enzyme from the Parquet footer and nowhere else - so
-// whichever way the server path leaves its chunks, every Parquet file it leaves has to carry it.
+// The server predicts the peptides it is given and knows nothing of the --meta file, so the library
+// it returns records none of it. FragDIA reads the enzyme from the Parquet footer and nowhere else,
+// and FragPipe requires a library's shards to carry the same footer - so whichever way the server
+// path leaves its chunks, every Parquet file it leaves has to carry the file's pairs, in its order.
 public class PredictorTest {
 
     /** A chunk as the server returns it: a few library rows, and a footer of its own. */
@@ -59,15 +61,35 @@ public class PredictorTest {
         return parquet;
     }
 
-    private static Map<String, String> trypsin(String fasta) {
-        EnzymeOptions enzyme = new EnzymeOptions();
-        String[] args = {"--cut", "KR", "--no-cut", "P", "--sense", "C", "--num-enzyme-termini", "1",
-                "--clip-n-term-m", "0"};
-        for (int i = 0; i < args.length; i += 2) {
-            assertTrue(enzyme.accept(args[i], args[i + 1]));
+    /**
+     * The footer of a --meta file FragPipe writes for trypsin with no enzyme name, as the predictor
+     * reads it: {@code database_name} only when {@code fasta} is not empty, as FragPipe writes none
+     * without a FASTA.
+     */
+    private static Map<String, String> trypsin(Path dir, String fasta) throws IOException {
+        List<String> lines = new ArrayList<>(Arrays.asList(
+                "# Library footer, written by FragPipe",
+                "search_enzyme_cut_1 = KR",
+                "search_enzyme_nocut_1 = P",
+                "search_enzyme_sense_1 = C",
+                "num_enzyme_termini = 1",
+                "clip_nTerm_M = 0"));
+        if (!fasta.isEmpty()) {
+            lines.add("database_name = " + fasta);
         }
-        enzyme.validate();
-        return enzyme.footer(fasta);
+        //read and then removed, so the directory holds only what finishParquet leaves there
+        Path file = dir.resolve("library.meta");
+        Files.write(file, lines, StandardCharsets.UTF_8);
+        MetaFile meta = new MetaFile();
+        meta.accept(file.toString());
+        meta.read();
+        Files.delete(file);
+        return meta.footer();
+    }
+
+    /** A footer as an ordered list, so that a comparison sees the order of its pairs as well. */
+    private static List<Map.Entry<String, String>> inOrder(Map<String, String> footer) {
+        return new ArrayList<>(footer.entrySet());
     }
 
     private static long rows(File parquet) throws Exception {
@@ -89,17 +111,17 @@ public class PredictorTest {
         return file.getAbsolutePath().replace("\\", "/");
     }
 
-    // One chunk is the library, under the run's name, and it records the enzyme and the FASTA - and
+    // One chunk is the library, under the run's name, and it records the meta file's pairs - and
     // only them: what the server's writer kept there is replaced, not added to.
     @Test
     public void oneChunkBecomesTheLibraryWithTheFooter(@TempDir Path dir) throws Exception {
         File only = chunk(dir, "model0.parquet", 3);
         File total = dir.resolve("model.parquet").toFile();
-        Map<String, String> footer = trypsin("C:\\fasta\\human.fasta");
+        Map<String, String> footer = trypsin(dir, "C:\\fasta\\human.fasta");
 
         Predictor.finishParquet(new String[] {only.getAbsolutePath()}, total, false, footer);
 
-        assertEquals(footer, ParquetFooters.read(total));
+        assertEquals(inOrder(footer), inOrder(ParquetFooters.read(total)));
         assertEquals(3, rows(total));
         assertEquals(new HashSet<>(Collections.singletonList("model.parquet")), names(dir),
                 "nothing staged is left beside the library");
@@ -125,29 +147,30 @@ public class PredictorTest {
         String[] chunks = {chunk(dir, "model0.parquet", 2).getAbsolutePath(),
                 chunk(dir, "model1.parquet", 5).getAbsolutePath()};
         File total = dir.resolve("model.parquet").toFile();
-        Map<String, String> footer = trypsin("");
+        Map<String, String> footer = trypsin(dir, "");
 
         Predictor.finishParquet(chunks, total, true, footer);
 
-        assertEquals(footer, ParquetFooters.read(total));
-        assertFalse(footer.containsKey("database_name"), "no --fasta, no database_name");
+        assertEquals(inOrder(footer), inOrder(ParquetFooters.read(total)));
+        assertFalse(ParquetFooters.read(total).containsKey("database_name"), "the file names no database");
         assertEquals(7, rows(total));
         assertEquals(new HashSet<>(Collections.singletonList("model.parquet")), names(dir));
     }
 
-    // Not merged, the chunks are the library's shards, and FragDIA compares the enzyme across a
-    // directory's shards - so each one carries the same footer, and keeps every row.
+    // Not merged, the chunks are the library's shards, and FragPipe requires every shard's whole
+    // footer to be the same - so each one carries the same pairs in the same order, and keeps every
+    // row.
     @Test
     public void unmergedChunksEachCarryTheFooter(@TempDir Path dir) throws Exception {
         List<File> chunks = Arrays.asList(chunk(dir, "model0.parquet", 2), chunk(dir, "model1.parquet", 5));
         File total = dir.resolve("model.parquet").toFile();
-        Map<String, String> footer = trypsin("/data/human.fasta");
+        Map<String, String> footer = trypsin(dir, "/data/human.fasta");
 
         Predictor.finishParquet(chunks.stream().map(File::getAbsolutePath).toArray(String[]::new), total,
                 false, footer);
 
-        assertEquals(footer, ParquetFooters.read(chunks.get(0)));
-        assertEquals(footer, ParquetFooters.read(chunks.get(1)));
+        assertEquals(inOrder(footer), inOrder(ParquetFooters.read(chunks.get(0))));
+        assertEquals(inOrder(footer), inOrder(ParquetFooters.read(chunks.get(1))));
         assertEquals(2, rows(chunks.get(0)));
         assertEquals(5, rows(chunks.get(1)));
         assertEquals(new HashSet<>(Arrays.asList("model0.parquet", "model1.parquet")), names(dir));
@@ -156,11 +179,12 @@ public class PredictorTest {
     // A rewrite that fails leaves the library as it was and nothing staged beside it.
     @Test
     public void aFooterThatCannotBeWrittenLeavesTheLibraryAsItWas(@TempDir Path dir) throws Exception {
+        Map<String, String> footer = trypsin(dir, "");
         File notParquet = dir.resolve("model.parquet").toFile();
         Files.write(notParquet.toPath(), "not a parquet file".getBytes());
 
         org.junit.jupiter.api.Assertions.assertThrows(java.sql.SQLException.class,
-                () -> Helpers.writeFooter(notParquet, trypsin("")));
+                () -> Helpers.writeFooter(notParquet, footer));
 
         assertEquals("not a parquet file", new String(Files.readAllBytes(notParquet.toPath())));
         assertEquals(new HashSet<>(Collections.singletonList("model.parquet")), names(dir));

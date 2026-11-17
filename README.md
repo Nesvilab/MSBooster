@@ -401,8 +401,12 @@ Three things about the method are worth understanding before relying on it:
    model over. The honest check is to compare identifications at your FDR threshold with and without
    the fine-tuned model.
 
-Nothing about the fine-tune itself is a parameter - it is driven entirely by the flags above. The
-parameters for *predicting* with what it produced (`FragCastModelZip`, `FragCastRtOnnx` and its
+Nothing about how the fine-tune trains is a parameter - it is driven entirely by the flags above.
+The parameter file still names the FragCast executable (`FragCast`) and, for a commercial FragCast,
+its license file (`FragCastLicense`), which every fine-tune task is given as `--license` just as
+prediction is. Left empty, no flag is passed and a commercial FragCast looks for a `license*.dat`
+under its own folder; an academic FragCast needs no license. The parameters for *predicting* with
+what it produced (`FragCastModelZip`, `FragCastRtOnnx` and its
 siblings) are documented in [msbooster_params.txt](msbooster_params.txt) and under
 [Optional parameters](#optional-parameters).
 

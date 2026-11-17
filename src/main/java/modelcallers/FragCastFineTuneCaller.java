@@ -36,8 +36,9 @@ import static utils.Print.printInfo;
  * <p>{@link #buildCommand} is the seam, in the same spirit as
  * {@link FragCastModelCaller#buildCommand}: the whole command-line contract is exercisable without
  * an installed executable. The command it builds is deliberately short: MSBooster names the task,
- * the library, the weights and the thread count, and leaves every hyperparameter - including how
- * much of the library to hold out - to FragCast's own per-task defaults.
+ * the library, the weights, the thread count and, when {@link Constants#FragCastLicense} is set, the
+ * license file of a commercial FragCast, and leaves every hyperparameter - including how much of the
+ * library to hold out - to FragCast's own per-task defaults.
  *
  * <p>Four flags are not merely omitted but must never be added, each for a reason FragCast documents
  * or demonstrates - {@code --fast} names an inference-only model and is refused alongside

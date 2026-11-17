@@ -82,6 +82,9 @@ public class Constants implements ConstantsInterface {
     public static Integer numThreads = Runtime.getRuntime().availableProcessors() - 1;
     public static String DiaNN = null;
     public static String FragCast = null; //path to the FragCast executable
+    //License file for a commercial FragCast, handed to every FragCast call as --license. Empty passes
+    //nothing, and FragCast then looks for a license*.dat under its own folder.
+    public static String FragCastLicense = "";
     //optional dir with FragCast-{RT,IM,Spec}.onnx; sets FRAGCAST_MODEL_DIR. The FragCast-Fast model
     //(see FragCastModels) additionally needs FragCast-Spec-Fast.onnx there.
     public static String FragCastModelDir = "";

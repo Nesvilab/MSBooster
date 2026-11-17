@@ -14,7 +14,9 @@
 
 package mainsteps;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.io.File;
@@ -88,6 +90,21 @@ public class ParameterTemplateTest {
                 "FragCastModelZip")) {
             assertTrue(keys.contains(key), key + " is missing from msbooster_params.txt");
         }
+    }
+
+    // A commercial FragCast is told where its license is through this parameter. The template leaves
+    // it empty, so a copy of it hands every FragCast the command line it always had.
+    @Test
+    public void theTemplateDocumentsTheFragCastLicenseAndLeavesItEmpty() throws Exception {
+        String value = null;
+        for (String line : Files.readAllLines(TEMPLATE.toPath(), StandardCharsets.UTF_8)) {
+            String[] keyValue = line.split("#", 2)[0].split("=", 2);
+            if (keyValue.length == 2 && keyValue[0].trim().equals("FragCastLicense")) {
+                value = keyValue[1].trim();
+            }
+        }
+        assertNotNull(value, "FragCastLicense is missing from msbooster_params.txt");
+        assertEquals("", value, "the template names a license file");
     }
 
     // Nothing about how the fine-tune is run belongs to MSBooster. Pinning a hyperparameter here

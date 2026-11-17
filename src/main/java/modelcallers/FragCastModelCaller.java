@@ -72,7 +72,9 @@ public class FragCastModelCaller {
      * {@code --fast} swaps the Conformer Spec weights for the small/fast ones and is FragCast's only
      * way to choose between them (there is no per-property task to call). A
      * {@code --rt-onnx}/{@code --im-onnx}/{@code --spec-onnx} flag follows for each property with
-     * custom weights, appended last so the flags FragCast has always been given keep their positions.
+     * custom weights, appended after the flags FragCast has always been given so those keep their
+     * positions. {@code --license} comes last, when {@link Constants#FragCastLicense} names a file
+     * (see {@link FragCastProcess#appendLicense}).
      */
     static List<String> buildCommand(String inputFile, String predFileString, boolean fast,
                                      FragCastWeights weights) {
@@ -118,6 +120,7 @@ public class FragCastModelCaller {
         //no --min-charge/--max-charge: every row of the list names its own charge, so FragCast
         //predicts exactly those precursors and the range would only be reported as overridden
         weights.appendFlags(command);
+        FragCastProcess.appendLicense(command);
         return command;
     }
 

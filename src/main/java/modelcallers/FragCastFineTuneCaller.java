@@ -47,7 +47,10 @@ import static utils.Print.printInfo;
  * the production MS2 model.
  */
 public class FragCastFineTuneCaller {
-    /** The FragCast command line for one fine-tuning run. */
+    /**
+     * The FragCast command line for one fine-tuning run, ending in {@code --license} when
+     * {@link Constants#FragCastLicense} names a file (see {@link FragCastProcess#appendLicense}).
+     */
     static List<String> buildCommand(FragCastFineTuneJob job) {
         List<String> command = new ArrayList<>();
         command.add(Constants.FragCast);
@@ -68,6 +71,7 @@ public class FragCastFineTuneCaller {
         //--val-frac is deliberately absent along with the rest. Without --eval it is what FragCast
         //holds out of --train to select the best epoch against, so pinning it - and pinning it to
         //zero, as this once did to reclaim training rows - would leave nothing to select on
+        FragCastProcess.appendLicense(command);
         return command;
     }
 

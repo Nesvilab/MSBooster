@@ -161,6 +161,10 @@ location here
   <li><code>FragCast (String)</code>: path to the FragCast executable. Required whenever
 <code>spectraModel</code>, <code>rtModel</code> or <code>imModel</code> is <code>FragCast</code> or
 <code>FragCast-Fast</code>
+  <li><code>FragCastLicense (String)</code>: license file for a commercial FragCast build, passed to
+every FragCast call (prediction and fine-tuning) as <code>--license</code>. Empty by default, in which
+case no flag is passed and a commercial FragCast looks for a <code>license*.dat</code> under its own
+folder. An academic FragCast needs no license
   <li><code>FragCastModelDir (String)</code>: directory holding the pretrained
 <code>FragCast-{RT,IM,Spec}.onnx</code> weights, plus <code>FragCast-Spec-Fast.onnx</code> for the
 <code>FragCast-Fast</code> model. Empty by default, in which case the directory is resolved from the

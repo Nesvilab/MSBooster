@@ -134,6 +134,30 @@ public class FragCastFineTuneCallerTest {
         assertTrue(command.contains("--save-onnx"), command.toString());
     }
 
+    // A commercial FragCast checks its license on every call, fine-tunes included. The license is
+    // named last and only when there is one, so with none every task's command is the one it was.
+    @Test
+    public void everyTaskIsHandedTheLicenseLastAndOnlyWhenOneIsNamed() {
+        String before = Constants.FragCastLicense;
+        String license = "C:\\Program Files\\FragPipe\\license-acme.dat";
+        try {
+            for (String task : FragCastWeights.TASKS) {
+                Constants.FragCastLicense = "";
+                List<String> unlicensed = argv(task, "/models/x.onnx");
+                assertFalse(unlicensed.contains("--license"),
+                        task + " passed an empty license: " + unlicensed);
+
+                Constants.FragCastLicense = license;
+                List<String> licensed = argv(task, "/models/x.onnx");
+                assertEquals(unlicensed, licensed.subList(0, unlicensed.size()), task);
+                assertEquals(Arrays.asList("--license", license),
+                        licensed.subList(unlicensed.size(), licensed.size()), task);
+            }
+        } finally {
+            Constants.FragCastLicense = before;
+        }
+    }
+
     private static final List<String> RT_LOG = Arrays.asList(
             "[2026-08-18 14:39:49 INFO] Fine-tune: task=rt params=334337 base=FragCast-RT.onnx",
             "[2026-08-18 14:39:49 INFO] No --eval given: holding out 10% of --train (303 precursors) for model selection",

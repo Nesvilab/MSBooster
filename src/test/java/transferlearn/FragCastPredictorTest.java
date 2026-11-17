@@ -274,6 +274,25 @@ public class FragCastPredictorTest {
 
         assertEquals("/from/the/file.zip", allconstants.Constants.FragCastModelZip);
     }
+
+    // FragPipe names its license in the parameter file and nowhere else: this command line has no
+    // flag for it. It must reach Constants on both paths, or FragCast's library prediction runs with
+    // no --license and a commercial build looks for one under its own folder instead.
+    @Test
+    public void theLicenseInTheParameterFileReachesFragCastOnBothPaths() throws Exception {
+        String license = "C:\\Program Files\\FragPipe\\license-acme.dat";
+        File params = paramsFileNaming("FragCastLicense = " + license,
+                "outputDirectory = " + tmp.toAbsolutePath().toString().replace("\\", "/"));
+
+        allconstants.Constants.FragCastLicense = "";
+        applyAsPredictorWould(FragCastPredictor.peptideListArgs(params.getAbsolutePath(), "1", "", "rev_"));
+        assertEquals(license, allconstants.Constants.FragCastLicense);
+
+        allconstants.Constants.FragCastLicense = "";
+        applyAsPredictorWould(FragCastPredictor.pinPathArgs(params.getAbsolutePath(), "0", "", "rev_", false));
+        assertEquals(license, allconstants.Constants.FragCastLicense);
+    }
+
     @Test
     public void handsTheProteinsStraightToFragCast() throws Exception {
         // FragCast fills ProteinId, GeneName, AllMappedProteins and Proteotypic from this column, so

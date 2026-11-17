@@ -60,6 +60,7 @@ spectraBestModelSearchMetric = median
 # DIA-NN is what runs when none is named)
 ############################################################
 FragCast = null                                  # path to the FragCast executable (selectable via spectraModel/rtModel/imModel = FragCast)
+FragCastLicense =                                # license file for a commercial FragCast, passed as --license; empty -> FragCast looks under its own folder
 FragCastModelDir =                               # dir with FragCast-{RT,IM,Spec}(-Spec-Fast).onnx; empty -> resolved beside the exe
 fragCastTopN = 20                                # build-library: top-N fragments per precursor by intensity
 fragCastMinFragMz = 200.0                        # build-library: drop fragments below this m/z

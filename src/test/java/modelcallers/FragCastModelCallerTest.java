@@ -300,4 +300,51 @@ public class FragCastModelCallerTest {
                 FragCastModelCaller.buildLibraryCommand("spectraRT.tsv", "out.parquet", false,
                         FragCastWeights.base(), List.of()));
     }
+
+    // No license param, no flag: the command is the one it always was, so a FragCast older than
+    // --license still runs, and a commercial one looks for its license under its own folder.
+    @Test
+    public void noLicenseParamPassesNoLicenseFlag() {
+        String before = Constants.FragCastLicense;
+        try {
+            Constants.FragCastLicense = "";
+            List<String> rescoring = FragCastModelCaller.buildCommand("spectraRT.tsv", "out.parquet",
+                    false, FragCastWeights.base());
+            List<String> library = FragCastModelCaller.buildLibraryCommand("spectraRT.tsv",
+                    "out.parquet", false, FragCastWeights.base(), List.of("--meta", "fragcast.meta"));
+            assertFalse(rescoring.contains("--license"), "an empty license was passed: " + rescoring);
+            assertFalse(library.contains("--license"), "an empty license was passed: " + library);
+        } finally {
+            Constants.FragCastLicense = before;
+        }
+    }
+
+    // The license follows every flag the rescoring command already carried, so none of them moves,
+    // and the path goes over as one argument however many spaces it holds. The library command is
+    // the rescoring one plus what it records, so it carries the license too, with its --meta after.
+    @Test
+    public void aLicenseIsAppendedLastAndTheLibraryCommandCarriesItToo() {
+        String before = Constants.FragCastLicense;
+        String license = "C:\\Program Files\\FragPipe\\license-acme.dat";
+        try {
+            Constants.FragCastLicense = "";
+            List<String> unlicensed = FragCastModelCaller.buildCommand("spectraRT.tsv", "out.parquet",
+                    true, FragCastWeights.base().withRt("/models/rt.onnx"));
+            Constants.FragCastLicense = license;
+            List<String> rescoring = FragCastModelCaller.buildCommand("spectraRT.tsv", "out.parquet",
+                    true, FragCastWeights.base().withRt("/models/rt.onnx"));
+
+            assertEquals(unlicensed, rescoring.subList(0, unlicensed.size()));
+            assertEquals(List.of("--license", license),
+                    rescoring.subList(unlicensed.size(), rescoring.size()));
+
+            List<String> recorded = List.of("--meta", "fragcast.meta");
+            List<String> library = FragCastModelCaller.buildLibraryCommand("spectraRT.tsv",
+                    "out.parquet", true, FragCastWeights.base().withRt("/models/rt.onnx"), recorded);
+            assertEquals(rescoring, library.subList(0, rescoring.size()));
+            assertEquals(recorded, library.subList(rescoring.size(), library.size()));
+        } finally {
+            Constants.FragCastLicense = before;
+        }
+    }
 }

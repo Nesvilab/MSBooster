@@ -161,6 +161,24 @@ public class FragCastProcess {
     }
 
     /**
+     * Append {@code --license <file>} to a FragCast command line when {@link Constants#FragCastLicense}
+     * names one, and nothing when it is empty.
+     *
+     * <p>A commercial FragCast looks for its license under its own folder unless it is told where the
+     * license is, and the caller - FragPipe above all - keeps it somewhere else. An empty param hands
+     * FragCast the command line it always had, so a FragCast that predates the flag still runs. Both
+     * command builders call this last, after every flag FragCast has always been given, so those keep
+     * their positions.
+     */
+    static void appendLicense(List<String> command) {
+        String license = Constants.FragCastLicense;
+        if (license != null && !license.isEmpty()) {
+            command.add("--license");
+            command.add(license);
+        }
+    }
+
+    /**
      * Run FragCast to completion.
      *
      * @param command the full command line, {@code command.get(0)} being the executable

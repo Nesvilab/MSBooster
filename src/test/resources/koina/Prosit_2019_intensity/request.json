@@ -1,0 +1,80 @@
+{
+    "inputs": [
+        {
+            "shape": [
+                15,
+                1
+            ],
+            "data": [
+                ["AVLDQGSTWPEM[UNIMOD:35]AGK"],
+                ["QYLDTEGAIPAK"],
+                ["GSPEDLHVTAR"],
+                ["ADGLR"],
+                ["HEAPGLDVSTWKPEEVLR"],
+                ["C[UNIMOD:4]ADLSGFTPEVIAR"],
+                ["NDTPLM[UNIMOD:35]EAGR"],
+                ["LGVEKAYNDGR"],
+                ["LGEPTIDEK"],
+                ["VFLENGTLR"],
+                ["SHC[UNIMOD:4]VAELLGPEK"],
+                ["TEC[UNIMOD:4]LDHFAVNPR"],
+                ["ELVSAPLGTNEIYDHFAQWTGLPVEDAK"],
+                ["EWLSPQDGAVR"],
+                ["ADVTGLPHK"]
+            ],
+            "datatype": "BYTES",
+            "name": "peptide_sequences"
+        },
+        {
+            "shape": [
+                15,
+                1
+            ],
+            "data": [
+                [2],
+                [2],
+                [2],
+                [1],
+                [4],
+                [2],
+                [2],
+                [3],
+                [2],
+                [2],
+                [2],
+                [3],
+                [3],
+                [2],
+                [2]
+            ],
+            "datatype": "INT32",
+            "name": "precursor_charges"
+        },
+        {
+            "shape": [
+                15,
+                1
+            ],
+            "data": [
+                [27],
+                [27],
+                [27],
+                [27],
+                [27],
+                [27],
+                [27],
+                [27],
+                [27],
+                [27],
+                [27],
+                [27],
+                [27],
+                [27],
+                [27]
+            ],
+            "datatype": "FP32",
+            "name": "collision_energies"
+        }
+    ],
+    "id": "0"
+}

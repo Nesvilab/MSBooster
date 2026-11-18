@@ -1,0 +1,1 @@
+{"name":"ms2pip_iTRAQphospho","versions":["1"],"platform":"ensemble","inputs":[{"name":"peptide_sequences","datatype":"BYTES","shape":[-1,-1]},{"name":"precursor_charges","datatype":"INT32","shape":[-1,1]}],"outputs":[{"name":"intensities","datatype":"FP32","shape":[-1,58]},{"name":"mz","datatype":"FP32","shape":[-1,58]},{"name":"annotation","datatype":"BYTES","shape":[-1,58]}]}

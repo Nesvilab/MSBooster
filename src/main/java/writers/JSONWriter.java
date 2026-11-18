@@ -15,7 +15,9 @@
 package writers;
 
 import allconstants.Constants;
-import allconstants.ModelCollections;
+import koinaclasses.KoinaException;
+import koinaclasses.KoinaModelRegistry;
+import koinaclasses.KoinaModelSpec;
 import org.json.JSONArray;
 import org.json.JSONObject;
 import utils.Multithreader;
@@ -31,50 +33,37 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Future;
 
-import static utils.Print.printError;
-
 public class JSONWriter {
     String url;
-    String model;
+    KoinaModelSpec spec;
     String property;
     String[] peptides;
     int[] charges;
     float[] nces;
     String[] instruments;
     String[] fragmentations;
-    boolean TMT = false;
     int numFiles;
     int iteration = -1;
+    //most precursors in one request file
+    int batchSize;
     public List<Future> futureList = new ArrayList<>(Constants.numThreads);
 
-    public static int maxJsonLength = 1000;
-
-    public JSONWriter(String url, Set<String> entries, boolean fullSet) {
+    /**
+     * @param batchSize the most precursors one request file holds: KoinaModelCheck.batchSize, which is the
+     *                  model's spec batch size unless the Koina server takes smaller batches
+     * @throws KoinaException if {@code url} is not a Koina model MSBooster can call
+     */
+    public JSONWriter(String url, Set<String> entries, boolean fullSet, int batchSize) {
         this.url = url;
-        this.model = url.toLowerCase().split("_")[0];
-        if (ModelCollections.KoinaRTmodels.contains(url)) {
-            property = "rt";
-        } else if (Constants.auxSpectraModel.equals(url)) {
-            property = "ms2_aux";
-        } else if (ModelCollections.KoinaMS2models.contains(url)) {
-            property = "ms2";
-        } else if (ModelCollections.KoinaIMmodels.contains(url)) {
-            property = "im";
+        this.spec = KoinaModelRegistry.find(url);
+        if (spec == null) {
+            throw new KoinaException(url + " is not a Koina model MSBooster can call");
         }
-        if (ModelCollections.KoinaIsoLabelmodels.contains(url)) {
-            TMT = true;
+        if (batchSize < 1) {
+            throw new IllegalArgumentException("A Koina request holds at least one precursor, not " + batchSize);
         }
-        switch (url) {
-            case "UniSpec":
-            case "Prosit_2025_intensity_MultiFrag":
-                maxJsonLength = 100;
-                break;
-            case "AlphaPept_ms2_generic":
-                maxJsonLength = 500;
-                break;
-            default:
-                maxJsonLength = 1000;
-        }
+        this.property = spec.property(Constants.auxSpectraModel.equals(url));
+        this.batchSize = batchSize;
 
         //set entries
         this.peptides = new String[entries.size()];
@@ -85,7 +74,7 @@ public class JSONWriter {
 
         //fullset is to indicate if the stripped peptide length is there
         //this is true if using pinreader.createjson
-        if ((model.contains("alphapept")) && (fullSet)) {
+        if (spec.sortBatchByLength() && fullSet) {
             List<String> sortedList = new ArrayList<>(entries);
 
             // Custom comparator to sort strings based on their stripped length
@@ -122,39 +111,29 @@ public class JSONWriter {
             }
         }
 
-        numFiles = (int) Math.ceil((float) this.peptides.length / (float) maxJsonLength);
+        numFiles = (int) Math.ceil((float) this.peptides.length / (float) batchSize);
     }
 
     //this version if we need to spawn smaller ones
     public JSONWriter(JSONWriter parent, int iteration) {
         this.iteration = iteration;
-        int start = iteration * maxJsonLength;
         this.url = parent.url;
-        this.model = url.toLowerCase().split("_")[0];
-        if (ModelCollections.KoinaRTmodels.contains(url)) {
-            property = "rt";
-        } else if (Constants.auxSpectraModel.equals(url)) {
-            property = "ms2_aux";
-        } else if (ModelCollections.KoinaMS2models.contains(url)) {
-            property = "ms2";
-        } else if (ModelCollections.KoinaIMmodels.contains(url)) {
-            property = "im";
-        }
-        if (ModelCollections.KoinaIsoLabelmodels.contains(url)) {
-            TMT = true;
-        }
+        this.spec = parent.spec;
+        this.property = parent.property;
+        this.batchSize = parent.batchSize;
+        int start = iteration * batchSize;
 
         //take subarrays
         this.peptides = Arrays.copyOfRange(parent.peptides, start,
-                Math.min(start + maxJsonLength, parent.peptides.length));
+                Math.min(start + batchSize, parent.peptides.length));
         this.charges = Arrays.copyOfRange(parent.charges, start,
-                Math.min(start + maxJsonLength, parent.peptides.length));
+                Math.min(start + batchSize, parent.peptides.length));
         this.nces = Arrays.copyOfRange(parent.nces, start,
-                Math.min(start + maxJsonLength, parent.peptides.length));
+                Math.min(start + batchSize, parent.peptides.length));
         this.instruments = Arrays.copyOfRange(parent.instruments, start,
-                Math.min(start + maxJsonLength, parent.peptides.length));
+                Math.min(start + batchSize, parent.peptides.length));
         this.fragmentations = Arrays.copyOfRange(parent.fragmentations, start,
-                Math.min(start + maxJsonLength, parent.peptides.length));
+                Math.min(start + batchSize, parent.peptides.length));
     }
 
     public String write(boolean createDir, String jsonOutFolder, ExecutorService executorService)
@@ -169,7 +148,9 @@ public class JSONWriter {
         }
 
         String fileName = "";
-        if (numFiles > 1) {
+        if (iteration == -1 && peptides.length == 0) {
+            //no precursor to send, so no request: Koina refuses a request without one
+        } else if (numFiles > 1) {
             futureList.clear();
             Multithreader mt = new Multithreader(numFiles, Constants.numThreads);
             for (int i = 0; i < Constants.numThreads; i++) {
@@ -189,152 +170,83 @@ public class JSONWriter {
                 future.get();
             }
         } else {
-            switch (model) {
-                case "alphapept":
-                case "prosit":
-                case "ms2pip":
-                case "deeplc":
-                case "unispec":
-                case "predfull":
-                case "im2deep":
-                    // Create the JSON data structure
-                    JSONObject jsonData = new JSONObject();
-                    jsonData.put("id", "0");
+            // Create the JSON data structure
+            JSONObject jsonData = new JSONObject();
+            jsonData.put("id", "0");
 
-                    JSONArray inputsArray = new JSONArray();
-                    JSONObject peptideObject = new JSONObject();
-                    peptideObject.put("name", "peptide_sequences");
-                    peptideObject.put("shape", new JSONArray("[" + peptides.length + ",1]"));
-                    peptideObject.put("datatype", "BYTES");
+            JSONArray inputsArray = new JSONArray();
+            JSONArray innerArray;
 
-                    JSONArray peptideData = new JSONArray();
-                    JSONArray innerArray;
+            JSONArray peptideData = new JSONArray();
+            for (String pep : peptides) {
+                innerArray = new JSONArray();
+                innerArray.put(pep);
+                peptideData.put(innerArray);
+            }
+            inputsArray.put(inputObject("peptide_sequences", "BYTES", peptideData));
 
-                    for (String pep : peptides) {
-                        innerArray = new JSONArray();
-                        innerArray.put(pep);
-                        peptideData.put(innerArray);
-                    }
-
-                    peptideObject.put("data", peptideData);
-                    inputsArray.put(peptideObject);
-
-                    if (property.equals("ms2") || property.equals("ms2_aux")) {
-                        //precursor charges
-                        JSONObject chargeObject = new JSONObject();
-                        chargeObject.put("name", "precursor_charges");
-                        chargeObject.put("shape", new JSONArray("[" + peptides.length + ",1]"));
-                        chargeObject.put("datatype", "INT32");
-
-                        JSONArray chargeData = new JSONArray();
-
+            //the other inputs the model takes, in the order of the spec
+            for (KoinaModelSpec.Input input : spec.inputs()) {
+                JSONArray data = new JSONArray();
+                switch (input) {
+                    case PRECURSOR_CHARGES:
                         for (int charge : charges) {
                             innerArray = new JSONArray();
                             innerArray.put(charge);
-                            chargeData.put(innerArray);
+                            data.put(innerArray);
                         }
-
-                        chargeObject.put("data", chargeData);
-                        inputsArray.put(chargeObject);
-
-                        //collision energies
-                        if (!url.equals("Prosit_2020_intensity_CID") && !url.contains("ms2pip") &&
-                                !url.contains("Prosit_2025_intensity_MultiFrag")) {
-                            JSONObject nceObject = new JSONObject();
-                            nceObject.put("name", "collision_energies");
-                            nceObject.put("shape", new JSONArray("[" + peptides.length + ",1]"));
-                            nceObject.put("datatype", "FP32");
-
-                            JSONArray nceData = new JSONArray();
-
-                            for (float nce : nces) {
-                                innerArray = new JSONArray();
-                                innerArray.put(nce);
-                                nceData.put(innerArray);
-                            }
-
-                            nceObject.put("data", nceData);
-                            inputsArray.put(nceObject);
-                        }
-
-                        //instrument types
-                        if (model.equals("alphapept") || model.equals("unispec")) {
-                            JSONObject instrumentObject = new JSONObject();
-                            instrumentObject.put("name", "instrument_types");
-                            instrumentObject.put("shape", new JSONArray("[" + peptides.length + ",1]"));
-                            instrumentObject.put("datatype", "BYTES");
-
-                            JSONArray instrumentData = new JSONArray();
-
-                            for (String instrument : instruments) {
-                                innerArray = new JSONArray();
-                                innerArray.put(instrument);
-                                instrumentData.put(innerArray);
-                            }
-
-                            instrumentObject.put("data", instrumentData);
-                            inputsArray.put(instrumentObject);
-                        }
-
-                        //fragmentation type
-                        if (TMT || model.equals("predfull") || url.equals("Prosit_2024_intensity_cit") ||
-                                url.equals("Prosit_2025_intensity_MultiFrag")) {
-                            JSONObject fragmentationObject = new JSONObject();
-                            fragmentationObject.put("name", "fragmentation_types");
-                            fragmentationObject.put("shape", new JSONArray("[" + peptides.length + ",1]"));
-                            fragmentationObject.put("datatype", "BYTES");
-
-                            JSONArray fragmentationData = new JSONArray();
-
-                            for (String fragmentation : fragmentations) {
-                                innerArray = new JSONArray();
-                                innerArray.put(fragmentation);
-                                fragmentationData.put(innerArray);
-                            }
-
-                            fragmentationObject.put("data", fragmentationData);
-                            inputsArray.put(fragmentationObject);
-                        }
-                    } else if (property.equals("im")) {
-                        //precursor charges
-                        JSONObject chargeObject = new JSONObject();
-                        chargeObject.put("name", "precursor_charges");
-                        chargeObject.put("shape", new JSONArray("[" + peptides.length + ",1]"));
-                        chargeObject.put("datatype", "INT32");
-
-                        JSONArray chargeData = new JSONArray();
-
-                        for (int charge : charges) {
+                        break;
+                    case COLLISION_ENERGIES:
+                        for (float nce : nces) {
                             innerArray = new JSONArray();
-                            innerArray.put(charge);
-                            chargeData.put(innerArray);
+                            innerArray.put(nce);
+                            data.put(innerArray);
                         }
+                        break;
+                    case INSTRUMENT_TYPES:
+                        for (String instrument : instruments) {
+                            innerArray = new JSONArray();
+                            innerArray.put(instrument);
+                            data.put(innerArray);
+                        }
+                        break;
+                    case FRAGMENTATION_TYPES:
+                        for (String fragmentation : fragmentations) {
+                            innerArray = new JSONArray();
+                            innerArray.put(fragmentation);
+                            data.put(innerArray);
+                        }
+                        break;
+                }
+                inputsArray.put(inputObject(input.koinaName(), input.datatype(), data));
+            }
 
-                        chargeObject.put("data", chargeData);
-                        inputsArray.put(chargeObject);
-                    }
+            jsonData.put("inputs", inputsArray);
 
-                    jsonData.put("inputs", inputsArray);
-
-                    // Write JSON data to a file
-                    if (iteration != -1) {
-                        fileName = jsonOutFolder + File.separator +
-                                "spectraRT_" + url + iteration + property + ".json";
-                    } else {
-                        fileName = jsonOutFolder + File.separator +
-                                "spectraRT_" + url + property + ".json";
-                    }
-                    try (FileWriter fileWriter = new FileWriter(fileName)) {
-                        fileWriter.write(jsonData.toString(4)); // Using 4 for indentation
-                    } catch (IOException e) {
-                        e.printStackTrace();
-                    }
-                    break;
-                default:
-                    printError(model + " is not supported by Koina. Exiting now.");
-                    System.exit(0);
+            // Write JSON data to a file
+            if (iteration != -1) {
+                fileName = jsonOutFolder + File.separator +
+                        "spectraRT_" + url + iteration + property + ".json";
+            } else {
+                fileName = jsonOutFolder + File.separator +
+                        "spectraRT_" + url + property + ".json";
+            }
+            try (FileWriter fileWriter = new FileWriter(fileName)) {
+                fileWriter.write(jsonData.toString(4)); // Using 4 for indentation
+            } catch (IOException e) {
+                e.printStackTrace();
             }
         }
         return jsonOutFolder;
+    }
+
+    //one input of the request: a column of one value per precursor
+    private JSONObject inputObject(String name, String datatype, JSONArray data) {
+        JSONObject inputObject = new JSONObject();
+        inputObject.put("name", name);
+        inputObject.put("shape", new JSONArray("[" + peptides.length + ",1]"));
+        inputObject.put("datatype", datatype);
+        inputObject.put("data", data);
+        return inputObject;
     }
 }

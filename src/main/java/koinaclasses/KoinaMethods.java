@@ -15,13 +15,11 @@
 package koinaclasses;
 
 import allconstants.Constants;
-import com.google.common.collect.ImmutableMap;
 import mainsteps.MzmlScanNumber;
 import mainsteps.PeptideObj;
 import mainsteps.PinMzmlMatcher;
 import modelcallers.KoinaModelCaller;
 import peptideptmformatting.PeptideFormatter;
-import peptideptmformatting.PeptideSkipper;
 import predictions.PredictionEntryHashMap;
 import readers.datareaders.MzmlReader;
 import readers.datareaders.PinReader;
@@ -58,13 +56,6 @@ public class KoinaMethods {
 //    public HashSet<String> peptideSetDecoys = new HashSet<>();
 //    public HashMap<String, LinkedList<Integer>> scanNumsDecoys = new HashMap<>();
 //    public HashMap<String, LinkedList<String>> peptidesDecoys = new HashMap<>();
-
-    private static final Map<String, String> generalModels = ImmutableMap.of(
-            "Prosit_2020_intensity_HCD", "Prosit",
-            "Prosit_2020_intensity_CID", "Prosit");
-    private static final Map<String, String> modelConversion = ImmutableMap.of(
-            "HCD.Prosit", "Prosit_2020_intensity_HCD",
-            "CID.Prosit", "Prosit_2020_intensity_CID");
 
     public KoinaMethods(PinMzmlMatcher pmMatcher) {
         this.pmMatcher = pmMatcher;
@@ -129,15 +120,19 @@ public class KoinaMethods {
     //used for partial prediction. allHits is only a subset of all the hits in a pin file
     public PredictionEntryHashMap getKoinaPredictions(
             HashSet<String> allHits, String model, int NCE, String folder, String fulltsv) {
-        ScheduledThreadPoolExecutor executorService = new ScheduledThreadPoolExecutor(1);
+        KoinaModelSpec spec = KoinaModelRegistry.require(model);
+        //asks Koina about the model the first time; a KoinaException goes on to MainClass, which exits
+        int batchSize = KoinaModelCheck.batchSize(model);
 
+        ScheduledThreadPoolExecutor executorService = new ScheduledThreadPoolExecutor(1);
+        String fragmentation = spec.fragmentationSentAs(Constants.FragmentationType);
         Set<String> hits = new HashSet<>();
         for (String s : allHits) { //s is peptide,charge
-            String instrument = mapInstrumentToModelSpecific(model, s.split(",")[1]);
-            hits.add(s + "," + NCE + "," + instrument + "," + Constants.FragmentationType);
+            String instrument = mapInstrumentToModelSpecific(spec, s.split(",")[1]);
+            hits.add(s + "," + NCE + "," + instrument + "," + fragmentation);
         }
 
-        JSONWriter jw = new JSONWriter(model, hits, false);
+        JSONWriter jw = new JSONWriter(model, hits, false, batchSize);
 
         String jsonFolder = "";
         try {
@@ -147,11 +142,17 @@ public class KoinaMethods {
             System.exit(1);
         }
 
-        //send predictions to Koina
+        //send predictions to Koina. With no precursor the model can take, there is nothing to send, and
+        //transferKoinaPreds scores every PSM as one the model cannot take
         KoinaLibReader klr = new KoinaLibReader(model);
         KoinaModelCaller kmc = new KoinaModelCaller();
-        kmc.callModel(model, klr, jsonFolder, executorService, false, false);
-        executorService.shutdown();
+        try {
+            if (!hits.isEmpty()) {
+                kmc.callModel(model, klr, jsonFolder, executorService, false, false);
+            }
+        } finally { //a KoinaException goes on to MainClass, which exits
+            executorService.shutdown();
+        }
         try {
             PredictionEntryHashMap assignedPreds = new PredictionEntryHashMap();
             ArrayList<KoinaLibReader> klrs = new ArrayList<>();
@@ -200,19 +201,28 @@ public class KoinaMethods {
         return peptideObjs;
     }
 
+    /**
+     * The precursors of these PSMs a Koina model is sent while it is calibrated or compared with other models, as
+     * "peptide,charge" with the peptide as the model is sent it. The PSMs it cannot take are left out (KoinaPreCheck),
+     * and if that leaves none, it is said once here; the model then gets no request, and no predictions.
+     *
+     * @param currentModel a Koina model
+     */
     public static HashSet<String> createPartialKoinaSet(String currentModel, ArrayList<PeptideFormatter> peptideFormatters) {
+        KoinaPreCheck preCheck = new KoinaPreCheck(KoinaModelRegistry.require(currentModel));
         HashSet<String> allHits = new HashSet<>();
         for (PeptideFormatter pf : peptideFormatters) {
-            if (PeptideSkipper.skipPeptide(pf, currentModel)) {
+            String pep = preCheck.modelPeptide(pf);
+            if (pep == null) {
                 continue;
             }
-
-            //Koina requires all uppercase UNIMOD
-            String pep = pf.getModel(currentModel);
 
             allHits.add(pep + "," + pf.getCharge());
         }
 
+        if (allHits.isEmpty()) {
+            printInfo(preCheck.noneMessage());
+        }
         return allHits;
     }
 }

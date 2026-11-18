@@ -17,9 +17,13 @@ package mainsteps;
 import allconstants.*;
 
 import koinaclasses.KoinaMethods;
+import koinaclasses.KoinaModelRegistry;
+import koinaclasses.KoinaModelSpec;
+import koinaclasses.KoinaPreCheck;
 
 import transferlearn.fragcast.FragCastModelBundle;
 
+import utils.FatalException;
 import utils.Model;
 import utils.MyFileUtils;
 
@@ -180,31 +184,31 @@ public class MainClass {
             }
 
             //make models properly uppercased, or throw error if not right
+            //a name MSBooster does not know, such as the PredFull of former versions, ends the run with status 1
             LowercaseModelMapper lmm = new LowercaseModelMapper();
             HashMap<String, String> modelMapper = lmm.getLowercaseToModel();
-            if (modelMapper.containsKey(Constants.spectraModel.toLowerCase())) {
-                Constants.spectraModel = modelMapper.get(Constants.spectraModel.toLowerCase());
-            } else {
-                printError("No spectra model called " + Constants.spectraModel + ". Exiting.");
-                System.exit(0);
+            Constants.spectraModel = modelName("spectra", "spectraModel", Constants.spectraModel, modelMapper,
+                    KoinaModelSpec.Kind.MS2);
+            Constants.rtModel = modelName("RT", "rtModel", Constants.rtModel, modelMapper, KoinaModelSpec.Kind.RT);
+            Constants.imModel = modelName("IM", "imModel", Constants.imModel, modelMapper, KoinaModelSpec.Kind.IM);
+            Constants.auxSpectraModel = modelName("auxiliary spectra", "auxSpectraModel", Constants.auxSpectraModel,
+                    modelMapper, KoinaModelSpec.Kind.MS2);
+            //a model chosen for a property the run predicts that cannot encode the search's isobaric label ends the
+            //run now, before any model is called. A model chosen by the best-model search is checked when the input
+            //files are made, and the search leaves such models out
+            if (Constants.useSpectra) {
+                KoinaPreCheck.checkIsobaricLabel(Constants.spectraModel);
+                KoinaPreCheck.checkIsobaricLabel(Constants.auxSpectraModel);
+                //so does a model whose NCE range to calibrate over is empty (minNCE, maxNCE); the best-model
+                //search checks its candidates before it tries any
+                NceConstants.requireCalibrationRange(Constants.spectraModel);
+                NceConstants.requireCalibrationRange(Constants.auxSpectraModel);
             }
-            if (modelMapper.containsKey(Constants.rtModel.toLowerCase())) {
-                Constants.rtModel = modelMapper.get(Constants.rtModel.toLowerCase());
-            } else {
-                printError("No RT model called " + Constants.rtModel + ". Exiting.");
-                System.exit(0);
+            if (Constants.useRT) {
+                KoinaPreCheck.checkIsobaricLabel(Constants.rtModel);
             }
-            if (modelMapper.containsKey(Constants.imModel.toLowerCase())) {
-                Constants.imModel = modelMapper.get(Constants.imModel.toLowerCase());
-            } else {
-                printError("No IM model called " + Constants.imModel + ". Exiting.");
-                System.exit(0);
-            }
-            if (modelMapper.containsKey(Constants.auxSpectraModel.toLowerCase())) {
-                Constants.auxSpectraModel = modelMapper.get(Constants.auxSpectraModel.toLowerCase());
-            } else {
-                printError("No auxiliary spectra model called " + Constants.auxSpectraModel + ". Exiting.");
-                System.exit(0);
+            if (Constants.useIM) {
+                KoinaPreCheck.checkIsobaricLabel(Constants.imModel);
             }
 
             //set models
@@ -314,9 +318,54 @@ public class MainClass {
 
             System.exit(0);
         } catch (Exception e) {
-            e.printStackTrace();
-            executorService.shutdown();
+            printFatal(e);
+            if (executorService != null) {
+                executorService.shutdown();
+            }
             System.exit(1);
         }
+    }
+
+    /**
+     * Says why the run stops. A FatalException, such as a KoinaException, also one a task threw on another thread
+     * (wrapped in an ExecutionException), carries a message for the user, which is printed as an error; anything
+     * else is printed with its stack trace.
+     */
+    static void printFatal(Throwable e) {
+        FatalException fatal = FatalException.in(e);
+        if (fatal != null) {
+            printError(fatal.getMessage());
+            printError("Exiting");
+        } else {
+            e.printStackTrace();
+        }
+    }
+
+    /**
+     * The name of a model as MSBooster spells it, from the name a parameter gives in any case. An empty name is no
+     * model, and stays empty.
+     *
+     * @param what             the property the model predicts, as the message names it: "spectra", "RT", "IM" or
+     *                         "auxiliary spectra"
+     * @param parameter        the parameter that names the model, such as spectraModel
+     * @param model            the name it gives
+     * @param lowercaseToModel every model name in lower case, to the name (LowercaseModelMapper)
+     * @param kind             the kind of Koina model the parameter takes, for the names the message lists
+     * @throws FatalException if MSBooster has no model of that name
+     */
+    static String modelName(String what, String parameter, String model, Map<String, String> lowercaseToModel,
+                            KoinaModelSpec.Kind kind) {
+        String name = lowercaseToModel.get(model.toLowerCase());
+        if (name != null) {
+            return name;
+        }
+        List<String> koinaModels = new ArrayList<>();
+        for (KoinaModelSpec spec : KoinaModelRegistry.all()) {
+            if (spec.kind() == kind) {
+                koinaModels.add(spec.name());
+            }
+        }
+        throw new FatalException("No " + what + " model called " + model + " (" + parameter + "). The Koina "
+                + what + " models MSBooster can call are " + String.join(", ", koinaModels));
     }
 }

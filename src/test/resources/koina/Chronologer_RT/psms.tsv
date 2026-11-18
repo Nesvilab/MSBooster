@@ -1,0 +1,31 @@
+peptide	charge	note
+K.LGEPTIDEK.A	2	unmodified
+R.AVLDQGSTWPEM[15.9949]AGK.S	2	oxidized Met (UNIMOD:35)
+K.TEC[57.0215]LDHFAVNPR.G	3	carbamidomethyl Cys (UNIMOD:4)
+K.SHCVAELLGPEK.T	2	free Cys: sent as a bare C, which Chronologer reads as a free cysteine
+K.C[39.9950]ADLSGFTPEVIAR.Q	2	pyro-carbamidomethyl Cys on residue 1: sent as C[UNIMOD:385], Chronologer's token for it
+K.n[42.0106]ADVTGLPHK.E	2	N-terminal acetyl (UNIMOD:1)
+K.n[42.0106]M[15.9949]DPSLVTAEGK.A	2	N-terminal acetyl on an oxidized Met residue 1
+R.GS[79.9663]PEDLHVTAR.L	2	phospho Ser (UNIMOD:21)
+R.NDT[79.9663]PLM[15.9949]EAGR.V	2	phospho Thr and oxidized Met
+R.GEDY[79.9663]LPTAK.S	2	phospho Tyr
+K.ADK[42.0106]LGEPTIDER.S	2	acetyl Lys (UNIMOD:1)
+K.LGVEK[114.0429]AYNDGR.F	3	GlyGly Lys (UNIMOD:121)
+K.ADK[14.0157]LGEPTIDER.S	2	methyl Lys (UNIMOD:34)
+K.ADK[28.0313]LGEPTIDER.S	2	dimethyl Lys (UNIMOD:36)
+K.ADK[42.0470]LGEPTIDER.S	2	trimethyl Lys (UNIMOD:37, not acetyl)
+R.GR[14.0157]PEDLHVTAK.L	2	methyl Arg (UNIMOD:34)
+R.GR[28.0313]PEDLHVTAK.L	2	dimethyl Arg (UNIMOD:36)
+K.n[229.1629]LGEPTIDEK[229.1629].A	2	TMT on the N-term and Lys (UNIMOD:737)
+K.n[224.1525]LGEPTIDEK[224.1525].A	2	TMT zero on the N-term and Lys (UNIMOD:739)
+R.Q[-17.0265]YLDTEGAIPAK.D	2	pyro-Glu from Gln on residue 1 (UNIMOD:28)
+K.E[-18.0106]WLSPQDGAVR.T	2	pyro-Glu from Glu on residue 1 (UNIMOD:27)
+K.ADK[100.0160]LGEPTIDER.S	2	succinyl Lys (UNIMOD:64, which Koina's table has as 125): left out
+K.VFLEN[0.9840]GTLR.A	2	deamidated Asn: left out
+K.n[-17.0265]QYLDTEGAIPAK.D	2	pyro-Glu as an N-term mod: left out
+K.LGEPTIDEKc[-0.9840].A	2	C-terminal amidation: a C-term mod is never sent
+K.LGEPTIDEKc[42.0106].A	2	a C-term mod of the acetyl mass: never sent, not even as the N-term acetyl of the table
+K.TEALDHFAVNPRGSLEWQKPEDVTAR.N	7	charge 7: an RT model takes any charge
+K.ELVSAPLGTNEIYDHFAQWTGLPVEDAKLGRSTEPVNGHAKYLDTEGAIP.R	3	50 residues
+K.ELVSAPLGTNEIYDHFAQWTGLPVEDAKLGRSTEPVNGHAKYLDTEGAIPK.R	3	51 residues: skipped, as Koina would read only the first 50
+K.GDUVLPAEK.A	2	selenocysteine U: skipped by models that refuse OUBZJX

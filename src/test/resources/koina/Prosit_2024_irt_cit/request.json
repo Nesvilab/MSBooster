@@ -1,0 +1,25 @@
+{
+    "inputs": [{
+        "shape": [
+            12,
+            1
+        ],
+        "data": [
+            ["AVLDQGSTWPEM[UNIMOD:35]AGK"],
+            ["GSPEDLHVTAR"],
+            ["HEAPGLDVSTWKPEEVLR"],
+            ["C[UNIMOD:4]ADLSGFTPEVIAR"],
+            ["TEC[UNIMOD:4]LDHFAVNPR"],
+            ["GLR[UNIMOD:7]DTVAEPWK"],
+            ["ADGLR"],
+            ["LGEPTIDEK"],
+            ["SHC[UNIMOD:4]VAELLGPEK"],
+            ["VFLEN[UNIMOD:7]GTLR"],
+            ["ADVTGLPHK"],
+            ["AEQ[UNIMOD:7]LPTSGVNK"]
+        ],
+        "datatype": "BYTES",
+        "name": "peptide_sequences"
+    }],
+    "id": "0"
+}

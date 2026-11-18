@@ -1,0 +1,19 @@
+peptide	charge	note
+K.LGEPTIDEK.A	2	unmodified
+R.AVLDQGSTWPEM[15.9949]AGK.S	2	oxidized Met (UNIMOD:35)
+K.TEC[57.0215]LDHFAVNPR.G	3	carbamidomethyl Cys (UNIMOD:4)
+K.SHCVAELLGPEK.T	2	free Cys: skipped, as Altimeter takes carbamidomethylated cysteines only
+K.C[39.9950]ADLSGFTPEVIAR.Q	2	pyro-carbamidomethyl Cys on residue 1: sent as C[UNIMOD:4], its -17.0265 left out
+K.n[42.0106]ADVTGLPHK.E	2	N-terminal acetyl: left out
+R.GS[79.9663]PEDLHVTAR.L	2	phospho Ser: left out
+K.LGEPTIDEKc[-0.9840].A	2	C-terminal amidation: left out
+K.M[15.9949]DPSLVTAEGHYRWK.A	3	oxidized Met with aromatic residues, for immonium ions
+K.YFHWLGEPTIDEK.A	2	aromatic residues, for immonium ions
+R.HEAPGLDVSTWKPEEVLR.S	4	charge 4, for precursor ions
+K.ADGLRK.T	1	6 residues, charge 1
+K.ADGLR.T	1	5 residues: skipped by models that take 6 or more
+K.ELVSAPLGTNEIYDHFAQWTGLPVEDAKLGRSTEPVNGHA.Y	4	40 residues
+K.ELVSAPLGTNEIYDHFAQWTGLPVEDAKLGRSTEPVNGHAK.Y	4	41 residues: skipped by models limited to 40
+K.TEALDHFAVNPRGSLEWQKPEDVTAR.N	7	charge 7
+K.TEALDHFAVNPRGSLEWQKPEDVTAR.N	8	charge 8: skipped by models limited to charge 7
+K.GDUVLPAEK.A	2	selenocysteine U: skipped by models that refuse OUBZJX

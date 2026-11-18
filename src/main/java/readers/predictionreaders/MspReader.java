@@ -164,8 +164,8 @@ public class MspReader implements LibraryPredictionMapper {
                         PredictionEntry tmp = allPreds.get(pf.getBaseCharge());
 
                         if (tmp == null) { //valid reasons to be empty
-                            if (PeptideSkipper.skipPeptide(pf,
-                                    Constants.spectraModel + Constants.rtModel + Constants.imModel)) {
+                            if (PeptideSkipper.skipPeptideForAnyModel(pf,
+                                    Constants.spectraModel, Constants.rtModel, Constants.imModel)) {
                                 continue;
                             }
                         }

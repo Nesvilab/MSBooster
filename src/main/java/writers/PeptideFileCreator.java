@@ -16,6 +16,10 @@ package writers;
 
 import allconstants.Constants;
 import jakarta.xml.bind.JAXBException;
+import koinaclasses.KoinaModelCheck;
+import koinaclasses.KoinaModelRegistry;
+import koinaclasses.KoinaModelSpec;
+import koinaclasses.KoinaPreCheck;
 import mainsteps.MainClass;
 import mainsteps.PinMzmlMatcher;
 import allconstants.FragCastCharges;
@@ -73,12 +77,15 @@ public class PeptideFileCreator {
             pinHits.add(new LinkedHashSet<>());
         }
 
-        //the alphapept, deeplc, im2deep and alphapeptdeep formats give a mass the UniMod code already used for
-        //it in this run, if there is one (PeptideFormatter.foundUnimods), so the code a peptide gets depends on
-        //the peptides formatted before it. For these, read the pin files one at a time, in pin file order
-        String lowerModelFormat = modelFormat.toLowerCase();
-        boolean usesFoundUnimods = lowerModelFormat.contains("alphapept") || lowerModelFormat.contains("deeplc") ||
-                lowerModelFormat.contains("im2deep");
+        //the Koina models whose spec says so (KoinaModelSpec.singleThreadFormatting) and the alphapeptdeep format
+        //give a mass the UniMod code already used for it in this run, if there is one
+        //(PeptideFormatter.foundUnimods), so the code a peptide gets depends on the peptides formatted before it.
+        //For these, read the pin files one at a time, in pin file order
+        KoinaModelSpec koinaSpec = KoinaModelRegistry.find(modelFormat);
+        boolean usesFoundUnimods = koinaSpec != null ? koinaSpec.singleThreadFormatting() :
+                modelFormat.equals("alphapeptdeep");
+        //what a Koina model is sent of the PSMs, and what is left out, counted over every pin
+        KoinaPreCheck preCheck = koinaSpec != null ? new KoinaPreCheck(koinaSpec) : null;
 
         printInfo("Creating input file for " + modelFormat);
         List<Future> futureList = new ArrayList<>();
@@ -126,8 +133,8 @@ public class PeptideFileCreator {
                             pin.createAlphapeptdeepList(hits);
                             break;
                     }
-                    if (KoinaModels.contains(modelFormat)) {
-                        pin.createJSON(modelFormat, hits);
+                    if (preCheck != null) {
+                        pin.createJSON(hits, preCheck);
                     }
                     pin.close();
                 } catch (Exception e) {
@@ -148,6 +155,11 @@ public class PeptideFileCreator {
             pinHits.set(i, null);
         }
         printInfo(hSetHits.size() + " precursors for prediction");
+        if (preCheck != null) {
+            preCheck.report(hSetHits.size());
+            //a model that can take none of the PSMs ends the run here, before a request is written
+            preCheck.requirePredictable(hSetHits.size());
+        }
 
         //want to see what mods were assigned
         if (modelFormat.equals("alphapeptdeep")) {
@@ -171,7 +183,7 @@ public class PeptideFileCreator {
         try {
             String filename = "";
             if (KoinaModels.contains(modelFormat)) {
-                JSONWriter jw = new JSONWriter(modelFormat, hSetHits, true);
+                JSONWriter jw = new JSONWriter(modelFormat, hSetHits, true, KoinaModelCheck.batchSize(modelFormat));
                 if (!Constants.usedKoina) {
                     filename = jw.write(true,
                             Constants.outputDirectory + File.separator + "jsonFiles",
@@ -286,15 +298,6 @@ public class PeptideFileCreator {
                         }
                         myWriter.close();
                         FragCastCharges.reportSkipped("PSMs");
-                        break;
-                    case "PredFull":
-                        printInfo("Writing PredFull input file");
-                        myWriter = new FileWriter(outfile);
-                        myWriter.write("Peptide" + "\t" + "Charge" + "\t" + "Type" + "\t" + "NCE\n");
-                        for (String hSetHit : hSetHits) {
-                            myWriter.write(hSetHit + "\n");
-                        }
-                        myWriter.close();
                         break;
                     case "Prosit":
                         printInfo("Writing Prosit input file");

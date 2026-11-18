@@ -130,4 +130,19 @@ public class ParameterTemplateTest {
         assertTrue(exposed.isEmpty(), "these belong to FragCast, not to MSBooster: " + exposed);
     }
 
+    // minNCE and maxNCE override each Koina model's own collision energy range (D27), so a template
+    // that set them would calibrate Prosit_2023_intensity_timsTOF over 20-40 instead of its 20-70.
+    // They stay documented, commented out.
+    @Test
+    public void theTemplateLeavesTheNceRangeToEachModel() throws Exception {
+        List<String> keys = templateKeys();
+        HashSet<String> settable = settableParameters();
+        String template = new String(Files.readAllBytes(TEMPLATE.toPath()), StandardCharsets.UTF_8);
+        for (String key : Arrays.asList("minNCE", "maxNCE")) {
+            assertTrue(settable.contains(key), key + " is still a parameter");
+            assertFalse(keys.contains(key), "msbooster_params.txt sets " + key);
+            assertTrue(template.contains("# " + key + " = "), key + " is not documented in msbooster_params.txt");
+        }
+    }
+
 }

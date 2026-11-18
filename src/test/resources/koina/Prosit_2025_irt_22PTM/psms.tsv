@@ -1,0 +1,29 @@
+peptide	charge	note
+K.LGEPTIDEK.A	2	unmodified
+R.AVLDQGSTWPEM[15.9949]AGK.S	2	oxidized Met (hand table, UNIMOD:35)
+K.TEC[57.0215]LDHFAVNPR.G	3	carbamidomethyl Cys (hand table, UNIMOD:4)
+K.SHCVAELLGPEK.T	2	free Cys: sent as a bare C, not as carbamidomethyl
+K.ADK[57.0215]LGEPTIDER.S	2	carbamidomethyl Lys (hand table, UNIMOD:4, not Gly UNIMOD:1263 of the same mass)
+K.C[39.9950]ADLSGFTPEVIAR.Q	2	pyro-carbamidomethyl Cys on residue 1 (UNIMOD:26, zero-shot)
+K.n[42.0106]ADVTGLPHK.E	2	N-terminal acetyl (hand table, UNIMOD:1)
+K.n[42.0106]M[15.9949]DPSLVTAEGK.A	2	N-terminal acetyl on an oxidized Met residue 1
+R.GS[79.9663]PEDLHVTAR.L	2	phospho Ser (hand table, UNIMOD:21)
+R.GSP[79.9663]EDLHVTAR.L	2	phospho Pro (hand table, UNIMOD:21; added to the mass table)
+K.LGVEK[114.0429]AYNDGR.F	3	GlyGly Lys (hand table, UNIMOD:121)
+R.Q[-17.0265]YLDTEGAIPAK.D	2	pyro-Glu from Gln on residue 1 (hand table, UNIMOD:28)
+K.VFLEN[0.9840]GTLR.A	2	deamidated Asn (hand table, UNIMOD:7)
+K.n[229.1629]LGEPTIDEK[229.1629].A	2	TMT on the N-term and Lys (hand table, UNIMOD:737)
+K.n[229.1629]GS[229.1629]PEDLHVTAK[229.1629].A	2	TMT on Ser too (UNIMOD:737, zero-shot)
+K.ADK[86.0004]LGEPTIDER.S	2	malonyl Lys (UNIMOD:747, zero-shot)
+K.PEPTM[31.9898]IDEK.A	2	dioxidized Met (UNIMOD:425, zero-shot)
+K.n[27.9949]LGEPTIDEK.A	2	N-terminal formyl (UNIMOD:122, zero-shot)
+R.GS[-18.0106]PEDLHVTAR.L	2	dehydrated Ser (UNIMOD:23): refused, left out
+R.GT[146.0579]PEDLHVTAR.L	2	dHex on Thr (UNIMOD:295): refused, left out
+K.VFLEN[203.0794]GTLR.A	2	HexNAc on Asn (UNIMOD:43): refused, as N has no attachment group; left out
+K.n[-17.0265]QYLDTEGAIPAK.D	2	pyro-Glu as an N-term mod (UNIMOD:28): refused, left out
+K.LGEPTIDEKc[-0.9840].A	2	C-terminal amidation (UNIMOD:2): a C-term mod is never sent
+R.HEAPGLDVSTWKPEEVLR.S	4	charge 4
+K.ADGLR.T	1	5 residues, charge 1
+K.ELVSAPLGTNEIYDHFAQWTGLPVEDAKLGR.S	3	31 residues: skipped by models limited to 30
+K.GDUVLPAEK.A	2	selenocysteine U: skipped by models that refuse OUBZJX
+K.TEALDHFAVNPRGSLEWQKPEDVTAR.N	7	charge 7: skipped by models limited to charge 6

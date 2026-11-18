@@ -1,38 +1,32 @@
 package allconstants;
 
+import koinaclasses.KoinaModelRegistry;
+import koinaclasses.KoinaModelSpec;
 import utils.CaseInsensitiveHashSet;
 import utils.Print;
 
 import java.util.*;
+import java.util.function.Predicate;
 
 public class ModelCollections implements ConstantsInterface {
-    ////////////all Koina models/////////////
-    public static CaseInsensitiveHashSet KoinaRTmodels = new CaseInsensitiveHashSet(
-            new String[] {
-                    "AlphaPept_rt_generic",
-                    "Prosit_2019_irt", "Prosit_2020_irt_TMT", "Prosit_2024_irt_cit",
-                    "Deeplc_hela_hf"});
-    public static CaseInsensitiveHashSet KoinaMS2models = new CaseInsensitiveHashSet(
-            new String[] {
-                    "ms2pip_2021_HCD", "ms2pip_timsTOF2024", "ms2pip_CID_TMT", "ms2pip_TTOF5600",
-                    "ms2pip_Immuno_HCD", "ms2pip_iTRAQphospho",
-                    "AlphaPept_ms2_generic",
-                    "Prosit_2019_intensity", "Prosit_2020_intensity_CID", "Prosit_2020_intensity_TMT",
-                    "Prosit_2020_intensity_HCD", "Prosit_2023_intensity_timsTOF", "Prosit_2024_intensity_cit",
-                    "Prosit_2025_intensity_MultiFrag",
-                    "UniSpec", "PredFull"});
-    public static CaseInsensitiveHashSet KoinaIMmodels = new CaseInsensitiveHashSet(
-            new String[] {"AlphaPept_ccs_generic", "IM2Deep"});
-    public static CaseInsensitiveHashSet KoinaCCSmodels = new CaseInsensitiveHashSet(
-            new String[] {"AlphaPept_ccs_generic", "IM2Deep"}); // convert from ccs to 1/K0
-    public static CaseInsensitiveHashSet KoinaModels = new CaseInsensitiveHashSet();
-    static {
-        KoinaModels.addAll(KoinaRTmodels);
-        KoinaModels.addAll(KoinaMS2models);
-        KoinaModels.addAll(KoinaIMmodels);
+    ////////////all Koina models, from koinaclasses.KoinaModelRegistry/////////////
+    public static CaseInsensitiveHashSet KoinaRTmodels = koinaModels(spec -> spec.kind() == KoinaModelSpec.Kind.RT);
+    public static CaseInsensitiveHashSet KoinaMS2models = koinaModels(spec -> spec.kind() == KoinaModelSpec.Kind.MS2);
+    public static CaseInsensitiveHashSet KoinaIMmodels = koinaModels(spec -> spec.kind() == KoinaModelSpec.Kind.IM);
+    public static CaseInsensitiveHashSet KoinaCCSmodels = koinaModels(spec -> spec.kind() == KoinaModelSpec.Kind.IM
+            && spec.imConversion().unit() == KoinaModelSpec.ImUnit.CCS); // convert from ccs to 1/K0
+    public static CaseInsensitiveHashSet KoinaModels = koinaModels(spec -> true);
+    public static CaseInsensitiveHashSet KoinaIsoLabelmodels = koinaModels(KoinaModelSpec::isobaricLabel);
+
+    private static CaseInsensitiveHashSet koinaModels(Predicate<KoinaModelSpec> filter) {
+        CaseInsensitiveHashSet models = new CaseInsensitiveHashSet();
+        for (KoinaModelSpec spec : KoinaModelRegistry.all()) {
+            if (filter.test(spec)) {
+                models.add(spec.name());
+            }
+        }
+        return models;
     }
-    public static CaseInsensitiveHashSet KoinaIsoLabelmodels = new CaseInsensitiveHashSet(
-            new String[] {"Prosit_2020_irt_TMT", "Prosit_2020_intensity_TMT"});
 
     ////////////individual collections/////////////
     //FragCast is added alongside DIA-NN as a findBest candidate (it does not replace DIA-NN).
@@ -102,12 +96,13 @@ public class ModelCollections implements ConstantsInterface {
     public static String ms2SearchModelsString = "";
     public static String imSearchModelsString = "";
 
-    ////////////allowed fragmentation types for models that require it/////////////
+    ////////////allowed fragmentation types for models that require it, from the registry/////////////
     public static HashMap<String, HashSet<String>> allowedFragmentationTypes = new HashMap<>();
     static {
-        allowedFragmentationTypes.put("Prosit_2020_intensity_TMT", new HashSet<>(Arrays.asList("HCD", "CID")));
-        allowedFragmentationTypes.put("Prosit_2024_intensity_cit", new HashSet<>(Arrays.asList("HCD", "CID")));
-        allowedFragmentationTypes.put("Prosit_2025_intensity_MultiFrag",
-                new HashSet<>(Arrays.asList("HCD", "ECD", "EID", "UVPD", "ETCID")));
+        for (KoinaModelSpec spec : KoinaModelRegistry.all()) {
+            if (!spec.allowedFragmentationTypes().isEmpty()) {
+                allowedFragmentationTypes.put(spec.name(), new HashSet<>(spec.allowedFragmentationTypes()));
+            }
+        }
     }
 }

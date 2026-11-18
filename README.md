@@ -1,5 +1,5 @@
 # MSBooster
-Last updated: 8/22/2026
+Last updated: 11/17/2026
 
 ## Overview
 MSBooster is a tool for incorporating spectral libary predictions into peptide-spectrum match (PSM) 
@@ -14,7 +14,7 @@ predictors' input files
 MSBooster is compatible with many types of database searches, including HLA immunopeptidomics, DDA and
 DIA, and single cell proteomics. It is incorporated into [FragPipe](https://fragpipe.nesvilab.org/) 
 and is included in many of its workflows. MSBooster was developed with other FragPipe tools in mind, 
-such as FragPipe-PDV.
+such as FragViz.
 
 ![Alt text](README_imgs/manuscript1_workflow.png)
 
@@ -74,10 +74,21 @@ Only FragCast can be fine-tuned on your own data; see
 ## Installation and running guide
 ### In FragPipe
 MSBooster can be run in Windows and Linux systems. If using FragPipe, no other installation steps are
-needed besides installing FragPipe. MSBooster is located in the "Validation" tab. Choose to enable 
-retention time features with "Predict RT" and MS/MS spectral features with "Predict spectra". Please refer to the 
-[FragPipe](https://fragpipe.nesvilab.org/) documentation for how to run an analysis.
-![Alt text](README_imgs/fragpipe_koina_interface.png)
+needed besides installing FragPipe. MSBooster is located in the "Validation" tab, in the "Rescoring using deep
+learning prediction" box. Check "Run MSBooster" to run it; it requires "Run Percolator" in the PSM validation panel.
+FragPipe always calculates retention time and MS/MS spectral features, and ion mobility features for timsTOF data
+(`.d` files, or the mzML diaTracer writes from them). The panel chooses what predicts them:
+ - **Model**: `FragCast`, which ships with FragPipe and runs on your computer's CPU; `Custom`, a model you
+   fine-tuned in the "Transfer Learning" tab, given as one zip file in "Model file"; or `Koina`, which sends the
+   peptide sequences to a Koina server. The "Custom model" and "Koina" boxes are greyed out unless that model is
+   chosen.
+ - **Fragmentation type**: the fragmentation type of the MS/MS spectra, for every model. `auto` reads it from the
+   first spectrum's filter string.
+ - **Koina server URL**, **RT model**, **MS2 model** and **IM model (timsTOF only)**: for `Koina`, the server to send
+   the peptides to, and one Koina model for each property. The tooltip of each model lists the mods it is sent and
+   the peptides it takes. See [Using Koina with MSBooster](Koina.md#fragpipe-gui).
+
+Please refer to the [FragPipe](https://fragpipe.nesvilab.org/) documentation for how to run an analysis.
 
 ### On the command line
 If using standalone MSBooster to run in the command line, please download the latest jar file from 
@@ -419,8 +430,8 @@ siblings) are documented in [msbooster_params.txt](msbooster_params.txt) and und
  `peptide<TAB>charge`, so the predicted library holds exactly the precursors the search found rather
  than every peptide across a charge range
  - spectraRT.predicted.bin: a binary file with predictions from DIA-NN to be used by MSBooster for
-feature calculation. If using FragPipe-PDV, these files are used to generate mirror plots of experimental
-and predicted spectra
+feature calculation. FragViz reads it, with spectraRT.tsv, from the MSBooster folder of a FragPipe result for
+mirror plots of experimental and predicted spectra
  - spectraRT.predicted.parquet: the same thing from FragCast, as a spectral library in Parquet. The
  name records which weights wrote it - `.fast` for the `FragCast-Fast` model, and a short `.ft-` tag
  when custom or fine-tuned weights were named - so libraries predicted under different weights never

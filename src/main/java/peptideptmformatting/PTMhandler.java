@@ -15,6 +15,9 @@
 package peptideptmformatting;
 
 import allconstants.Constants;
+import koinaclasses.KoinaModelSpec.EncodableMods;
+import koinaclasses.KoinaModelSpec.ModMassMap;
+import koinaclasses.KoinaModelSpec.PeptideFormat;
 import org.apache.commons.lang3.math.NumberUtils;
 import umich.ms.fileio.filetypes.unimod.UnimodOboReader;
 import utils.NumericUtils;
@@ -47,6 +50,20 @@ public class PTMhandler {
     public static final int pyrogluEUnimod = 27;
     public static final int pyroCarbamidomethylUnimod = 26;
     public static final int citrullinationDeamidationUnimod = 7;
+    public static final int glyUnimod = 1263; //Gly, which has the mass of carbamidomethyl
+    public static final double lactylMass = 72.021129;
+    public static final int lactylUnimod = 2114;
+    public static final double methylMass = 14.01565;
+    public static final double dimethylMass = 28.0313;
+    public static final double trimethylMass = 42.04695;
+    public static final int methylUnimod = 34;
+    public static final int dimethylUnimod = 36;
+    public static final int trimethylUnimod = 37;
+    public static final double tmtZeroMass = 224.152478; //TMT (TMT zero)
+    public static final int tmtZeroUnimod = 739;
+    //what Koina's Chronologer reads C[UNIMOD:385] as: a pyro-carbamidomethyl cysteine, carbamidomethyl and the
+    //ammonia loss of the cyclization (UNIMOD:385) together
+    public static final int chronologerPyroCarbamidomethylUnimod = 385;
 
     //models trained on tmt6/10/11 extrapolate well to tmt pro and itraq
     public static final double tmt6_10_11Mass = 229.1629;
@@ -65,8 +82,29 @@ public class PTMhandler {
         tmtMass = mass;
         updateUnimodToModMassLimited();
         updateAAUnimodToModMassLimited();
+        updateChronologerTables();
     }
     public static double getTmtMass() { return tmtMass; }
+
+    //whether the search in fragger.params has an isobaric label (TMT or iTRAQ), as a fixed or variable mod
+    private static boolean isobaricLabel = false;
+
+    /** The search has an isobaric label of this mass (ParameterUtils.readFraggerParams); it becomes the TMT mass. */
+    public static void setIsobaricLabel(double mass) {
+        setTmtMass(mass);
+        isobaricLabel = true;
+    }
+
+    /** Whether the search has an isobaric label (TMT or iTRAQ), whose mass is then {@link #getTmtMass()}. */
+    public static boolean hasIsobaricLabel() {
+        return isobaricLabel;
+    }
+
+    /** Forgets the search's isobaric label, and sets the TMT mass back to TMT 6/10/11. For tests. */
+    public static void resetIsobaricLabel() {
+        isobaricLabel = false;
+        setTmtMass(tmt6_10_11Mass);
+    }
 
     public static HashMap<Integer, Double> unimodToModMassLimited = new HashMap<>();
     static {
@@ -217,6 +255,36 @@ public class PTMhandler {
         }
     }
 
+    //AAunimodToModMassAll as it was when the Prosit-PTM table was last made from it, and that table
+    private record DerivedMassTable(Map<String, Double> source, Map<String, Double> table) {}
+    private static volatile DerivedMassTable aaUnimodToModMassPrositPtm;
+
+    /**
+     * The mass table of Koina's Prosit-PTM models (KoinaModelSpec.ModMassMap.PROSIT_PTM): AAunimodToModMassAll with
+     * the two pairs of their hand-written table it lacks, phospho on P (P21) and Gly on C (C1263). It is made again
+     * when AAunimodToModMassAll is, as when an additional mods file is read.
+     */
+    public static Map<String, Double> getAAunimodToModMassPrositPtm() {
+        Map<String, Double> source = AAunimodToModMassAll;
+        DerivedMassTable derived = aaUnimodToModMassPrositPtm;
+        if (derived == null || derived.source() != source) {
+            Map<String, Double> table = new HashMap<>(source);
+            putIfKnown(table, "P", phosphorylationUnimod);
+            putIfKnown(table, "C", glyUnimod);
+            derived = new DerivedMassTable(source, Collections.unmodifiableMap(table));
+            aaUnimodToModMassPrositPtm = derived;
+        }
+        return derived.table();
+    }
+
+    //the residue with the mass unimodToModMassAll has for the code, unless the table has the pair already
+    private static void putIfKnown(Map<String, Double> table, String residue, int unimod) {
+        Double mass = unimodToModMassAll.get(unimod);
+        if (mass != null) {
+            table.putIfAbsent(residue + unimod, mass);
+        }
+    }
+
     public static Map<Integer, Double> unimodOboToModMass;
 
     public static void setUnimodObo() {
@@ -245,110 +313,76 @@ public class PTMhandler {
     //gives some leeway in PTM mass, precision, only needs to be 0.001 away
     //foundUnimods are those PTMs to check first (those that have already been identified in the sample)
 
+    //how a peptide format writes a mod it keeps
+    //unimodLabel: the word before the code, as in [UNIMOD:35]
+    //ntermPrefix, ntermSuffix: written before and after an N-term mod
+    //ctermPrefix: written before a C-term mod
+    //customModAsMass: a mod of the additional mods file without a UniMod code is written as its mass
+    //parentheses: mods are written in () instead of []
+    private record ModNotation(String unimodLabel, String ntermPrefix, String ntermSuffix, String ctermPrefix,
+                               boolean customModAsMass, boolean parentheses) {}
+
+    private static final ModNotation DIANN_NOTATION = new ModNotation("UniMod", "", "", "", false, false);
+    private static final ModNotation LIBRARYTSV_NOTATION = new ModNotation("UniMod", "_", "", "_", true, true);
+
     //start is index of [
+    //the DIA-NN ("diann") and library.tsv ("librarytsv") formats. A Koina model's peptides are written by
+    //formatPeptideBaseToKoina
     public static String[] formatPeptideBaseToSpecific(String peptide, int start, int end, String model,
                                                        Set<String> foundUnimods, boolean cterm) {
-        //set allowed unimods
-        Set<String> modelAllowedUnimods;
-        switch(model) {
+        switch (model) {
             case "diann":
-                modelAllowedUnimods = diannAAMods;
-                break;
-            case "unispec":
-                modelAllowedUnimods = unispecAAMods;
-                break;
-            case "prosit":
-            case "prosittmt":
-                modelAllowedUnimods = prositAAMods;
-                break;
-            case "ms2pip":
-                modelAllowedUnimods = ms2pipAAMods;
-                break;
-            case "alphapept":
-            case "deeplc":
-            case "im2deep":
+                return formatMod(peptide, start, end, DIANN_NOTATION, AAunimodToModMassLimited,
+                        foundUnimods, diannAAMods, EncodableMods.ANY, cterm);
             case "librarytsv":
-                modelAllowedUnimods = AAunimodToModMassAllKeys;
-                break;
-            case "predfull":
-                modelAllowedUnimods = predfullAAMods;
-                break;
+                return formatMod(peptide, start, end, LIBRARYTSV_NOTATION, AAunimodToModMassAll,
+                        foundUnimods, AAunimodToModMassAllKeys, EncodableMods.ANY, cterm);
             default:
-                modelAllowedUnimods = new HashSet<>();
-                break;
+                throw new IllegalArgumentException(model + " is not a peptide format of formatPeptideBaseToSpecific");
         }
+    }
 
-        //set unimod string formatting
-        String unimodFormat = "";
-        switch(model) {
-            case "diann":
-            case "librarytsv":
-                unimodFormat = "UniMod";
-                break;
-            default: //koina
-                unimodFormat = "UNIMOD";
-                break;
-        }
+    /**
+     * Writes the mod at [start, end] of a base peptide the way a Koina model's peptide format does: as the UniMod
+     * code its mass has, looked up first among preferredMods and then among allowedMods, or left out of the
+     * peptide if neither has it. A code the model cannot encode is passed over, as one neither set has.
+     *
+     * @param start     the index of the mod's "["
+     * @param end       the index of the mod's "]"
+     * @param encodable the codes the model can be sent (KoinaModelSpec.encodableMods)
+     * @param cterm     whether a mod on the last residue may be a C-term mod
+     * @return the peptide with the mod written, and the residue (or "[") plus code chosen, or "" if it was left out
+     */
+    public static String[] formatPeptideBaseToKoina(String peptide, int start, int end, PeptideFormat format,
+                                                    ModMassMap massMap, Set<String> preferredMods,
+                                                    Set<String> allowedMods, EncodableMods encodable,
+                                                    boolean cterm) {
+        ModNotation notation = new ModNotation("UNIMOD", "", format.ntermSeparator(), format.ctermSeparator(),
+                false, false);
+        return formatMod(peptide, start, end, notation, massMap.aaUnimodToMass(), preferredMods, allowedMods,
+                encodable, cterm);
+    }
 
-        String ntermSuffix = "";
-        switch(model) {
-            case "diann":
-            case "unispec":
-            case "deeplc":
-            case "librarytsv":
-                break;
-            default:
-                ntermSuffix = "-";
-                break;
-        }
-
-        String ntermPrefix = "";
-        switch(model) {
-            case "librarytsv":
-                ntermPrefix = "_";
-                break;
-            default:
-                break;
-        }
-
-        String ctermPrefix = "";
-        switch(model) {
-            case "alphapept":
-                ctermPrefix = "-";
-                break;
-            case "librarytsv":
-                ctermPrefix = "_";
-                break;
-            default:
-                break;
-        }
-
-        //all unimod codes allowed
-        Map<String, Double> modMap;
-        if (model.equals("alphapept") || model.equals("deeplc") ||
-                model.equals("im2deep") || model.equals("librarytsv")) {
-            modMap = AAunimodToModMassAll;
-        } else {
-            modMap = AAunimodToModMassLimited;
-        }
-
+    private static String[] formatMod(String peptide, int start, int end, ModNotation notation,
+                                      Map<String, Double> modMap, Set<String> foundUnimods,
+                                      Set<String> modelAllowedUnimods, EncodableMods encodable, boolean cterm) {
         double reportedMass = Double.parseDouble(peptide.substring(start + 1, end));
         String unimod = PTMhandler.findUnimodForMass(foundUnimods, modMap, reportedMass, peptide,
-                start - 1, end, true, cterm);
+                start - 1, end, true, encodable, cterm);
         if (unimod.isEmpty()) {
             unimod = PTMhandler.findUnimodForMass(modelAllowedUnimods, modMap, reportedMass, peptide,
-                    start - 1, end, false, cterm);
+                    start - 1, end, false, encodable, cterm);
         }
 
         //need to check if the AA is allowed to hold this PTM
         if (unimod.isEmpty()) {
             //model won't predict this anyway
             peptide = peptide.substring(0, start) + peptide.substring(end + 1);
-        } else if (model.equals("librarytsv") && !NumberUtils.isDigits(unimod.substring(1))) {
+        } else if (notation.customModAsMass() && !NumberUtils.isDigits(unimod.substring(1))) {
             //custom mod represented by mass
             peptide = peptide.substring(0, start + 1) + reportedMass + peptide.substring(end);
         } else {
-            peptide = peptide.substring(0, start + 1) + unimodFormat + ":" +
+            peptide = peptide.substring(0, start + 1) + notation.unimodLabel() + ":" +
                     unimod.substring(1) + peptide.substring(end);
         }
 
@@ -360,15 +394,16 @@ public class PTMhandler {
             } else if (peptide.startsWith("(")) {
                 splitpoint = peptide.indexOf(")");
             }
-            peptide = ntermPrefix + peptide.substring(0, splitpoint + 1) + ntermSuffix + peptide.substring(splitpoint + 1);
+            peptide = notation.ntermPrefix() + peptide.substring(0, splitpoint + 1) + notation.ntermSuffix() +
+                    peptide.substring(splitpoint + 1);
         }
 
         //cterm
         if (cterm && (unimod.startsWith("[") || unimod.startsWith("("))) {
-            peptide = peptide.substring(0, start) + ctermPrefix + peptide.substring(start);
+            peptide = peptide.substring(0, start) + notation.ctermPrefix() + peptide.substring(start);
         }
 
-        if (model.equals("librarytsv")) {
+        if (notation.parentheses()) {
             peptide = peptide.replace("[", "(");
             peptide = peptide.replace("]", ")");
         }
@@ -376,11 +411,11 @@ public class PTMhandler {
         return new String[]{peptide, unimod}; //unimod is accepted unimod, or ""
     }
 
-    //returns unimod for the reportedMass, or empty string if not found
+    //returns unimod for the reportedMass, or empty string if not found. A code the model cannot encode is not found
     private static String findUnimodForMass(Set<String> allowedMods, Map<String, Double> modMap,
                                             Double reportedMass,
                                             String peptide, int start, int end,
-                                            boolean removeMods, boolean cterm) {
+                                            boolean removeMods, EncodableMods encodable, boolean cterm) {
         //start is index of amino acid before, or 0 if nterm mod
 
         //first, remove mods that are not supported
@@ -398,18 +433,18 @@ public class PTMhandler {
             Double PTMmass = modMap.get(unimod);
             if (NumericUtils.massesCloseEnough(PTMmass, reportedMass)) {
                 char AA = unimod.charAt(0);
+                boolean site;
+                boolean ctermSite = false;
                 if (start == -1) { //nterm
-                    if (AA == '[') {
-                        return unimod;
-                    }
+                    site = AA == '[';
                 } else if (cterm && end == peptide.length() - 1) { //cterm
-                    if (AA == '[') {
-                        return unimod;
-                    }
+                    site = AA == '[';
+                    ctermSite = true;
                 } else {
-                    if (AA == peptide.charAt(start)) {
-                        return unimod;
-                    }
+                    site = AA == peptide.charAt(start);
+                }
+                if (site && encodable.encodes(unimod, ctermSite)) {
+                    return unimod;
                 }
             }
         }
@@ -661,6 +696,67 @@ public class PTMhandler {
                     "[737", "K737", "S737"));
     public static final HashSet<String> ms2pipAAMods = new HashSet<>(
             Arrays.asList("M35", "C4"));
-    public static final HashSet<String> predfullAAMods = new HashSet<>(
-            Arrays.asList("M35", "C4"));
+
+    //the Prosit lactylation models (KoinaModelSpec.ModMassMap.LAC): lactyl on K and the N-terminus, oxidized M and
+    //carbamidomethylated C. Lactyl has the mass of carboxyethyl (UNIMOD:378), which the ALL table has on K
+    public static final Map<String, Double> AAunimodToModMassLac = Map.of(
+            "K" + lactylUnimod, lactylMass,
+            "[" + lactylUnimod, lactylMass,
+            "M" + oxidationUnimod, oxidationMass,
+            "C" + carbamidomethylationUnimod, carbamidomethylationMass);
+    public static final Map<Integer, Double> unimodToModMassLac = Map.of(
+            lactylUnimod, lactylMass,
+            oxidationUnimod, oxidationMass,
+            carbamidomethylationUnimod, carbamidomethylationMass);
+
+    //Chronologer (KoinaModelSpec.ModMassMap.CHRONOLOGER): the pairs of Koina's Chronologer table
+    //(models/Chronologer/Chronologer_Preprocess/1/sequence_conversion.py), but succinyl on K, which is left out.
+    //C385 is the pyro-carbamidomethyl cysteine as a whole, the token Chronologer has for it. The N-term pyro forms of
+    //that table (27, 28 and 385 before the first residue) are left out too: Chronologer reads pyro-Glu and
+    //pyro-carbamidomethyl from the residue (Q28, E27, C385) and sets the N-terminus to match, while an N-term code
+    //would leave residue 1 unmodified. TMT (UNIMOD:737) has the run's TMT mass, as in the LIMITED table
+    public static final HashMap<String, Double> AAunimodToModMassChronologer = new HashMap<>();
+    public static final HashMap<Integer, Double> unimodToModMassChronologer = new HashMap<>();
+    static {
+        updateChronologerTables();
+    }
+
+    private static void updateChronologerTables() {
+        AAunimodToModMassChronologer.clear();
+        AAunimodToModMassChronologer.put("C" + carbamidomethylationUnimod, carbamidomethylationMass);
+        AAunimodToModMassChronologer.put("M" + oxidationUnimod, oxidationMass);
+        AAunimodToModMassChronologer.put("S" + phosphorylationUnimod, phosphorylationMass);
+        AAunimodToModMassChronologer.put("T" + phosphorylationUnimod, phosphorylationMass);
+        AAunimodToModMassChronologer.put("Y" + phosphorylationUnimod, phosphorylationMass);
+        AAunimodToModMassChronologer.put("K" + acetylationUnimod, acetylationMass);
+        AAunimodToModMassChronologer.put("K" + glyglyUnimod, glyglyMass);
+        AAunimodToModMassChronologer.put("K" + methylUnimod, methylMass);
+        AAunimodToModMassChronologer.put("K" + dimethylUnimod, dimethylMass);
+        AAunimodToModMassChronologer.put("K" + trimethylUnimod, trimethylMass);
+        AAunimodToModMassChronologer.put("R" + methylUnimod, methylMass);
+        AAunimodToModMassChronologer.put("R" + dimethylUnimod, dimethylMass);
+        AAunimodToModMassChronologer.put("K" + tmtZeroUnimod, tmtZeroMass);
+        AAunimodToModMassChronologer.put("K" + tmt6_10_11Unimod, tmtMass);
+        AAunimodToModMassChronologer.put("C" + chronologerPyroCarbamidomethylUnimod, pyroCarbamidomethylMass);
+        AAunimodToModMassChronologer.put("E" + pyrogluEUnimod, pyrogluEMass);
+        AAunimodToModMassChronologer.put("Q" + pyrogluQUnimod, pyrogluQMass);
+        AAunimodToModMassChronologer.put("[" + acetylationUnimod, acetylationMass);
+        AAunimodToModMassChronologer.put("[" + tmt6_10_11Unimod, tmtMass);
+        AAunimodToModMassChronologer.put("[" + tmtZeroUnimod, tmtZeroMass);
+
+        unimodToModMassChronologer.clear();
+        unimodToModMassChronologer.put(carbamidomethylationUnimod, carbamidomethylationMass);
+        unimodToModMassChronologer.put(oxidationUnimod, oxidationMass);
+        unimodToModMassChronologer.put(phosphorylationUnimod, phosphorylationMass);
+        unimodToModMassChronologer.put(acetylationUnimod, acetylationMass);
+        unimodToModMassChronologer.put(glyglyUnimod, glyglyMass);
+        unimodToModMassChronologer.put(methylUnimod, methylMass);
+        unimodToModMassChronologer.put(dimethylUnimod, dimethylMass);
+        unimodToModMassChronologer.put(trimethylUnimod, trimethylMass);
+        unimodToModMassChronologer.put(tmtZeroUnimod, tmtZeroMass);
+        unimodToModMassChronologer.put(tmt6_10_11Unimod, tmtMass);
+        unimodToModMassChronologer.put(chronologerPyroCarbamidomethylUnimod, pyroCarbamidomethylMass);
+        unimodToModMassChronologer.put(pyrogluEUnimod, pyrogluEMass);
+        unimodToModMassChronologer.put(pyrogluQUnimod, pyrogluQMass);
+    }
 }

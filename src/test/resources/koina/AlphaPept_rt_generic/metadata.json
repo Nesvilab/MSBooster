@@ -1,0 +1,1 @@
+{"name":"AlphaPept_rt_generic","versions":["1"],"platform":"python","inputs":[{"name":"peptide_sequences","datatype":"BYTES","shape":[-1,-1]}],"outputs":[{"name":"irt","datatype":"FP32","shape":[-1,1]}]}

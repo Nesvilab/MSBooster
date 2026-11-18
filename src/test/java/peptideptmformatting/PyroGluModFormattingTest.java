@@ -21,6 +21,8 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import java.util.HashSet;
 import java.util.Map;
 
+import koinaclasses.KoinaModelRegistry;
+import koinaclasses.KoinaModelSpec;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -41,6 +43,8 @@ import org.junit.jupiter.api.Test;
  * so the malformed key can never reappear.
  */
 class PyroGluModFormattingTest {
+    //the AlphaPeptDeep models' peptide format
+    private static final KoinaModelSpec ALPHAPEPT = KoinaModelRegistry.require("AlphaPept_ms2_generic");
 
     @BeforeEach
     void resetFoundUnimods() {
@@ -52,20 +56,20 @@ class PyroGluModFormattingTest {
     @Test
     void pyroGluQ_serializesToUnimod28() {
         PeptideFormatter pf = new PeptideFormatter("Q[-17.0265]IDNARLAADDF", 2, "base");
-        assertEquals("Q[UNIMOD:28]IDNARLAADDF", pf.getAlphapept());
+        assertEquals("Q[UNIMOD:28]IDNARLAADDF", pf.getModel(ALPHAPEPT));
     }
 
     @Test
     void pyroGluE_serializesToUnimod27() {
         PeptideFormatter pf = new PeptideFormatter("E[-18.0106]IDNARLAADDF", 2, "base");
-        assertEquals("E[UNIMOD:27]IDNARLAADDF", pf.getAlphapept());
+        assertEquals("E[UNIMOD:27]IDNARLAADDF", pf.getModel(ALPHAPEPT));
     }
 
     @Test
     void pyroGluQ_hasNoStrayCaretOrBracket() {
         // The exact shape reported in the issue: Q[UNIMOD:^[28]GVNDNEEGFFSAR
         PeptideFormatter pf = new PeptideFormatter("Q[-17.0265]GVNDNEEGFFSAR", 2, "base");
-        String alphapept = pf.getAlphapept();
+        String alphapept = pf.getModel(ALPHAPEPT);
 
         assertEquals("Q[UNIMOD:28]GVNDNEEGFFSAR", alphapept);
         assertFalse(alphapept.contains("^"), "stray localization separator leaked: " + alphapept);
@@ -78,8 +82,9 @@ class PyroGluModFormattingTest {
         // Exercise the serializer directly with a fresh, empty foundUnimods set so the
         // result depends only on the AAunimodToModMassAll map, not on prior state.
         String base = "Q[-17.0265]IDNARLAADDF";
-        String[] result = PTMhandler.formatPeptideBaseToSpecific(
-                base, base.indexOf('['), base.indexOf(']'), "alphapept", new HashSet<>(), false);
+        String[] result = PTMhandler.formatPeptideBaseToKoina(
+                base, base.indexOf('['), base.indexOf(']'), ALPHAPEPT.peptideFormat(), ALPHAPEPT.modMassMap(),
+                new HashSet<>(), ALPHAPEPT.modRule().allowedMods(), ALPHAPEPT.encodableMods(), false);
 
         assertEquals("Q[UNIMOD:28]IDNARLAADDF", result[0]);
         assertEquals("Q28", result[1]);

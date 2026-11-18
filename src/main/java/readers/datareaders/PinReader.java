@@ -17,10 +17,11 @@ package readers.datareaders;
 import allconstants.Constants;
 import allconstants.FragCastCharges;
 import allconstants.NceConstants;
+import koinaclasses.KoinaModelSpec;
+import koinaclasses.KoinaPreCheck;
 import org.apache.commons.lang3.ArrayUtils;
 import peptideptmformatting.PTMhandler;
 import peptideptmformatting.PeptideFormatter;
-import peptideptmformatting.PeptideSkipper;
 import umich.ms.fileio.exceptions.FileParsingException;
 import utils.ProteinLabels;
 
@@ -397,17 +398,25 @@ public class PinReader {
         }
     }
 
-    public void createJSON(String modelFormat, Set<String> hSetHits) throws IOException {
+    /**
+     * Adds this pin's precursors for a Koina model, as JSONWriter reads them: the peptide as the model is sent it,
+     * charge, NCE, instrument and fragmentation as the model is sent them, and stripped length. The PSMs the model
+     * cannot take are left out; preCheck counts them, and the mods left out of the peptides.
+     */
+    public void createJSON(Set<String> hSetHits, KoinaPreCheck preCheck) throws IOException {
+        KoinaModelSpec spec = preCheck.spec();
+        String nce = NceConstants.getCalibratedNCE(spec.name());
+        String fragmentation = spec.fragmentationSentAs(Constants.FragmentationType);
         while (next(true)) {
             PeptideFormatter pf = getPep();
-            if (PeptideSkipper.skipPeptide(pf, modelFormat)) {
+            String pep = preCheck.modelPeptide(pf);
+            if (pep == null) {
                 continue;
             }
 
-            String instrument = mapInstrumentToModelSpecific(modelFormat, pf.getCharge());
-            String pep = pf.getModel(modelFormat);
-            String sb = pep + "," + pf.getCharge() + "," + NceConstants.getCalibratedNCE(modelFormat) + "," +
-                    instrument + "," + Constants.FragmentationType + "," + pf.getStripped().length();
+            String instrument = mapInstrumentToModelSpecific(spec, pf.getCharge());
+            String sb = pep + "," + pf.getCharge() + "," + nce + "," + instrument + "," + fragmentation + "," +
+                    pf.getStripped().length();
             hSetHits.add(sb);
         }
     }

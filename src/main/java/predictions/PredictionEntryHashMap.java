@@ -16,6 +16,8 @@ package predictions;
 
 import allconstants.Constants;
 import features.spectra.MassCalculator;
+import koinaclasses.KoinaModelRegistry;
+import koinaclasses.KoinaModelSpec;
 import peptideptmformatting.PeptideFormatter;
 import peptideptmformatting.PeptideSkipper;
 import readers.predictionreaders.KoinaLibReader;
@@ -83,6 +85,15 @@ public class PredictionEntryHashMap extends ConcurrentHashMap<String, Prediction
     //example would be IM from DIANN, spectra and RT from Koina
     //for both files, they already have all the peptides needed, no transferring needed
     public void mergeIntoLibrary(PredictionEntryHashMap fullLib, String mode) {
+        //an auxiliary Koina model whose m/z is kept (KoinaModelSpec.trustKoinaMz: UniSpec, Altimeter) answers with
+        //the exact m/z of each fragment, so the spectrum it fills in is matched in ppm, as the main model's is. Only
+        //its monoisotopic peaks are kept: an entry carries the isotope number of each peak when any of its peaks is
+        //an isotope peak (MgfFileWriter writes them only then), and one that carries none, such as every entry of
+        //Altimeter, which predicts no isotope peak, has monoisotopic peaks only. Other auxiliary models fill it in
+        //to be matched in Daltons
+        KoinaModelSpec auxSpec = KoinaModelRegistry.find(Constants.auxSpectraModel);
+        boolean auxHasExactMz = auxSpec != null && auxSpec.trustKoinaMz();
+
         //switch case for spectra, RT, IM, aux
         for (Entry<String, PredictionEntry> entry : this.entrySet()) {
             String peptide = entry.getKey();
@@ -102,7 +113,11 @@ public class PredictionEntryHashMap extends ConcurrentHashMap<String, Prediction
                         break;
                     case "auxSpectra":
                         if (pe1.numFragments() <= 1) { //populate missing main spectra
-                            if (Constants.auxSpectraModel.equalsIgnoreCase("unispec")) {
+                            if (auxHasExactMz && pe2.isotopes.length == 0) { //monoisotopic peaks only
+                                pe1.fragments = pe2.fragments;
+                                pe1.fullAnnotations = pe2.fullAnnotations;
+                                pe1.isotopes = pe2.isotopes;
+                            } else if (auxHasExactMz) {
                                 //filter to use only 0 isotopes
                                 ArrayList<Integer> zeroIsotopes = new ArrayList<>();
                                 for (int i = 0; i < pe2.isotopes.length; i++) {
@@ -129,12 +144,12 @@ public class PredictionEntryHashMap extends ConcurrentHashMap<String, Prediction
                                     }
                                     i++;
                                 }
-                            } else { //PredFull
+                            } else { //models without isotope peaks
                                 pe1.fragments = pe2.fragments;
                                 pe1.fullAnnotations = pe2.fullAnnotations;
                                 pe1.isotopes = pe2.isotopes;
 
-                                //prediction entry completely from predfull, need to use dalton matching
+                                //prediction entry comes entirely from the auxiliary model, match it in Daltons
                                 pe1.daltonMatching = true;
                             }
                         }
@@ -156,7 +171,7 @@ public class PredictionEntryHashMap extends ConcurrentHashMap<String, Prediction
     //use this when we need don't already have predictions for all final peptides
     //models may have different PTM restrictions, so need to transfer their predictions onto the ones we actually need
     //for when msbooster is calling models for the first time, not when it is reading in prepredicted libraries
-    //TODO: also need to consider model. Unispec and Predfull transfer differently
+    //TODO: also need to consider model. A model whose m/z is kept (KoinaModelSpec.trustKoinaMz) transfers differently
     //TODO: can save aby fragments separately from other ones
     public void transferKoinaPreds(ArrayList<KoinaLibReader> klrs, String fulltsv) throws Exception {
         //iterate through entries of full tsv
@@ -181,32 +196,17 @@ public class PredictionEntryHashMap extends ConcurrentHashMap<String, Prediction
                 if (predMap.containsKey(baseCharge)) {
                     oldPred = predMap.get(baseCharge);
                 } else { //need to translate
-                    PeptideFormatter pf = null;
-                    oldPred = null;
-                    switch (klr.modelType) {
-                        case "alphapept":
-                        case "ms2pip":
-                        case "deeplc":
-                        case "im2deep":
-                        case "unispec":
-                        case "prosit":
-                        case "prosittmt":
-                        case "prosit_cit":
-                        case "predfull":
-                            pf = new PeptideFormatter(
-                                    new PeptideFormatter(line[0], line[1], "base").getModel(klr.modelType),
-                                    line[1], klr.modelType);
-                            modelSpecificBaseCharge = pf.getBaseCharge();
-                            oldPred = predMap.get(modelSpecificBaseCharge);
-                            break;
-                        default:
-                            printError(klr.modelType + " not supported by Koina");
-                            System.exit(1);
-                    }
+                    //the peptide as the model was sent it, and back in mass notation
+                    PeptideFormatter basePf = new PeptideFormatter(line[0], line[1], "base");
+                    String modelPeptide = basePf.getModel(klr.spec);
+                    PeptideFormatter pf = new PeptideFormatter(modelPeptide, line[1], klr.spec);
+                    modelSpecificBaseCharge = pf.getBaseCharge();
+                    oldPred = predMap.get(modelSpecificBaseCharge);
 
                     if (oldPred == null) {
-                        //check if missing
-                        if (PeptideSkipper.skipPeptide(pf, klr.modelType)) {
+                        //the model was not sent it, as the request writers decided on this PSM's own peptide, or
+                        //Koina refused it (KoinaBisection); else it is missing
+                        if (PeptideSkipper.skipPeptide(basePf, klr.spec) || klr.isRefused(pf)) {
                             skipPeptide = true;
                         } else {
                             printError("Missing precursor to transfer prediction onto " + l + ": " + modelSpecificBaseCharge);
@@ -241,7 +241,7 @@ public class PredictionEntryHashMap extends ConcurrentHashMap<String, Prediction
                             if (newMZs.length == 0) { //this entry is already in old pred hashmap
                                 newMZs = oldPred.getMzs();
                             }
-                            if (klr.modelType.contains("unispec") || klr.modelType.contains("predfull")) {
+                            if (klr.spec.trustKoinaMz()) {
                                 newPred = new PredictionEntry(newMZs, oldPred.getIntensities(), oldPred.getFragNums(),
                                         oldPred.getCharges(), oldPred.getFragmentIonTypes(), oldPred.fullAnnotations);
                             } else {
@@ -274,7 +274,7 @@ public class PredictionEntryHashMap extends ConcurrentHashMap<String, Prediction
                             if (newMZs.length == 0) {
                                 newMZs = oldPred.getMzs();
                             }
-                            if (klr.modelType.contains("unispec") || klr.modelType.contains("predfull")) {
+                            if (klr.spec.trustKoinaMz()) {
                                 auxPe = new PredictionEntry(newMZs, oldPred.getIntensities(), oldPred.getFragNums(),
                                         oldPred.getCharges(), oldPred.getFragmentIonTypes(), oldPred.fullAnnotations);
                             } else {

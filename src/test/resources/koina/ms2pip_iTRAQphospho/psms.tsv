@@ -1,0 +1,10 @@
+peptide	charge	note
+K.n[144.1021]LGEPTIDEK[144.1021].A	2	iTRAQ 4-plex on the N-term and Lys (UNIMOD:214)
+R.n[144.1021]GS[79.9663]PEDLHVTAR.L	2	iTRAQ and phospho Ser
+R.n[144.1021]NDT[79.9663]PLM[15.9949]EAGR.V	2	iTRAQ, phospho Thr and oxidized Met
+K.n[144.1021]EDLHTGY[79.9663]VAPR.N	2	iTRAQ and phospho Tyr
+K.n[144.1021]TEC[57.0215]LDHFAVNPR.G	3	iTRAQ and carbamidomethyl Cys
+K.n[144.1021]SHCVAELLGPEK[144.1021].T	2	iTRAQ and free Cys
+R.n[144.1021]HEAPGLDVSTWK[144.1021]PEEVLR.S	4	iTRAQ, charge 4
+K.n[144.1021]ELVSAPLGTNEIYDHFAQWTGLPVEDAK[144.1021]LGR.S	3	31 residues: skipped by models limited to 30
+K.n[144.1021]GDUVLPAEK[144.1021].A	2	selenocysteine U: skipped by models that refuse OUBZJX

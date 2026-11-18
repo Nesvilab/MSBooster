@@ -2,6 +2,9 @@ package bestmodelsearch;
 
 import allconstants.LowercaseModelMapper;
 import allconstants.ModelCollections;
+import koinaclasses.KoinaException;
+import koinaclasses.KoinaModelRegistry;
+import koinaclasses.KoinaPreCheck;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -31,8 +34,8 @@ public class ModelCollectionDecider {
         }
 
         printInfo("Searching for best " + mode + " model for your data");
+        ArrayList<String> consideredModels = new ArrayList<>();
         if (! searchString.isEmpty()) {
-            ArrayList<String> consideredModels = new ArrayList<>();
             String[] searchModels = searchString.split(",");
 
             LowercaseModelMapper lmm = new LowercaseModelMapper();
@@ -46,11 +49,29 @@ public class ModelCollectionDecider {
                     System.exit(1);
                 }
             }
-            printInfo("Searching the following models: " + consideredModels);
-            return consideredModels;
         } else {
-            printInfo("Searching the following models: " + collection);
-            return collection;
+            consideredModels.addAll(collection);
         }
+
+        //a model that cannot encode the search's isobaric label could not be used, so it is not tried
+        ArrayList<String> labelledOut = new ArrayList<>();
+        for (String model : consideredModels) {
+            if (!KoinaPreCheck.takesSearchLabel(model)) {
+                labelledOut.add(model);
+            }
+        }
+        if (!labelledOut.isEmpty()) {
+            for (String model : labelledOut) {
+                printInfo(KoinaPreCheck.isobaricLabelMessage(KoinaModelRegistry.require(model))
+                        + ". It is left out of the search for the best " + mode + " model");
+            }
+            consideredModels.removeAll(labelledOut);
+            if (consideredModels.isEmpty()) {
+                throw new KoinaException("No " + mode + " model is left to search: "
+                        + KoinaPreCheck.isobaricLabelMessage(KoinaModelRegistry.require(labelledOut.get(0))));
+            }
+        }
+        printInfo("Searching the following models: " + consideredModels);
+        return consideredModels;
     }
 }

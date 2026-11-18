@@ -1,0 +1,133 @@
+{
+    "inputs": [
+        {
+            "shape": [
+                22,
+                1
+            ],
+            "data": [
+                ["ADGLR"],
+                ["GLPEVK"],
+                ["[UNIMOD:1]-ADVTGLPHK"],
+                ["LGEPTIDEK-[UNIMOD:2]"],
+                ["[UNIMOD:737]-LGEPTIDEK[UNIMOD:737]"],
+                ["LGEPTIDEK"],
+                ["VFLEN[UNIMOD:621]GTLR"],
+                ["NDT[UNIMOD:21]PLM[UNIMOD:35]EAGR"],
+                ["LGVEK[UNIMOD:121]AYNDGR"],
+                ["E[UNIMOD:27]WLSPQDGAVR"],
+                ["GS[UNIMOD:21]PEDLHVTAR"],
+                ["[UNIMOD:1]-M[UNIMOD:35]DPSLVTAEGK"],
+                ["TEC[UNIMOD:4]LDHFAVNPR"],
+                ["Q[UNIMOD:28]YLDTEGAIPAK"],
+                ["SHCVAELLGPEK"],
+                ["C[UNIMOD:26]ADLSGFTPEVIAR"],
+                ["AVLDQGSTWPEM[UNIMOD:35]AGK"],
+                ["HEAPGLDVSTWKPEEVLR"],
+                ["SAEGLNPTVQDLKATWGHEPLR"],
+                ["ELVSAPLGTNEIYDHFAQWTGLPVEDAK"],
+                ["TPLDGEFAHVSNQWLEGTDKPAEVLSPGR"],
+                ["ELVSAPLGTNEIYDHFAQWTGLPVEDAKLGRSTEPV"]
+            ],
+            "datatype": "BYTES",
+            "name": "peptide_sequences"
+        },
+        {
+            "shape": [
+                22,
+                1
+            ],
+            "data": [
+                [1],
+                [1],
+                [2],
+                [2],
+                [2],
+                [2],
+                [2],
+                [2],
+                [3],
+                [2],
+                [2],
+                [2],
+                [3],
+                [2],
+                [2],
+                [2],
+                [2],
+                [4],
+                [3],
+                [3],
+                [3],
+                [4]
+            ],
+            "datatype": "INT32",
+            "name": "precursor_charges"
+        },
+        {
+            "shape": [
+                22,
+                1
+            ],
+            "data": [
+                [30],
+                [30],
+                [30],
+                [30],
+                [30],
+                [30],
+                [30],
+                [30],
+                [30],
+                [30],
+                [30],
+                [30],
+                [30],
+                [30],
+                [30],
+                [30],
+                [30],
+                [30],
+                [30],
+                [30],
+                [30],
+                [30]
+            ],
+            "datatype": "FP32",
+            "name": "collision_energies"
+        },
+        {
+            "shape": [
+                22,
+                1
+            ],
+            "data": [
+                ["QE"],
+                ["QE"],
+                ["QE"],
+                ["QE"],
+                ["QE"],
+                ["QE"],
+                ["QE"],
+                ["QE"],
+                ["QE"],
+                ["QE"],
+                ["QE"],
+                ["QE"],
+                ["QE"],
+                ["QE"],
+                ["QE"],
+                ["QE"],
+                ["QE"],
+                ["QE"],
+                ["QE"],
+                ["QE"],
+                ["QE"],
+                ["QE"]
+            ],
+            "datatype": "BYTES",
+            "name": "instrument_types"
+        }
+    ],
+    "id": "0"
+}

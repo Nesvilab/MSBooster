@@ -1,0 +1,1 @@
+{"name":"Deeplc_hela_hf","versions":["1"],"platform":"ensemble","inputs":[{"name":"peptide_sequences","datatype":"BYTES","shape":[-1,-1]}],"outputs":[{"name":"irt","datatype":"FP32","shape":[-1,1]}]}

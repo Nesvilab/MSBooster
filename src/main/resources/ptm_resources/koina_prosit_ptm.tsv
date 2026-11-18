@@ -1,0 +1,98 @@
+# How Koina's Prosit-PTM models (Prosit_2025_intensity_22PTM, Prosit_2025_intensity_40PTM,
+# Prosit_2025_irt_22PTM) encode a modified position, from wilhelm-lab/koina commit d176169. Read by
+# koinaclasses.KoinaPrositPtm. name: the site, a residue or n for the peptide N-terminus; the symbol of a sugar row.
+# hand rows: the pairs of models/Prosit/Prosit_Preprocess_ac_gain/1/model.py (dict_ptm_atom_count_gain, lines 11-89)
+#   and Prosit_Preprocess_ac_loss/1/model.py (dict_ptm_atom_count_loss, lines 11-82), which hold the same pairs;
+#   gain and loss are their atom counts.
+# attachment rows: the attachment group of each site the zero-shot encoding takes (zero_shot.py, dict_attachment_loss,
+#   lines 22-37), in the loss column; a pair that is not a hand row is encoded as gain = attachment group + delta
+#   composition, loss = attachment group.
+# sugar rows: the monosaccharide symbols the zero-shot encoding reads in a composition (zero_shot.py, SUGAR_COMPOSITION,
+#   lines 40-49), as their atoms in the gain column.
+kind	name	unimod_id	gain	loss
+hand	n	1	H(4) C(2) N O	H(2) N
+hand	n	58	H(6) C(3) N O	H(2) N
+hand	n	59	H(6) C(3) N O	H(2) N
+hand	n	214	H(14) C(7) N(3) O	H(2) N
+hand	n	411	H(6) C(3) N O	H(2) N
+hand	n	730	H(26) C(14) N(5) O(3)	H(2) N
+hand	n	737	H(22) C(12) N(3) O(2)	H(2) N
+hand	n	2016	H(27) C(15) N(4) O(3)	H(2) N
+hand	C	4	H(4) C(2) N O S	H S
+hand	C	34	H(3) C S	H S
+hand	C	35	H O S	H S
+hand	C	312	H(6) C(3) N O(2) S(2)	H S
+hand	C	1263	H(4) C(2) N O S	H S
+hand	C	2062	H(25) C(14) N(4) O(3) S	H S
+hand	D	34	H(3) C O(2)	H O(2)
+hand	E	27	H(7) C(4) N(2)	H(9) C(4) N(2) O
+hand	E	34	H(3) C O(2)	H O(2)
+hand	H	21	H(2) O(3) N P	H N
+hand	H	34	H(3) C N	H N
+hand	H	35	H N O	H N
+hand	I	34	H(4) C N	H(2) N
+hand	K	1	H(4) C(2) N O	H(2) N
+hand	K	4	H(5) C(2) N(2) O	H(2) N
+hand	K	34	H(4) C N	H(2) N
+hand	K	35	H(2) N O	H(2) N
+hand	K	36	H(6) C(2) N	H(2) N
+hand	K	37	H(8) C(3) N	H(2) N
+hand	K	56	H(4) C(2) N O	H(2) N
+hand	K	58	H(6) C(3) N O	H(2) N
+hand	K	59	H(6) C(3) N O	H(2) N
+hand	K	121	H(8) C(4) N(3) O(2)	H(2) N
+hand	K	214	H(14) C(7) N(3) O	H(2) N
+hand	K	535	H(31) C(16) N(8) O(4)	H(2) N
+hand	K	730	H(26) C(14) N(5) O(3)	H(2) N
+hand	K	737	H(22) C(12) N(3) O(2)	H(2) N
+hand	K	1263	H(5) C(2) N(2) O	H(2) N
+hand	K	1289	H(8) C(4) N O	H(2) N
+hand	K	1293	H(23) C(13) N(6) O(6)	H(2) N
+hand	K	1848	H(8) C(5) N O(3)	H(2) N
+hand	K	1990	H(24) C(13) N(5) O(4) S	H(2) N
+hand	K	2016	H(27) C(15) N(4) O(3)	H(2) N
+hand	K	5634	H(6) C(3) N O	H(2) N
+hand	K	12118	H(20) C(10) N(7) O(3)	H(2) N
+hand	K	19903	H(19) C(10) N(4) O(3)	H(2) N
+hand	K	129317	H(15) C(8) N(4) O(4)	H(2) N
+hand	L	34	H(4) C N	H(2) N
+hand	M	35	H(3) C O S	H(3) C S
+hand	N	7	H O	H(2) N
+hand	N	34	H(4) C(2) N O	H(2) C N O
+hand	P	21	H(2) O(4) P	H O
+hand	P	35	H(4) C(2) N O	H(4) C(2) N
+hand	Q	7	H O	H(2) N
+hand	Q	28	H(6) C(4) N O	H(9) C(4) N(2) O
+hand	Q	34	H(4) C N	H(2) N
+hand	R	7	O	H N
+hand	R	34	H(4) C N	H(2) N
+hand	R	36	H(6) C(2) N	H(2) N
+hand	R	267		
+hand	S	21	H(2) O(4) P	H O
+hand	S	43	H(14) C(8) N O(6)	H O
+hand	T	21	H(2) O(4) P	H O
+hand	T	43	H(14) C(8) N O(6)	H O
+hand	W	35	H O	H
+hand	Y	21	H(2) O(4) P	H O
+attachment	n			H(2) N
+attachment	C			H S
+attachment	D			H O(2)
+attachment	H			H N
+attachment	I			H(2) N
+attachment	K			H(2) N
+attachment	L			H(2) N
+attachment	M			H(3) C S
+attachment	Q			H(2) N
+attachment	R			H(2) N
+attachment	S			H O
+attachment	T			H O
+attachment	W			H
+attachment	Y			H O
+sugar	Hex		C(6) H(10) O(5)	
+sugar	HexNAc		C(8) H(13) N O(5)	
+sugar	dHex		C(6) H(10) O(4)	
+sugar	Pent		C(5) H(8) O(4)	
+sugar	HexA		C(6) H(8) O(6)	
+sugar	NeuAc		C(11) H(17) N O(8)	
+sugar	NeuGc		C(11) H(17) N O(9)	
+sugar	Kdn		C(9) H(14) O(8)	

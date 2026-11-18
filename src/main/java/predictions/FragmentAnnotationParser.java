@@ -9,7 +9,7 @@ import java.util.ArrayList;
 import static features.spectra.MassCalculator.allNeutralLossMasses;
 import static utils.NumericUtils.isUppercaseOrDigit;
 
-//class to parse annotations for unispec and predfull
+//class to parse UniSpec-style fragment annotations (UniSpec output and MassCalculator.annotateMZs)
 //designed to handle output from unispec koina prediction and read in dictionary of unispec allowed fragments
 
 public class FragmentAnnotationParser {

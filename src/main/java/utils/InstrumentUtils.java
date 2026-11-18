@@ -15,6 +15,7 @@
 package utils;
 
 import allconstants.Constants;
+import koinaclasses.KoinaModelSpec;
 import umich.ms.datatypes.LCMSDataSubset;
 import umich.ms.datatypes.scancollection.impl.ScanCollectionDefault;
 import umich.ms.fileio.exceptions.FileParsingException;
@@ -36,19 +37,6 @@ public class InstrumentUtils {
     static HashSet<String> SciexTOFKeys = new HashSet<>(Arrays.asList("Sciex", "TripleTOF"));
     static HashSet<String> timsTOFKeys = new HashSet<>(List.of("flight", "timsTOF"));
     static HashSet<String> ThermoTOFKeys = new HashSet<>(List.of("Astral"));
-
-    //supported instruments by each model
-    static CaseInsensitiveHashSet unispecInstruments = new CaseInsensitiveHashSet(Arrays.asList(
-            "LUMOS", "QE", "QEHFX", "ELITE", "VELOS", "NONE"));
-    static CaseInsensitiveHashSet alphapeptdeepInstruments = new CaseInsensitiveHashSet(Arrays.asList(
-            "QE", "LUMOS", "TIMSTOF", "SCIEXTOF")); //"THERMOTOF"
-//    static HashSet<String> allInstruments = makeAllInstruments();
-//    private static HashSet<String> makeAllInstruments() {
-//        HashSet<String> allInstruments = new HashSet<>();
-//        allInstruments.addAll(unispecInstruments);
-//        allInstruments.addAll(alphapeptdeepInstruments);
-//        return allInstruments;
-//    }
 
     public static String getInstrument(ScanCollectionDefault scans) {
         if (Constants.instrument.isEmpty()) {
@@ -112,25 +100,8 @@ public class InstrumentUtils {
         }
     }
 
-    public static String mapInstrumentToModelSpecific(String model, String charge) {
-        model = model.toLowerCase();
-        String instrument = Constants.instrument;
-
-        if (model.contains("unispec")) {
-            if (!unispecInstruments.contains(instrument)) {
-                instrument = "NONE";
-            } else if ((instrument.equals("QE") || instrument.equals("QEHFX")) &&
-                    charge.equals("1")) {
-                instrument = "NONE";
-            }
-        } else if (model.contains("alphapept")) {
-            if (instrument.equals("QEHFX")) {
-                instrument = "QE";
-            } else if (!alphapeptdeepInstruments.contains(instrument)) {
-                instrument = "QE";
-            }
-        }
-
-        return instrument;
+    //the run's instrument as a Koina model is sent it (KoinaModelSpec.InstrumentMap)
+    public static String mapInstrumentToModelSpecific(KoinaModelSpec spec, String charge) {
+        return spec.instrumentMap().map(Constants.instrument, charge);
     }
 }

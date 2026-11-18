@@ -1,0 +1,55 @@
+{
+    "inputs": [
+        {
+            "shape": [
+                15,
+                1
+            ],
+            "data": [
+                ["SHCVAELLGPEK"],
+                ["NDTPLM[UNIMOD:35]EAGR"],
+                ["HEAPGLDVSTWKPEEVLR"],
+                ["AVLDQGSTWPEM[UNIMOD:35]AGK"],
+                ["QYLDTEGAIPAK"],
+                ["CADLSGFTPEVIAR"],
+                ["TEC[UNIMOD:4]LDHFAVNPR"],
+                ["ELVSAPLGTNEIYDHFAQWTGLPVEDAK"],
+                ["EWLSPQDGAVR"],
+                ["LGEPTIDEK"],
+                ["GSPEDLHVTAR"],
+                ["VFLENGTLR"],
+                ["LGVEKAYNDGR"],
+                ["ADVTGLPHK"],
+                ["ADGLR"]
+            ],
+            "datatype": "BYTES",
+            "name": "peptide_sequences"
+        },
+        {
+            "shape": [
+                15,
+                1
+            ],
+            "data": [
+                [2],
+                [2],
+                [4],
+                [2],
+                [2],
+                [2],
+                [3],
+                [3],
+                [2],
+                [2],
+                [2],
+                [2],
+                [3],
+                [2],
+                [1]
+            ],
+            "datatype": "INT32",
+            "name": "precursor_charges"
+        }
+    ],
+    "id": "0"
+}

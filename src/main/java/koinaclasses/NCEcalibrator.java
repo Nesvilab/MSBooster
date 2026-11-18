@@ -57,7 +57,12 @@ public class NCEcalibrator {
         double bestMedianDouble = 0d;
         int bestNCEint = 0;
         if (NceConstants.nceModels.contains(currentModel)) {
-            printInfo("Calibrating NCE for " + currentModel);
+            //the model's own range, or minNCE/maxNCE if they are set. MainClass and the best-model search check
+            //the range before any model is calibrated; this is for a caller that did not
+            NceConstants.requireCalibrationRange(currentModel);
+            int minNCE = NceConstants.getMinNCE(currentModel);
+            int maxNCE = NceConstants.getMaxNCE(currentModel);
+            printInfo("Calibrating NCE for " + currentModel + " from " + minNCE + " to " + maxNCE);
 
             //create nce calibration directory
             MyFileUtils.createWholeDirectory(jsonOutFolder);
@@ -67,14 +72,20 @@ public class NCEcalibrator {
             PeptideFileCreator.createPartialFile(jsonOutFolder + File.separator + "NCE_calibration_full.tsv",
                     currentModel, peptideFormatterArrayList);
             HashSet<String> allHits = KoinaMethods.createPartialKoinaSet(currentModel, peptideFormatterArrayList);
+            if (allHits.isEmpty()) {
+                //none of the PSMs calibrated with is one the model can take (said above), so there is nothing to
+                //compare. The model keeps the default NCE: the whole run may still have PSMs it can take, and if
+                //it has none, writing its requests ends the run with the reason
+                return notCalibrated(currentModel);
+            }
 
             //iterate through every NCE
             //TODO: make this into one method, taking a model and iterating through all NCEs
             ConcurrentHashMap<Integer, ArrayList<Double>> concurrentSimilarities = new ConcurrentHashMap<>();
-            ProgressReporter pr = new ProgressReporter(NceConstants.maxNCE - NceConstants.minNCE + 1);
+            ProgressReporter pr = new ProgressReporter(maxNCE - minNCE + 1);
 
             List<Future> futureList = new ArrayList<>(Constants.numThreads);
-            for (int NCE = NceConstants.minNCE; NCE < NceConstants.maxNCE + 1; NCE++) {
+            for (int NCE = minNCE; NCE < maxNCE + 1; NCE++) {
                 int finalNCE = NCE;
                 futureList.add(MainClass.executorService.submit(() -> {
                     PredictionEntryHashMap allPreds =
@@ -106,23 +117,32 @@ public class NCEcalibrator {
             similarities = new TreeMap<>(concurrentSimilarities);
 
             //pick the best NCE once all tasks are done, going through the NCEs in ascending order, so the choice
-            //does not depend on the order in which the tasks finish. A tie goes to the lower NCE
+            //does not depend on the order in which the tasks finish. A tie goes to the lower NCE. An NCE with no
+            //PSM to compare has no median
+            boolean anyCompared = false;
             for (Map.Entry<Integer, ArrayList<Double>> entry : similarities.entrySet()) {
+                if (entry.getValue().isEmpty()) {
+                    continue;
+                }
+                anyCompared = true;
                 double median = StatMethods.medianDouble(entry.getValue());
                 if (median > bestMedianDouble) {
                     bestMedianDouble = median;
                     bestNCEint = entry.getKey();
                 }
             }
+            if (!anyCompared) {
+                return notCalibrated(currentModel);
+            }
 
             printInfo("Best NCE for " + currentModel + " after calibration is " + bestNCEint);
             if (verbose) {
                 printInfo("Median similarity for " + currentModel + " is " + String.format("%.4f", bestMedianDouble));
             }
-            if (bestNCEint == NceConstants.minNCE) {
-                printInfo("Consider lowering minNCE below " + NceConstants.minNCE);
-            } else if (bestNCEint == NceConstants.maxNCE) {
-                printInfo("Consider increasing maxNCE above " + NceConstants.maxNCE);
+            if (bestNCEint == minNCE) {
+                printInfo("Consider lowering minNCE below " + minNCE);
+            } else if (bestNCEint == maxNCE) {
+                printInfo("Consider increasing maxNCE above " + maxNCE);
             }
         }
         return new Object[]{similarities, bestMedianDouble, bestNCEint};
@@ -131,16 +151,30 @@ public class NCEcalibrator {
         //bestNCEint is NCE at which highest median similarity is achieved
     }
 
+    //what calibrateNCE returns for a model it could not calibrate: no similarities, and the default NCE
+    private static Object[] notCalibrated(String currentModel) {
+        int nce = NceConstants.mzmlNCEs.isEmpty() ? NceConstants.NCE : (int) Float.parseFloat(NceConstants.getNCE());
+        printInfo("NCE for " + currentModel + " is not calibrated, as no PSM to calibrate with could be compared. It "
+                + "uses the default NCE, " + nce);
+        return new Object[]{new TreeMap<Integer, ArrayList<Double>>(), 0d, nce};
+    }
+
     public static void plotNCEchart(String currentModel, TreeMap<Integer, ArrayList<Double>> similarities) {
         try {
+            //an NCE with no PSM compared has no box, and a model not calibrated (calibrateNCE) has no chart
+            if (similarities == null || similarities.values().stream().allMatch(List::isEmpty)) {
+                return;
+            }
             if (!new File(figureDirectory).exists()) {
                 new File(figureDirectory).mkdirs();
             }
 
-            int currentNCE = NceConstants.minNCE;
+            //the range calibrateNCE tried for this model
+            int currentNCE = NceConstants.getMinNCE(currentModel);
+            int maxNCE = NceConstants.getMaxNCE(currentModel);
             int added = 0;
 
-            while (currentNCE <= NceConstants.maxNCE) {
+            while (currentNCE <= maxNCE) {
                 //create figure
                 BoxChart chart = new BoxChartBuilder().title("NCE calibration").
                         width(510).height(340).
@@ -148,15 +182,22 @@ public class NCEcalibrator {
                 chart.getStyler().setBoxplotCalCulationMethod(BoxStyler.BoxplotCalCulationMethod.N_LESS_1);
 
                 int startNCE = currentNCE;
-                while (added < 6 && currentNCE <= NceConstants.maxNCE) {
-                    chart.addSeries(String.valueOf(currentNCE), similarities.get(currentNCE));
+                int boxes = 0;
+                while (added < 6 && currentNCE <= maxNCE) {
+                    ArrayList<Double> similarity = similarities.get(currentNCE);
+                    if (similarity != null && !similarity.isEmpty()) {
+                        chart.addSeries(String.valueOf(currentNCE), similarity);
+                        boxes++;
+                    }
                     added++;
                     currentNCE++;
                 }
                 int endNCE = currentNCE - 1;
                 added = 0;
-                plot(chart, figureDirectory + File.separator + "NCE_calibration_" +
-                        currentModel + startNCE + "to" + endNCE);
+                if (boxes > 0) {
+                    plot(chart, figureDirectory + File.separator + "NCE_calibration_" +
+                            currentModel + startNCE + "to" + endNCE);
+                }
             }
         } catch (IOException e) {
             e.printStackTrace();

@@ -1,0 +1,105 @@
+{
+    "inputs": [
+        {
+            "shape": [
+                15,
+                1
+            ],
+            "data": [
+                ["LGEPTIDEK"],
+                ["SHCVAELLGPEK"],
+                ["Q[UNIMOD:28]YLDTEGAIPAK"],
+                ["NDT[UNIMOD:21]PLM[UNIMOD:35]EAGR"],
+                ["ELVSAPLGTNEIYDHFAQWTGLPVEDAK"],
+                ["E[UNIMOD:27]WLSPQDGAVR"],
+                ["LGVEKAYNDGR"],
+                ["C[UNIMOD:26]ADLSGFTPEVIAR"],
+                ["HEAPGLDVSTWKPEEVLR"],
+                ["[UNIMOD:1]ADVTGLPHK"],
+                ["AVLDQGSTWPEM[UNIMOD:35]AGK"],
+                ["ADGLR"],
+                ["GS[UNIMOD:21]PEDLHVTAR"],
+                ["TEC[UNIMOD:4]LDHFAVNPR"],
+                ["VFLENGTLR"]
+            ],
+            "datatype": "BYTES",
+            "name": "peptide_sequences"
+        },
+        {
+            "shape": [
+                15,
+                1
+            ],
+            "data": [
+                [2],
+                [2],
+                [2],
+                [2],
+                [3],
+                [2],
+                [3],
+                [2],
+                [4],
+                [2],
+                [2],
+                [1],
+                [2],
+                [3],
+                [2]
+            ],
+            "datatype": "INT32",
+            "name": "precursor_charges"
+        },
+        {
+            "shape": [
+                15,
+                1
+            ],
+            "data": [
+                [28],
+                [28],
+                [28],
+                [28],
+                [28],
+                [28],
+                [28],
+                [28],
+                [28],
+                [28],
+                [28],
+                [28],
+                [28],
+                [28],
+                [28]
+            ],
+            "datatype": "FP32",
+            "name": "collision_energies"
+        },
+        {
+            "shape": [
+                15,
+                1
+            ],
+            "data": [
+                ["QE"],
+                ["QE"],
+                ["QE"],
+                ["QE"],
+                ["QE"],
+                ["QE"],
+                ["QE"],
+                ["QE"],
+                ["QE"],
+                ["QE"],
+                ["QE"],
+                ["NONE"],
+                ["QE"],
+                ["QE"],
+                ["QE"]
+            ],
+            "datatype": "BYTES",
+            "name": "instrument_types"
+        }
+    ],
+    "id": "0"
+}

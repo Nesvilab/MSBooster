@@ -14,6 +14,9 @@
 
 package allconstants;
 
+import koinaclasses.KoinaModelRegistry;
+import koinaclasses.KoinaModelSpec;
+
 import java.util.HashMap;
 
 public class LowercaseModelMapper {
@@ -25,8 +28,8 @@ public class LowercaseModelMapper {
         lowercaseToModel.put(FragCastModels.FAST.toLowerCase(), FragCastModels.FAST);
         lowercaseToModel.put("alphapeptdeep", "alphapeptdeep");
 
-        for (String model : ModelCollections.KoinaModels) {
-            lowercaseToModel.put(model.toLowerCase(), model);
+        for (KoinaModelSpec spec : KoinaModelRegistry.all()) {
+            lowercaseToModel.put(spec.name().toLowerCase(), spec.name());
         }
     }
 

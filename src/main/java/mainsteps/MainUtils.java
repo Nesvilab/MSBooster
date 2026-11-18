@@ -3,6 +3,8 @@ package mainsteps;
 import allconstants.*;
 import bestmodelsearch.BestModelSearcher;
 import koinaclasses.KoinaMethods;
+import koinaclasses.KoinaModelCheck;
+import koinaclasses.KoinaPreCheck;
 import koinaclasses.NCEcalibrator;
 import modelcallers.DiannModelCaller;
 import modelcallers.FragCastModelCaller;
@@ -193,7 +195,6 @@ public class MainUtils {
                         PeptideFileCreator.createPartialFile(
                                 jsonOutFolder + File.separator + model + File.separator + "spectraRT_full.tsv",
                                 model, km.peptideArrayListIM);
-                        KoinaMethods.createPartialKoinaSet(model, km.peptideArrayListIM);
                         String inputFile = jsonOutFolder + File.separator + model + File.separator + "spectraRT.tsv";
                         imPreds = runLocalBestModel(model, inputFile, km.peptideArrayListIM);
                     } else { //mode for koina
@@ -278,6 +279,11 @@ public class MainUtils {
             //here, look for best spectra model
             if (Constants.findBestSpectraModel) {
                 ArrayList<String> consideredModels = decideCollection("MS2");
+                //a candidate whose NCE range to calibrate over is empty ends the search before any is tried,
+                //not part-way through
+                for (String model : consideredModels) {
+                    NceConstants.requireCalibrationRange(model);
+                }
 
                 String jsonOutFolder = Constants.outputDirectory + File.separator + "best_model";
                 MyFileUtils.createWholeDirectory(jsonOutFolder);
@@ -299,14 +305,10 @@ public class MainUtils {
 
                     //set matching with Da or not
                     //if matchWithDaltons are true, also accept that (e.g. from reading it from fragger.params)
-                    if (model.equalsIgnoreCase("predfull")) {
-                        Constants.matchWithDaltonsDefault = true;
+                    if (Constants.matchWithDaltons == null) {
+                        Constants.matchWithDaltonsDefault = false;
                     } else {
-                        if (Constants.matchWithDaltons == null) {
-                            Constants.matchWithDaltonsDefault = false;
-                        } else {
-                            Constants.matchWithDaltonsDefault = Constants.matchWithDaltons;
-                        }
+                        Constants.matchWithDaltonsDefault = Constants.matchWithDaltons;
                     }
 
                     MyFileUtils.createWholeDirectory(jsonOutFolder + File.separator + model);
@@ -314,7 +316,6 @@ public class MainUtils {
                         PeptideFileCreator.createPartialFile(
                                 jsonOutFolder + File.separator + model + File.separator + "spectraRT_full.tsv",
                                 model, km.peptideArraylist);
-                        KoinaMethods.createPartialKoinaSet(model, km.peptideArraylist);
                         String inputFile = jsonOutFolder + File.separator + model + File.separator + "spectraRT.tsv";
                         PredictionEntryHashMap allPreds = runLocalBestModel(model, inputFile, km.peptideArraylist);
 
@@ -557,6 +558,15 @@ public class MainUtils {
 
     static void makeInputFiles(PinMzmlMatcher pmMatcher, ArrayList<Model> models, KoinaMethods km)
             throws FileParsingException, IOException, ExecutionException, InterruptedException {
+        //ask Koina about every Koina model of the run before the pin files are read for it, so a model Koina
+        //does not serve, or one that cannot encode the search's isobaric label, ends the run now
+        for (Model model : models) {
+            if (ModelCollections.KoinaModels.contains(model.name)) {
+                KoinaPreCheck.checkIsobaricLabel(model.name);
+                KoinaModelCheck.check(model.name);
+            }
+        }
+
         MyFileUtils.deleteWholeDirectory(Constants.outputDirectory + File.separator + "NCE_calibration");
         //createfull is needed for almost everything
         HashSet<String> modelSet = new HashSet<>();
@@ -578,14 +588,10 @@ public class MainUtils {
                         ! NceConstants.calibratedModels.containsKey(currentModel)) {
                     //set matching with Da or not
                     //if matchWithDaltons are true, also accept that (e.g. from reading it from fragger.params)
-                    if (currentModel.equalsIgnoreCase("predfull")) {
-                        Constants.matchWithDaltonsDefault = true;
+                    if (Constants.matchWithDaltons == null) {
+                        Constants.matchWithDaltonsDefault = false;
                     } else {
-                        if (Constants.matchWithDaltons == null) {
-                            Constants.matchWithDaltonsDefault = false;
-                        } else {
-                            Constants.matchWithDaltonsDefault = Constants.matchWithDaltons;
-                        }
+                        Constants.matchWithDaltonsDefault = Constants.matchWithDaltons;
                     }
 
                     Object[] modelInfo = NCEcalibrator.calibrateNCE(currentModel, km,
@@ -629,10 +635,6 @@ public class MainUtils {
                         printInfo("Generating input file for pDeep3");
                         PeptideFileCreator.createPeptideFile(pmMatcher, Constants.spectraRTPrefix + ".tsv", "pDeep3");
                         break;
-                    case "PredFull":
-                        printInfo("Generating input file for PredFull");
-                        PeptideFileCreator.createPeptideFile(pmMatcher, Constants.spectraRTPrefix + ".tsv", "PredFull");
-                        break;
                     case "Prosit":
                         printInfo("Generating input file for Prosit");
                         PeptideFileCreator.createPeptideFile(pmMatcher, Constants.spectraRTPrefix + ".csv", "Prosit");
@@ -647,7 +649,7 @@ public class MainUtils {
                         break;
                     default:
                         printError("spectraRTPredModel must be one of FragCast, FragCast-Fast, DIA-NN, " +
-                                "Prosit, PrositTMT, PredFull, pDeep2, pDeep3, or alphapeptdeep");
+                                "Prosit, PrositTMT, pDeep2, pDeep3, or alphapeptdeep");
                         System.exit(1);
                 }
             }

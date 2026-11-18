@@ -1,0 +1,16 @@
+peptide	charge	note
+K.LGEPTIDEK.A	2	unmodified
+R.AVLDQGSTWPEM[15.9949]AGK.S	2	oxidized Met (UNIMOD:35)
+K.TEC[57.0215]LDHFAVNPR.G	3	carbamidomethyl Cys (UNIMOD:4)
+K.SHCVAELLGPEK.T	2	free Cys, no carbamidomethyl
+K.C[39.9950]ADLSGFTPEVIAR.Q	2	pyro-carbamidomethyl Cys on residue 1 (UNIMOD:26)
+K.n[42.0106]ADVTGLPHK.E	2	N-terminal acetyl (UNIMOD:1)
+R.GS[79.9663]PEDLHVTAR.L	2	phospho Ser (UNIMOD:21)
+K.VFLEN[0.9840]GTLR.A	2	deamidated Asn (UNIMOD:7)
+K.GLR[0.9840]DTVAEPWK.S	2	citrullinated Arg (UNIMOD:7)
+R.AEQ[0.9840]LPTSGVNK.D	2	deamidated Gln (UNIMOD:7)
+R.HEAPGLDVSTWKPEEVLR.S	4	charge 4
+K.ADGLR.T	1	5 residues, charge 1
+K.ELVSAPLGTNEIYDHFAQWTGLPVEDAKLGR.S	3	31 residues: skipped by models limited to 30
+K.GDUVLPAEK.A	2	selenocysteine U: skipped by models that refuse OUBZJX
+K.TEALDHFAVNPRGSLEWQKPEDVTAR.N	7	charge 7: skipped by models limited to charge 6

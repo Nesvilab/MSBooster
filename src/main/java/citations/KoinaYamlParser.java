@@ -1,7 +1,8 @@
 package citations;
 
 import allconstants.Constants;
-import allconstants.ModelCollections;
+import koinaclasses.KoinaModelRegistry;
+import koinaclasses.KoinaModelSpec;
 import org.yaml.snakeyaml.Yaml;
 import utils.Model;
 import utils.Print;
@@ -31,33 +32,44 @@ public class KoinaYamlParser {
         paths = firstLayer.get("paths");
     }
 
-    private String getCitation(String model) {
-        //naming changes needed for yaml
-        model = model.replace("AlphaPept", "AlphaPeptDeep");
-
-        String description = paths.get("/" + model + "/infer").get("post").get("description");
-        description = description.split("### Citation")[1].
+    //the citation under a model's path in koina_citations.yml (KoinaModelSpec.citationKey), blank if Koina gives
+    //none, or null if the file has no such path
+    String getCitation(String citationKey) {
+        HashMap<String, HashMap<String, String>> path = paths.get("/" + citationKey + "/infer");
+        if (path == null || path.get("post") == null || path.get("post").get("description") == null) {
+            return null;
+        }
+        String[] description = path.get("post").get("description").split("### Citation");
+        if (description.length < 2) {
+            return null;
+        }
+        return description[1].
                 replace("<br>", " ").
                 replace("\r", "").
                 replace("\n", "");
-        return description;
     }
 
     public void writeCitations(ArrayList<Model> models) throws IOException {
         HashSet<String> citations = new HashSet<>();
         for (Model model : models) {
-            String modelName = model.name;
-            if (ModelCollections.KoinaModels.contains(modelName)) {
-                String citation = getCitation(modelName);
-                citations.add(citation);
+            KoinaModelSpec spec = KoinaModelRegistry.find(model.name);
+            if (spec != null) {
+                String citation = getCitation(spec.citationKey());
+                if (citation == null || citation.isBlank()) {
+                    Print.printInfo("No citation found for Koina model " + spec.name() + " under "
+                            + spec.citationKey() + " in koina_citations.yml");
+                } else {
+                    citations.add(citation);
+                }
             }
         }
 
         if (!citations.isEmpty()) {
             String starter = "If using models from Koina, please cite the following:";
-            String koinaCitation = "Lautenbacher L, Yang KL, et al. " +
+            //as koina_citations.yml (Koina's openapi.yml) asks Koina to be cited
+            String koinaCitation = "Lautenbacher L, Yang KL, Kockmann T, et al. " +
                     "Koina: Democratizing machine learning for proteomics research. " +
-                    "bioRxiv. (2024) doi:10.1101/2024.06.01.596953";
+                    "Nat Commun 16, 9933 (2025). doi:10.1038/s41467-025-64870-5";
             String comment = "#CITATIONS: ";
 
             //write to output

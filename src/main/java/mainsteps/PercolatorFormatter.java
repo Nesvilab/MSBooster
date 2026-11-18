@@ -100,10 +100,7 @@ public class PercolatorFormatter {
             }
             FragmentIonConstants.fragmentGroups = createFragmentGroups();
 
-            if (Constants.spectraModel.equals("PredFull")) {
-                Constants.matchWithDaltons = true; //they report predictions in bins
-                Constants.matchWithDaltonsDefault = true;
-            } else if (Constants.matchWithDaltons == null) {
+            if (Constants.matchWithDaltons == null) {
                 Constants.matchWithDaltons = false;
                 Constants.matchWithDaltonsDefault = false;
             }
@@ -140,9 +137,7 @@ public class PercolatorFormatter {
                 libraries.add(predictedAuxSpectra);
             }
             allProperties.put("auxSpectra", Constants.auxSpectraPredFile);
-            if (Constants.auxSpectraModel.equals("PredFull")) {
-                Constants.matchWithDaltonsAux = true; //they report predictions in bins
-            } else if (Constants.matchWithDaltonsAux == null) {
+            if (Constants.matchWithDaltonsAux == null) {
                 Constants.matchWithDaltonsAux = false;
             }
         }

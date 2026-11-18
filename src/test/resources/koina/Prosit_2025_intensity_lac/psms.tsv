@@ -1,0 +1,21 @@
+peptide	charge	note
+K.LGEPTIDEK.A	2	unmodified
+R.AVLDQGSTWPEM[15.9949]AGK.S	2	oxidized Met (UNIMOD:35)
+K.TEC[57.0215]LDHFAVNPR.G	3	carbamidomethyl Cys (UNIMOD:4)
+K.SHCVAELLGPEK.T	2	free Cys: skipped, as Koina reads a bare C as carbamidomethylated
+K.C[39.9950]ADLSGFTPEVIAR.Q	2	pyro-carbamidomethyl Cys on residue 1: sent as C[UNIMOD:4], its -17.0265 left out
+K.ADK[72.0211]LGEPTIDER.S	2	lactyl Lys (UNIMOD:2114, not the carboxyethyl UNIMOD:378 of the same mass)
+K.n[72.0211]ADVTGLPHK.E	2	N-terminal lactyl (UNIMOD:2114)
+K.n[72.0211]LGEPTK[72.0211]IDEK.A	3	N-terminal and Lys lactyl
+K.M[15.9949]DPSLVTAEGK[72.0211].A	2	oxidized Met and lactyl Lys on the last residue
+K.n[42.0106]ADVTGLPHK.E	2	N-terminal acetyl: left out
+K.ADK[56.0262]LGEPTIDER.S	2	propionyl Lys (UNIMOD:58): left out, not sent as lactyl
+K.ADK[42.0106]LGEPTIDER.S	2	acetyl Lys: left out
+R.GS[79.9663]PEDLHVTAR.L	2	phospho Ser: left out
+R.Q[-17.0265]YLDTEGAIPAK.D	2	pyro-Glu from Gln on residue 1: left out
+K.LGEPTIDEKc[72.0211].A	2	a C-term mod of the lactyl mass: never sent, not even as the lactyl on the last K
+R.HEAPGLDVSTWKPEEVLR.S	4	charge 4
+K.ADGLR.T	1	5 residues, charge 1
+K.ELVSAPLGTNEIYDHFAQWTGLPVEDAKLGR.S	3	31 residues: skipped by models limited to 30
+K.GDUVLPAEK.A	2	selenocysteine U: skipped by models that refuse OUBZJX
+K.TEALDHFAVNPRGSLEWQKPEDVTAR.N	7	charge 7: skipped by models limited to charge 6

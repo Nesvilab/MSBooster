@@ -15,8 +15,13 @@
 package readers.predictionreaders;
 
 import allconstants.Constants;
-import allconstants.ModelCollections;
+import koinaclasses.KoinaModelRegistry;
+import koinaclasses.KoinaModelSpec;
+import peptideptmformatting.PeptideFormatter;
 import predictions.PredictionEntryHashMap;
+
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
 import static utils.Print.printError;
 
@@ -24,38 +29,23 @@ public class KoinaLibReader implements LibraryPredictionMapper {
     public boolean failed = false;
     public PredictionEntryHashMap allPreds = new PredictionEntryHashMap();
     public String finalModel;
-    public String modelType; //TODO: may need better way to handle this i.e. prosit and prosit cit
+    //the model's spec, which PeptideFormatter, PeptideSkipper and transferKoinaPreds take
+    public final KoinaModelSpec spec;
     public String property;
-    public boolean useFullAnnotation = false;
+    //the precursors Koina refused (HTTP 400) when each was sent alone, in mass notation, with what Koina said; see
+    //refuse
+    private final Map<String, String> refused = new ConcurrentHashMap<>();
 
     public KoinaLibReader(String model) {
-        finalModel = model;
-        modelType = model.toLowerCase().split("_")[0];
-        if (modelType.equals("prosit") && model.contains("TMT")) {
-            modelType = "prosittmt";
-        } else if (modelType.equals("prosit") && model.contains("_cit")) {
-            modelType = "prosit_cit";
-        }
-
-        if (modelType.contains("unispec") || modelType.contains("predfull")) {
-            useFullAnnotation = true;
-        }
-
-        //decide if this is RT or MS2 model
-        if (ModelCollections.KoinaRTmodels.contains(model)) {
-            property = "rt";
-        } else if (ModelCollections.KoinaMS2models.contains(model)) {
-            if (Constants.auxSpectraModel.equals(model)) {
-                property = "ms2_aux";
-            } else {
-                property = "ms2";
-            }
-        } else if (ModelCollections.KoinaIMmodels.contains(model)) {
-            property = "im";
-        } else {
+        spec = KoinaModelRegistry.find(model);
+        if (spec == null) {
             printError(model + " not in Koina models");
             System.exit(1);
         }
+        finalModel = model;
+
+        //decide if this is an RT, MS2 or IM model
+        property = spec.property(Constants.auxSpectraModel.equals(model));
     }
 
     public PredictionEntryHashMap getPreds() {return allPreds;}
@@ -65,5 +55,49 @@ public class KoinaLibReader implements LibraryPredictionMapper {
 
     public void clear() {
         allPreds.clear();
+    }
+
+    /**
+     * Records a precursor Koina refused (HTTP 400) when it was sent alone (KoinaBisection). It has no prediction from
+     * the model, and transferKoinaPreds scores it as a precursor the model cannot take.
+     * <p>
+     * It is recorded in mass notation, as the model's predictions are, so it is found whichever UniMod code the
+     * peptide is written with: a model that remembers the codes it finds (PeptideFormatter.foundUnimods) may write a
+     * mass with two codes one way in the request and the other way when transferKoinaPreds writes it again.
+     *
+     * @param modelPeptide the peptide as the model was sent it
+     * @param charge       its charge as the request wrote it; ignored, and may be null, for a model that is sent no
+     *                     charge
+     * @param message      what Koina answered
+     * @return whether it was not recorded before
+     */
+    public boolean refuse(String modelPeptide, String charge, String message) {
+        PeptideFormatter pf = new PeptideFormatter(modelPeptide, charge == null ? "0" : charge, spec);
+        return refused.putIfAbsent(key(pf), message) == null;
+    }
+
+    /**
+     * Whether Koina refused this precursor ({@link #refuse}).
+     *
+     * @param modelPf the peptide as the model was sent it, read with the model's spec
+     *                ({@link PeptideFormatter#PeptideFormatter(String, Object, KoinaModelSpec)}), and its charge
+     */
+    public boolean isRefused(PeptideFormatter modelPf) {
+        return !refused.isEmpty() && refused.containsKey(key(modelPf));
+    }
+
+    /** Whether Koina refused this precursor ({@link #refuse}), the peptide as the model was sent it. */
+    public boolean isRefused(String modelPeptide, String charge) {
+        return !refused.isEmpty() && isRefused(new PeptideFormatter(modelPeptide, charge, spec));
+    }
+
+    /** How many precursors Koina refused ({@link #refuse}). */
+    public int refusedCount() {
+        return refused.size();
+    }
+
+    //an RT model is sent no charge, so Koina refuses its peptide whatever the charge
+    private String key(PeptideFormatter modelPf) {
+        return spec.sends(KoinaModelSpec.Input.PRECURSOR_CHARGES) ? modelPf.getBaseCharge() : modelPf.getBase();
     }
 }

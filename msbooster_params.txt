@@ -149,11 +149,15 @@ splitPredInputFile = 1                           # legacy; FragPred no longer sp
 # Fragmentation / NCE
 ############################################################
 FragmentationType = auto                         # HCD, CID, ETD, ETHCD, ECD, EID, UVPD, ETCID, or auto
-instrument =
-autoSwitchFragmentation = true
-NCE = 25
-minNCE = 20
-maxNCE = 40
+instrument =                                     # empty -> read from the mzML; sent to AlphaPept_ms2_generic, UniSpec, Prosit_2025_intensity_lac
+autoSwitchFragmentation = true                   # no longer changes anything; kept so older parameter files load
+NCE = 25                                         # used when not calibrated and not read from the mzML
+## NCE calibration tries each Koina model it calibrates over the model's own collision energy range: 20-40 for
+## most models, 20-70 (eV) for Prosit_2023_intensity_timsTOF. Set minNCE or maxNCE only to override that end of
+## the range for every model. A range they leave empty (minNCE above maxNCE, minNCE above a model's highest NCE,
+## or maxNCE below its lowest) ends the run before any model is calibrated.
+# minNCE = 20
+# maxNCE = 40
 calibrateNCE = true
 ignoredFragmentIonTypes =
 onlyFragmentIonTypes =

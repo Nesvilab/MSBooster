@@ -144,7 +144,6 @@ public class Constants implements ConstantsInterface {
         map.put("DIA-NN", 60000);
         map.put("Prosit", 1);
         map.put("alphapeptdeep", 1);
-        map.put("PredFull", 1000);
         return map;
     }
     public static HashMap<String, Integer> modelMaxIntensity = makeModelMaxIntensity();
@@ -226,7 +225,7 @@ public class Constants implements ConstantsInterface {
     //peptide counts
     public static ConcurrentHashMap<String, HashSet<String>> peptideCounter = new ConcurrentHashMap<>();
 
-    //support for PredFull and Prosit
+    //fragmentation and instrument settings for spectral prediction models
     public static String FragmentationType = "auto";
     public static String instrument = "";
     public static Integer maxPredictedFragmentCharge = 100;

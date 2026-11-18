@@ -1,0 +1,1517 @@
+# The UniMod delta compositions Koina reads: every term with a delta_composition in the unimod.obo of
+# wilhelm-lab/koina commit d176169, models/Deeplc/Deeplc_Preprocess_AC/1/unimod.obo (dated 20:10:2022 14:06),
+# which DeepLC, IM2Deep and the Prosit-PTM zero-shot encoding load. Read by koinaclasses.KoinaUnimod.
+unimod_id	name	delta_composition
+1	Acetyl	H(2) C(2) O
+2	Amidated	H N O(-1)
+3	Biotin	H(14) C(10) N(2) O(2) S
+4	Carbamidomethyl	H(3) C(2) N O
+5	Carbamyl	H C N O
+6	Carboxymethyl	H(2) C(2) O(2)
+7	Deamidated	H(-1) N(-1) O
+8	ICAT-G	H(38) C(22) N(4) O(6) S
+9	ICAT-G:2H(8)	H(30) 2H(8) C(22) N(4) O(6) S
+10	Met->Hse	H(-2) C(-1) O S(-1)
+11	Met->Hsl	H(-4) C(-1) S(-1)
+12	ICAT-D:2H(8)	H(26) 2H(8) C(20) N(4) O(5) S
+13	ICAT-D	H(34) C(20) N(4) O(5) S
+17	NIPCAM	H(9) C(5) N O
+20	PEO-Iodoacetyl-LC-Biotin	H(30) C(18) N(4) O(5) S
+21	Phospho	H O(3) P
+23	Dehydrated	H(-2) O(-1)
+24	Propionamide	H(5) C(3) N O
+25	Pyridylacetyl	H(5) C(7) N O
+26	Pyro-carbamidomethyl	C(2) O
+27	Glu->pyro-Glu	H(-2) O(-1)
+28	Gln->pyro-Glu	H(-3) N(-1)
+29	SMA	H(9) C(6) N O(2)
+30	Cation:Na	H(-1) Na
+31	Pyridylethyl	H(7) C(7) N
+34	Methyl	H(2) C
+35	Oxidation	O
+36	Dimethyl	H(4) C(2)
+37	Trimethyl	H(6) C(3)
+39	Methylthio	H(2) C S
+40	Sulfo	O(3) S
+41	Hex	Hex
+42	Lipoyl	H(12) C(8) O S(2)
+43	HexNAc	HexNAc
+44	Farnesyl	H(24) C(15)
+45	Myristoyl	H(26) C(14) O
+46	PyridoxalPhosphate	H(8) C(8) N O(5) P
+47	Palmitoyl	H(30) C(16) O
+48	GeranylGeranyl	H(32) C(20)
+49	Phosphopantetheine	H(21) C(11) N(2) O(6) P S
+50	FAD	H(31) C(27) N(9) O(15) P(2)
+51	Tripalmitate	H(96) C(51) O(5)
+52	Guanidinyl	H(2) C N(2)
+53	HNE	H(16) C(9) O(2)
+54	Glucuronyl	HexA
+55	Glutathione	H(15) C(10) N(3) O(6) S
+56	Acetyl:2H(3)	H(-1) 2H(3) C(2) O
+58	Propionyl	H(4) C(3) O
+59	Propionyl:13C(3)	H(4) 13C(3) O
+60	GIST-Quat	H(13) C(7) N O
+61	GIST-Quat:2H(3)	H(10) 2H(3) C(7) N O
+62	GIST-Quat:2H(6)	H(7) 2H(6) C(7) N O
+63	GIST-Quat:2H(9)	H(4) 2H(9) C(7) N O
+64	Succinyl	H(4) C(4) O(3)
+65	Succinyl:2H(4)	2H(4) C(4) O(3)
+66	Succinyl:13C(4)	H(4) 13C(4) O(3)
+89	Iminobiotin	H(15) C(10) N(3) O S
+90	ESP	H(26) C(16) N(4) O(2) S
+91	ESP:2H(10)	H(16) 2H(10) C(16) N(4) O(2) S
+92	NHS-LC-Biotin	H(25) C(16) N(3) O(3) S
+93	EDT-maleimide-PEO-biotin	H(39) C(25) N(5) O(6) S(3)
+94	IMID	H(4) C(3) N(2)
+95	IMID:2H(4)	2H(4) C(3) N(2)
+97	Propionamide:2H(3)	H(2) 2H(3) C(3) N O
+105	ICAT-C	H(17) C(10) N(3) O(3)
+106	ICAT-C:13C(9)	H(17) C 13C(9) N(3) O(3)
+107	FormylMet	H(9) C(6) N O(2) S
+108	Nethylmaleimide	H(7) C(6) N O(2)
+112	OxLysBiotinRed	H(26) C(16) N(4) O(3) S
+113	OxLysBiotin	H(24) C(16) N(4) O(3) S
+114	OxProBiotinRed	H(29) C(16) N(5) O(3) S
+115	OxProBiotin	H(27) C(16) N(5) O(3) S
+116	OxArgBiotin	H(22) C(15) N(2) O(3) S
+117	OxArgBiotinRed	H(24) C(15) N(2) O(3) S
+118	EDT-iodoacetyl-PEO-biotin	H(34) C(20) N(4) O(4) S(3)
+119	IBTP	H(21) C(22) P
+121	GG	H(6) C(4) N(2) O(2)
+122	Formyl	C O
+123	ICAT-H	H(20) C(15) N O(6) Cl
+124	ICAT-H:13C(6)	H(20) C(9) 13C(6) N O(6) Cl
+126	Xlink:DTSSP[88]	H(4) C(3) O S
+127	Fluoro	H(-1) F
+128	Fluorescein	H(13) C(22) N O(6)
+129	Iodo	H(-1) I
+130	Diiodo	H(-2) I(2)
+131	Triiodo	H(-3) I(3)
+134	Myristoleyl	H(24) C(14) O
+135	Myristoyl+Delta:H(-4)	H(22) C(14) O
+136	Benzoyl	H(4) C(7) O
+137	Hex(5)HexNAc(2)	Hex(5) HexNAc(2)
+139	Dansyl	H(11) C(12) N O(2) S
+140	a-type-ion	H(-2) C(-1) O(-2)
+141	Amidine	H(3) C(2) N
+142	HexNAc(1)dHex(1)	dHex HexNAc
+143	HexNAc(2)	HexNAc(2)
+144	Hex(3)	Hex(3)
+145	HexNAc(1)dHex(2)	dHex(2) HexNAc
+146	Hex(1)HexNAc(1)dHex(1)	dHex Hex HexNAc
+147	HexNAc(2)dHex(1)	dHex HexNAc(2)
+148	Hex(1)HexNAc(2)	Hex HexNAc(2)
+149	Hex(1)HexNAc(1)NeuAc(1)	Hex HexNAc NeuAc
+150	HexNAc(2)dHex(2)	dHex(2) HexNAc(2)
+151	Hex(1)HexNAc(2)Pent(1)	Pent Hex HexNAc(2)
+152	Hex(1)HexNAc(2)dHex(1)	dHex Hex HexNAc(2)
+153	Hex(2)HexNAc(2)	Hex(2) HexNAc(2)
+154	Hex(3)HexNAc(1)Pent(1)	Pent Hex(3) HexNAc
+155	Hex(1)HexNAc(2)dHex(1)Pent(1)	Pent dHex Hex HexNAc(2)
+156	Hex(1)HexNAc(2)dHex(2)	dHex(2) Hex HexNAc(2)
+157	Hex(2)HexNAc(2)Pent(1)	Pent Hex(2) HexNAc(2)
+158	Hex(2)HexNAc(2)dHex(1)	dHex Hex(2) HexNAc(2)
+159	Hex(3)HexNAc(2)	Hex(3) HexNAc(2)
+160	Hex(1)HexNAc(1)NeuAc(2)	Hex HexNAc NeuAc(2)
+161	Hex(3)HexNAc(2)Phos(1)	H O(3) P Hex(3) HexNAc(2)
+162	Delta:S(-1)Se(1)	S(-1) Se
+170	Delta:H(-1)N(-1)18O(1)	H(-1) N(-1) 18O
+171	NBS:13C(6)	H(3) 13C(6) N O(2) S
+172	NBS	H(3) C(6) N O(2) S
+176	BHT	H(22) C(15) O
+178	DAET	H(9) C(4) N O(-1) S
+184	Label:13C(9)	C(-9) 13C(9)
+185	Label:13C(9)+Phospho	H C(-9) 13C(9) O(3) P
+186	HPG	H(4) C(8) O(2)
+187	2HPG	H(10) C(16) O(5)
+188	Label:13C(6)	C(-6) 13C(6)
+193	Label:18O(2)	O(-2) 18O(2)
+194	AccQTag	H(6) C(10) N(2) O
+195	QAT	H(19) C(9) N(2) O
+196	QAT:2H(3)	H(16) 2H(3) C(9) N(2) O
+197	EQAT	H(20) C(10) N(2) O
+198	EQAT:2H(5)	H(15) 2H(5) C(10) N(2) O
+199	Dimethyl:2H(4)	2H(4) C(2)
+200	Ethanedithiol	H(4) C(2) O(-1) S(2)
+205	Delta:H(6)C(6)O(1)	H(6) C(6) O
+206	Delta:H(4)C(3)O(1)	H(4) C(3) O
+207	Delta:H(2)C(3)	H(2) C(3)
+208	Delta:H(4)C(6)	H(4) C(6)
+209	Delta:H(8)C(6)O(2)	H(8) C(6) O(2)
+211	NEIAA	H(7) C(4) N O
+212	NEIAA:2H(5)	H(2) 2H(5) C(4) N O
+213	ADP-Ribosyl	H(13) C(10) N(5) O(9) P(2) Pent
+214	iTRAQ4plex	H(12) C(4) 13C(3) N 15N O
+243	IGBP	H(13) C(12) N(2) O(2) Br
+253	Crotonaldehyde	H(6) C(4) O
+254	Delta:H(2)C(2)	H(2) C(2)
+255	Delta:H(4)C(2)	H(4) C(2)
+256	Delta:H(4)C(3)	H(4) C(3)
+258	Label:18O(1)	O(-1) 18O
+259	Label:13C(6)15N(2)	C(-6) 13C(6) N(-2) 15N(2)
+260	Thiophospho	H O(2) P S
+261	SPITC	H(5) C(7) N O(3) S(2)
+262	Label:2H(3)	H(-3) 2H(3)
+264	PET	H(7) C(7) N O(-1) S
+267	Label:13C(6)15N(4)	C(-6) 13C(6) N(-4) 15N(4)
+268	Label:13C(5)15N(1)	C(-5) 13C(5) N(-1) 15N
+269	Label:13C(9)15N(1)	C(-9) 13C(9) N(-1) 15N
+270	Cytopiloyne	H(22) C(19) O(7)
+271	Cytopiloyne+water	H(24) C(19) O(8)
+272	CAF	H(4) C(3) O(4) S
+275	Nitrosyl	H(-1) N O
+276	AEBS	H(9) C(8) N O(2) S
+278	Ethanolyl	H(4) C(2) O
+280	Ethyl	H(4) C(2)
+281	CoenzymeA	H(34) C(21) N(7) O(16) P(3) S
+284	Methyl:2H(2)	2H(2) C
+285	SulfanilicAcid	H(5) C(6) N O(2) S
+286	SulfanilicAcid:13C(6)	H(5) 13C(6) N O(2) S
+288	Trp->Oxolactone	H(-2) O
+289	Biotin-PEO-Amine	H(28) C(16) N(4) O(3) S
+290	Biotin-HPDP	H(32) C(19) N(4) O(3) S(2)
+291	Delta:Hg(1)	Hg
+292	IodoU-AMP	H(11) C(9) N(2) O(9) P
+293	CAMthiopropanoyl	H(7) C(5) N O(2) S
+294	IED-Biotin	H(22) C(14) N(4) O(3) S
+295	dHex	dHex
+298	Methyl:2H(3)	H(-1) 2H(3) C
+299	Carboxy	C O(2)
+301	Bromobimane	H(10) C(10) N(2) O(2)
+302	Menadione	H(6) C(11) O(2)
+303	DeStreak	H(4) C(2) O S
+305	dHex(1)Hex(3)HexNAc(4)	dHex Hex(3) HexNAc(4)
+307	dHex(1)Hex(4)HexNAc(4)	dHex Hex(4) HexNAc(4)
+308	dHex(1)Hex(5)HexNAc(4)	dHex Hex(5) HexNAc(4)
+309	Hex(3)HexNAc(4)	Hex(3) HexNAc(4)
+310	Hex(4)HexNAc(4)	Hex(4) HexNAc(4)
+311	Hex(5)HexNAc(4)	Hex(5) HexNAc(4)
+312	Cysteinyl	H(5) C(3) N O(2) S
+313	Lys-loss	H(-12) C(-6) N(-2) O(-1)
+314	Nmethylmaleimide	H(5) C(5) N O(2)
+316	DimethylpyrroleAdduct	H(6) C(6)
+318	Delta:H(2)C(5)	H(2) C(5)
+319	Delta:H(2)C(3)O(1)	H(2) C(3) O
+320	Nethylmaleimide+water	H(9) C(6) N O(3)
+323	Xlink:B10621	H(30) C(31) N(4) O(6) S I
+324	Xlink:DTBP[87]	H(5) C(3) N S
+325	FP-Biotin	H(49) C(27) N(4) O(5) P S
+327	Delta:H(4)C(2)O(-1)S(1)	H(4) C(2) O(-1) S
+329	Methyl:2H(3)13C(1)	H(-1) 2H(3) 13C
+330	Dimethyl:2H(6)13C(2)	H(-2) 2H(6) 13C(2)
+332	Thiophos-S-S-biotin	H(34) C(19) N(4) O(5) P S(3)
+333	Can-FP-biotin	H(34) C(19) N(3) O(5) P S
+335	HNE+Delta:H(2)	H(18) C(9) O(2)
+337	Methylamine	H(3) C N O(-1)
+340	Bromo	H(-1) Br
+342	Amino	H N
+343	Argbiotinhydrazide	H(13) C(9) N O(2) S
+344	Arg->GluSA	H(-5) C(-1) N(-3) O
+345	Trioxidation	O(3)
+348	His->Asn	H(-1) C(-2) N(-1) O
+349	His->Asp	H(-2) C(-2) N(-2) O(2)
+350	Trp->Hydroxykynurenin	C(-1) O(2)
+351	Trp->Kynurenin	C(-1) O
+352	Lys->Allysine	H(-3) N(-1) O
+353	Lysbiotinhydrazide	H(15) C(10) N(3) O(2) S
+354	Nitro	H(-1) N O(2)
+357	probiotinhydrazide	H(18) C(10) N(4) O(2) S
+359	Pro->pyro-Glu	H(-2) O
+360	Pro->Pyrrolidinone	H(-2) C(-1) O(-1)
+361	Thrbiotinhydrazide	H(16) C(10) N(4) O S
+362	Diisopropylphosphate	H(13) C(6) O(3) P
+363	Isopropylphospho	H(7) C(3) O(3) P
+364	ICPL:13C(6)	H(3) 13C(6) N O
+365	ICPL	H(3) C(6) N O
+366	Deamidated:18O(1)	H(-1) N(-1) 18O
+368	Cys->Dha	H(-2) S(-1)
+369	Pro->Pyrrolidone	C(-1) O(-1)
+371	HMVK	H(6) C(4) O(2)
+372	Arg->Orn	H(-2) C(-1) N(-2)
+374	Dehydro	H(-1)
+375	Diphthamide	H(14) C(7) N(2) O
+376	Hydroxyfarnesyl	H(24) C(15) O
+377	Diacylglycerol	H(68) C(37) O(4)
+378	Carboxyethyl	H(4) C(3) O(2)
+379	Hypusine	H(9) C(4) N O
+380	Retinylidene	H(26) C(20)
+381	Lys->AminoadipicAcid	H(-3) N(-1) O(2)
+382	Cys->PyruvicAcid	H(-3) N(-1) O S(-1)
+385	Ammonia-loss	H(-3) N(-1)
+387	Phycocyanobilin	H(38) C(33) N(4) O(6)
+388	Phycoerythrobilin	H(40) C(33) N(4) O(6)
+389	Phytochromobilin	H(36) C(33) N(4) O(6)
+390	Heme	H(32) C(34) N(4) O(4) Fe
+391	Molybdopterin	H(11) C(10) N(5) O(8) P S(2) Mo
+392	Quinone	H(-2) O(2)
+393	Glucosylgalactosyl	O Hex(2)
+394	GPIanchor	H(6) C(2) N O(3) P
+395	PhosphoribosyldephosphoCoA	H(42) C(26) N(7) O(19) P(3) S
+396	GlycerylPE	H(12) C(5) N O(5) P
+397	Triiodothyronine	H C(6) O I(3)
+398	Thyroxine	C(6) O I(4)
+400	Tyr->Dha	H(-6) C(-6) O(-1)
+401	Didehydro	H(-2)
+402	Cys->Oxoalanine	H(-2) O S(-1)
+403	Ser->LacticAcid	H(-1) N(-1)
+405	Phosphoadenosine	H(12) C(10) N(5) O(6) P
+407	Hydroxycinnamyl	H(6) C(9) O(2)
+408	Glycosyl	H(-2) C(-1) Hex
+409	FMNH	H(19) C(17) N(4) O(9) P
+410	Archaeol	H(86) C(43) O(2)
+411	Phenylisocyanate	H(5) C(7) N O
+412	Phenylisocyanate:2H(5)	2H(5) C(7) N O
+413	Phosphoguanosine	H(12) C(10) N(5) O(7) P
+414	Hydroxymethyl	H(2) C O
+415	MolybdopterinGD+Delta:S(-1)Se(1)	H(47) C(40) N(20) O(26) P(4) S(3) Se Mo
+416	Dipyrrolylmethanemethyl	H(22) C(20) N(2) O(8)
+417	PhosphoUridine	H(11) C(9) N(2) O(8) P
+419	Glycerophospho	H(7) C(3) O(5) P
+420	Carboxy->Thiocarboxy	O(-1) S
+421	Sulfide	S
+422	PyruvicAcidIminyl	H(2) C(3) O(2)
+423	Delta:Se(1)	Se
+424	MolybdopterinGD	H(47) C(40) N(20) O(26) P(4) S(4) Mo
+425	Dioxidation	O(2)
+426	Octanoyl	H(14) C(8) O
+428	PhosphoHexNAc	H O(3) P HexNAc
+429	PhosphoHex	H O(3) P Hex
+431	Palmitoleyl	H(28) C(16) O
+432	Cholesterol	H(44) C(27)
+433	Didehydroretinylidene	H(24) C(20)
+434	CHDH	H(26) C(17) O(4)
+435	Methylpyrroline	H(7) C(6) N O
+436	Hydroxyheme	H(30) C(34) N(4) O(4) Fe
+437	MicrocinC7	H(19) C(13) N(6) O(6) P
+438	Cyano	H(-1) C N
+439	Diironsubcluster	H(-1) C(5) N(2) O(5) S(2) Fe(2)
+440	Amidino	H(2) C N(2)
+442	FMN	H(19) C(17) N(4) O(8) P
+443	FMNC	H(21) C(17) N(4) O(9) P
+444	CuSMo	H(24) C(19) N(8) O(15) P(2) S(3) Cu Mo
+445	Hydroxytrimethyl	H(7) C(3) O
+447	Deoxy	O(-1)
+448	Microcin	H(37) C(36) N(3) O(20)
+449	Decanoyl	H(18) C(10) O
+450	Glu	H(7) C(5) N O(3)
+451	GluGlu	H(14) C(10) N(2) O(6)
+452	GluGluGlu	H(21) C(15) N(3) O(9)
+453	GluGluGluGlu	H(28) C(20) N(4) O(12)
+454	HexN	HexN
+455	Xlink:DMP[154]	H(14) C(8) N(2) O
+457	NDA	H(5) C(13) N
+464	SPITC:13C(6)	H(5) C 13C(6) N O(3) S(2)
+472	AEC-MAEC	H(5) C(2) N O(-1) S
+476	TMAB	H(14) C(7) N O
+477	TMAB:2H(9)	H(5) 2H(9) C(7) N O
+478	FTC	H(15) C(21) N(3) O(5) S
+481	Label:2H(4)	H(-4) 2H(4)
+488	DHP	H(8) C(8) N
+490	Hep	Hep
+493	BADGE	H(24) C(21) O(4)
+494	CyDye-Cy3	H(44) C(37) N(4) O(6) S
+495	CyDye-Cy5	H(44) C(38) N(4) O(6) S
+498	BHTOH	H(22) C(15) O(2)
+499	IGBP:13C(2)	H(13) C(10) 13C(2) N(2) O(2) Br
+500	Nmethylmaleimide+water	H(7) C(5) N O(3)
+501	PyMIC	H(6) C(7) N(2) O
+503	LG-lactam-K	H(28) C(20) O(4)
+504	LG-Hlactam-K	H(28) C(20) O(5)
+505	LG-lactam-R	H(26) C(19) N(-2) O(4)
+506	LG-Hlactam-R	H(26) C(19) N(-2) O(5)
+510	Dimethyl:2H(4)13C(2)	2H(4) 13C(2)
+512	Hex(2)	Hex(2)
+513	C8-QAT	H(29) C(14) N O
+514	PropylNAGthiazoline	H(14) C(9) N O(4) S
+515	FNEM	H(13) C(24) N O(7)
+518	Diethyl	H(8) C(4)
+519	BisANS	H(22) C(32) N(2) O(6) S(2)
+520	Piperidine	H(8) C(5)
+522	Maleimide-PEO2-Biotin	H(35) C(23) N(5) O(7) S
+523	Sulfo-NHS-LC-LC-Biotin	H(36) C(22) N(4) O(4) S
+525	CLIP_TRAQ_2	H(12) C(6) 13C N(2) O
+526	Dethiomethyl	H(-4) C(-1) S(-1)
+528	Methyl+Deamidated	H C N(-1) O
+529	Delta:H(5)C(2)	H(5) C(2)
+530	Cation:K	H(-1) K
+531	Cation:Cu[I]	H(-1) Cu
+532	iTRAQ4plex114	H(12) C(5) 13C(2) N(2) 18O
+533	iTRAQ4plex115	H(12) C(6) 13C N 15N 18O
+534	Dibromo	H(-2) Br(2)
+535	LRGG	H(29) C(16) N(7) O(4)
+536	CLIP_TRAQ_3	H(20) C(11) 13C N(3) O(4)
+537	CLIP_TRAQ_4	H(15) C(9) 13C N(2) O(5)
+538	Biotin:Cayman-10141	H(54) C(35) N(4) O(4) S
+539	Biotin:Cayman-10013	H(60) C(36) N(4) O(5) S
+540	Ala->Ser	O
+541	Ala->Thr	H(2) C O
+542	Ala->Asp	C O(2)
+543	Ala->Pro	H(2) C(2)
+544	Ala->Gly	H(-2) C(-1)
+545	Ala->Glu	H(2) C(2) O(2)
+546	Ala->Val	H(4) C(2)
+547	Cys->Phe	H(4) C(6) S(-1)
+548	Cys->Ser	O S(-1)
+549	Cys->Trp	H(5) C(8) N S(-1)
+550	Cys->Tyr	H(4) C(6) O S(-1)
+551	Cys->Arg	H(7) C(3) N(3) S(-1)
+552	Cys->Gly	H(-2) C(-1) S(-1)
+553	Asp->Ala	C(-1) O(-2)
+554	Asp->His	H(2) C(2) N(2) O(-2)
+555	Asp->Asn	H N O(-1)
+556	Asp->Gly	H(-2) C(-2) O(-2)
+557	Asp->Tyr	H(4) C(5) O(-1)
+558	Asp->Glu	H(2) C
+559	Asp->Val	H(4) C O(-2)
+560	Glu->Ala	H(-2) C(-2) O(-2)
+561	Glu->Gln	H N O(-1)
+562	Glu->Asp	H(-2) C(-1)
+563	Glu->Lys	H(5) C N O(-2)
+564	Glu->Gly	H(-4) C(-3) O(-2)
+565	Glu->Val	H(2) O(-2)
+566	Phe->Ser	H(-4) C(-6) O
+567	Phe->Cys	H(-4) C(-6) S
+568	Phe->Xle	H(2) C(-3)
+569	Phe->Tyr	O
+570	Phe->Val	C(-4)
+571	Gly->Ala	H(2) C
+572	Gly->Ser	H(2) C O
+573	Gly->Trp	H(7) C(9) N
+574	Gly->Glu	H(4) C(3) O(2)
+575	Gly->Val	H(6) C(3)
+576	Gly->Asp	H(2) C(2) O(2)
+577	Gly->Cys	H(2) C S
+578	Gly->Arg	H(9) C(4) N(3)
+580	His->Pro	C(-1) N(-2)
+581	His->Tyr	H(2) C(3) N(-2) O
+582	His->Gln	H C(-1) N(-1) O
+584	His->Arg	H(5) N
+585	His->Xle	H(4) N(-2)
+588	Xle->Thr	H(-4) C(-2) O
+589	Xle->Asn	H(-5) C(-2) N O
+590	Xle->Lys	H N
+594	Lys->Thr	H(-5) C(-2) N(-1) O
+595	Lys->Asn	H(-6) C(-2) O
+596	Lys->Glu	H(-5) C(-1) N(-1) O(2)
+597	Lys->Gln	H(-4) C(-1) O
+598	Lys->Met	H(-3) C(-1) N(-1) S
+599	Lys->Arg	N(2)
+600	Lys->Xle	H(-1) N(-1)
+601	Xle->Ser	H(-6) C(-3) O
+602	Xle->Phe	H(-2) C(3)
+603	Xle->Trp	H(-1) C(5) N
+604	Xle->Pro	H(-4) C(-1)
+605	Xle->Val	H(-2) C(-1)
+606	Xle->His	H(-4) N(2)
+607	Xle->Gln	H(-3) C(-1) N O
+608	Xle->Met	H(-2) C(-1) S
+609	Xle->Arg	H N(3)
+610	Met->Thr	H(-2) C(-1) O S(-1)
+611	Met->Arg	H(3) C N(3) S(-1)
+613	Met->Lys	H(3) C N S(-1)
+614	Met->Xle	H(2) C S(-1)
+615	Met->Val	S(-1)
+616	Asn->Ser	H(-1) C(-1) N(-1)
+617	Asn->Thr	H N(-1)
+618	Asn->Lys	H(6) C(2) O(-1)
+619	Asn->Tyr	H(3) C(5) N(-1)
+620	Asn->His	H C(2) N O(-1)
+621	Asn->Asp	H(-1) N(-1) O
+622	Asn->Xle	H(5) C(2) N(-1) O(-1)
+623	Pro->Ser	H(-2) C(-2) O
+624	Pro->Ala	H(-2) C(-2)
+625	Pro->His	C N(2)
+626	Pro->Gln	H N O
+627	Pro->Thr	C(-1) O
+628	Pro->Arg	H(5) C N(3)
+629	Pro->Xle	H(4) C
+630	Gln->Pro	H(-1) N(-1) O(-1)
+631	Gln->Lys	H(4) C O(-1)
+632	Gln->Glu	H(-1) N(-1) O
+633	Gln->His	H(-1) C N O(-1)
+634	Gln->Arg	H(4) C N(2) O(-1)
+635	Gln->Xle	H(3) C N(-1) O(-1)
+636	Arg->Ser	H(-7) C(-3) N(-3) O
+637	Arg->Trp	H(-2) C(5) N(-2)
+638	Arg->Thr	H(-5) C(-2) N(-3) O
+639	Arg->Pro	H(-5) C(-1) N(-3)
+640	Arg->Lys	N(-2)
+641	Arg->His	H(-5) N(-1)
+642	Arg->Gln	H(-4) C(-1) N(-2) O
+643	Arg->Met	H(-3) C(-1) N(-3) S
+644	Arg->Cys	H(-7) C(-3) N(-3) S
+645	Arg->Xle	H(-1) N(-3)
+646	Arg->Gly	H(-9) C(-4) N(-3)
+647	Ser->Phe	H(4) C(6) O(-1)
+648	Ser->Ala	O(-1)
+649	Ser->Trp	H(5) C(8) N O(-1)
+650	Ser->Thr	H(2) C
+651	Ser->Asn	H C N
+652	Ser->Pro	H(2) C(2) O(-1)
+653	Ser->Tyr	H(4) C(6)
+654	Ser->Cys	O(-1) S
+655	Ser->Arg	H(7) C(3) N(3) O(-1)
+656	Ser->Xle	H(6) C(3) O(-1)
+657	Ser->Gly	H(-2) C(-1) O(-1)
+658	Thr->Ser	H(-2) C(-1)
+659	Thr->Ala	H(-2) C(-1) O(-1)
+660	Thr->Asn	H(-1) N
+661	Thr->Lys	H(5) C(2) N O(-1)
+662	Thr->Pro	C O(-1)
+663	Thr->Met	H(2) C O(-1) S
+664	Thr->Xle	H(4) C(2) O(-1)
+665	Thr->Arg	H(5) C(2) N(3) O(-1)
+666	Val->Phe	C(4)
+667	Val->Ala	H(-4) C(-2)
+668	Val->Glu	H(-2) O(2)
+669	Val->Met	S
+670	Val->Asp	H(-4) C(-1) O(2)
+671	Val->Xle	H(2) C
+672	Val->Gly	H(-6) C(-3)
+673	Trp->Ser	H(-5) C(-8) N(-1) O
+674	Trp->Cys	H(-5) C(-8) N(-1) S
+675	Trp->Arg	H(2) C(-5) N(2)
+676	Trp->Gly	H(-7) C(-9) N(-1)
+677	Trp->Xle	H C(-5) N(-1)
+678	Tyr->Phe	O(-1)
+679	Tyr->Ser	H(-4) C(-6)
+680	Tyr->Asn	H(-3) C(-5) N
+681	Tyr->His	H(-2) C(-3) N(2) O(-1)
+682	Tyr->Asp	H(-4) C(-5) O
+683	Tyr->Cys	H(-4) C(-6) O(-1) S
+684	BDMAPP	H(12) C(11) N O Br
+685	NA-LNO2	H(31) C(18) N O(4)
+686	NA-OA-NO2	H(33) C(18) N O(4)
+687	ICPL:2H(4)	H(-1) 2H(4) C(6) N O
+695	Label:13C(6)15N(1)	C(-6) 13C(6) N(-1) 15N
+696	Label:2H(9)13C(6)15N(2)	H(-9) 2H(9) C(-6) 13C(6) N(-2) 15N(2)
+697	NIC	H(3) C(6) N O
+698	dNIC	H 2H(3) C(6) N O
+720	HNE-Delta:H(2)O	H(14) C(9) O
+721	4-ONE	H(14) C(9) O(2)
+723	O-Dimethylphosphate	H(5) C(2) O(3) P
+724	O-Methylphosphate	H(3) C O(3) P
+725	Diethylphosphate	H(9) C(4) O(3) P
+726	Ethylphosphate	H(5) C(2) O(3) P
+727	O-pinacolylmethylphosphonate	H(15) C(7) O(2) P
+728	Methylphosphonate	H(3) C O(2) P
+729	O-Isopropylmethylphosphonate	H(9) C(4) O(2) P
+730	iTRAQ8plex	H(24) C(7) 13C(7) N(3) 15N O(3)
+731	iTRAQ8plex:13C(6)15N(2)	H(24) C(8) 13C(6) N(2) 15N(2) O(3)
+734	Ethanolamine	H(5) C(2) N
+735	BEMAD_ST	H(8) C(4) O S(2)
+736	BEMAD_C	H(8) C(4) O(2) S
+737	TMT6plex	H(20) C(8) 13C(4) N 15N O(2)
+738	TMT2plex	H(20) C(11) 13C N(2) O(2)
+739	TMT	H(20) C(12) N(2) O(2)
+740	ExacTagThiol	H(50) C(23) 13C(12) N(8) 15N(6) O(18)
+741	ExacTagAmine	H(52) C(25) 13C(12) N(8) 15N(6) O(19) S
+743	4-ONE+Delta:H(-2)O(-1)	H(12) C(9) O
+744	NO_SMX_SEMD	H(9) C(10) N(3) O(3) S
+746	NO_SMX_SIMD	H(9) C(10) N(3) O(4) S
+747	Malonyl	H(2) C(3) O(3)
+748	3sulfo	H(4) C(7) O(4) S
+750	trifluoro	H(-3) F(3)
+751	TNBS	H C(6) N(3) O(6)
+762	IDEnT	H(7) C(9) N O Cl(2)
+763	BEMAD_ST:2H(6)	H(2) 2H(6) C(4) O S(2)
+764	BEMAD_C:2H(6)	H(2) 2H(6) C(4) O(2) S
+765	Met-loss	H(-9) C(-5) N(-1) O(-1) S(-1)
+766	Met-loss+Acetyl	H(-7) C(-3) N(-1) S(-1)
+767	Menadione-HQ	H(8) C(11) O(2)
+768	Methyl+Acetyl:2H(3)	H 2H(3) C(3) O
+771	lapachenole	H(16) C(16) O(2)
+772	Label:13C(5)	C(-5) 13C(5)
+773	maleimide	H(3) C(4) N O(2)
+774	Biotin-phenacyl	H(38) C(29) N(8) O(6) S
+775	Carboxymethyl:13C(2)	H(2) 13C(2) O(2)
+776	NEM:2H(5)	H(2) 2H(5) C(6) N O(2)
+792	AEC-MAEC:2H(4)	H 2H(4) C(2) N O(-1) S
+793	Hex(1)HexNAc(1)	Hex HexNAc
+799	Label:13C(6)+GG	H(6) C(-2) 13C(6) N(2) O(2)
+800	Biotin:Thermo-21345	H(25) C(15) N(3) O(2) S
+801	Pentylamine	H(10) C(5)
+811	Biotin:Thermo-21360	H(37) C(21) N(5) O(6) S
+821	Cy3b-maleimide	H(38) C(37) N(4) O(7) S
+822	Gly-loss+Amide	H(-2) C(-2) O(-2)
+824	Xlink:BMOE	H(8) C(10) N(2) O(4)
+825	Xlink:DFDNB	C(6) N(2) O(4)
+827	TMPP-Ac	H(33) C(29) O(10) P
+830	Dihydroxyimidazolidine	H(4) C(3) O(2)
+834	Label:2H(4)+Acetyl	H(-2) 2H(4) C(2) O
+835	Label:13C(6)+Acetyl	H(2) C(-4) 13C(6) O
+836	Label:13C(6)15N(2)+Acetyl	H(2) C(-4) 13C(6) N(-2) 15N(2) O
+837	Arg->Npo	H(-1) C(3) N O(2)
+846	EQIGG	H(32) C(20) N(6) O(8)
+848	Arg2PG	H(10) C(16) O(4)
+849	cGMP	H(10) C(10) N(5) O(7) P
+851	cGMP+RMP-loss	H(4) C(5) N(5) O
+853	Label:2H(4)+GG	H(2) 2H(4) C(4) N(2) O(2)
+859	MG-H1	H(2) C(3) O
+860	G-H1	C(2) O
+861	ZGB	H(53) B C(37) N(6) O(6) F(2) S
+862	Label:13C(1)2H(3)	H(-3) 2H(3) C(-1) 13C
+864	Label:13C(6)15N(2)+GG	H(6) C(-2) 13C(6) 15N(2) O(2)
+866	ICPL:13C(6)2H(4)	H(-1) 2H(4) 13C(6) N O
+876	QEQTGG	H(36) C(23) N(8) O(11)
+877	QQQTGG	H(37) C(23) N(9) O(10)
+884	Biotin:Thermo-21325	H(45) C(34) N(7) O(7) S
+885	Label:13C(1)2H(3)+Oxidation	H(-3) 2H(3) C(-1) 13C O
+886	HydroxymethylOP	H(4) C(6) O(2)
+887	MDCC	H(21) C(20) N(3) O(5)
+888	mTRAQ	H(12) C(7) N(2) O
+889	mTRAQ:13C(3)15N(1)	H(12) C(4) 13C(3) N 15N O
+890	DyLight-maleimide	H(48) C(39) N(4) O(15) S(4)
+891	Methyl-PEO12-Maleimide	H(58) C(32) N(2) O(15)
+893	CarbamidomethylDTT	H(11) C(6) N O(3) S(2)
+894	CarboxymethylDTT	H(10) C(6) O(4) S(2)
+895	Biotin-PEG-PRA	H(42) C(26) N(8) O(7)
+896	Met->Aha	H(-3) C(-1) N(3) S(-1)
+897	Label:15N(4)	N(-4) 15N(4)
+898	pyrophospho	H(2) O(6) P(2)
+899	Met->Hpg	H(-2) C S(-1)
+901	4AcAllylGal	H(24) C(17) O(9)
+902	DimethylArsino	H(5) C(2) As
+903	Lys->CamCys	H(-4) C(-1) O S
+904	Phe->CamCys	H(-1) C(-4) N O S
+905	Leu->MetOx	H(-2) C(-1) O S
+906	Lys->MetOx	H(-3) C(-1) N(-1) O S
+907	Galactosyl	O Hex
+908	Xlink:SMCC[321]	H(27) C(17) N(3) O(3)
+910	Bacillosamine	H(6) C(4) N(2) dHex
+911	MTSL	H(14) C(9) N O S
+912	HNE-BAHAH	H(45) C(25) N(5) O(4) S
+914	Methylmalonylation	H(4) C(4) O(3)
+923	Label:13C(4)15N(2)+GG	H(6) 13C(4) 15N(2) O(2)
+926	ethylamino	H(5) C(2) N O(-1)
+928	MercaptoEthanol	H(4) C(2) S
+931	Ethyl+Deamidated	H(3) C(2) N(-1) O
+932	VFQQQTGG	H(55) C(37) N(11) O(12)
+933	VIEVYQEQTGG	H(81) C(53) N(13) O(19)
+934	AMTzHexNAc2	H(30) C(19) N(6) O(10)
+935	Atto495Maleimide	H(32) C(27) N(5) O(3)
+936	Chlorination	H(-1) Cl
+937	dichlorination	H(-2) Cl(2)
+938	AROD	H(52) C(35) N(10) O(9) S(2)
+939	Cys->methylaminoAla	H(3) C N S(-1)
+940	Cys->ethylaminoAla	H(5) C(2) N S(-1)
+941	DNPS	H(3) C(6) N(2) O(4) S
+942	SulfoGMBS	H(26) C(22) N(4) O(5) S
+943	DimethylamineGMBS	H(21) C(13) N(3) O(3)
+944	Label:15N(2)2H(9)	H(-9) 2H(9) N(-2) 15N(2)
+946	LG-anhydrolactam	H(26) C(20) O(3)
+947	LG-pyrrole	H(28) C(20) O(3)
+948	LG-anhyropyrrole	H(26) C(20) O(2)
+949	3-deoxyglucosone	H(8) C(6) O(4)
+950	Cation:Li	H(-1) Li
+951	Cation:Ca[II]	H(-2) Ca
+952	Cation:Fe[II]	H(-2) Fe
+953	Cation:Ni[II]	H(-2) Ni
+954	Cation:Zn[II]	H(-2) Zn
+955	Cation:Ag	H(-1) Ag
+956	Cation:Mg[II]	H(-2) Mg
+957	2-succinyl	H(4) C(4) O(4)
+958	Propargylamine	H(3) C(3) N O(-1)
+959	Phosphopropargyl	H(4) C(3) N O(2) P
+960	SUMO2135	H(137) C(90) N(21) O(37) S
+961	SUMO3549	H(224) C(150) N(38) O(60) S
+967	thioacylPA	H(9) C(6) N O(2) S
+971	maleimide3	H(59) C(37) N(7) O(23)
+972	maleimide5	H(79) C(49) N(7) O(33)
+973	Puromycin	H(27) C(22) N(7) O(4)
+977	Carbofuran	H(3) C(2) N O
+978	BITC	H(7) C(8) N S
+979	PEITC	H(9) C(9) N S
+981	glucosone	H(8) C(6) O(5)
+984	cysTMT	H(25) C(14) N(3) O(2) S
+985	cysTMT6plex	H(25) C(10) 13C(4) N(2) 15N O(2) S
+986	Label:13C(6)+Dimethyl	H(4) C(-4) 13C(6)
+987	Label:13C(6)15N(2)+Dimethyl	H(4) C(-4) 13C(6) N(-2) 15N(2)
+989	Ammonium	H(3) N
+991	ISD_z+2_ion	H(-1) N(-1)
+993	Biotin:Sigma-B1267	H(27) C(20) N(5) O(5) S
+994	Label:15N(1)	N(-1) 15N
+995	Label:15N(2)	N(-2) 15N(2)
+996	Label:15N(3)	N(-3) 15N(3)
+997	sulfo+amino	H N O(3) S
+1000	AHA-Alkyne	H(5) C(4) N(5) O S(-1)
+1001	AHA-Alkyne-KDDDD	H(37) C(26) N(11) O(14) S(-1)
+1002	EGCG1	H(16) C(22) O(11)
+1003	EGCG2	H(11) C(15) O(6)
+1004	Label:13C(6)15N(4)+Methyl	H(2) C(-5) 13C(6) N(-4) 15N(4)
+1005	Label:13C(6)15N(4)+Dimethyl	H(4) C(-4) 13C(6) N(-4) 15N(4)
+1006	Label:13C(6)15N(4)+Methyl:2H(3)13C(1)	H(-1) 2H(3) C(-6) 13C(7) N(-4) 15N(4)
+1007	Label:13C(6)15N(4)+Dimethyl:2H(6)13C(2)	H(-2) 2H(6) C(-6) 13C(8) N(-4) 15N(4)
+1008	Cys->CamSec	H(3) C(2) N O S(-1) Se
+1009	Thiazolidine	C
+1010	DEDGFLYMVYASQETFG	H(122) C(89) N(18) O(31) S
+1012	Biotin:Invitrogen-M1602	H(33) C(23) N(5) O(7) S
+1014	glycidamide	H(5) C(3) N O(2)
+1015	Ahx2+Hsl	H(27) C(16) N(3) O(3)
+1017	DMPO	H(9) C(6) N O
+1018	ICDID	H(10) C(8) O(2)
+1019	ICDID:2H(6)	H(4) 2H(6) C(8) O(2)
+1020	Xlink:DSS[156]	H(12) C(8) O(3)
+1021	Xlink:EGS[244]	H(12) C(10) O(7)
+1022	Xlink:DST[132]	H(4) C(4) O(5)
+1023	Xlink:DTSSP[192]	H(8) C(6) O(3) S(2)
+1024	Xlink:SMCC[237]	H(15) C(12) N O(4)
+1027	Xlink:DMP[140]	H(12) C(7) N(2) O
+1028	Xlink:EGS[115]	H(5) C(4) N O(3)
+1031	Biotin:Thermo-88310	H(16) C(10) N(2) O(2)
+1032	2-nitrobenzyl	H(5) C(7) N O(2)
+1033	Cys->SecNEM	H(7) C(6) N O(2) S(-1) Se
+1034	Cys->SecNEM:2H(5)	H(2) 2H(5) C(6) N O(2) S(-1) Se
+1035	Thiadiazole	H(6) C(9) N(2) S
+1036	Withaferin	H(38) C(28) O(6)
+1037	Biotin:Thermo-88317	H(42) C(22) N(3) O(4) P
+1038	TAMRA-FP	H(46) C(37) N(3) O(6) P
+1039	Biotin:Thermo-21901+H2O	H(37) C(23) N(5) O(8) S
+1041	Deoxyhypusine	H(9) C(4) N
+1042	Acetyldeoxyhypusine	H(11) C(6) N O
+1043	Acetylhypusine	H(11) C(6) N O(2)
+1044	Ala->Cys	S
+1045	Ala->Phe	H(4) C(6)
+1046	Ala->His	H(2) C(3) N(2)
+1047	Ala->Xle	H(6) C(3)
+1048	Ala->Lys	H(7) C(3) N
+1049	Ala->Met	H(4) C(2) S
+1050	Ala->Asn	H C N O
+1051	Ala->Gln	H(3) C(2) N O
+1052	Ala->Arg	H(7) C(3) N(3)
+1053	Ala->Trp	H(5) C(8) N
+1054	Ala->Tyr	H(4) C(6) O
+1055	Cys->Ala	S(-1)
+1056	Cys->Asp	C O(2) S(-1)
+1057	Cys->Glu	H(2) C(2) O(2) S(-1)
+1058	Cys->His	H(2) C(3) N(2) S(-1)
+1059	Cys->Xle	H(6) C(3) S(-1)
+1060	Cys->Lys	H(7) C(3) N S(-1)
+1061	Cys->Met	H(4) C(2)
+1062	Cys->Asn	H C N O S(-1)
+1063	Cys->Pro	H(2) C(2) S(-1)
+1064	Cys->Gln	H(3) C(2) N O S(-1)
+1065	Cys->Thr	H(2) C O S(-1)
+1066	Cys->Val	H(4) C(2) S(-1)
+1067	Asp->Cys	C(-1) O(-2) S
+1068	Asp->Phe	H(4) C(5) O(-2)
+1069	Asp->Xle	H(6) C(2) O(-2)
+1070	Asp->Lys	H(7) C(2) N O(-2)
+1071	Asp->Met	H(4) C O(-2) S
+1072	Asp->Pro	H(2) C O(-2)
+1073	Asp->Gln	H(3) C N O(-1)
+1074	Asp->Arg	H(7) C(2) N(3) O(-2)
+1075	Asp->Ser	C(-1) O(-1)
+1076	Asp->Thr	H(2) O(-1)
+1077	Asp->Trp	H(5) C(7) N O(-2)
+1078	Glu->Cys	H(-2) C(-2) O(-2) S
+1079	Glu->Phe	H(2) C(4) O(-2)
+1080	Glu->His	C N(2) O(-2)
+1081	Glu->Xle	H(4) C O(-2)
+1082	Glu->Met	H(2) O(-2) S
+1083	Glu->Asn	H(-1) C(-1) N O(-1)
+1084	Glu->Pro	O(-2)
+1085	Glu->Arg	H(5) C N(3) O(-2)
+1086	Glu->Ser	H(-2) C(-2) O(-1)
+1087	Glu->Thr	C(-1) O(-1)
+1088	Glu->Trp	H(3) C(6) N O(-2)
+1089	Glu->Tyr	H(2) C(4) O(-1)
+1090	Phe->Ala	H(-4) C(-6)
+1091	Phe->Asp	H(-4) C(-5) O(2)
+1092	Phe->Glu	H(-2) C(-4) O(2)
+1093	Phe->Gly	H(-6) C(-7)
+1094	Phe->His	H(-2) C(-3) N(2)
+1095	Phe->Lys	H(3) C(-3) N
+1096	Phe->Met	C(-4) S
+1097	Phe->Asn	H(-3) C(-5) N O
+1098	Phe->Pro	H(-2) C(-4)
+1099	Phe->Gln	H(-1) C(-4) N O
+1100	Phe->Arg	H(3) C(-3) N(3)
+1101	Phe->Thr	H(-2) C(-5) O
+1102	Phe->Trp	H C(2) N
+1103	Gly->Phe	H(6) C(7)
+1104	Gly->His	H(4) C(4) N(2)
+1105	Gly->Xle	H(8) C(4)
+1106	Gly->Lys	H(9) C(4) N
+1107	Gly->Met	H(6) C(3) S
+1108	Gly->Asn	H(3) C(2) N O
+1109	Gly->Pro	H(4) C(3)
+1110	Gly->Gln	H(5) C(3) N O
+1111	Gly->Thr	H(4) C(2) O
+1112	Gly->Tyr	H(6) C(7) O
+1113	His->Ala	H(-2) C(-3) N(-2)
+1114	His->Cys	H(-2) C(-3) N(-2) S
+1115	His->Glu	C(-1) N(-2) O(2)
+1116	His->Phe	H(2) C(3) N(-2)
+1117	His->Gly	H(-4) C(-4) N(-2)
+1119	His->Lys	H(5) N(-1)
+1120	His->Met	H(2) C(-1) N(-2) S
+1121	His->Ser	H(-2) C(-3) N(-2) O
+1122	His->Thr	C(-2) N(-2) O
+1123	His->Val	H(2) C(-1) N(-2)
+1124	His->Trp	H(3) C(5) N(-1)
+1125	Xle->Ala	H(-6) C(-3)
+1126	Xle->Cys	H(-6) C(-3) S
+1127	Xle->Asp	H(-6) C(-2) O(2)
+1128	Xle->Glu	H(-4) C(-1) O(2)
+1129	Xle->Gly	H(-8) C(-4)
+1130	Xle->Tyr	H(-2) C(3) O
+1131	Lys->Ala	H(-7) C(-3) N(-1)
+1132	Lys->Cys	H(-7) C(-3) N(-1) S
+1133	Lys->Asp	H(-7) C(-2) N(-1) O(2)
+1134	Lys->Phe	H(-3) C(3) N(-1)
+1135	Lys->Gly	H(-9) C(-4) N(-1)
+1136	Lys->His	H(-5) N
+1137	Lys->Pro	H(-5) C(-1) N(-1)
+1138	Lys->Ser	H(-7) C(-3) N(-1) O
+1139	Lys->Val	H(-3) C(-1) N(-1)
+1140	Lys->Trp	H(-2) C(5)
+1141	Lys->Tyr	H(-3) C(3) N(-1) O
+1142	Met->Ala	H(-4) C(-2) S(-1)
+1143	Met->Cys	H(-4) C(-2)
+1144	Met->Asp	H(-4) C(-1) O(2) S(-1)
+1145	Met->Glu	H(-2) O(2) S(-1)
+1146	Met->Phe	C(4) S(-1)
+1147	Met->Gly	H(-6) C(-3) S(-1)
+1148	Met->His	H(-2) C N(2) S(-1)
+1149	Met->Asn	H(-3) C(-1) N O S(-1)
+1150	Met->Pro	H(-2) S(-1)
+1151	Met->Gln	H(-1) N O S(-1)
+1152	Met->Ser	H(-4) C(-2) O S(-1)
+1153	Met->Trp	H C(6) N S(-1)
+1154	Met->Tyr	C(4) O S(-1)
+1155	Asn->Ala	H(-1) C(-1) N(-1) O(-1)
+1156	Asn->Cys	H(-1) C(-1) N(-1) O(-1) S
+1157	Asn->Glu	H C N(-1) O
+1158	Asn->Phe	H(3) C(5) N(-1) O(-1)
+1159	Asn->Gly	H(-3) C(-2) N(-1) O(-1)
+1160	Asn->Met	H(3) C N(-1) O(-1) S
+1161	Asn->Pro	H C N(-1) O(-1)
+1162	Asn->Gln	H(2) C
+1163	Asn->Arg	H(6) C(2) N(2) O(-1)
+1164	Asn->Val	H(3) C N(-1) O(-1)
+1165	Asn->Trp	H(4) C(7) O(-1)
+1166	Pro->Cys	H(-2) C(-2) S
+1167	Pro->Asp	H(-2) C(-1) O(2)
+1168	Pro->Glu	O(2)
+1169	Pro->Phe	H(2) C(4)
+1170	Pro->Gly	H(-4) C(-3)
+1171	Pro->Lys	H(5) C N
+1172	Pro->Met	H(2) S
+1173	Pro->Asn	H(-1) C(-1) N O
+1174	Pro->Val	H(2)
+1175	Pro->Trp	H(3) C(6) N
+1176	Pro->Tyr	H(2) C(4) O
+1177	Gln->Ala	H(-3) C(-2) N(-1) O(-1)
+1178	Gln->Cys	H(-3) C(-2) N(-1) O(-1) S
+1179	Gln->Asp	H(-3) C(-1) N(-1) O
+1180	Gln->Phe	H C(4) N(-1) O(-1)
+1181	Gln->Gly	H(-5) C(-3) N(-1) O(-1)
+1182	Gln->Met	H N(-1) O(-1) S
+1183	Gln->Asn	H(-2) C(-1)
+1184	Gln->Ser	H(-3) C(-2) N(-1)
+1185	Gln->Thr	H(-1) C(-1) N(-1)
+1186	Gln->Val	H N(-1) O(-1)
+1187	Gln->Trp	H(2) C(6) O(-1)
+1188	Gln->Tyr	H C(4) N(-1)
+1189	Arg->Ala	H(-7) C(-3) N(-3)
+1190	Arg->Asp	H(-7) C(-2) N(-3) O(2)
+1191	Arg->Glu	H(-5) C(-1) N(-3) O(2)
+1192	Arg->Asn	H(-6) C(-2) N(-2) O
+1193	Arg->Val	H(-3) C(-1) N(-3)
+1194	Arg->Tyr	H(-3) C(3) N(-3) O
+1195	Arg->Phe	H(-3) C(3) N(-3)
+1196	Ser->Asp	C O
+1197	Ser->Glu	H(2) C(2) O
+1198	Ser->His	H(2) C(3) N(2) O(-1)
+1199	Ser->Lys	H(7) C(3) N O(-1)
+1200	Ser->Met	H(4) C(2) O(-1) S
+1201	Ser->Gln	H(3) C(2) N
+1202	Ser->Val	H(4) C(2) O(-1)
+1203	Thr->Cys	H(-2) C(-1) O(-1) S
+1204	Thr->Asp	H(-2) O
+1205	Thr->Glu	C O
+1206	Thr->Phe	H(2) C(5) O(-1)
+1207	Thr->Gly	H(-4) C(-2) O(-1)
+1208	Thr->His	C(2) N(2) O(-1)
+1209	Thr->Gln	H C N
+1210	Thr->Val	H(2) C O(-1)
+1211	Thr->Trp	H(3) C(7) N O(-1)
+1212	Thr->Tyr	H(2) C(5)
+1213	Val->Cys	H(-4) C(-2) S
+1214	Val->His	H(-2) C N(2)
+1215	Val->Lys	H(3) C N
+1216	Val->Asn	H(-3) C(-1) N O
+1217	Val->Pro	H(-2)
+1218	Val->Gln	H(-1) N O
+1219	Val->Arg	H(3) C N(3)
+1220	Val->Ser	H(-4) C(-2) O
+1221	Val->Thr	H(-2) C(-1) O
+1222	Val->Trp	H C(6) N
+1223	Val->Tyr	C(4) O
+1224	Trp->Ala	H(-5) C(-8) N(-1)
+1225	Trp->Asp	H(-5) C(-7) N(-1) O(2)
+1226	Trp->Glu	H(-3) C(-6) N(-1) O(2)
+1227	Trp->Phe	H(-1) C(-2) N(-1)
+1228	Trp->His	H(-3) C(-5) N
+1229	Trp->Lys	H(2) C(-5)
+1230	Trp->Met	H(-1) C(-6) N(-1) S
+1231	Trp->Asn	H(-4) C(-7) O
+1232	Trp->Pro	H(-3) C(-6) N(-1)
+1233	Trp->Gln	H(-2) C(-6) O
+1234	Trp->Thr	H(-3) C(-7) N(-1) O
+1235	Trp->Val	H(-1) C(-6) N(-1)
+1236	Trp->Tyr	H(-1) C(-2) N(-1) O
+1237	Tyr->Ala	H(-4) C(-6) O(-1)
+1238	Tyr->Glu	H(-2) C(-4) O
+1239	Tyr->Gly	H(-6) C(-7) O(-1)
+1240	Tyr->Lys	H(3) C(-3) N O(-1)
+1241	Tyr->Met	C(-4) O(-1) S
+1242	Tyr->Pro	H(-2) C(-4) O(-1)
+1243	Tyr->Gln	H(-1) C(-4) N
+1244	Tyr->Arg	H(3) C(-3) N(3) O(-1)
+1245	Tyr->Thr	H(-2) C(-5)
+1246	Tyr->Val	C(-4) O(-1)
+1247	Tyr->Trp	H C(2) N O(-1)
+1248	Tyr->Xle	H(2) C(-3) O(-1)
+1249	AHA-SS	H(9) C(7) N(5) O(2)
+1250	AHA-SS_CAM	H(12) C(9) N(6) O(3)
+1251	Biotin:Thermo-33033	H(36) C(25) N(6) O(4) S(2)
+1252	Biotin:Thermo-33033-H	H(34) C(25) N(6) O(4) S(2)
+1253	2-monomethylsuccinyl	H(6) C(5) O(4)
+1254	Saligenin	H(6) C(7) O
+1255	Cresylphosphate	H(7) C(7) O(3) P
+1256	CresylSaligeninPhosphate	H(13) C(14) O(4) P
+1257	Ub-Br2	H(8) C(4) N(2) O
+1258	Ub-VME	H(12) C(7) N(2) O(3)
+1261	Ub-fluorescein	H(29) C(31) N(6) O(7)
+1262	2-dimethylsuccinyl	H(8) C(6) O(4)
+1263	Gly	H(3) C(2) N O
+1264	pupylation	H(13) C(9) N(3) O(5)
+1266	Label:13C(4)	C(-4) 13C(4)
+1267	Label:13C(4)+Oxidation	C(-4) 13C(4) O
+1270	HCysThiolactone	H(7) C(4) N O S
+1271	HCysteinyl	H(7) C(4) N O(2) S
+1276	UgiJoullie	H(60) C(47) N(23) O(10)
+1277	Dipyridyl	H(11) C(13) N(3) O
+1278	Furan	H(2) C(4) O
+1279	Difuran	H(4) C(8) O(2)
+1281	BMP-piperidinol	H(17) C(18) N O
+1282	UgiJoullieProGly	H(10) C(7) N(2) O(2)
+1283	UgiJoullieProGlyProGly	H(20) C(14) N(4) O(4)
+1286	IMEHex(2)NeuAc(1)	H(3) C(2) N S Hex(2) NeuAc
+1287	Arg-loss	H(-12) C(-6) N(-4) O(-1)
+1288	Arg	H(12) C(6) N(4) O
+1289	Butyryl	H(6) C(4) O
+1290	Dicarbamidomethyl	H(6) C(4) N(2) O(2)
+1291	Dimethyl:2H(6)	H(-2) 2H(6) C(2)
+1292	GGQ	H(14) C(9) N(4) O(4)
+1293	QTGG	H(21) C(13) N(5) O(6)
+1296	Label:13C(3)	C(-3) 13C(3)
+1297	Label:13C(3)15N(1)	C(-3) 13C(3) N(-1) 15N
+1298	Label:13C(4)15N(1)	C(-4) 13C(4) N(-1) 15N
+1299	Label:2H(10)	H(-10) 2H(10)
+1300	Label:2H(4)13C(1)	H(-4) 2H(4) C(-1) 13C
+1301	Lys	H(12) C(6) N(2) O
+1302	mTRAQ:13C(6)15N(2)	H(12) C 13C(6) 15N(2) O
+1303	NeuAc	NeuAc
+1304	NeuGc	NeuGc
+1305	Propyl	H(6) C(3)
+1306	Propyl:2H(6)	2H(6) C(3)
+1310	Propiophenone	H(8) C(9) O
+1312	Delta:H(6)C(3)O(1)	H(6) C(3) O
+1313	Delta:H(8)C(6)O(1)	H(8) C(6) O
+1314	biotinAcrolein298	H(22) C(13) N(4) O(2) S
+1315	MM-diphenylpentanone	H(19) C(18) N O
+1317	EHD-diphenylpentanone	H(18) C(18) O(2)
+1320	Biotin:Thermo-21901+2H2O	H(39) C(23) N(5) O(9) S
+1321	DiLeu4plex115	H(15) C(7) 13C 15N 18O
+1322	DiLeu4plex	H(13) 2H(2) C(8) N 18O
+1323	DiLeu4plex117	H(13) 2H(2) C(7) 13C 15N O
+1324	DiLeu4plex118	H(11) 2H(4) C(8) N O
+1326	NEMsulfur	H(7) C(6) N O(2) S
+1327	SulfurDioxide	O(2) S
+1328	NEMsulfurWater	H(9) C(6) N O(3) S
+1330	bisANS-sulfonates	H(22) C(32) N(2)
+1331	DNCB_hapten	H(2) C(6) N(2) O(4)
+1340	Biotin:Thermo-21911	H(71) C(41) N(5) O(16) S
+1341	iodoTMT	H(28) C(16) N(4) O(3)
+1342	iodoTMT6plex	H(28) C(12) 13C(4) N(3) 15N O(3)
+1344	Phosphogluconoylation	H(11) C(6) O(9) P
+1345	PS_Hapten	H(4) C(7) O(2)
+1348	Cy3-maleimide	H(45) C(37) N(4) O(9) S(2)
+1349	benzylguanidine	H(8) C(8) N(2)
+1350	CarboxymethylDMAP	H(10) C(9) N(2) O
+1355	azole	H(-4) O(-1)
+1356	phosphoRibosyl	H(9) C(5) O(7) P
+1358	NEM:2H(5)+H2O	H(4) 2H(5) C(6) N O(3)
+1363	Crotonyl	H(4) C(4) O
+1364	O-Et-N-diMePhospho	H(10) C(4) N O(2) P
+1365	N-dimethylphosphate	H(6) C(2) N O(2) P
+1367	dHex(1)Hex(1)	dHex Hex
+1368	Methyl:2H(3)+Acetyl:2H(3)	H(-2) 2H(6) C(3) O
+1370	Label:2H(3)+Oxidation	H(-3) 2H(3) O
+1371	Trimethyl:2H(9)	H(-3) 2H(9) C(3)
+1372	Acetyl:13C(2)	H(2) 13C(2) O
+1375	dHex(1)Hex(2)	dHex Hex(2)
+1376	dHex(1)Hex(3)	dHex Hex(3)
+1377	dHex(1)Hex(4)	dHex Hex(4)
+1378	dHex(1)Hex(5)	dHex Hex(5)
+1379	dHex(1)Hex(6)	dHex Hex(6)
+1380	methylsulfonylethyl	H(6) C(3) O(2) S
+1381	ethylsulfonylethyl	H(8) C(4) O(2) S
+1382	phenylsulfonylethyl	H(8) C(8) O(2) S
+1383	PyridoxalPhosphateH2	H(10) C(8) N O(5) P
+1384	Homocysteic_acid	H(-2) C(-1) O(3)
+1385	Hydroxamic_acid	H N
+1387	3-phosphoglyceryl	H(5) C(3) O(6) P
+1388	HN2_mustard	H(11) C(5) N O
+1389	HN3_mustard	H(13) C(6) N O(2)
+1390	Oxidation+NEM	H(7) C(6) N O(3)
+1391	NHS-fluorescein	H(21) C(27) N O(7)
+1392	DiART6plex	H(20) C(7) 13C(4) N 15N O(2)
+1393	DiART6plex115	H(20) C(8) 13C(3) 15N(2) O(2)
+1394	DiART6plex116/119	H(18) 2H(2) C(9) 13C(2) N 15N O(2)
+1395	DiART6plex117	H(18) 2H(2) C(10) 13C 15N(2) O(2)
+1396	DiART6plex118	H(18) 2H(2) C(8) 13C(3) N(2) O(2)
+1397	Iodoacetanilide	H(7) C(8) N O
+1398	Iodoacetanilide:13C(6)	H(7) C(2) 13C(6) N O
+1399	Dap-DSP	H(20) C(13) N(2) O(6) S(2)
+1400	MurNAc	O(-1) NeuAc
+1402	Label:2H(7)15N(4)	H(-7) 2H(7) N(-4) 15N(4)
+1403	Label:2H(6)15N(1)	H(-6) 2H(6) N(-1) 15N
+1405	EEEDVIEVYQEQTGG	H(107) C(72) N(17) O(31)
+1406	EDEDTIDVFQQQTGG	H(102) C(69) N(18) O(30)
+1408	Hex(5)HexNAc(4)NeuAc(2)	Hex(5) HexNAc(4) NeuAc(2)
+1409	Hex(5)HexNAc(4)NeuAc(1)	Hex(5) HexNAc(4) NeuAc
+1410	dHex(1)Hex(5)HexNAc(4)NeuAc(1)	dHex Hex(5) HexNAc(4) NeuAc
+1411	dHex(1)Hex(5)HexNAc(4)NeuAc(2)	dHex Hex(5) HexNAc(4) NeuAc(2)
+1412	s-GlcNAc	O(3) S HexNAc
+1413	PhosphoHex(2)	H O(3) P Hex(2)
+1414	Trimethyl:13C(3)2H(9)	H(-3) 2H(9) 13C(3)
+1419	15N-oxobutanoic	H(-3) 15N(-1)
+1420	spermine	H(23) C(10) N(3)
+1421	spermidine	H(16) C(7) N(2)
+1423	Biotin:Thermo-21330	H(35) C(21) N(3) O(7) S
+1425	Pentose	Pent
+1426	Hex(1)Pent(1)	Pent Hex
+1427	Hex(1)HexA(1)	Hex HexA
+1428	Hex(1)Pent(2)	Pent(2) Hex
+1429	Hex(1)HexNAc(1)Phos(1)	H O(3) P Hex HexNAc
+1430	Hex(1)HexNAc(1)Sulf(1)	O(3) S Hex HexNAc
+1431	Hex(1)NeuAc(1)	Hex NeuAc
+1432	Hex(1)NeuGc(1)	Hex NeuGc
+1433	HexNAc(3)	HexNAc(3)
+1434	HexNAc(1)NeuAc(1)	HexNAc NeuAc
+1435	HexNAc(1)NeuGc(1)	HexNAc NeuGc
+1436	Hex(1)HexNAc(1)dHex(1)Me(1)	Me dHex Hex HexNAc
+1437	Hex(1)HexNAc(1)dHex(1)Me(2)	Me(2) dHex Hex HexNAc
+1438	Hex(2)HexNAc(1)	Hex(2) HexNAc
+1439	Hex(1)HexA(1)HexNAc(1)	Hex HexA HexNAc
+1440	Hex(2)HexNAc(1)Me(1)	Me Hex(2) HexNAc
+1441	Hex(1)Pent(3)	Pent(3) Hex
+1442	Hex(1)NeuAc(1)Pent(1)	Pent Hex NeuAc
+1443	Hex(2)HexNAc(1)Sulf(1)	O(3) S Hex(2) HexNAc
+1444	Hex(2)NeuAc(1)	Hex(2) NeuAc
+1445	dHex(2)Hex(2)	dHex(2) Hex(2)
+1446	dHex(1)Hex(2)HexA(1)	dHex Hex(2) HexA
+1447	Hex(1)HexNAc(2)Sulf(1)	O(3) S Hex HexNAc(2)
+1448	Hex(4)	Hex(4)
+1449	dHex(1)Hex(2)HexNAc(2)Pent(1)	dHex(1) Hex(2) HexNAc(2) Pent(1)
+1450	Hex(2)HexNAc(2)NeuAc(1)	Hex(2) HexNAc(2) NeuAc
+1451	Hex(3)HexNAc(2)Pent(1)	Hex(3) HexNAc(2) Pent(1)
+1452	Hex(4)HexNAc(2)	Hex(4) HexNAc(2)
+1453	dHex(1)Hex(4)HexNAc(1)Pent(1)	dHex(1) Hex(4) HexNAc(1) Pent(1)
+1454	dHex(1)Hex(3)HexNAc(2)Pent(1)	dHex(1) Hex(3) HexNAc(2) Pent(1)
+1455	Hex(3)HexNAc(2)NeuAc(1)	Hex(3) HexNAc(2) NeuAc(1)
+1456	Hex(4)HexNAc(2)Pent(1)	Hex(4) HexNAc(2) Pent(1)
+1457	Hex(3)HexNAc(3)Pent(1)	Hex(3) HexNAc(3) Pent(1)
+1458	Hex(5)HexNAc(2)Phos(1)	H O(3) P Hex(5) HexNAc(2)
+1459	dHex(1)Hex(4)HexNAc(2)Pent(1)	dHex(1) Hex(4) HexNAc(2) Pent(1)
+1460	Hex(7)HexNAc(1)	Hex(7) HexNAc(1)
+1461	Hex(4)HexNAc(2)NeuAc(1)	Hex(4) HexNAc(2) NeuAc
+1462	dHex(1)Hex(5)HexNAc(2)	dHex(1) Hex(5) HexNAc(2)
+1463	dHex(1)Hex(3)HexNAc(3)Pent(1)	dHex(1) Hex(3) HexNAc(3) Pent(1)
+1464	Hex(3)HexNAc(4)Sulf(1)	O(3) S Hex(3) HexNAc(4)
+1465	Hex(6)HexNAc(2)	Hex(6) HexNAc(2)
+1466	Hex(4)HexNAc(3)Pent(1)	Hex(4) HexNAc(3) Pent(1)
+1467	dHex(1)Hex(4)HexNAc(3)	dHex(1) Hex(4) HexNAc(3)
+1468	Hex(5)HexNAc(3)	Hex(5) HexNAc(3)
+1469	Hex(3)HexNAc(4)Pent(1)	Hex(3) HexNAc(4) Pent(1)
+1470	Hex(6)HexNAc(2)Phos(1)	H O(3) P Hex(6) HexNAc(2)
+1471	dHex(1)Hex(4)HexNAc(3)Sulf(1)	O(3) S dHex Hex(4) HexNAc(3)
+1472	dHex(1)Hex(5)HexNAc(2)Pent(1)	dHex(1) Hex(5) HexNAc(2) Pent(1)
+1473	Hex(8)HexNAc(1)	Hex(8) HexNAc(1)
+1474	dHex(1)Hex(3)HexNAc(3)Pent(2)	dHex(1) Hex(3) HexNAc(3) Pent(2)
+1475	dHex(2)Hex(3)HexNAc(3)Pent(1)	dHex(2) Hex(3) HexNAc(3) Pent(1)
+1476	dHex(1)Hex(3)HexNAc(4)Sulf(1)	O(3) S dHex Hex(3) HexNAc(4)
+1477	dHex(1)Hex(6)HexNAc(2)	dHex(1) Hex(6) HexNAc(2)
+1478	dHex(1)Hex(4)HexNAc(3)Pent(1)	dHex(1) Hex(4) HexNAc(3) Pent(1)
+1479	Hex(4)HexNAc(4)Sulf(1)	O(3) S Hex(4) HexNAc(4)
+1480	Hex(7)HexNAc(2)	Hex(7) HexNAc(2)
+1481	dHex(2)Hex(4)HexNAc(3)	dHex(2) Hex(4) HexNAc(3)
+1482	Hex(5)HexNAc(3)Pent(1)	Hex(5) HexNAc(3) Pent(1)
+1483	Hex(4)HexNAc(3)NeuGc(1)	Hex(4) HexNAc(3) NeuGc(1)
+1484	dHex(1)Hex(5)HexNAc(3)	dHex(1) Hex(5) HexNAc(3)
+1485	dHex(1)Hex(3)HexNAc(4)Pent(1)	dHex(1) Hex(3) HexNAc(4) Pent(1)
+1486	Hex(3)HexNAc(5)Sulf(1)	O(3) S Hex(3) HexNAc(5)
+1487	Hex(6)HexNAc(3)	Hex(6) HexNAc(3)
+1488	Hex(3)HexNAc(4)NeuAc(1)	Hex(3) HexNAc(4) NeuAc
+1489	Hex(4)HexNAc(4)Pent(1)	Hex(4) HexNAc(4) Pent(1)
+1490	Hex(7)HexNAc(2)Phos(1)	H O(3) P Hex(7) HexNAc(2)
+1491	Hex(4)HexNAc(4)Me(2)Pent(1)	Hex(4) HexNAc(4) Me(2) Pent(1)
+1492	dHex(1)Hex(3)HexNAc(3)Pent(3)	Pent(3) dHex Hex(3) HexNAc(3)
+1493	dHex(1)Hex(5)HexNAc(3)Sulf(1)	O(3) S dHex Hex(5) HexNAc(3)
+1494	dHex(2)Hex(3)HexNAc(3)Pent(2)	dHex(2) Hex(3) HexNAc(3) Pent(2)
+1495	Hex(6)HexNAc(3)Phos(1)	H O(3) P Hex(6) HexNAc(3)
+1496	Hex(4)HexNAc(5)	Hex(4) HexNAc(5)
+1497	dHex(3)Hex(3)HexNAc(3)Pent(1)	dHex(3) Hex(3) HexNAc(3) Pent(1)
+1498	dHex(2)Hex(4)HexNAc(3)Pent(1)	dHex(2) Hex(4) HexNAc(3) Pent(1)
+1499	dHex(1)Hex(4)HexNAc(4)Sulf(1)	O(3) S dHex Hex(4) HexNAc(4)
+1500	dHex(1)Hex(7)HexNAc(2)	dHex(1) Hex(7) HexNAc(2)
+1501	dHex(1)Hex(4)HexNAc(3)NeuAc(1)	dHex Hex(4) HexNAc(3) NeuAc
+1502	Hex(7)HexNAc(2)Phos(2)	H(2) O(6) P(2) Hex(7) HexNAc(2)
+1503	Hex(5)HexNAc(4)Sulf(1)	O(3) S Hex(5) HexNAc(4)
+1504	Hex(8)HexNAc(2)	Hex(8) HexNAc(2)
+1505	dHex(1)Hex(3)HexNAc(4)Pent(2)	dHex(1) Hex(3) HexNAc(4) Pent(2)
+1506	dHex(1)Hex(4)HexNAc(3)NeuGc(1)	dHex Hex(4) HexNAc(3) NeuGc
+1507	dHex(2)Hex(3)HexNAc(4)Pent(1)	dHex(2) Hex(3) HexNAc(4) Pent(1)
+1508	dHex(1)Hex(3)HexNAc(5)Sulf(1)	O(3) S dHex Hex(3) HexNAc(5)
+1509	dHex(1)Hex(6)HexNAc(3)	dHex(1) Hex(6) HexNAc(3)
+1510	dHex(1)Hex(3)HexNAc(4)NeuAc(1)	dHex(1) Hex(3) HexNAc(4) NeuAc(1)
+1511	dHex(3)Hex(3)HexNAc(4)	dHex(3) Hex(3) HexNAc(4)
+1512	dHex(1)Hex(4)HexNAc(4)Pent(1)	dHex(1) Hex(4) HexNAc(4) Pent(1)
+1513	Hex(4)HexNAc(5)Sulf(1)	O(3) S Hex(4) HexNAc(5)
+1514	Hex(7)HexNAc(3)	Hex(7) HexNAc(3)
+1515	dHex(1)Hex(4)HexNAc(3)NeuAc(1)Sulf(1)	O(3) S dHex Hex(4) HexNAc(3) NeuAc
+1516	Hex(5)HexNAc(4)Me(2)Pent(1)	Hex(5) HexNAc(4) Me(2) Pent(1)
+1517	Hex(3)HexNAc(6)Sulf(1)	O(3) S Hex(3) HexNAc(6)
+1518	dHex(1)Hex(6)HexNAc(3)Sulf(1)	O(3) S dHex Hex(6) HexNAc(3)
+1519	dHex(1)Hex(4)HexNAc(5)	dHex(1) Hex(4) HexNAc(5)
+1520	dHex(1)Hex(5)HexA(1)HexNAc(3)Sulf(1)	O(3) S dHex Hex(5) HexA HexNAc(3)
+1521	Hex(7)HexNAc(3)Phos(1)	H O(3) P Hex(7) HexNAc(3)
+1522	Hex(6)HexNAc(4)Me(3)	Hex(6) HexNAc(4) Me(3)
+1523	dHex(2)Hex(4)HexNAc(4)Sulf(1)	O(3) S dHex(2) Hex(4) HexNAc(4)
+1524	Hex(4)HexNAc(3)NeuAc(2)	Hex(4) HexNAc(3) NeuAc(2)
+1525	dHex(1)Hex(3)HexNAc(4)Pent(3)	dHex(1) Hex(3) HexNAc(4) Pent(3)
+1526	dHex(2)Hex(5)HexNAc(3)Pent(1)	dHex(2) Hex(5) HexNAc(3) Pent(1)
+1527	dHex(1)Hex(5)HexNAc(4)Sulf(1)	O(3) S dHex Hex(5) HexNAc(4)
+1528	dHex(2)Hex(3)HexNAc(4)Pent(2)	dHex(2) Hex(3) HexNAc(4) Pent(2)
+1529	dHex(1)Hex(5)HexNAc(3)NeuAc(1)	dHex(1) Hex(5) HexNAc(3) NeuAc(1)
+1530	Hex(3)HexNAc(6)Sulf(2)	O(6) S(2) Hex(3) HexNAc(6)
+1531	Hex(9)HexNAc(2)	Hex(9) HexNAc(2)
+1532	Hex(4)HexNAc(6)	Hex(4) HexNAc(6)
+1533	dHex(3)Hex(3)HexNAc(4)Pent(1)	dHex(3) Hex(3) HexNAc(4) Pent(1)
+1534	dHex(1)Hex(5)HexNAc(3)NeuGc(1)	dHex Hex(5) HexNAc(3) NeuGc
+1535	dHex(2)Hex(4)HexNAc(4)Pent(1)	dHex(2) Hex(4) HexNAc(4) Pent(1)
+1536	dHex(1)Hex(4)HexNAc(5)Sulf(1)	O(3) S dHex Hex(4) HexNAc(5)
+1537	dHex(1)Hex(7)HexNAc(3)	dHex(1) Hex(7) HexNAc(3)
+1538	dHex(1)Hex(5)HexNAc(4)Pent(1)	dHex(1) Hex(5) HexNAc(4) Pent(1)
+1539	dHex(1)Hex(5)HexA(1)HexNAc(3)Sulf(2)	O(6) S(2) dHex Hex(5) HexA HexNAc(3)
+1540	Hex(3)HexNAc(7)	Hex(3) HexNAc(7)
+1541	dHex(2)Hex(5)HexNAc(4)	dHex(2) Hex(5) HexNAc(4)
+1542	dHex(2)Hex(4)HexNAc(3)NeuAc(1)Sulf(1)	O(3) S dHex(2) Hex(4) HexNAc(3) NeuAc
+1543	dHex(1)Hex(5)HexNAc(4)Sulf(2)	O(6) S(2) dHex Hex(5) HexNAc(4)
+1544	dHex(1)Hex(5)HexNAc(4)Me(2)Pent(1)	dHex(1) Hex(5) HexNAc(4) Me(2) Pent(1)
+1545	Hex(5)HexNAc(4)NeuGc(1)	Hex(5) HexNAc(4) NeuGc(1)
+1546	dHex(1)Hex(3)HexNAc(6)Sulf(1)	O(3) S dHex Hex(3) HexNAc(6)
+1547	dHex(1)Hex(6)HexNAc(4)	dHex(1) Hex(6) HexNAc(4)
+1548	dHex(1)Hex(5)HexNAc(3)NeuAc(1)Sulf(1)	O(3) S dHex Hex(5) HexNAc(3) NeuAc
+1549	Hex(7)HexNAc(4)	Hex(7) HexNAc(4)
+1550	dHex(1)Hex(5)HexNAc(3)NeuGc(1)Sulf(1)	O(3) S dHex Hex(5) HexNAc(3) NeuGc
+1551	Hex(4)HexNAc(5)NeuAc(1)	Hex(4) HexNAc(5) NeuAc(1)
+1552	Hex(6)HexNAc(4)Me(3)Pent(1)	Hex(6) HexNAc(4) Me(3) Pent(1)
+1553	dHex(1)Hex(7)HexNAc(3)Sulf(1)	O(3) S dHex Hex(7) HexNAc(3)
+1554	dHex(1)Hex(7)HexNAc(3)Phos(1)	H O(3) P dHex Hex(7) HexNAc(3)
+1555	dHex(1)Hex(5)HexNAc(5)	dHex(1) Hex(5) HexNAc(5)
+1556	dHex(1)Hex(4)HexNAc(4)NeuAc(1)Sulf(1)	O(3) S dHex Hex(4) HexNAc(4) NeuAc
+1557	dHex(3)Hex(4)HexNAc(4)Sulf(1)	O(3) S dHex(3) Hex(4) HexNAc(4)
+1558	Hex(3)HexNAc(7)Sulf(1)	O(3) S Hex(3) HexNAc(7)
+1559	Hex(6)HexNAc(5)	Hex(6) HexNAc(5)
+1560	Hex(5)HexNAc(4)NeuAc(1)Sulf(1)	O(3) S Hex(5) HexNAc(4) NeuAc
+1561	Hex(3)HexNAc(6)NeuAc(1)	Hex(3) HexNAc(6) NeuAc(1)
+1562	dHex(2)Hex(3)HexNAc(6)	dHex(2) Hex(3) HexNAc(6)
+1563	Hex(1)HexNAc(1)NeuGc(1)	Hex(1) HexNAc(1) NeuGc(1)
+1564	dHex(1)Hex(2)HexNAc(1)	dHex(1) Hex(2) HexNAc(1)
+1565	HexNAc(3)Sulf(1)	O(3) S HexNAc(3)
+1566	Hex(3)HexNAc(1)	Hex(3) HexNAc
+1567	Hex(1)HexNAc(1)Kdn(1)Sulf(1)	O(3) S Hex HexNAc Kdn
+1568	HexNAc(2)NeuAc(1)	HexNAc(2) NeuAc(1)
+1570	HexNAc(1)Kdn(2)	HexNAc Kdn(2)
+1571	Hex(3)HexNAc(1)Me(1)	Hex(3) HexNAc(1) Me(1)
+1572	Hex(2)HexA(1)Pent(1)Sulf(1)	O(3) S Pent Hex(2) HexA
+1573	HexNAc(2)NeuGc(1)	HexNAc(2) NeuGc(1)
+1575	Hex(4)Phos(1)	H O(3) P Hex(4)
+1577	Hex(1)HexNAc(1)NeuAc(1)Sulf(1)	O(3) S Hex HexNAc NeuAc
+1578	Hex(1)HexA(1)HexNAc(2)	Hex(1) HexA(1) HexNAc(2)
+1579	dHex(1)Hex(2)HexNAc(1)Sulf(1)	O(3) S dHex Hex(2) HexNAc
+1580	dHex(1)HexNAc(3)	dHex(1) HexNAc(3)
+1581	dHex(1)Hex(1)HexNAc(1)Kdn(1)	dHex Hex HexNAc Kdn
+1582	Hex(1)HexNAc(3)	Hex(1) HexNAc(3)
+1583	HexNAc(2)NeuAc(1)Sulf(1)	O(3) S HexNAc(2) NeuAc
+1584	dHex(2)Hex(3)	dHex(2) Hex(3)
+1585	Hex(2)HexA(1)HexNAc(1)Sulf(1)	O(3) S Hex(2) HexA HexNAc
+1586	dHex(2)Hex(2)HexA(1)	dHex(2) Hex(2) HexA(1)
+1587	dHex(1)Hex(1)HexNAc(2)Sulf(1)	O(3) S dHex Hex HexNAc(2)
+1588	dHex(1)Hex(1)HexNAc(1)NeuAc(1)	dHex(1) Hex(1) HexNAc(1) NeuAc(1)
+1589	Hex(2)HexNAc(2)Sulf(1)	O(3) S Hex(2) HexNAc(2)
+1590	Hex(5)	Hex(5)
+1591	HexNAc(4)	HexNAc(4)
+1592	HexNAc(1)NeuGc(2)	HexNAc(1) NeuGc(2)
+1593	dHex(1)Hex(1)HexNAc(1)NeuGc(1)	dHex Hex HexNAc NeuGc
+1594	dHex(2)Hex(2)HexNAc(1)	dHex(2) Hex(2) HexNAc(1)
+1595	Hex(2)HexNAc(1)NeuGc(1)	Hex(2) HexNAc(1) NeuGc(1)
+1596	dHex(1)Hex(3)HexNAc(1)	dHex(1) Hex(3) HexNAc(1)
+1597	dHex(1)Hex(2)HexA(1)HexNAc(1)	dHex(1) Hex(2) HexA(1) HexNAc(1)
+1598	Hex(1)HexNAc(3)Sulf(1)	O(3) S Hex HexNAc(3)
+1599	Hex(4)HexNAc(1)	Hex(4) HexNAc
+1600	Hex(1)HexNAc(2)NeuAc(1)	Hex(1) HexNAc(2) NeuAc(1)
+1602	Hex(1)HexNAc(2)NeuGc(1)	Hex(1) HexNAc(2) NeuGc(1)
+1604	Hex(5)Phos(1)	H O(3) P Hex(5)
+1606	dHex(2)Hex(1)HexNAc(1)Kdn(1)	dHex(2) Hex HexNAc Kdn
+1607	dHex(1)Hex(3)HexNAc(1)Sulf(1)	O(3) S dHex Hex(3) HexNAc
+1608	dHex(1)Hex(1)HexNAc(3)	dHex(1) Hex(1) HexNAc(3)
+1609	dHex(1)Hex(2)HexA(1)HexNAc(1)Sulf(1)	O(3) S dHex Hex(2) HexA HexNAc
+1610	Hex(2)HexNAc(3)	Hex(2) HexNAc(3)
+1611	Hex(1)HexNAc(2)NeuAc(1)Sulf(1)	O(3) S Hex HexNAc(2) NeuAc
+1612	dHex(2)Hex(4)	dHex(2) Hex(4)
+1614	dHex(2)HexNAc(2)Kdn(1)	dHex(2) HexNAc(2) Kdn
+1615	dHex(1)Hex(2)HexNAc(2)Sulf(1)	O(3) S dHex Hex(2) HexNAc(2)
+1616	dHex(1)HexNAc(4)	dHex(1) HexNAc(4)
+1617	Hex(1)HexNAc(1)NeuAc(1)NeuGc(1)	Hex(1) HexNAc(1) NeuAc(1) NeuGc(1)
+1618	dHex(1)Hex(1)HexNAc(2)Kdn(1)	dHex Hex HexNAc(2) Kdn
+1619	Hex(1)HexNAc(1)NeuGc(2)	Hex(1) HexNAc(1) NeuGc(2)
+1620	Hex(1)HexNAc(1)NeuAc(2)Ac(1)	Ac Hex HexNAc NeuAc(2)
+1621	dHex(2)Hex(2)HexA(1)HexNAc(1)	dHex(2) Hex(2) HexA(1) HexNAc(1)
+1622	dHex(1)Hex(1)HexNAc(3)Sulf(1)	O(3) S dHex Hex HexNAc(3)
+1623	Hex(2)HexA(1)NeuAc(1)Pent(1)Sulf(1)	O(3) S Pent Hex(2) HexA NeuAc
+1624	dHex(1)Hex(1)HexNAc(2)NeuAc(1)	dHex(1) Hex(1) HexNAc(2) NeuAc(1)
+1625	dHex(1)Hex(3)HexA(1)HexNAc(1)	dHex(1) Hex(3) HexA(1) HexNAc(1)
+1626	Hex(2)HexNAc(3)Sulf(1)	O(3) S Hex(2) HexNAc(3)
+1627	Hex(5)HexNAc(1)	Hex(5) HexNAc
+1628	HexNAc(5)	HexNAc(5)
+1630	Hex(1)HexNAc(1)NeuAc(2)Ac(2)	Ac(2) Hex HexNAc NeuAc(2)
+1631	Hex(2)HexNAc(2)NeuGc(1)	Hex(2) HexNAc(2) NeuGc(1)
+1632	Hex(5)Phos(3)	H(3) O(9) P(3) Hex(5)
+1633	Hex(6)Phos(1)	H O(3) P Hex(6)
+1634	dHex(1)Hex(2)HexA(1)HexNAc(2)	dHex(1) Hex(2) HexA(1) HexNAc(2)
+1635	dHex(2)Hex(3)HexNAc(1)Sulf(1)	O(3) S dHex(2) Hex(3) HexNAc
+1636	Hex(1)HexNAc(3)NeuAc(1)	Hex(1) HexNAc(3) NeuAc(1)
+1637	dHex(2)Hex(1)HexNAc(3)	dHex(2) Hex(1) HexNAc(3)
+1638	Hex(1)HexNAc(3)NeuGc(1)	Hex(1) HexNAc(3) NeuGc(1)
+1639	dHex(1)Hex(1)HexNAc(2)NeuAc(1)Sulf(1)	O(3) S dHex Hex HexNAc(2) NeuAc
+1640	dHex(1)Hex(3)HexA(1)HexNAc(1)Sulf(1)	O(3) S dHex Hex(3) HexA HexNAc
+1641	dHex(1)Hex(1)HexA(1)HexNAc(3)	dHex(1) Hex(1) HexA(1) HexNAc(3)
+1642	Hex(2)HexNAc(2)NeuAc(1)Sulf(1)	O(3) S Hex(2) HexNAc(2) NeuAc
+1643	dHex(2)Hex(2)HexNAc(2)Sulf(1)	O(3) S dHex(2) Hex(2) HexNAc(2)
+1644	dHex(2)Hex(1)HexNAc(2)Kdn(1)	dHex(2) Hex HexNAc(2) Kdn
+1645	dHex(1)Hex(1)HexNAc(4)	dHex(1) Hex(1) HexNAc(4)
+1646	Hex(2)HexNAc(4)	Hex(2) HexNAc(4)
+1647	Hex(2)HexNAc(1)NeuGc(2)	Hex(2) HexNAc(1) NeuGc(2)
+1648	dHex(2)Hex(4)HexNAc(1)	dHex(2) Hex(4) HexNAc(1)
+1649	Hex(1)HexNAc(2)NeuAc(2)	Hex(1) HexNAc(2) NeuAc(2)
+1650	dHex(2)Hex(1)HexNAc(2)NeuAc(1)	dHex(2) Hex(1) HexNAc(2) NeuAc(1)
+1651	dHex(1)Hex(2)HexNAc(3)Sulf(1)	O(3) S dHex Hex(2) HexNAc(3)
+1652	dHex(1)HexNAc(5)	dHex(1) HexNAc(5)
+1653	dHex(2)Hex(1)HexNAc(2)NeuGc(1)	dHex(2) Hex HexNAc(2) NeuGc
+1654	dHex(3)Hex(2)HexNAc(2)	dHex(3) Hex(2) HexNAc(2)
+1655	Hex(3)HexNAc(3)Sulf(1)	O(3) S Hex(3) HexNAc(3)
+1656	dHex(2)Hex(2)HexNAc(2)Sulf(2)	O(6) S(2) dHex(2) Hex(2) HexNAc(2)
+1657	dHex(1)Hex(2)HexNAc(2)NeuGc(1)	dHex Hex(2) HexNAc(2) NeuGc
+1658	dHex(1)Hex(1)HexNAc(3)NeuAc(1)	dHex Hex HexNAc(3) NeuAc
+1659	Hex(6)Phos(3)	H(3) O(9) P(3) Hex(6)
+1660	dHex(1)Hex(3)HexA(1)HexNAc(2)	dHex(1) Hex(3) HexA(1) HexNAc(2)
+1661	dHex(1)Hex(1)HexNAc(3)NeuGc(1)	dHex Hex HexNAc(3) NeuGc
+1662	Hex(1)HexNAc(2)NeuAc(2)Sulf(1)	O(3) S Hex HexNAc(2) NeuAc(2)
+1663	dHex(2)Hex(3)HexA(1)HexNAc(1)Sulf(1)	O(3) S dHex(2) Hex(3) HexA HexNAc
+1664	Hex(1)HexNAc(1)NeuAc(3)	Hex(1) HexNAc(1) NeuAc(3)
+1665	Hex(2)HexNAc(3)NeuGc(1)	Hex(2) HexNAc(3) NeuGc(1)
+1666	dHex(1)Hex(2)HexNAc(2)NeuAc(1)Sulf(1)	O(3) S dHex Hex(2) HexNAc(2) NeuAc
+1667	dHex(3)Hex(1)HexNAc(2)Kdn(1)	dHex(3) Hex HexNAc(2) Kdn
+1668	dHex(2)Hex(3)HexNAc(2)Sulf(1)	O(3) S dHex(2) Hex(3) HexNAc(2)
+1669	dHex(2)Hex(2)HexNAc(2)Kdn(1)	dHex(2) Hex(2) HexNAc(2) Kdn
+1670	dHex(2)Hex(2)HexA(1)HexNAc(2)Sulf(1)	O(3) S dHex(2) Hex(2) HexA HexNAc(2)
+1671	dHex(1)Hex(2)HexNAc(4)	dHex Hex(2) HexNAc(4)
+1672	Hex(1)HexNAc(1)NeuGc(3)	Hex(1) HexNAc(1) NeuGc(3)
+1673	dHex(1)Hex(1)HexNAc(3)NeuAc(1)Sulf(1)	O(3) S dHex Hex HexNAc(3) NeuAc
+1674	dHex(1)Hex(3)HexA(1)HexNAc(2)Sulf(1)	O(3) S dHex Hex(3) HexA HexNAc(2)
+1675	dHex(1)Hex(1)HexNAc(2)NeuAc(2)	dHex(1) Hex(1) HexNAc(2) NeuAc(2)
+1676	dHex(3)HexNAc(3)Kdn(1)	dHex(3) HexNAc(3) Kdn
+1678	Hex(2)HexNAc(3)NeuAc(1)Sulf(1)	O(3) S Hex(2) HexNAc(3) NeuAc
+1679	dHex(2)Hex(2)HexNAc(3)Sulf(1)	O(3) S dHex(2) Hex(2) HexNAc(3)
+1680	dHex(2)HexNAc(5)	dHex(2) HexNAc(5)
+1681	Hex(2)HexNAc(2)NeuAc(2)	Hex(2) HexNAc(2) NeuAc(2)
+1682	dHex(2)Hex(2)HexNAc(2)NeuAc(1)	dHex(2) Hex(2) HexNAc(2) NeuAc
+1683	dHex(1)Hex(3)HexNAc(3)Sulf(1)	O(3) S dHex Hex(3) HexNAc(3)
+1684	dHex(2)Hex(2)HexNAc(2)NeuGc(1)	dHex(2) Hex(2) HexNAc(2) NeuGc
+1685	Hex(2)HexNAc(5)	Hex(2) HexNAc(5)
+1686	dHex(1)Hex(3)HexNAc(2)NeuGc(1)	dHex(1) Hex(3) HexNAc(2) NeuGc(1)
+1687	Hex(1)HexNAc(3)NeuAc(2)	Hex(1) HexNAc(3) NeuAc(2)
+1688	dHex(1)Hex(2)HexNAc(3)NeuAc(1)	dHex(1) Hex(2) HexNAc(3) NeuAc(1)
+1689	dHex(3)Hex(2)HexNAc(3)	dHex(3) Hex(2) HexNAc(3)
+1690	Hex(7)Phos(3)	H(3) O(9) P(3) Hex(7)
+1691	dHex(1)Hex(4)HexA(1)HexNAc(2)	dHex(1) Hex(4) HexA(1) HexNAc(2)
+1692	Hex(3)HexNAc(3)NeuAc(1)	Hex(3) HexNAc(3) NeuAc
+1693	dHex(1)Hex(3)HexA(2)HexNAc(2)	dHex(1) Hex(3) HexA(2) HexNAc(2)
+1694	Hex(2)HexNAc(2)NeuAc(2)Sulf(1)	O(3) S Hex(2) HexNAc(2) NeuAc(2)
+1695	dHex(2)Hex(2)HexNAc(2)NeuAc(1)Sulf(1)	O(3) S dHex(2) Hex(2) HexNAc(2) NeuAc
+1696	Hex(3)HexNAc(3)NeuGc(1)	Hex(3) HexNAc(3) NeuGc(1)
+1697	dHex(4)Hex(1)HexNAc(2)Kdn(1)	dHex(4) Hex HexNAc(2) Kdn
+1698	dHex(3)Hex(2)HexNAc(2)Kdn(1)	dHex(3) Hex(2) HexNAc(2) Kdn
+1699	dHex(3)Hex(2)HexA(1)HexNAc(2)Sulf(1)	O(3) S dHex(3) Hex(2) HexA HexNAc(2)
+1700	Hex(2)HexNAc(4)NeuAc(1)	Hex(2) HexNAc(4) NeuAc(1)
+1701	dHex(2)Hex(2)HexNAc(4)	dHex(2) Hex(2) HexNAc(4)
+1702	dHex(2)Hex(3)HexA(1)HexNAc(2)Sulf(1)	O(3) S dHex(2) Hex(3) HexA HexNAc(2)
+1703	dHex(4)HexNAc(3)Kdn(1)	dHex(4) HexNAc(3) Kdn
+1705	Hex(2)HexNAc(1)NeuGc(3)	Hex(2) HexNAc(1) NeuGc(3)
+1706	dHex(4)Hex(1)HexNAc(1)Kdn(2)	dHex(4) Hex HexNAc Kdn(2)
+1707	dHex(1)Hex(2)HexNAc(3)NeuAc(1)Sulf(1)	O(3) S dHex Hex(2) HexNAc(3) NeuAc
+1708	dHex(1)Hex(2)HexNAc(2)NeuAc(2)	dHex(1) Hex(2) HexNAc(2) NeuAc(2)
+1709	dHex(3)Hex(1)HexNAc(3)Kdn(1)	dHex(3) Hex HexNAc(3) Kdn
+1711	Hex(3)HexNAc(3)NeuAc(1)Sulf(1)	O(3) S Hex(3) HexNAc(3) NeuAc
+1712	Hex(3)HexNAc(2)NeuAc(2)	Hex(3) HexNAc(2) NeuAc(2)
+1713	Hex(3)HexNAc(3)NeuGc(1)Sulf(1)	O(3) S Hex(3) HexNAc(3) NeuGc
+1714	dHex(1)Hex(2)HexNAc(2)NeuGc(2)	dHex(1) Hex(2) HexNAc(2) NeuGc(2)
+1715	dHex(2)Hex(3)HexNAc(2)NeuGc(1)	dHex(2) Hex(3) HexNAc(2) NeuGc
+1716	dHex(1)Hex(3)HexA(1)HexNAc(3)Sulf(1)	O(3) S dHex Hex(3) HexA HexNAc(3)
+1717	Hex(2)HexNAc(3)NeuAc(2)	Hex(2) HexNAc(3) NeuAc(2)
+1718	dHex(2)Hex(2)HexNAc(3)NeuAc(1)	dHex(2) Hex(2) HexNAc(3) NeuAc(1)
+1719	dHex(4)Hex(2)HexNAc(3)	dHex(4) Hex(2) HexNAc(3)
+1720	Hex(2)HexNAc(3)NeuAc(1)NeuGc(1)	Hex(2) HexNAc(3) NeuAc(1) NeuGc(1)
+1721	dHex(2)Hex(2)HexNAc(3)NeuGc(1)	dHex(2) Hex(2) HexNAc(3) NeuGc
+1722	dHex(3)Hex(3)HexNAc(3)	dHex(3) Hex(3) HexNAc(3)
+1723	Hex(8)Phos(3)	H(3) O(9) P(3) Hex(8)
+1724	dHex(1)Hex(2)HexNAc(2)NeuAc(2)Sulf(1)	O(3) S dHex Hex(2) HexNAc(2) NeuAc(2)
+1725	Hex(2)HexNAc(3)NeuGc(2)	Hex(2) HexNAc(3) NeuGc(2)
+1726	dHex(4)Hex(2)HexNAc(2)Kdn(1)	dHex(4) Hex(2) HexNAc(2) Kdn
+1727	dHex(1)Hex(2)HexNAc(4)NeuAc(1)	dHex(1) Hex(2) HexNAc(4) NeuAc(1)
+1728	dHex(3)Hex(2)HexNAc(4)	dHex(3) Hex(2) HexNAc(4)
+1729	Hex(1)HexNAc(1)NeuGc(4)	Hex(1) HexNAc(1) NeuGc(4)
+1730	dHex(4)Hex(1)HexNAc(3)Kdn(1)	dHex(4) Hex HexNAc(3) Kdn
+1732	Hex(4)HexNAc(4)Sulf(2)	O(6) S(2) Hex(4) HexNAc(4)
+1733	dHex(3)Hex(2)HexNAc(3)Kdn(1)	dHex(3) Hex(2) HexNAc(3) Kdn
+1735	dHex(2)Hex(2)HexNAc(5)	dHex(2) Hex(2) HexNAc(5)
+1736	dHex(2)Hex(3)HexA(1)HexNAc(3)Sulf(1)	O(3) S dHex(2) Hex(3) HexA HexNAc(3)
+1737	dHex(1)Hex(4)HexA(1)HexNAc(3)Sulf(1)	O(3) S dHex Hex(4) HexA HexNAc(3)
+1738	Hex(3)HexNAc(3)NeuAc(2)	Hex(3) HexNAc(3) NeuAc(2)
+1739	dHex(2)Hex(3)HexNAc(3)NeuAc(1)	dHex(2) Hex(3) HexNAc(3) NeuAc
+1740	dHex(4)Hex(3)HexNAc(3)	dHex(4) Hex(3) HexNAc(3)
+1742	Hex(9)Phos(3)	H(3) O(9) P(3) Hex(9)
+1743	dHex(2)HexNAc(7)	dHex(2) HexNAc(7)
+1744	Hex(2)HexNAc(1)NeuGc(4)	Hex(2) HexNAc(1) NeuGc(4)
+1745	Hex(3)HexNAc(3)NeuAc(2)Sulf(1)	O(3) S Hex(3) HexNAc(3) NeuAc(2)
+1746	dHex(2)Hex(3)HexNAc(5)	dHex(2) Hex(3) HexNAc(5)
+1747	dHex(1)Hex(2)HexNAc(2)NeuGc(3)	dHex(1) Hex(2) HexNAc(2) NeuGc(3)
+1748	dHex(2)Hex(4)HexA(1)HexNAc(3)Sulf(1)	O(3) S dHex(2) Hex(4) HexA HexNAc(3)
+1749	Hex(2)HexNAc(3)NeuAc(3)	Hex(2) HexNAc(3) NeuAc(3)
+1750	dHex(1)Hex(3)HexNAc(3)NeuAc(2)	dHex(1) Hex(3) HexNAc(3) NeuAc(2)
+1751	dHex(3)Hex(3)HexNAc(3)NeuAc(1)	dHex(3) Hex(3) HexNAc(3) NeuAc(1)
+1752	Hex(2)HexNAc(3)NeuGc(3)	Hex(2) HexNAc(3) NeuGc(3)
+1753	Hex(10)Phos(3)	H(3) O(9) P(3) Hex(10)
+1754	dHex(1)Hex(2)HexNAc(4)NeuAc(2)	dHex(1) Hex(2) HexNAc(4) NeuAc(2)
+1755	Hex(1)HexNAc(1)NeuGc(5)	Hex(1) HexNAc(1) NeuGc(5)
+1756	Hex(4)HexNAc(4)NeuAc(1)Sulf(2)	O(6) S(2) Hex(4) HexNAc(4) NeuAc
+1757	Hex(4)HexNAc(4)NeuGc(1)Sulf(2)	O(6) S(2) Hex(4) HexNAc(4) NeuGc
+1758	dHex(2)Hex(3)HexNAc(3)NeuAc(2)	dHex(2) Hex(3) HexNAc(3) NeuAc(2)
+1759	Hex(4)HexNAc(4)NeuAc(1)Sulf(3)	O(9) S(3) Hex(4) HexNAc(4) NeuAc
+1760	dHex(2)Hex(2)HexNAc(2)	dHex(2) Hex(2) HexNAc(2)
+1761	dHex(1)Hex(3)HexNAc(2)	dHex(1) Hex(3) HexNAc(2)
+1762	dHex(1)Hex(2)HexNAc(3)	dHex(1) Hex(2) HexNAc(3)
+1763	Hex(3)HexNAc(3)	Hex(3) HexNAc(3)
+1764	dHex(1)Hex(3)HexNAc(2)Sulf(1)	O(3) S dHex Hex(3) HexNAc(2)
+1765	dHex(2)Hex(3)HexNAc(2)	dHex(2) Hex(3) HexNAc(2)
+1766	dHex(1)Hex(4)HexNAc(2)	dHex(1) Hex(4) HexNAc(2)
+1767	dHex(2)Hex(2)HexNAc(3)	dHex(2) Hex(2) HexNAc(3)
+1768	dHex(1)Hex(3)HexNAc(3)	dHex(1) Hex(3) HexNAc(3)
+1769	Hex(4)HexNAc(3)	Hex(4) HexNAc(3)
+1770	dHex(2)Hex(4)HexNAc(2)	dHex(2) Hex(4) HexNAc(2)
+1771	dHex(2)Hex(3)HexNAc(3)	dHex(2) Hex(3) HexNAc(3)
+1772	Hex(3)HexNAc(5)	Hex(3) HexNAc(5)
+1773	Hex(4)HexNAc(3)NeuAc(1)	Hex(4) HexNAc(3) NeuAc
+1774	dHex(2)Hex(3)HexNAc(4)	dHex(2) Hex(3) HexNAc(4)
+1775	dHex(1)Hex(3)HexNAc(5)	dHex(1) Hex(3) HexNAc(5)
+1776	Hex(3)HexNAc(6)	Hex(3) HexNAc(6)
+1777	Hex(4)HexNAc(4)NeuAc(1)	Hex(4) HexNAc(4) NeuAc(1)
+1778	dHex(2)Hex(4)HexNAc(4)	dHex(2) Hex(4) HexNAc(4)
+1779	Hex(6)HexNAc(4)	Hex(6) HexNAc(4)
+1780	Hex(5)HexNAc(5)	Hex(5) HexNAc(5)
+1781	dHex(1)Hex(3)HexNAc(6)	dHex(1) Hex(3) HexNAc(6)
+1782	dHex(1)Hex(4)HexNAc(4)NeuAc(1)	dHex Hex(4) HexNAc(4) NeuAc
+1783	dHex(3)Hex(4)HexNAc(4)	dHex(3) Hex(4) HexNAc(4)
+1784	dHex(1)Hex(3)HexNAc(5)NeuAc(1)	dHex(1) Hex(3) HexNAc(5) NeuAc(1)
+1785	dHex(2)Hex(4)HexNAc(5)	dHex(2) Hex(4) HexNAc(5)
+1786	Hex(1)HexNAc(1)NeuAc(1)Ac(1)	Ac Hex HexNAc NeuAc
+1787	Label:13C(2)15N(2)	C(-2) 13C(2) N(-2) 15N(2)
+1789	Xlink:DSS[155]	H(13) C(8) N O(2)
+1799	NQIGG	H(31) C(19) N(7) O(7)
+1800	Carboxyethylpyrrole	H(6) C(7) O(2)
+1801	Fluorescein-tyramine	H(19) C(29) N O(7)
+1824	GEE	H(6) C(4) O(2)
+1825	RNPXL	H(13) C(9) N(2) O(9) P
+1826	Glu->pyro-Glu+Methyl	C O(-1)
+1827	Glu->pyro-Glu+Methyl:2H(2)13C(1)	H(-2) 2H(2) 13C O(-1)
+1828	LRGG+methyl	H(31) C(17) N(7) O(4)
+1829	LRGG+dimethyl	H(33) C(18) N(7) O(4)
+1830	Biotin-tyramide	H(23) C(18) N(3) O(3) S
+1831	Tris	H(10) C(4) N O(2)
+1832	IASD	H(16) C(18) N(2) O(8) S(2)
+1833	NP40	H(24) C(15) O
+1834	Tween20	H(21) C(12)
+1835	Tween80	H(31) C(18) O
+1836	Triton	H(20) C(14)
+1837	Brij35	H(24) C(12)
+1838	Brij58	H(32) C(16)
+1839	betaFNA	H(30) C(25) N(2) O(6)
+1840	dHex(1)Hex(7)HexNAc(4)	dHex Hex(7) HexNAc(4)
+1841	Biotin:Thermo-21328	H(23) C(15) N(3) O(3) S(3)
+1843	PhosphoCytidine	H(12) C(9) N(3) O(7) P
+1845	AzidoF	H(-1) N(3)
+1846	Dimethylaminoethyl	H(9) C(4) N
+1848	Gluratylation	H(6) C(5) O(3)
+1849	hydroxyisobutyryl	H(6) C(4) O(2)
+1868	MeMePhosphorothioate	H(5) C(2) O P S
+1870	Cation:Fe[III]	H(-3) Fe
+1871	DTT	H(8) C(4) O(2) S(2)
+1872	DYn-2	H(13) C(11) O
+1873	MesitylOxide	H(10) C(6) O
+1875	methylol	H(2) C O
+1877	Xlink:DSS[259]	H(21) C(12) N O(5)
+1878	Xlink:DSSO[176]	H(8) C(6) O(4) S
+1879	Xlink:DSSO[175]	H(9) C(6) N O(3) S
+1880	Xlink:DSSO[279]	H(17) C(10) N O(6) S
+1881	Xlink:DSSO[54]	H(2) C(3) O
+1882	Xlink:DSSO[86]	H(2) C(3) O S
+1883	Xlink:DSSO[104]	H(4) C(3) O(2) S
+1885	Xlink:BuUrBu[111]	H(5) C(5) N O(2)
+1886	Xlink:BuUrBu[85]	H(7) C(4) N O
+1887	Xlink:BuUrBu[213]	H(15) C(9) N(3) O(3)
+1888	Xlink:BuUrBu[214]	H(14) C(9) N(2) O(4)
+1889	Xlink:BuUrBu[317]	H(23) C(13) N(3) O(6)
+1896	Xlink:DSSO[158]	H(6) C(6) O(3) S
+1897	Xlink:EGS[226]	H(10) C(10) O(6)
+1898	Xlink:DSS[138]	H(10) C(8) O(2)
+1899	Xlink:BuUrBu[196]	H(12) C(9) N(2) O(3)
+1900	Xlink:DTBP[172]	H(8) C(6) N(2) S(2)
+1901	Xlink:DST[114]	H(2) C(4) O(4)
+1902	Xlink:DTSSP[174]	H(6) C(6) O(2) S(2)
+1903	Xlink:SMCC[219]	H(13) C(12) N O(3)
+1905	Xlink:BS2G[96]	H(4) C(5) O(2)
+1906	Xlink:BS2G[113]	H(7) C(5) N O(2)
+1907	Xlink:BS2G[114]	H(6) C(5) O(3)
+1908	Xlink:BS2G[217]	H(15) C(9) N O(5)
+1910	Cation:Al[III]	H(-3) Al
+1911	Xlink:DMP[139]	H(13) C(7) N(3)
+1912	Xlink:DMP[122]	H(10) C(7) N(2)
+1913	glyoxalAGE	H(-2) C(2)
+1914	Met->AspSA	H(-4) C(-1) O S(-1)
+1915	Decarboxylation	H(-2) C(-1) O(-1)
+1916	Aspartylurea	H(-2) C(-1) N(-2) O(2)
+1917	Formylasparagine	H(-1) C(-1) N(-1) O(2)
+1918	Carbonyl	H(-2) O
+1920	AFB1_Dialdehyde	H(10) C(17) O(6)
+1922	Pro->HAVA	H(2) O
+1923	Delta:H(-4)O(2)	H(-4) O(2)
+1924	Delta:H(-4)O(3)	H(-4) O(3)
+1925	Delta:O(4)	O(4)
+1926	Delta:H(4)C(3)O(2)	H(4) C(3) O(2)
+1927	Delta:H(4)C(5)O(1)	H(4) C(5) O
+1928	Delta:H(10)C(8)O(1)	H(10) C(8) O
+1929	Delta:H(6)C(7)O(4)	H(6) C(7) O(4)
+1930	Pent(2)	Pent(2)
+1931	Pent(1)HexNAc(1)	Pent HexNAc
+1932	Hex(2)Sulf(1)	O(3) S Hex(2)
+1933	Hex(1)Pent(2)Me(1)	Me Pent(2) Hex
+1934	HexNAc(2)Sulf(1)	O(3) S HexNAc(2)
+1935	Hex(1)Pent(3)Me(1)	Me Pent(3) Hex
+1936	Hex(2)Pent(2)	Pent(2) Hex(2)
+1937	Hex(2)Pent(2)Me(1)	Me Pent(2) Hex(2)
+1938	Hex(4)HexA(1)	Hex(4) HexA
+1939	Hex(2)HexNAc(1)Pent(1)HexA(1)	Pent Hex(2) HexA HexNAc
+1940	Hex(3)HexNAc(1)HexA(1)	Hex(3) HexA HexNAc
+1941	Hex(1)HexNAc(2)dHex(2)Sulf(1)	O(3) S dHex(2) Hex HexNAc(2)
+1942	HexA(2)HexNAc(3)	HexA(2) HexNAc(3)
+1943	dHex(1)Hex(4)HexA(1)	dHex Hex(4) HexA
+1944	Hex(5)HexA(1)	Hex(5) HexA
+1945	Hex(4)HexA(1)HexNAc(1)	Hex(4) HexA HexNAc
+1946	dHex(3)Hex(3)HexNAc(1)	dHex(3) Hex(3) HexNAc
+1947	Hex(6)HexNAc(1)	Hex(6) HexNAc
+1948	Hex(1)HexNAc(4)dHex(1)Sulf(1)	Sulf dHex Hex HexNAc(4)
+1949	dHex(1)Hex(2)HexNAc(1)NeuAc(2)	dHex Hex(2) HexNAc NeuAc(2)
+1950	dHex(3)Hex(3)HexNAc(2)	dHex(3) Hex(3) HexNAc(2)
+1951	dHex(2)Hex(1)HexNAc(4)Sulf(1)	Sulf dHex(2) Hex HexNAc(4)
+1952	dHex(1)Hex(2)HexNAc(4)Sulf(2)	Sulf(2) dHex Hex(2) HexNAc(4)
+1953	Hex(9)	Hex(9)
+1954	dHex(2)Hex(3)HexNAc(3)Sulf(1)	Sulf dHex(2) Hex(3) HexNAc(3)
+1955	dHex(2)Hex(5)HexNAc(2)Me(1)	Me dHex(2) Hex(5) HexNAc(2)
+1956	dHex(2)Hex(2)HexNAc(4)Sulf(2)	Sulf(2) dHex(2) Hex(2) HexNAc(4)
+1957	Hex(9)HexNAc(1)	Hex(9) HexNAc
+1958	dHex(3)Hex(2)HexNAc(4)Sulf(2)	Sulf(2) dHex(3) Hex(2) HexNAc(4)
+1959	Hex(4)HexNAc(4)NeuGc(1)	Hex(4) HexNAc(4) NeuGc
+1960	dHex(4)Hex(3)HexNAc(2)NeuAc(1)	dHex(4) Hex(3) HexNAc(2) NeuAc
+1961	Hex(3)HexNAc(5)NeuAc(1)	Hex(3) HexNAc(5) NeuAc
+1962	Hex(10)HexNAc(1)	Hex(10) HexNAc
+1963	dHex(1)Hex(8)HexNAc(2)	dHex Hex(8) HexNAc(2)
+1964	Hex(3)HexNAc(4)NeuAc(2)	Hex(3) HexNAc(4) NeuAc(2)
+1965	dHex(2)Hex(3)HexNAc(4)NeuAc(1)	dHex(2) Hex(3) HexNAc(4) NeuAc
+1966	dHex(2)Hex(2)HexNAc(6)Sulf(1)	Sulf dHex(2) Hex(2) HexNAc(6)
+1967	Hex(5)HexNAc(4)NeuAc(1)Ac(1)	Ac Hex(5) HexNAc(4) NeuAc
+1968	Hex(3)HexNAc(3)NeuAc(3)	Hex(3) HexNAc(3) NeuAc(3)
+1969	Hex(5)HexNAc(4)NeuAc(1)Ac(2)	Ac(2) Hex(5) HexNAc(4) NeuAc
+1970	Unknown:162	H(18) C(8) O(3)
+1971	Unknown:177	H(-7) O Fe(3)
+1972	Unknown:210	H(22) C(13) O(2)
+1973	Unknown:216	H(16) C(10) O(5)
+1974	Unknown:234	H(14) C(9) O(7)
+1975	Unknown:248	H(28) C(13) O(4)
+1976	Unknown:250	H(4) C(10) N O(5) S
+1977	Unknown:302	H(8) C(4) N(5) O(7) S(2)
+1978	Unknown:306	H(18) C(12) O(9)
+1979	Unknown:420	H(24) C(12) N(2) O(6) S(4)
+1986	Diethylphosphothione	H(9) C(4) O(2) P S
+1987	Dimethylphosphothione	H(5) C(2) O(2) P S
+1989	monomethylphosphothione	H(3) C O(2) P S
+1990	CIGG	H(22) C(13) N(4) O(4) S
+1991	GNLLFLACYCIGG	H(92) C(61) N(14) O(15) S(2)
+1992	serotonylation	H(9) C(10) N O
+1993	TMPP-Ac:13C(9)	H(33) C(20) 13C(9) O(10) P
+1999	Xlink:DST[56]	C(2) O(2)
+2001	ZQG	H(16) C(15) N(2) O(6)
+2006	Haloxon	H(7) C(4) O(3) P Cl(2)
+2007	Methamidophos-S	H(4) C N O P S
+2008	Methamidophos-O	H(4) C N O(2) P
+2014	Nitrene	H(-1) N
+2015	shTMT	H(20) C(3) 13C(9) 15N(2) O(2)
+2016	TMTpro	H(25) C(8) 13C(7) N 15N(2) O(3)
+2017	TMTpro_zero	H(25) C(15) N(3) O(3)
+2022	Ser/Thr-KDO	H(12) C(8) O(7)
+2025	Andro-H2O	H(28) C(20) O(4)
+2027	His+O(2)	H(7) C(6) N(3) O(3)
+2028	Hex(6)HexNAc(5)NeuAc(3)	Hex(6) HexNAc(5) NeuAc(3)
+2029	Hex(7)HexNAc(6)	Hex(7) HexNAc(6)
+2033	Met+O(2)	H(9) C(5) N O(3) S
+2034	Gly+O(2)	H(3) C(2) N O(3)
+2035	Pro+O(2)	H(7) C(5) N O(3)
+2036	Lys+O(2)	H(12) C(6) N(2) O(3)
+2037	Glu+O(2)	H(7) C(5) N O(5)
+2039	LTX+Lophotoxin	H(24) C(22) O(8)
+2040	MBS+peptide	H(108) C(81) N(7) O(19)
+2041	3-hydroxybenzyl-phosphate	H(7) C(7) O(4) P
+2042	phenyl-phosphate	H(5) C(6) O(3) P
+2044	RBS-ID_Uridine	H(12) C(9) N(2) O(6)
+2050	shTMTpro	H(25) 13C(15) 15N(3) O(3)
+2052	Biotin:Aha-DADPS	H(70) C(42) N(8) O(11) Si S
+2053	Biotin:Aha-PC	H(38) C(29) N(8) O(10) S
+2054	pRBS-ID_4-thiouridine	H(10) C(9) N(2) O(5)
+2055	pRBS-ID_6-thioguanosine	H(11) C(10) N(5) O(4)
+2057	6C-CysPAT	H(16) C(8) N O(4) P
+2058	Xlink:DSPP[210]	H(3) C(8) O(5) P
+2059	Xlink:DSPP[228]	H(5) C(8) O(6) P
+2060	Xlink:DSPP[331]	H(14) C(12) N O(8) P
+2061	Xlink:DSPP[226]	H(5) C(8) N O(5) P
+2062	DBIA	H(24) C(14) N(4) O(3)
+2067	Mono_N-propargyl-L-Gln_desthiobiotin	H(44) C(26) N(8) O(7)
+2068	Di_L-Glu_N-propargyl-L-Gln_desthiobiotin	H(51) C(31) N(9) O(10)
+2069	Di_L-Gln_N-propargyl-L-Gln_desthiobiotin	H(52) C(31) N(10) O(9)
+2070	L-Gln	H(8) C(5) N(2) O(2)
+2072	Glyceroyl	H(4) C(3) O(3)

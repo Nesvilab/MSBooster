@@ -16,6 +16,8 @@ package features.spectra;
 
 import allconstants.Constants;
 import allconstants.FragmentIonConstants;
+import koinaclasses.KoinaModelRegistry;
+import koinaclasses.KoinaModelSpec;
 import mainsteps.PeptideObj;
 import org.apache.commons.math3.distribution.HypergeometricDistribution;
 import org.apache.commons.math3.random.Well19937c;
@@ -269,6 +271,12 @@ public class SpectrumComparison {
         return matchedInts;
     }
 
+    //whether this model is a Koina model whose fragment annotations are UniSpec's
+    private static boolean annotatesLikeUnispec(String model) {
+        KoinaModelSpec spec = KoinaModelRegistry.find(model);
+        return spec != null && spec.annotationParser() == KoinaModelSpec.AnnotationParser.UNISPEC;
+    }
+
     private void getAllMatchedIntensities() {
         if (allMatchedIntensities == null) {
             //what fragment ion types do we need?
@@ -279,13 +287,17 @@ public class SpectrumComparison {
             TreeSet<Float> mzsSet = new TreeSet<>();
             HashMap<Float, String> mzToIontype = new HashMap<>();
 
+            //the fragments of a model that annotates them as UniSpec does are UniSpec's fragments
+            boolean primaryUnispecFragments = annotatesLikeUnispec(Constants.spectraModel);
+            boolean auxUnispecFragments = annotatesLikeUnispec(Constants.auxSpectraModel);
+
             //iterate over fragment ion types
             for (String fiontype : fiontypes) {
                 if (
                         (FragmentIonConstants.primaryFragmentIonTypes.contains(fiontype) &&
-                                Constants.spectraModel.equalsIgnoreCase("unispec")) ||
+                                primaryUnispecFragments) ||
                                 (!FragmentIonConstants.primaryFragmentIonTypes.contains(fiontype) &&
-                                        Constants.auxSpectraModel.equalsIgnoreCase("unispec")) ||
+                                        auxUnispecFragments) ||
                                 FragmentIonConstants.annotatePredfullLikeUnispec
                 ) {
                     ArrayList<Float> mzsList = mc.possibleUnispecMzs(fiontype);
@@ -862,7 +874,7 @@ public class SpectrumComparison {
             successes = matchedIons;
         }
 
-        //when considering predicted mzs for predfull, a fragment's reported mz may be above the scan lower limit
+        //when considering predicted mzs, a fragment's reported mz may be above the scan lower limit
         //however, it may be a rounding issue where its actual mz is below the scan lower limit
         //allMatchedIntensities accounts for this but possible doesn't, so we default to allMatchedIntensities length
         if (possible > allMatchedIntensities.length) {

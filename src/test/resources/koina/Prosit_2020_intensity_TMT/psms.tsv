@@ -1,0 +1,14 @@
+peptide	charge	note
+K.n[229.1629]LGEPTIDEK[229.1629].A	2	TMT on the N-term and Lys (UNIMOD:737)
+R.n[229.1629]AVLDQGSTWPEM[15.9949]AGK[229.1629].S	2	TMT and oxidized Met
+K.n[229.1629]TEC[57.0215]LDHFAVNPR.G	3	TMT on the N-term, carbamidomethyl Cys
+K.n[229.1629]S[229.1629]HCVAELLGPEK[229.1629].T	2	TMT on Ser (overlabeling) and free Cys
+K.LGVEK[229.1629]AYNDGR.F	3	TMT on Lys only, no N-terminal TMT
+K.n[42.0106]ADVTGLPHK[229.1629].E	2	N-terminal acetyl instead of TMT
+R.n[229.1629]GS[79.9663]PEDLHVTAR.L	2	TMT and phospho Ser
+K.n[229.1629]VFLEN[0.9840]GTLR.A	2	TMT and deamidated Asn
+K.C[39.9950]ADLSGFTPEVIAR.Q	2	pyro-carbamidomethyl Cys on residue 1 (UNIMOD:26)
+R.n[229.1629]HEAPGLDVSTWK[229.1629]PEEVLR.S	4	TMT, charge 4
+K.n[229.1629]ELVSAPLGTNEIYDHFAQWTGLPVEDAK[229.1629]LGR.S	3	31 residues: skipped by models limited to 30
+K.n[229.1629]GDUVLPAEK[229.1629].A	2	selenocysteine U: skipped by models that refuse OUBZJX
+K.n[229.1629]TEALDHFAVNPRGSLEWQK[229.1629]PEDVTAR.N	7	charge 7: skipped by models limited to charge 6

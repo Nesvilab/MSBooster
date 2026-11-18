@@ -1,0 +1,39 @@
+{
+    "inputs": [{
+        "shape": [
+            26,
+            1
+        ],
+        "data": [
+            ["C[UNIMOD:385]ADLSGFTPEVIAR"],
+            ["TEALDHFAVNPRGSLEWQKPEDVTAR"],
+            ["[UNIMOD:739]-LGEPTIDEK[UNIMOD:739]"],
+            ["QYLDTEGAIPAK"],
+            ["TEC[UNIMOD:4]LDHFAVNPR"],
+            ["[UNIMOD:1]-M[UNIMOD:35]DPSLVTAEGK"],
+            ["ADK[UNIMOD:34]LGEPTIDER"],
+            ["ADK[UNIMOD:1]LGEPTIDER"],
+            ["LGEPTIDEK"],
+            ["NDT[UNIMOD:21]PLM[UNIMOD:35]EAGR"],
+            ["GR[UNIMOD:34]PEDLHVTAK"],
+            ["E[UNIMOD:27]WLSPQDGAVR"],
+            ["ADK[UNIMOD:37]LGEPTIDER"],
+            ["AVLDQGSTWPEM[UNIMOD:35]AGK"],
+            ["ADK[UNIMOD:36]LGEPTIDER"],
+            ["[UNIMOD:737]-LGEPTIDEK[UNIMOD:737]"],
+            ["VFLENGTLR"],
+            ["Q[UNIMOD:28]YLDTEGAIPAK"],
+            ["[UNIMOD:1]-ADVTGLPHK"],
+            ["ADKLGEPTIDER"],
+            ["GS[UNIMOD:21]PEDLHVTAR"],
+            ["SHCVAELLGPEK"],
+            ["ELVSAPLGTNEIYDHFAQWTGLPVEDAKLGRSTEPVNGHAKYLDTEGAIP"],
+            ["LGVEK[UNIMOD:121]AYNDGR"],
+            ["GEDY[UNIMOD:21]LPTAK"],
+            ["GR[UNIMOD:36]PEDLHVTAK"]
+        ],
+        "datatype": "BYTES",
+        "name": "peptide_sequences"
+    }],
+    "id": "0"
+}

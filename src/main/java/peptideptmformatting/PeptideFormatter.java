@@ -14,10 +14,16 @@
 
 package peptideptmformatting;
 
+import koinaclasses.KoinaModelSpec;
+import koinaclasses.KoinaModelSpec.EncodableMods;
+import koinaclasses.KoinaModelSpec.ModMassMap;
+import koinaclasses.KoinaModelSpec.ModRule;
+import koinaclasses.KoinaModelSpec.PeptideFormat;
 import utils.NumericUtils;
 
 import java.util.ArrayList;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
@@ -29,13 +35,6 @@ import static utils.Print.printError;
 public class PeptideFormatter {
     String base;
     private String diann;
-    private String predfull;
-    private String prosit;
-    private String prositTMT;
-    private String unispec;
-    private String ms2pip;
-    private String deeplc;
-    private String alphapept;
     private String librarytsv;
     private String stripped;
     String baseCharge;
@@ -99,12 +98,6 @@ public class PeptideFormatter {
 
     private void unimodoboTObase(String peptide) {
         base = PTMhandler.formatPeptideSpecificToBase(peptide, unimodOboToModMass, "[]");
-    }
-
-    private void predfullTObase(String peptide) {
-        //remove (O) and add [57] to C
-        base = peptide.replace("(O)", "[" + PTMhandler.oxidationMass + "]")
-                .replace("C", "C[" + PTMhandler.carbamidomethylationMass + "]");
     }
 
     private void mspTObase(String peptide) {
@@ -187,72 +180,6 @@ public class PeptideFormatter {
         }
     }
 
-    private void baseTOunispec() {
-        unispec = base;
-
-        boolean attemptCterm = cterm;
-        for (int i = starts.size() - 1; i > -1; i--) {
-            int start = starts.get(i);
-            int end = ends.get(i);
-
-            String[] peptideUnimod = PTMhandler.formatPeptideBaseToSpecific(
-                    unispec, start, end, "unispec", unispecAAMods, attemptCterm);
-            attemptCterm = false;
-            unispec = peptideUnimod[0];
-        }
-    }
-
-    private void baseTOms2pip() {
-        ms2pip = base;
-
-        boolean attemptCterm = cterm;
-        for (int i = starts.size() - 1; i > -1; i--) {
-            int start = starts.get(i);
-            int end = ends.get(i);
-
-            String[] peptideUnimod = PTMhandler.formatPeptideBaseToSpecific(
-                    ms2pip, start, end, "ms2pip", ms2pipAAMods, attemptCterm);
-            attemptCterm = false;
-            ms2pip = peptideUnimod[0];
-        }
-    }
-
-    private void baseTOdeeplc() {
-        deeplc = base;
-
-        boolean attemptCterm = cterm;
-        for (int i = starts.size() - 1; i > -1; i--) {
-            int start = starts.get(i);
-            int end = ends.get(i);
-
-            String[] peptideUnimod = PTMhandler.formatPeptideBaseToSpecific(
-                    deeplc, start, end, "deeplc", foundUnimods, attemptCterm);
-            attemptCterm = false;
-            deeplc = peptideUnimod[0];
-            if (!peptideUnimod[1].isEmpty()) {
-                foundUnimods.add(peptideUnimod[1]);
-            }
-        }
-    }
-
-    private void baseTOalphapept() {
-        alphapept = base;
-
-        boolean attemptCterm = cterm;
-        for (int i = starts.size() - 1; i > -1; i--) {
-            int start = starts.get(i);
-            int end = ends.get(i);
-
-            String[] peptideUnimod = PTMhandler.formatPeptideBaseToSpecific(
-                    alphapept, start, end, "alphapept", foundUnimods, attemptCterm);
-            attemptCterm = false;
-            alphapept = peptideUnimod[0];
-            if (!peptideUnimod[1].isEmpty()) {
-                foundUnimods.add(peptideUnimod[1]);
-            }
-        }
-    }
-
     private void baseTOlibrarytsv() {
         librarytsv = base;
 
@@ -272,86 +199,140 @@ public class PeptideFormatter {
         }
     }
 
-    private void baseToPredfullKoina() {
-        predfull = base;
+    //writes the base peptide as a Koina model with this format, mass table and mods is sent it
+    //encodable: the codes the model can be sent; a mod with no such code is left out
+    //rememberFoundMods: each code found goes into foundUnimods (ModRule.remembersFoundMods)
+    //droppedMods: if not null, gets each mod left out of the peptide, as modLabel writes it
+    private String baseToKoina(PeptideFormat format, ModMassMap massMap, Set<String> preferredMods,
+                               Set<String> allowedMods, EncodableMods encodable, boolean rememberFoundMods,
+                               List<String> droppedMods) {
+        String peptide = base;
 
         boolean attemptCterm = cterm;
+        boolean ntermKept = false;
+        boolean ctermKept = false;
         for (int i = starts.size() - 1; i > -1; i--) {
             int start = starts.get(i);
             int end = ends.get(i);
 
-            String[] peptideUnimod = PTMhandler.formatPeptideBaseToSpecific(
-                    predfull, start, end, "predfull", predfullAAMods, attemptCterm);
-            attemptCterm = false;
-            predfull = peptideUnimod[0].replace("[UNIMOD:4]", "");
-        }
-    }
-
-    private void baseTOpredfull() {
-        predfull = base;
-
-        //PredFull only supports oxM and assumes C is carbamidomethylated. Below, we format it this way, but also keep on other PTM masses so m/z values for fragments can be adjusted
-        for (int i = starts.size() - 1; i > -1; i--) {
-            double reportedMass = Double.parseDouble(predfull.substring(starts.get(i) + 1, ends.get(i)));
-            if (starts.get(i) - 1 > -1) { //no changes to nterm mod
-                if (Math.abs(PTMhandler.oxidationMass - reportedMass) < 0.01 &&
-                        predfull.charAt(starts.get(i) - 1) == 'M') {
-                    predfull = predfull.substring(0, starts.get(i)) + "(O)" + predfull.substring(ends.get(i) + 1);
-                } else { //mod unsupported, remove for now. Or C carbamidomethylation
-                    predfull = predfull.substring(0, starts.get(i)) + predfull.substring(ends.get(i) + 1);
+            String[] peptideUnimod = PTMhandler.formatPeptideBaseToKoina(
+                    peptide, start, end, format, massMap, preferredMods, allowedMods, encodable, attemptCterm);
+            peptide = peptideUnimod[0];
+            if (peptideUnimod[1].isEmpty()) {
+                if (droppedMods != null) {
+                    droppedMods.add(modLabel(start, end, attemptCterm));
                 }
-            } else { //deal with nterm mod by deleting
-                predfull = predfull.substring(0, starts.get(i)) + predfull.substring(ends.get(i) + 1);
+            } else {
+                if (rememberFoundMods) {
+                    foundUnimods.add(peptideUnimod[1]);
+                }
+                if (start == 0) {
+                    ntermKept = true;
+                } else if (attemptCterm && peptideUnimod[1].charAt(0) == '[') {
+                    ctermKept = true;
+                }
             }
-        }
-    }
-
-    private void baseTOprosit(HashSet<String> uniqMods) {
-        prosit = base;
-
-        boolean attemptCterm = cterm;
-        for (int i = starts.size() - 1; i > -1; i--) {
-            int start = starts.get(i);
-            int end = ends.get(i);
-
-            String[] peptideUnimod = PTMhandler.formatPeptideBaseToSpecific(
-                    prosit, start, end, "prosit", uniqMods, attemptCterm);
             attemptCterm = false;
-            prosit = peptideUnimod[0];
         }
 
-        //C is required to have carbamidomethyl
-        for (int i = prosit.length() - 1; i > -1; i--) {
-            char c = prosit.charAt(i);
-            if (c == 'C') {
-                boolean substituteC = false;
+        if (format.termModsOnResidues()) {
+            peptide = termModsOnResidues(peptide, ntermKept, ctermKept, droppedMods);
+        }
 
-                if (i == prosit.length() - 1) {
-                    substituteC = true;
-                } else if (prosit.charAt(i + 1) != '[') {
-                    substituteC = true;
-                }
+        if (format.camOnBareCys()) {
+            //C is required to have carbamidomethyl
+            for (int i = peptide.length() - 1; i > -1; i--) {
+                char c = peptide.charAt(i);
+                if (c == 'C') {
+                    boolean substituteC = false;
 
-                if (substituteC) {
-                    prosit = prosit.substring(0, i + 1) + "[UNIMOD:" +
-                            PTMhandler.carbamidomethylationUnimod + "]" +
-                            prosit.substring(i + 1);
+                    if (i == peptide.length() - 1) {
+                        substituteC = true;
+                    } else if (peptide.charAt(i + 1) != '[') {
+                        substituteC = true;
+                    }
+
+                    if (substituteC) {
+                        peptide = peptide.substring(0, i + 1) + "[UNIMOD:" +
+                                PTMhandler.carbamidomethylationUnimod + "]" +
+                                peptide.substring(i + 1);
+                    }
                 }
             }
         }
+
+        if (format.tmtOnNterm()) {
+            //Prosit TMT assumes n-term are TMT-labeled
+            if (!peptide.startsWith("[")) {
+                String tmtLabel = "[UNIMOD:" + PTMhandler.tmtUnimod + "]-";
+                peptide = tmtLabel + peptide;
+            }
+
+            //S are not labeled
+            peptide = peptide.replace("S[UNIMOD:" + tmtUnimod + "]", "S");
+        }
+        return peptide;
     }
 
-    private void prositTOprositTMT() {
-        //Prosit TMT assumes n-term are TMT-labeled
-        if (!prosit.startsWith("[")) {
-            String tmtLabel = "[UNIMOD:" + PTMhandler.tmtUnimod + "]-";
-            prositTMT = tmtLabel + prosit;
+    /**
+     * Moves the terminal mods of a peptide written for a Koina model onto the terminal residues
+     * (PeptideFormat.termModsOnResidues): "[UNIMOD:1]PEP" becomes "P[UNIMOD:1]EP". The C-term mod is already
+     * written after the last residue. A terminal residue that keeps a mod of its own keeps only that one: the
+     * terminal mod is taken out and added to droppedMods (D24).
+     *
+     * @param peptide   the peptide as written, with its N-term mod first if ntermKept, and its C-term mod last if
+     *                  ctermKept
+     * @param ntermKept whether the base peptide's N-term mod was written
+     * @param ctermKept whether the base peptide's C-term mod was written
+     */
+    private String termModsOnResidues(String peptide, boolean ntermKept, boolean ctermKept,
+                                      List<String> droppedMods) {
+        if (ctermKept) {
+            int open = peptide.lastIndexOf('[');
+            if (open > 0 && peptide.charAt(open - 1) == ']') { //the last residue has a mod of its own
+                peptide = peptide.substring(0, open);
+                if (droppedMods != null) {
+                    int last = starts.size() - 1;
+                    droppedMods.add(modLabel(starts.get(last), ends.get(last), true));
+                }
+            }
+        }
+        if (ntermKept) {
+            int close = peptide.indexOf(']');
+            int residue = close + 1;
+            if (residue + 1 < peptide.length() && peptide.charAt(residue + 1) == '[') { //residue 1 has a mod
+                peptide = peptide.substring(residue);
+                if (droppedMods != null) {
+                    droppedMods.add(modLabel(starts.get(0), ends.get(0), false));
+                }
+            } else {
+                peptide = peptide.charAt(residue) + peptide.substring(0, residue) + peptide.substring(residue + 1);
+            }
+        }
+        return peptide;
+    }
+
+    /**
+     * The mod at [start, end] of the base peptide as MSFragger writes it in a pin: its residue, or n for an N-term
+     * and c for a C-term mod, then its mass in brackets, e.g. S[79.9663] or n[42.0106].
+     *
+     * @param cterm whether a mod on the last residue is read as a C-term mod
+     */
+    private String modLabel(int start, int end, boolean cterm) {
+        //the residue before the mod, past any mods written before it
+        int i = start - 1;
+        while (i >= 0 && base.charAt(i) == ']') {
+            i = base.lastIndexOf('[', i) - 1;
+        }
+        String site;
+        if (i < 0) {
+            site = "n";
+        } else if (cterm && end == base.length() - 1) {
+            site = "c";
         } else {
-            prositTMT = prosit;
+            site = String.valueOf(base.charAt(i));
         }
-
-        //S are not labeled
-        prositTMT = prositTMT.replace("S[UNIMOD:" + tmtUnimod + "]", "S");
+        return site + base.substring(start, end + 1);
     }
 
     private void strippedTOdlib() { dlib = stripped.replace("C", "C[" + PTMhandler.carbamidomethylationMass + "]") + "|" + charge;
@@ -430,10 +411,7 @@ public class PeptideFormatter {
 
     //only sets base and basecharge
     public PeptideFormatter(String peptide, Object c, String format) {
-        if (peptide.endsWith("cterm")) {
-            peptide = peptide.substring(0, peptide.length() - 5);
-            cterm = true;
-        }
+        peptide = readCterm(peptide);
         charge = c.toString();
 
         switch(format) {
@@ -450,36 +428,8 @@ public class PeptideFormatter {
             case "base":
                 base = peptide;
                 break;
-            case "predfull":
-                predfull = peptide;
-                predfullTObase(peptide); //this version is for standalone
-                koinaTObase(peptide, unimodToModMassLimited); //this version for koina
-                break;
-            case "unispec":
-                unispec = peptide;
+            case "prosit": //the local Prosit predictions (MspReader); a Koina model's peptides take its spec
                 koinaTObase(peptide, unimodToModMassLimited);
-                break;
-            case "prosit":
-            case "prosit_cit":
-                prosit = peptide;
-                koinaTObase(peptide, unimodToModMassLimited);
-                break;
-            case "prosittmt":
-                prositTMT = peptide;
-                koinaTObase(peptide, unimodToModMassLimited);
-                break;
-            case "ms2pip":
-                ms2pip = peptide;
-                koinaTObase(peptide, unimodToModMassLimited);
-                break;
-            case "deeplc":
-            case "im2deep":
-                deeplc = peptide;
-                koinaTObase(peptide, unimodToModMassAll);
-                break;
-            case "alphapept":
-                alphapept = peptide;
-                koinaTObase(peptide, unimodToModMassAll);
                 break;
             case "msp":
                 mspTObase(peptide);
@@ -494,6 +444,48 @@ public class PeptideFormatter {
 
         findPTMlocations();
         baseCharge = base + "|" + charge;
+    }
+
+    //a peptide as a Koina model is sent it, read back with the model's mass table. Only sets base and basecharge
+    public PeptideFormatter(String peptide, Object c, KoinaModelSpec spec) {
+        peptide = readCterm(peptide);
+        charge = c.toString();
+        if (spec.peptideFormat().termModsOnResidues()) {
+            peptide = ntermModOffFirstResidue(peptide, spec.modMassMap().aaUnimodToMass());
+        }
+        koinaTObase(peptide, spec.modMassMap().unimodToMass());
+
+        findPTMlocations();
+        baseCharge = base + "|" + charge;
+    }
+
+    /**
+     * A peptide written with its N-term mod on the first residue (PeptideFormat.termModsOnResidues), with that mod
+     * put back before the residue: "A[UNIMOD:1]DK" becomes "[UNIMOD:1]ADK". A mod on the first residue is read as
+     * the N-term mod when the mass table has its code as an N-term mod and not as a mod of that residue; "K[UNIMOD:1]"
+     * stays acetyl on K. Koina reads both the same, so either reading names the same prediction.
+     */
+    static String ntermModOffFirstResidue(String peptide, Map<String, Double> aaUnimodToMass) {
+        if (peptide.length() < 3 || peptide.charAt(1) != '[') {
+            return peptide;
+        }
+        int close = peptide.indexOf(']');
+        String mod = peptide.substring(2, close); //UNIMOD:1
+        String code = mod.substring(mod.indexOf(':') + 1);
+        char residue = peptide.charAt(0);
+        if (aaUnimodToMass.containsKey(residue + code) || !aaUnimodToMass.containsKey("[" + code)) {
+            return peptide;
+        }
+        return "[" + mod + "]" + residue + peptide.substring(close + 1);
+    }
+
+    //the peptide without the "cterm" a C-term mod is marked with, if it has one
+    private String readCterm(String peptide) {
+        if (peptide.endsWith("cterm")) {
+            peptide = peptide.substring(0, peptide.length() - 5);
+            cterm = true;
+        }
+        return peptide;
     }
 
     public String getBaseCharge() {
@@ -513,9 +505,11 @@ public class PeptideFormatter {
         return diann;
     }
 
-    public String getProsit(HashSet<String> uniqMods) {
-        baseTOprosit(uniqMods);
-        return prosit;
+    //the local Prosit format (PinReader.createPrositList and createPrositTMTList, MspReader), with these mods
+    //preferred. A Koina model's peptides are written by getModel
+    public String getProsit(Set<String> uniqMods) {
+        return baseToKoina(PeptideFormat.PROSIT, ModMassMap.LIMITED, uniqMods, prositAAMods, EncodableMods.ANY, false,
+                null);
     }
 
     public String getStripped() {
@@ -523,40 +517,10 @@ public class PeptideFormatter {
         return stripped;
     }
 
+    //the local PrositTMT format (MspReader)
     public String getPrositTMT() {
-        getProsit(prositTmtAAMods);
-        prositTOprositTMT();
-        return prositTMT;
-    }
-
-    public String getPredfull() {
-        baseTOpredfull();
-        return predfull;
-    }
-
-    public String getPredfullKoina() {
-        baseToPredfullKoina();
-        return predfull;
-    }
-
-    public String getUnispec() {
-        baseTOunispec();
-        return unispec;
-    }
-
-    public String getMs2pip() {
-        baseTOms2pip();
-        return ms2pip;
-    }
-
-    public String getDeeplc() {
-        baseTOdeeplc();
-        return deeplc;
-    }
-
-    public String getAlphapept() {
-        baseTOalphapept();
-        return alphapept;
+        return baseToKoina(PeptideFormat.PROSIT_TMT, ModMassMap.LIMITED, prositTmtAAMods, prositAAMods,
+                EncodableMods.ANY, false, null);
     }
 
     public String getLibrarytsv() {
@@ -566,33 +530,26 @@ public class PeptideFormatter {
         return librarytsv;
     }
 
-    public String getModel(String model) { //model is whole url name
-        switch(model.toLowerCase().split("_")[0]) {
-            case "diann":
-                return getDiann();
-            case "prosit":
-                if (model.contains("TMT")) {
-                    return getPrositTMT();
-                } else if (model.contains("_cit")) {
-                    return getProsit(prositCitAAMods);
-                }
-                return getProsit(prositAAMods);
-            case "prosittmt":
-                return getPrositTMT();
-            case "unispec":
-                return getUnispec();
-            case "ms2pip":
-                return getMs2pip();
-            case "deeplc":
-            case "im2deep":
-                return getDeeplc();
-            case "alphapept":
-                return getAlphapept();
-            case "predfull":
-                return getPredfullKoina();
-            default:
-                return "";
-        }
+    /**
+     * The peptide as a Koina model is sent it: in the model's peptide format, with the mods its rule allows written
+     * as UniMod codes and the others left out. For a rule that remembers the codes it finds, this adds them to
+     * {@link #foundUnimods}.
+     */
+    public String getModel(KoinaModelSpec spec) {
+        return getModel(spec, null);
+    }
+
+    /**
+     * {@link #getModel(KoinaModelSpec)}, also adding to {@code droppedMods} each mod left out of the peptide, as
+     * its residue (n for an N-term mod, c for a C-term mod) and its mass in brackets, e.g. S[79.9663]. Its mass is
+     * missing from the peptide sent, and transferKoinaPreds adds it back to the fragments that hold it.
+     *
+     * @param droppedMods the list the mods left out are added to; null if they are not wanted
+     */
+    public String getModel(KoinaModelSpec spec, List<String> droppedMods) {
+        ModRule rule = spec.modRule();
+        return baseToKoina(spec.peptideFormat(), spec.modMassMap(), rule.preferredMods(), rule.allowedMods(),
+                spec.encodableMods(), rule.remembersFoundMods(), droppedMods);
     }
 
     public String getDlib() {

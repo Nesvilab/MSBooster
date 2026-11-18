@@ -1,11 +1,28 @@
 package koinaclasses;
 
-import java.util.ArrayList;
+import java.util.List;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
+//the annotation parsers of KoinaModelSpec.AnnotationParser. Each throws on an annotation it does not know, rather
+//than adding a fragment with a missing or wrong ion type
 public class KoinaOutputParsingMethods {
-    public static void parseUnispec(String result, ArrayList<String> fullAnnotation, ArrayList<Integer> charges,
-                                    ArrayList<String> fragmentIonTypes, ArrayList<Integer> fragNums) {
-        fullAnnotation.add(result);
+    private static final Pattern ION_NUMBER_CHARGE = Pattern.compile("([by])(\\d+)\\+(\\d+)");
+
+    //"b3+1", "y12+2"
+    public static void parseIonNumberCharge(String result, List<Integer> charges,
+                                            List<String> fragmentIonTypes, List<Integer> fragNums) {
+        Matcher m = ION_NUMBER_CHARGE.matcher(result);
+        if (!m.matches()) {
+            throw unknownAnnotation(result, "a b or y ion written as \"y3+1\"");
+        }
+        charges.add(Integer.parseInt(m.group(3)));
+        fragmentIonTypes.add(m.group(1));
+        fragNums.add(Integer.parseInt(m.group(2)));
+    }
+
+    public static void parseUnispec(String result, List<Integer> charges,
+                                    List<String> fragmentIonTypes, List<Integer> fragNums) {
         //charge
         String[] info = result.split("\\^");
         if (info.length > 1) {
@@ -54,6 +71,8 @@ public class KoinaOutputParsingMethods {
                     fragmentIonTypes.add("imm");
                 }
                 break;
+            default:
+                throw unknownAnnotation(result, "a UniSpec y, b, a, precursor, internal or immonium ion");
         }
 
         //fragment number
@@ -78,9 +97,8 @@ public class KoinaOutputParsingMethods {
         }
     }
 
-    //TODO: Do not need full annotation
-    public static void parsePrositMultifrag(String result, ArrayList<Integer> charges,
-                                            ArrayList<String> fragmentIonTypes, ArrayList<Integer> fragNums) {
+    public static void parsePrositMultifrag(String result, List<Integer> charges,
+                                            List<String> fragmentIonTypes, List<Integer> fragNums) {
         //charge
         String[] info = result.split("\\^");
         if (info.length > 1) {
@@ -122,10 +140,59 @@ public class KoinaOutputParsingMethods {
             case 'z':
                 fragmentIonTypes.add("zdot");
                 break;
+            default:
+                throw unknownAnnotation(result, "a MultiFrag a, b, c, x, y or z ion");
         }
 
         //fragment number
         int number = Integer.parseInt(info[0].substring(1));
         fragNums.add(number);
+    }
+
+    //Altimeter's labels (mzPAF, Altimeter_2024_filter_splines/ion_dictionary.txt in Koina): a b or y ion and its
+    //losses, then "^" and the charge if above 1 ("y5", "b3^2", "y5-H2O^2"); the precursor the same way ("p",
+    //"p^3"); an immonium ion: "I", the residue, its mod in parentheses, and losses and gains ("IY",
+    //"IC(Carbamidomethyl)", "IH-NH3+CO", "IH+2CO")
+    private static final Pattern ALTIMETER_ION = Pattern.compile("([byp])(\\d*)((?:-[A-Za-z0-9]+)*)(?:\\^(\\d+))?");
+    private static final Pattern ALTIMETER_IMMONIUM =
+            Pattern.compile("I[A-Z](?:\\([A-Za-z]+\\))?(?:[+-]\\d*[A-Z][A-Za-z0-9]*)*");
+
+    //losses are read as parseUnispec reads them: a b or y ion with one is b-NL or y-NL, the precursor is p and an
+    //immonium ion imm with or without one
+    public static void parseAltimeter(String result, List<Integer> charges,
+                                      List<String> fragmentIonTypes, List<Integer> fragNums) {
+        Matcher m = ALTIMETER_ION.matcher(result);
+        if (m.matches()) {
+            String type = m.group(1);
+            boolean precursor = type.equals("p");
+            //a b or y ion has a number, the precursor none
+            if (precursor != m.group(2).isEmpty()) {
+                throw unknownAnnotation(result, ALTIMETER_EXPECTED);
+            }
+            charges.add(m.group(4) == null ? 1 : Integer.parseInt(m.group(4)));
+            if (precursor) {
+                fragmentIonTypes.add("p");
+                fragNums.add(0);
+            } else {
+                fragmentIonTypes.add(m.group(3).isEmpty() ? type : type + "-NL");
+                fragNums.add(Integer.parseInt(m.group(2)));
+            }
+            return;
+        }
+        if (ALTIMETER_IMMONIUM.matcher(result).matches()) {
+            charges.add(1);
+            fragmentIonTypes.add("imm");
+            fragNums.add(0);
+            return;
+        }
+        throw unknownAnnotation(result, ALTIMETER_EXPECTED);
+    }
+
+    private static final String ALTIMETER_EXPECTED = "an Altimeter b, y, precursor or immonium ion written as "
+            + "\"y3\", \"b5^2\", \"p^2\" or \"IY\"";
+
+    private static IllegalArgumentException unknownAnnotation(String annotation, String expected) {
+        return new IllegalArgumentException("Koina answered with the fragment annotation \"" + annotation
+                + "\", which MSBooster cannot read; it expects " + expected);
     }
 }

@@ -1,0 +1,125 @@
+{
+    "inputs": [
+        {
+            "shape": [
+                14,
+                1
+            ],
+            "data": [
+                ["HEAPGLDVSTWKPEEVLR"],
+                ["ADGLR"],
+                ["AVLDQGSTWPEM[UNIMOD:35]AGK"],
+                ["[UNIMOD:2114]-LGEPTK[UNIMOD:2114]IDEK"],
+                ["ADKLGEPTIDER"],
+                ["LGEPTIDEK"],
+                ["GSPEDLHVTAR"],
+                ["TEC[UNIMOD:4]LDHFAVNPR"],
+                ["M[UNIMOD:35]DPSLVTAEGK[UNIMOD:2114]"],
+                ["QYLDTEGAIPAK"],
+                ["C[UNIMOD:4]ADLSGFTPEVIAR"],
+                ["[UNIMOD:2114]-ADVTGLPHK"],
+                ["ADK[UNIMOD:2114]LGEPTIDER"],
+                ["ADVTGLPHK"]
+            ],
+            "datatype": "BYTES",
+            "name": "peptide_sequences"
+        },
+        {
+            "shape": [
+                14,
+                1
+            ],
+            "data": [
+                [4],
+                [1],
+                [2],
+                [3],
+                [2],
+                [2],
+                [2],
+                [3],
+                [2],
+                [2],
+                [2],
+                [2],
+                [2],
+                [2]
+            ],
+            "datatype": "INT32",
+            "name": "precursor_charges"
+        },
+        {
+            "shape": [
+                14,
+                1
+            ],
+            "data": [
+                [28],
+                [28],
+                [28],
+                [28],
+                [28],
+                [28],
+                [28],
+                [28],
+                [28],
+                [28],
+                [28],
+                [28],
+                [28],
+                [28]
+            ],
+            "datatype": "FP32",
+            "name": "collision_energies"
+        },
+        {
+            "shape": [
+                14,
+                1
+            ],
+            "data": [
+                ["ASTRAL"],
+                ["ASTRAL"],
+                ["ASTRAL"],
+                ["ASTRAL"],
+                ["ASTRAL"],
+                ["ASTRAL"],
+                ["ASTRAL"],
+                ["ASTRAL"],
+                ["ASTRAL"],
+                ["ASTRAL"],
+                ["ASTRAL"],
+                ["ASTRAL"],
+                ["ASTRAL"],
+                ["ASTRAL"]
+            ],
+            "datatype": "BYTES",
+            "name": "instrument_types"
+        },
+        {
+            "shape": [
+                14,
+                1
+            ],
+            "data": [
+                ["HCD"],
+                ["HCD"],
+                ["HCD"],
+                ["HCD"],
+                ["HCD"],
+                ["HCD"],
+                ["HCD"],
+                ["HCD"],
+                ["HCD"],
+                ["HCD"],
+                ["HCD"],
+                ["HCD"],
+                ["HCD"],
+                ["HCD"]
+            ],
+            "datatype": "BYTES",
+            "name": "fragmentation_types"
+        }
+    ],
+    "id": "0"
+}

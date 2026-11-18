@@ -242,8 +242,8 @@ public class MzmlScanNumber {
             //when peptide isn't in predictions, like unsupported amino acids
             //Set to arbitrary 0 vectors so nothing matches, similarity 0
             //may need to adapt this if using percolator imputation
-            if (PeptideSkipper.skipPeptide(name,
-                    Constants.spectraModel + Constants.rtModel + Constants.imModel)) {
+            if (PeptideSkipper.skipPeptideForAnyModel(name,
+                    Constants.spectraModel, Constants.rtModel, Constants.imModel)) {
                 newPepObj = new PeptideObj(this, name.getBaseCharge(), rank, targetORdecoy, escore,
                         zeroFloatArray, zeroFloatArray, zeroStringArray, predRT, predIM, daltonMatching);
                 if (set) {

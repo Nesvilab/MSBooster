@@ -23,11 +23,16 @@ import allconstants.Constants;
 import allconstants.FragmentIonConstants;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashSet;
+import java.util.List;
 import java.util.Random;
+import java.util.Set;
+import java.util.TreeSet;
 import mainsteps.MzmlScanNumber;
 import mainsteps.PeptideObj;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import predictions.FragmentAnnotationParser;
 import utils.StatMethods;
 
 class SpectrumComparisonTest {
@@ -158,5 +163,85 @@ class SpectrumComparisonTest {
         } finally {
             Constants.numThreads = numThreads;
         }
+    }
+
+    // the fragments a spectrum could have (hypergeometricProbability and intersection) come from UniSpec's fragment
+    // list for the ion types a model that annotates its fragments as UniSpec does predicted, as the primary or the
+    // auxiliary model. For the types any other model predicted they are calculated, Altimeter's included, though its
+    // m/z are Koina's too. annotatePredfullLikeUnispec takes UniSpec's list for every model
+    @Test
+    void thePossibleFragmentsAreUniSpecsForAModelThatAnnotatesAsUniSpecDoes() throws Exception {
+        boolean annotateLikeUnispec = FragmentIonConstants.annotatePredfullLikeUnispec;
+        ArrayList<FragmentAnnotationParser> unispecFragments = FragmentIonConstants.fragmentAnnotationParserArrayList;
+        Set<String> primaryTypes = new HashSet<>(FragmentIonConstants.primaryFragmentIonTypes);
+        HashSet<String> hierarchy = FragmentIonConstants.fragmentIonHierarchySet;
+        Boolean matchWithDaltons = Constants.matchWithDaltons;
+        Boolean matchWithDaltonsAux = Constants.matchWithDaltonsAux;
+        String spectraModel = Constants.spectraModel;
+        String auxSpectraModel = Constants.auxSpectraModel;
+        String fragmentationType = Constants.FragmentationType;
+        try {
+            FragmentIonConstants.annotatePredfullLikeUnispec = false;
+            FragmentIonConstants.fragmentAnnotationParserArrayList = new ArrayList<>(List.of(
+                    new FragmentAnnotationParser("y1"), new FragmentAnnotationParser("y2"),
+                    new FragmentAnnotationParser("b2")));
+            FragmentIonConstants.primaryFragmentIonTypes.add("y"); //b ions come from the auxiliary model
+            FragmentIonConstants.fragmentIonHierarchySet = new HashSet<>(Set.of("y", "b"));
+            Constants.matchWithDaltons = false;
+            Constants.matchWithDaltonsAux = false;
+            Constants.FragmentationType = "HCD";
+
+            MassCalculator mc = new MassCalculator("PEPTIDEK", 2);
+            int calculatedY = new TreeSet<>(mc.possibleFragmentIons("y")).size();
+            TreeSet<Float> calculatedYB = new TreeSet<>(mc.possibleFragmentIons("y"));
+            calculatedYB.addAll(mc.possibleFragmentIons("b"));
+            TreeSet<Float> calculatedYUnispecB = new TreeSet<>(mc.possibleFragmentIons("y"));
+            calculatedYUnispecB.addAll(mc.possibleUnispecMzs("b"));
+            assertTrue(calculatedY > 2, "y1 to y7 at charges 1 and 2, and their isotopes: " + calculatedY);
+
+            assertEquals(2, possibleFragments("UniSpec", "", "y"), "y1 and y2");
+            assertEquals(calculatedY, possibleFragments("Altimeter_2024_intensities", "", "y"));
+            assertEquals(calculatedY, possibleFragments("Prosit_2020_intensity_HCD", "", "y"));
+            assertEquals(calculatedYUnispecB.size(),
+                    possibleFragments("Prosit_2020_intensity_HCD", "UniSpec", "y", "b"));
+            assertEquals(calculatedYB.size(), possibleFragments("Prosit_2020_intensity_HCD",
+                    "Altimeter_2024_intensities", "y", "b"));
+            assertEquals(3, possibleFragments("UniSpec", "UniSpec", "y", "b"));
+
+            FragmentIonConstants.annotatePredfullLikeUnispec = true;
+            assertEquals(2, possibleFragments("Altimeter_2024_intensities", "", "y"));
+        } finally {
+            FragmentIonConstants.annotatePredfullLikeUnispec = annotateLikeUnispec;
+            FragmentIonConstants.fragmentAnnotationParserArrayList = unispecFragments;
+            FragmentIonConstants.primaryFragmentIonTypes.clear();
+            FragmentIonConstants.primaryFragmentIonTypes.addAll(primaryTypes);
+            FragmentIonConstants.fragmentIonHierarchySet = hierarchy;
+            Constants.matchWithDaltons = matchWithDaltons;
+            Constants.matchWithDaltonsAux = matchWithDaltonsAux;
+            Constants.spectraModel = spectraModel;
+            Constants.auxSpectraModel = auxSpectraModel;
+            Constants.FragmentationType = fragmentationType;
+        }
+    }
+
+    //how many fragments PEPTIDEK at charge 2 could have, for a prediction of fragments of these types by these models
+    private static int possibleFragments(String spectraModel, String auxSpectraModel, String... types) {
+        Constants.spectraModel = spectraModel;
+        Constants.auxSpectraModel = auxSpectraModel;
+        MzmlScanNumber scan = new MzmlScanNumber(1, EXP_MZS.clone(), new float[]{10f, 20f, 30f, 100f}, 1.0f, 0f);
+        scan.ms2LowerLimit = 0.0;
+        scan.ms2UpperLimit = 5000.0;
+        PeptideObj pepObj = new PeptideObj();
+        pepObj.scanNumObj = scan;
+        pepObj.name = "PEPTIDEK|2";
+        pepObj.charge = 2;
+        String[] predTypes = new String[EXP_MZS.length];
+        for (int i = 0; i < predTypes.length; i++) {
+            predTypes[i] = types[i % types.length];
+        }
+        SpectrumComparison sc = new SpectrumComparison(pepObj, scan.getExpMZs(), scan.getExpIntensities(),
+                new float[]{111f, 222f, 333f, 444f}, PRED_INTENSITIES.clone(), predTypes, false);
+        sc.hypergeometricProbability();
+        return sc.allMatchedIntensities.length;
     }
 }

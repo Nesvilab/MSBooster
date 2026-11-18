@@ -217,7 +217,7 @@ public class ParameterUtils {
                             if (NumericUtils.massesCloseEnough(varmod, potentialTmtMass)) {
                                 printInfo("TMT/iTRAQ mass detected in fragger.params as variable modification: " +
                                         potentialTmtMass);
-                                PTMhandler.setTmtMass(potentialTmtMass);
+                                PTMhandler.setIsobaricLabel(potentialTmtMass);
                                 ModelCollections.rtCollection = "isolabel";
                                 ModelCollections.ms2Collection = "isolabel";
                                 break;
@@ -229,7 +229,7 @@ public class ParameterUtils {
                             if (NumericUtils.massesCloseEnough(fixedMod, potentialTmtMass)) {
                                 printInfo("TMT/iTRAQ mass detected in fragger.params as fixed modification: " +
                                         potentialTmtMass);
-                                PTMhandler.setTmtMass(potentialTmtMass);
+                                PTMhandler.setIsobaricLabel(potentialTmtMass);
                                 ModelCollections.rtCollection = "isolabel";
                                 ModelCollections.ms2Collection = "isolabel";
                                 break;

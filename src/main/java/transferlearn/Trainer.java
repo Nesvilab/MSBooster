@@ -106,15 +106,17 @@ public class Trainer {
             errorMessage();
         }
 
-        //convert library to parquet
+        //the model is downloaded beside the library unless --output-dir says where
+        final File libraryFile = new File(library).getAbsoluteFile();
+        if (outputDir.isEmpty()) {
+            outputDir = libraryFile.getParent();
+        }
+
         printInfo("Converting input to parquet");
-        String parquetPath = library.substring(0, library.length() - 3) + "parquet";
-        Helpers.convertCsvToParquet(library, parquetPath, false);
-        library = parquetPath;
+        File libraryparquet = parquetForUpload(libraryFile, new File(outputDir));
 
         printInfo("Transfer learning started");
         URL uploadUrl = new URL(url + "/train/upload");
-        File libraryparquet = new File(library);
         String outputBaseName;
         if (! basename.isEmpty()) {
             outputBaseName = basename;
@@ -190,6 +192,8 @@ public class Trainer {
 
             writer.append("--").append(boundary).append("--").append("\r\n");
             writer.flush();
+        } finally {
+            deleteUpload(libraryparquet);
         }
 
         //get response
@@ -262,9 +266,6 @@ public class Trainer {
         }
 
         //download
-        if (outputDir.isEmpty()) {
-            outputDir = libraryparquet.getParent();
-        }
         File downloadPath = new File(outputDir, outputBaseName + ".zip");
 
         if (status.equals("SUCCESS")) {
@@ -301,5 +302,39 @@ public class Trainer {
             System.exit(1);
             return "";
         }
+    }
+
+    /**
+     * The TSV library {@code library} converted to Parquet for the upload, under the library's name
+     * with .parquet in place of its extension, in a new folder of its own in {@code dir}. Never beside
+     * the library: its folder can hold a Parquet library of that name already (FragSpecLib writes
+     * library.parquet beside library.tsv, and FragDIA reads it, footer and all), which a converted
+     * copy, with no footer, would replace. The file and its folder are deleted when the JVM exits,
+     * unless {@link #deleteUpload} deleted them before.
+     */
+    static File parquetForUpload(File library, File dir) throws IOException {
+        Files.createDirectories(dir.toPath());
+        final Path uploadDir = Files.createTempDirectory(dir.toPath(), "library-upload-");
+        final File parquet = uploadDir.resolve(parquetName(library.getName())).toFile();
+        uploadDir.toFile().deleteOnExit(); // registered first, so deleted after the file in it
+        parquet.deleteOnExit();
+        Helpers.convertCsvToParquet(library.getPath(), parquet.getPath(), false);
+        return parquet;
+    }
+
+    /** Deletes the Parquet library {@link #parquetForUpload} made, and its folder. */
+    static void deleteUpload(File parquet) {
+        try {
+            Files.deleteIfExists(parquet.toPath());
+            Files.deleteIfExists(parquet.toPath().getParent());
+        } catch (IOException e) {
+            printError("Could not delete " + parquet.getParent() + ", made for the upload: " + e);
+        }
+    }
+
+    /** {@code name} with its extension, if any, replaced by .parquet: library.tsv becomes library.parquet. */
+    static String parquetName(String name) {
+        final int dot = name.lastIndexOf('.');
+        return (dot > 0 ? name.substring(0, dot) : name) + ".parquet";
     }
 }

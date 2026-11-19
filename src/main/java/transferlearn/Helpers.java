@@ -124,7 +124,7 @@ public class Helpers {
                             "  COMPRESSION 'SNAPPY', " +
                             "  ROW_GROUP_SIZE 100000" +
                             ")",
-                    csvFilePath, parquetFilePath
+                    sqlPath(csvFilePath), sqlPath(parquetFilePath)
             );
 
             stmt.execute(sql);

@@ -256,6 +256,14 @@ public class FragCastPredictor {
         if (basename.isEmpty()) {
             basename = model.isEmpty() ? "fragcast_predict" : stripZip(new File(model).getName());
         }
+        //Split now that the parameter file has been applied, so options FragCast could not be
+        //handed stop the run with the parameter named, before last run's library is cleared away.
+        try {
+            FragCastModelCaller.libraryCmdOpts();
+        } catch (IllegalArgumentException e) {
+            printError(e.getMessage());
+            System.exit(1);
+        }
 
         //the weights the bundle supplied, or the pretrained ones when no bundle was named
         final FragCastWeights weights = FragCastWeights.fromConstants();

@@ -58,9 +58,10 @@ public class FragCastFineTuneCallerTest {
         }
     }
 
-    // Each of these finishes successfully having written no usable model, so none may ever appear.
+    // MSBooster never adds any of these itself; FragCastFineTuneCaller says why for each. A user may
+    // still name one in FragCastFineTuneCmdOpts, which these commands leave empty.
     @Test
-    public void flagsThatSilentlyDiscardTheExportAreNeverPassed() {
+    public void flagsMsboosterLeavesOutAreNeverPassed() {
         for (String task : FragCastWeights.TASKS) {
             List<String> command = argv(task, "/models/x.onnx");
             for (String flag : new String[] {"--fast", "--lora", "--grid", "--extra-blocks", "--ce"}) {
@@ -135,7 +136,8 @@ public class FragCastFineTuneCallerTest {
     }
 
     // A commercial FragCast checks its license on every call, fine-tunes included. The license is
-    // named last and only when there is one, so with none every task's command is the one it was.
+    // named after every flag MSBooster has always passed (only FragCastFineTuneCmdOpts follows it,
+    // empty here) and only when there is one, so with none every task's command is the one it was.
     @Test
     public void everyTaskIsHandedTheLicenseLastAndOnlyWhenOneIsNamed() {
         String before = Constants.FragCastLicense;
@@ -155,6 +157,73 @@ public class FragCastFineTuneCallerTest {
             }
         } finally {
             Constants.FragCastLicense = before;
+        }
+    }
+
+    // The user's options follow everything MSBooster names, the license included, because FragCast
+    // takes the last value of a repeated flag: that is what lets one override MSBooster's. Every task
+    // is handed the same ones, split as the user quoted them.
+    @Test
+    public void theUsersOptionsComeLastOnEveryTaskAfterTheLicense() {
+        String licenseBefore = Constants.FragCastLicense;
+        String optsBefore = Constants.FragCastFineTuneCmdOpts;
+        String license = "C:\\Program Files\\FragPipe\\license-acme.dat";
+        try {
+            Constants.FragCastLicense = license;
+            for (String task : FragCastWeights.TASKS) {
+                Constants.FragCastFineTuneCmdOpts = "";
+                List<String> plain = argv(task, "/models/x.onnx");
+                assertEquals(Arrays.asList("--license", license),
+                        plain.subList(plain.size() - 2, plain.size()), task);
+
+                Constants.FragCastFineTuneCmdOpts =
+                        "--epochs 20 --threads 2 --eval \"C:\\My data\\eval.tsv\"";
+                List<String> withOpts = argv(task, "/models/x.onnx");
+                assertEquals(plain, withOpts.subList(0, plain.size()), task);
+                assertEquals(Arrays.asList("--epochs", "20", "--threads", "2", "--eval",
+                                "C:\\My data\\eval.tsv"),
+                        withOpts.subList(plain.size(), withOpts.size()), task);
+            }
+        } finally {
+            Constants.FragCastLicense = licenseBefore;
+            Constants.FragCastFineTuneCmdOpts = optsBefore;
+        }
+    }
+
+    // An empty or blank param is no options at all, so every task's command is the one it was - and
+    // the tests above, which pin that command, still describe it.
+    @Test
+    public void aBlankOptionsParamLeavesEveryTaskAsItWas() {
+        String licenseBefore = Constants.FragCastLicense;
+        String optsBefore = Constants.FragCastFineTuneCmdOpts;
+        try {
+            Constants.FragCastLicense = "";
+            for (String task : FragCastWeights.TASKS) {
+                Constants.FragCastFineTuneCmdOpts = "";
+                List<String> empty = argv(task, "/models/x.onnx");
+                assertEquals(Arrays.asList("--threads", "8"),
+                        empty.subList(empty.size() - 2, empty.size()),
+                        task + " gained arguments from an empty param: " + empty);
+                Constants.FragCastFineTuneCmdOpts = " \t ";
+                assertEquals(empty, argv(task, "/models/x.onnx"), task);
+            }
+        } finally {
+            Constants.FragCastLicense = licenseBefore;
+            Constants.FragCastFineTuneCmdOpts = optsBefore;
+        }
+    }
+
+    // The library options are for the library a prediction keeps; a fine-tune never sees them.
+    @Test
+    public void theLibraryOptionsNeverReachAFineTune() {
+        String before = Constants.FragCastLibraryCmdOpts;
+        try {
+            Constants.FragCastLibraryCmdOpts = "";
+            List<String> plain = argv("spec", "/models/x.onnx");
+            Constants.FragCastLibraryCmdOpts = "--max-memory 8 --no-im";
+            assertEquals(plain, argv("spec", "/models/x.onnx"));
+        } finally {
+            Constants.FragCastLibraryCmdOpts = before;
         }
     }
 

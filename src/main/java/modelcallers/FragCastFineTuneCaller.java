@@ -15,6 +15,7 @@
 package modelcallers;
 
 import allconstants.Constants;
+import utils.CommandLineSplitter;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -38,19 +39,44 @@ import static utils.Print.printInfo;
  * an installed executable. The command it builds is deliberately short: MSBooster names the task,
  * the library, the weights, the thread count and, when {@link Constants#FragCastLicense} is set, the
  * license file of a commercial FragCast, and leaves every hyperparameter - including how much of the
- * library to hold out - to FragCast's own per-task defaults.
+ * library to hold out - to FragCast's own per-task defaults. A user who wants another value passes
+ * FragCast's own flag through {@link Constants#FragCastFineTuneCmdOpts}, which goes last.
  *
- * <p>Four flags are not merely omitted but must never be added, each for a reason FragCast documents
- * or demonstrates - {@code --fast} names an inference-only model and is refused alongside
- * {@code --save-onnx}; {@code --lora} and {@code --grid} train and then return before the export ever
- * runs, so they finish successfully having written no weights; {@code --extra-blocks} appends layers
- * that have no representation in the ONNX file and skips the export; and {@code --ce} is a no-op in
- * the production MS2 model.
+ * <p>MSBooster itself never adds five flags, each for a reason FragCast 0.3.0 shows: {@code --fast}
+ * is refused by the rt and im tasks, and by the spec task alongside {@code --onnx} (a fast MS2
+ * fine-tune is chosen by naming the fast weights, and it exports too); {@code --grid} runs an rt
+ * sweep that never exports; {@code --extra-blocks} appends layers that have no representation in the
+ * ONNX file and skips the export; and {@code --ce} is a no-op in the production MS2 model.
+ * {@code --lora} exports, but logs its final cosine under a name {@link FragCastFineTuneOutcome}
+ * does not read. Nothing filters the user's options, so any of them can still arrive through
+ * {@link Constants#FragCastFineTuneCmdOpts}; a task that then writes no weights stops the run (see
+ * {@link mainsteps.FragCastTransferLearner#fineTuneAll}).
  */
 public class FragCastFineTuneCaller {
+    /** The parameter {@link #cmdOpts} reads, as an error names it. */
+    public static final String CMD_OPTS_PARAM = "FragCastFineTuneCmdOpts";
+
     /**
-     * The FragCast command line for one fine-tuning run, ending in {@code --license} when
-     * {@link Constants#FragCastLicense} names a file (see {@link FragCastProcess#appendLicense}).
+     * {@link Constants#FragCastFineTuneCmdOpts} as the arguments it adds to every task, or none when
+     * it is blank.
+     *
+     * @throws IllegalArgumentException when it opens a quote it never closes
+     */
+    public static List<String> cmdOpts() {
+        return CommandLineSplitter.split(Constants.FragCastFineTuneCmdOpts, CMD_OPTS_PARAM);
+    }
+
+    /** Does {@link Constants#FragCastFineTuneCmdOpts} hand FragCast anything of the user's own? */
+    public static boolean hasCmdOpts() {
+        String opts = Constants.FragCastFineTuneCmdOpts;
+        return opts != null && !opts.trim().isEmpty();
+    }
+
+    /**
+     * The FragCast command line for one fine-tuning run, then {@code --license} when
+     * {@link Constants#FragCastLicense} names a file (see {@link FragCastProcess#appendLicense}), then
+     * {@link #cmdOpts}. The user's options go after everything MSBooster names, so FragCast, which
+     * takes the last value of a repeated flag, lets them override it.
      */
     static List<String> buildCommand(FragCastFineTuneJob job) {
         List<String> command = new ArrayList<>();
@@ -73,21 +99,24 @@ public class FragCastFineTuneCaller {
         //holds out of --train to select the best epoch against, so pinning it - and pinning it to
         //zero, as this once did to reclaim training rows - would leave nothing to select on
         FragCastProcess.appendLicense(command);
+        command.addAll(cmdOpts());
         return command;
     }
 
     /**
      * Run one fine-tuning job to completion and parse what it reported.
      *
-     * <p>Nothing here exits the JVM. A failed fine-tune is a reason to keep predicting with the
-     * pretrained model, not a reason to abandon a rescoring run that is otherwise fine.
+     * <p>Nothing here exits the JVM. It returns the outcome, failed or not; whether a failure ends
+     * the run is {@link mainsteps.FragCastTransferLearner#fineTuneAll}'s decision, and it does only
+     * while {@link Constants#FragCastFineTuneCmdOpts} is set.
      */
     public static FragCastFineTuneOutcome fineTune(FragCastFineTuneJob job, boolean verbose)
             throws IOException, InterruptedException {
         List<String> command = buildCommand(job);
         printInfo("Fine-tuning the FragCast " + job.task + " model on " + job.train.getName() +
-                ", with FragCast's own hyperparameters for the task. FragCast reports how many of " +
-                "its precursors it could train on.");
+                ", with FragCast's own hyperparameters for the task" +
+                (hasCmdOpts() ? " except where " + CMD_OPTS_PARAM + " sets them" : "") +
+                ". FragCast reports how many of its precursors it could train on.");
         FragCastProcess.Result result = FragCastProcess.run(command, verbose);
         return FragCastFineTuneOutcome.parse(job.task, result.exitCode, job.saveOnnx, result.output);
     }

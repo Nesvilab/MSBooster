@@ -167,8 +167,8 @@ public class FragCastProcess {
      * <p>A commercial FragCast looks for its license under its own folder unless it is told where the
      * license is, and the caller - FragPipe above all - keeps it somewhere else. An empty param hands
      * FragCast the command line it always had, so a FragCast that predates the flag still runs. Both
-     * command builders call this last, after every flag FragCast has always been given, so those keep
-     * their positions.
+     * command builders call this after every flag FragCast has always been given, so those keep
+     * their positions; only a library's {@code --meta} and the user's own options follow it.
      */
     static void appendLicense(List<String> command) {
         String license = Constants.FragCastLicense;

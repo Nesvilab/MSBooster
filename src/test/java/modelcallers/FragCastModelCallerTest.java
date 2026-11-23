@@ -347,4 +347,62 @@ public class FragCastModelCallerTest {
             Constants.FragCastLicense = before;
         }
     }
+
+    // The user's library options come after everything MSBooster passes, --license and --meta
+    // included, so FragCast - which takes the last value of a repeated flag - lets one override
+    // MSBooster's. They are split as the user quoted them.
+    @Test
+    public void theUsersLibraryOptionsComeLastAfterTheMetaFile() {
+        String licenseBefore = Constants.FragCastLicense;
+        String optsBefore = Constants.FragCastLibraryCmdOpts;
+        try {
+            Constants.FragCastLicense = "C:\\Program Files\\FragPipe\\license-acme.dat";
+            List<String> recorded = List.of("--meta", "fragcast.meta");
+            Constants.FragCastLibraryCmdOpts = "";
+            List<String> plain = FragCastModelCaller.buildLibraryCommand("spectraRT.tsv",
+                    "out.parquet", false, FragCastWeights.base(), recorded);
+            assertEquals(recorded, plain.subList(plain.size() - 2, plain.size()));
+
+            Constants.FragCastLibraryCmdOpts = "--max-memory 8 --top-n 12 --rt-onnx 'C:\\My models\\RT.onnx'";
+            List<String> library = FragCastModelCaller.buildLibraryCommand("spectraRT.tsv",
+                    "out.parquet", false, FragCastWeights.base(), recorded);
+            assertEquals(plain, library.subList(0, plain.size()));
+            assertEquals(List.of("--max-memory", "8", "--top-n", "12", "--rt-onnx", "C:\\My models\\RT.onnx"),
+                    library.subList(plain.size(), library.size()));
+
+            //blank is nothing: the library command is the one it always was
+            Constants.FragCastLibraryCmdOpts = "  ";
+            assertEquals(plain, FragCastModelCaller.buildLibraryCommand("spectraRT.tsv",
+                    "out.parquet", false, FragCastWeights.base(), recorded));
+        } finally {
+            Constants.FragCastLicense = licenseBefore;
+            Constants.FragCastLibraryCmdOpts = optsBefore;
+        }
+    }
+
+    // Rescoring predicts a file nothing outside the run reads, and the options are for the library a
+    // user keeps - so neither set of options may change it, the best-model search's quiet runs
+    // included, which build the same command.
+    @Test
+    public void rescoringNeverCarriesTheUsersOptions() {
+        String libraryBefore = Constants.FragCastLibraryCmdOpts;
+        String fineTuneBefore = Constants.FragCastFineTuneCmdOpts;
+        try {
+            Constants.FragCastLibraryCmdOpts = "";
+            Constants.FragCastFineTuneCmdOpts = "";
+            for (boolean fast : new boolean[] {false, true}) {
+                List<String> plain = FragCastModelCaller.buildCommand("spectraRT.tsv", "out.parquet",
+                        fast, FragCastWeights.base());
+                Constants.FragCastLibraryCmdOpts = "--max-memory 8 --no-im";
+                Constants.FragCastFineTuneCmdOpts = "--epochs 5";
+                assertEquals(plain, FragCastModelCaller.buildCommand("spectraRT.tsv", "out.parquet",
+                        fast, FragCastWeights.base()));
+                Constants.FragCastLibraryCmdOpts = "";
+                Constants.FragCastFineTuneCmdOpts = "";
+            }
+        } finally {
+            Constants.FragCastLibraryCmdOpts = libraryBefore;
+            Constants.FragCastFineTuneCmdOpts = fineTuneBefore;
+        }
+    }
 }

@@ -92,6 +92,13 @@ public class Constants implements ConstantsInterface {
     public static Double fragCastMinFragMz = 200.0; //build-library: drop fragments below this m/z
     public static Double fragCastMinRelIntensity = 0.01; //build-library: drop fragments below this relative intensity
     public static Integer fragCastMinFragSize = 2; //build-library: minimum fragment length in residues
+    //FragCast flags of the user's own, appended after everything MSBooster passes, so FragCast's
+    //last-value-wins parsing lets one override MSBooster's value. The fine-tune ones go to every
+    //task of transferlearn.FragCastLocalWorkflow; the library ones go to the library
+    //transferlearn.FragCastPredictor builds, and never to rescoring. Split as
+    //utils.CommandLineSplitter says. Empty passes nothing.
+    public static String FragCastFineTuneCmdOpts = "";
+    public static String FragCastLibraryCmdOpts = "";
 
     //Custom FragCast weights used for prediction (--rt-onnx/--im-onnx/--spec-onnx). Empty = the
     //pretrained weights in FragCastModelDir. A fine-tune (mainsteps.FragCastTransferLearner) writes

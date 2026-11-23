@@ -16,6 +16,7 @@ package modelcallers;
 
 import allconstants.Constants;
 import allconstants.FragCastWeights;
+import utils.CommandLineSplitter;
 
 import java.io.File;
 import java.io.IOException;
@@ -124,17 +125,37 @@ public class FragCastModelCaller {
         return command;
     }
 
+    /** The parameter {@link #libraryCmdOpts} reads, as an error names it. */
+    public static final String LIBRARY_CMD_OPTS_PARAM = "FragCastLibraryCmdOpts";
+
+    /**
+     * {@link Constants#FragCastLibraryCmdOpts} as the arguments it adds to a library prediction, or
+     * none when it is blank.
+     *
+     * @throws IllegalArgumentException when it opens a quote it never closes
+     */
+    public static List<String> libraryCmdOpts() {
+        return CommandLineSplitter.split(Constants.FragCastLibraryCmdOpts, LIBRARY_CMD_OPTS_PARAM);
+    }
+
     /**
      * The command that predicts a spectral library to keep: {@link #buildCommand}'s, then
      * {@code libraryArgs} exactly as given - the {@code --meta} file whose key-value pairs FragCast
-     * records in the library's Parquet footer. Only a library prediction carries it. The rescoring
-     * path's {@link #callModel} predicts a file nothing outside this run reads, so it is never handed
-     * one.
+     * records in the library's Parquet footer - then {@link #libraryCmdOpts}. Only a library
+     * prediction carries either. The rescoring path's {@link #callModel} predicts a file nothing
+     * outside this run reads, and is never handed the user's options: a flag meant for the library
+     * a user keeps has no business changing what this run rescores with.
+     *
+     * <p>The user's options come last of all, so FragCast, which takes the last value of a repeated
+     * flag, lets them override what MSBooster passed. Nothing filters them: {@code --out},
+     * {@code --format} or {@code --meta} there breaks the run, since MSBooster reads the library from
+     * where it asked FragCast to write it, and FragCast refuses a second {@code --meta}.
      */
     static List<String> buildLibraryCommand(String inputFile, String outputFile, boolean fast,
                                             FragCastWeights weights, List<String> libraryArgs) {
         List<String> command = buildCommand(inputFile, outputFile, fast, weights);
         command.addAll(libraryArgs);
+        command.addAll(libraryCmdOpts());
         return command;
     }
 

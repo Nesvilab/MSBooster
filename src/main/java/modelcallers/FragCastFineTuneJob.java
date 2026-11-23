@@ -25,7 +25,9 @@ import java.io.File;
  * size, weight decay, warmup, seed, training depth or {@code --topk}: it omits every one of those
  * flags, so each run trains on whatever the executable considers right for the task. FragCast is the
  * component that knows what its models need, and the tuned values move with it rather than being
- * pinned to whatever was true when this integration was written.
+ * pinned to whatever was true when this integration was written. A user who wants another value
+ * passes FragCast's own flag in {@link Constants#FragCastFineTuneCmdOpts}; that choice is the
+ * user's, made per run, and MSBooster still sets no default of its own.
  *
  * <p>What MSBooster still names is what only it knows: which task to run, which library to read,
  * which weights to start from, where to write the result, and how many threads it may use.

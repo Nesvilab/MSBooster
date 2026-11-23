@@ -14,6 +14,7 @@
 
 package mainsteps;
 
+import allconstants.Constants;
 import allconstants.FragCastWeights;
 import modelcallers.FragCastFineTuneCaller;
 import modelcallers.FragCastFineTuneJob;
@@ -62,18 +63,49 @@ public class FragCastTransferLearner {
     public static final String DEFAULT_BUNDLE_BASENAME = "FragCast-finetuned";
 
     /**
+     * A task failed, or wrote no weights, while {@link Constants#FragCastFineTuneCmdOpts}
+     * was handing FragCast options of the user's own. The message says so and names them; the caller
+     * reports it and stops.
+     */
+    public static class CmdOptsFailure extends Exception {
+        CmdOptsFailure(String message) {
+            super(message);
+        }
+    }
+
+    /** One fine-tune, run to completion. The seam a test stands in for FragCast through. */
+    interface Trainer {
+        FragCastFineTuneOutcome fineTune(FragCastFineTuneJob job) throws Exception;
+    }
+
+    /**
      * Run every task FragCast can be fine-tuned for, and take every model it exported. There is no
      * subset to choose: a property the library carries no measurement for is FragCast's to skip and
      * to report, which it does per task, so naming one here would only be a second opinion on a
      * question already answered.
      *
+     * <p>A task that fails, or finishes without a weights file, costs only that task - unless
+     * {@link Constants#FragCastFineTuneCmdOpts} is set, and then it ends the run (see
+     * {@link #stopIfTheCmdOptsMayBeTheCause}). A library with nothing to train a task on, and a task
+     * that would overwrite its own starting weights, are skipped either way: neither says anything
+     * about the options.
+     *
      * @param trainLibrary the library itself, passed to FragCast unchanged
      * @param fast start the MS2 task from FragCast's small/fast Spec weights rather than the
      *             Conformer ones. Both are fine-tunable; this only decides which file it patches.
      * @return {@code before} with each fine-tuned model substituted in
+     * @throws CmdOptsFailure when a task failed with the user's options set; no later task is run
      */
     public static FragCastWeights fineTuneAll(FragCastWeights before, File trainLibrary, File dir,
-                                              boolean fast) {
+                                              boolean fast) throws CmdOptsFailure {
+        //echoed rather than captured: FragCast logs a line per epoch, and fine-tuning is long enough
+        //that a silent one cannot be told from a stalled one
+        return fineTuneAll(before, trainLibrary, dir, fast,
+                job -> FragCastFineTuneCaller.fineTune(job, true));
+    }
+
+    static FragCastWeights fineTuneAll(FragCastWeights before, File trainLibrary, File dir,
+                                       boolean fast, Trainer trainer) throws CmdOptsFailure {
         String modelDir = FragCastProcess.resolveModelDir();
         FragCastWeights accepted = before;
         for (String task : FragCastWeights.TASKS) {
@@ -90,32 +122,58 @@ public class FragCastTransferLearner {
             }
             FragCastFineTuneJob job = FragCastFineTuneJob.forTask(task, trainLibrary,
                     startFrom, saveOnnx);
+            FragCastFineTuneOutcome outcome;
             try {
-                //echoed rather than captured: FragCast logs a line per epoch, and fine-tuning is
-                //long enough that a silent one cannot be told from a stalled one
-                FragCastFineTuneOutcome outcome = FragCastFineTuneCaller.fineTune(job, true);
-                if (outcome.noTrainingData()) {
-                    //the library holds nothing this model can learn from - no ion mobility in it,
-                    //most often. Not a failure: there is simply no fine-tuned model to be had.
-                    printInfo("  skipped: the library carries nothing the " + task +
-                            " model can be trained on");
-                    continue;
-                }
-                printInfo("  " + outcome.summary());
-                String reason = outcome.unusableReason();
-                if (reason != null) {
-                    //not a verdict on the fine-tune: there is no weights file to point the next
-                    //prediction pass at, so this run has nothing new to predict this property with
-                    printInfo("  no usable fine-tuned " + task + " model was written: " + reason);
-                    continue;
-                }
-                accepted = accepted.withTask(task, saveOnnx.getAbsolutePath());
+                outcome = trainer.fineTune(job);
             } catch (Exception e) {
+                stopIfTheCmdOptsMayBeTheCause(task, "it failed (" + e + ")");
                 printError("  fine-tuning the FragCast " + task + " model failed (" + e +
                         "); this run has no fine-tuned " + task + " model to predict with");
+                continue;
             }
+            if (outcome.noTrainingData()) {
+                //the library holds nothing this model can learn from - no ion mobility in it,
+                //most often. Not a failure: there is simply no fine-tuned model to be had.
+                printInfo("  skipped: the library carries nothing the " + task +
+                        " model can be trained on");
+                continue;
+            }
+            printInfo("  " + outcome.summary());
+            String reason = outcome.unusableReason();
+            if (reason != null) {
+                stopIfTheCmdOptsMayBeTheCause(task, "it wrote no usable model: " + reason);
+                //not a verdict on the fine-tune: there is no weights file to point the next
+                //prediction pass at, so this run has nothing new to predict this property with
+                printInfo("  no usable fine-tuned " + task + " model was written: " + reason);
+                continue;
+            }
+            accepted = accepted.withTask(task, saveOnnx.getAbsolutePath());
         }
         return accepted;
+    }
+
+    /**
+     * End the run over a failed task when the user handed FragCast options of their own, and do
+     * nothing when they did not.
+     *
+     * <p>Without options, a task that fails costs only that task: the other tasks' models are still
+     * worth having, and the pretrained one stands in for the rest. With options, the options are the
+     * likeliest cause - a typo, or a flag one of the three tasks refuses, as rt and im refuse
+     * {@code --fast} - and every task is handed the same ones, so the next would most likely fail
+     * the same way after hours of training. Carrying on would also end in success: the step would
+     * report a fine-tuned model made without what the user asked for, or none at all, and exit 0.
+     */
+    private static void stopIfTheCmdOptsMayBeTheCause(String task, String what)
+            throws CmdOptsFailure {
+        if (!FragCastFineTuneCaller.hasCmdOpts()) {
+            return;
+        }
+        String param = FragCastFineTuneCaller.CMD_OPTS_PARAM;
+        throw new CmdOptsFailure("The FragCast " + task + " fine-tune stopped this run: " + what +
+                ". The options in " + param + " are the likely cause. Every task is handed the " +
+                "same ones, so each must be a flag the rt, im and spec fine-tunes all accept; " +
+                "the output above shows what went wrong. " + param + " is: " +
+                Constants.FragCastFineTuneCmdOpts.trim());
     }
 
     /**

@@ -15,14 +15,26 @@
 package transferlearn;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import java.io.File;
+import java.lang.reflect.Field;
+import java.lang.reflect.Modifier;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.HashMap;
+import java.util.Map;
 
+import allconstants.Constants;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
+import testutils.ExitTrap;
 
 // This entry point initialises the parameters with requirePinMzml=false, which leaves
 // Constants.outputDirectory empty - and new File("", name) is not a relative path, it is the ROOT of
@@ -65,5 +77,70 @@ public class FragCastLocalWorkflowTest {
         assertEquals(dir.resolve("typed").toFile(),
                 FragCastLocalWorkflow.resolveOutputDirectory(dir.resolve("typed").toString(),
                         dir.resolve("library.tsv").toString()));
+    }
+
+    // --- the exit code FragPipe sees --------------------------------------------------------------
+    //
+    // FragPipe reads a step's outcome from its exit code alone. A FragCast that cannot be started
+    // stands in for any failed task here: every task fails, and the exit code is what the options
+    // decide. These drive the real parameter machinery, which writes into public statics across the
+    // whole of Constants, so every one of them is put back afterwards.
+
+    private final Map<Field, Object> constantsBefore = new HashMap<>();
+
+    @BeforeEach
+    public void saveConstants() throws Exception {
+        constantsBefore.clear();
+        for (Field f : Constants.class.getFields()) {
+            if (!Modifier.isFinal(f.getModifiers()) && Modifier.isStatic(f.getModifiers())) {
+                constantsBefore.put(f, f.get(null));
+            }
+        }
+    }
+
+    @AfterEach
+    public void restoreConstants() throws Exception {
+        for (Map.Entry<Field, Object> e : constantsBefore.entrySet()) {
+            e.getKey().set(null, e.getValue());
+        }
+    }
+
+    /** The status the workflow exits with on a library it cannot train on, given these options. */
+    private static int exitStatus(Path dir, String cmdOpts) throws Exception {
+        File library = dir.resolve("library.tsv").toFile();
+        Files.write(library.toPath(), "ModifiedPeptideSequence\tPrecursorCharge\n"
+                .getBytes(StandardCharsets.UTF_8));
+        File params = dir.resolve("params.txt").toFile();
+        Files.write(params.toPath(), String.join("\n",
+                "FragCast = " + dir.resolve("no-such-fragcast"),
+                "FragCastModelDir = " + dir,
+                "numThreads = 1",
+                "FragCastFineTuneCmdOpts = " + cmdOpts).getBytes(StandardCharsets.UTF_8));
+        try (ExitTrap trap = ExitTrap.install()) {
+            return assertThrows(ExitTrap.ExitCalled.class,
+                    () -> FragCastLocalWorkflow.fineTuneOnLibrary(params.getPath(), library.getPath(),
+                            dir.resolve("out").toString(), "")).status;
+        }
+    }
+
+    // Without options, the run that trained nothing still ends in success, as it always has: the
+    // pretrained models are unchanged, and the run says so.
+    @Test
+    public void withoutOptionsARunThatTrainedNothingExitsZero(@TempDir Path dir) throws Exception {
+        assertEquals(0, exitStatus(dir, ""));
+    }
+
+    // With options, the same failure is a failed step: the user asked for training those options
+    // describe, and exiting 0 would tell FragPipe they got it.
+    @Test
+    public void withOptionsAFailedTaskExitsOne(@TempDir Path dir) throws Exception {
+        assertEquals(1, exitStatus(dir, "--epochs 5"));
+    }
+
+    // Options that cannot be split stop the run before any task starts or any output is made.
+    @Test
+    public void optionsWithAnUnclosedQuoteStopTheRunBeforeAnyTask(@TempDir Path dir) throws Exception {
+        assertEquals(1, exitStatus(dir, "--eval \"C:\\My data\\eval.tsv"));
+        assertFalse(dir.resolve("out").toFile().exists(), "the run went on to make its output directory");
     }
 }

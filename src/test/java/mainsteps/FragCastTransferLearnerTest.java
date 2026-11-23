@@ -16,20 +16,51 @@ package mainsteps;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import java.io.File;
+import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.ArrayList;
+import java.util.List;
 
+import allconstants.Constants;
 import allconstants.FragCastWeights;
+import modelcallers.FragCastFineTuneJob;
+import modelcallers.FragCastFineTuneOutcome;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
-// A fine-tune produces loose ONNX files and a bundle holding copies of them. What may be deleted
-// afterwards is the whole of what this class decides, and getting it wrong removes weights the
-// installation - or a model the user pointed a parameter at - still needs.
+// Two things this class decides. A fine-tune produces loose ONNX files and a bundle holding copies
+// of them, and what may be deleted afterwards is the first: getting it wrong removes weights the
+// installation - or a model the user pointed a parameter at - still needs. The second is which
+// failed task ends the run, and that depends on whether the user handed FragCast options of their
+// own; FragCast never runs here, a fake stands in for each task.
 public class FragCastTransferLearnerTest {
+    private String cmdOptsBefore;
+    private String modelDirBefore;
+
+    @TempDir
+    Path tmp;
+
+    @BeforeEach
+    public void saveConstants() {
+        cmdOptsBefore = Constants.FragCastFineTuneCmdOpts;
+        modelDirBefore = Constants.FragCastModelDir;
+        //named outright, so the starting weights do not depend on where a FragCast happens to sit
+        Constants.FragCastModelDir = tmp.resolve("models").toString();
+    }
+
+    @AfterEach
+    public void restoreConstants() {
+        Constants.FragCastFineTuneCmdOpts = cmdOptsBefore;
+        Constants.FragCastModelDir = modelDirBefore;
+    }
 
     // The bundle is the product; the loose ONNX files are what went into it. Deleting a file the
     // fine-tune did not write - the shipped pretrained weights, or a model a parameter names -
@@ -74,5 +105,158 @@ public class FragCastTransferLearnerTest {
         FragCastWeights before = FragCastWeights.base();
         FragCastWeights accepted = before.withTask("rt", dir.resolve("absent.onnx").toString());
         assertEquals(0, FragCastTransferLearner.deleteLooseModels(accepted, before));
+    }
+
+    // --- which failed task ends the run ---------------------------------------------------------
+
+    /** What FragCast does for each task, in place of running it; the tasks asked for are recorded. */
+    private static final class FakeFragCast implements FragCastTransferLearner.Trainer {
+        final List<String> ran = new ArrayList<>();
+        private final String failing;
+        private final FragCastTransferLearner.Trainer failure;
+
+        /** Every task exports, except {@code failing}, which does what {@code failure} does. */
+        FakeFragCast(String failing, FragCastTransferLearner.Trainer failure) {
+            this.failing = failing;
+            this.failure = failure;
+        }
+
+        @Override
+        public FragCastFineTuneOutcome fineTune(FragCastFineTuneJob job) throws Exception {
+            ran.add(job.task);
+            return job.task.equals(failing) ? failure.fineTune(job) : exported(job);
+        }
+    }
+
+    private static FragCastFineTuneOutcome exported(FragCastFineTuneJob job) throws IOException {
+        Files.write(job.saveOnnx.toPath(), "onnx".getBytes(StandardCharsets.UTF_8));
+        return FragCastFineTuneOutcome.parse(job.task, 0, job.saveOnnx,
+                List.of("[t INFO] Wrote fine-tuned model -> " + job.saveOnnx));
+    }
+
+    private static FragCastTransferLearner.Trainer exitsWith(int code) {
+        return job -> FragCastFineTuneOutcome.parse(job.task, code, job.saveOnnx,
+                List.of("[t ERROR] unknown arg: --bogus"));
+    }
+
+    /** Exit 0 and no export line, as an rt --grid sweep ends. */
+    private static FragCastFineTuneOutcome wroteNothing(FragCastFineTuneJob job) {
+        return FragCastFineTuneOutcome.parse(job.task, 0, job.saveOnnx, List.of("[t INFO] grid done"));
+    }
+
+    private static FragCastFineTuneOutcome cannotStart(FragCastFineTuneJob job) throws IOException {
+        throw new IOException("Cannot run program \"fragcast\"");
+    }
+
+    private FragCastWeights fineTuneAll(FragCastWeights before, FakeFragCast fake)
+            throws FragCastTransferLearner.CmdOptsFailure {
+        return FragCastTransferLearner.fineTuneAll(before, tmp.resolve("library.tsv").toFile(),
+                tmp.toFile(), false, fake);
+    }
+
+    private File saved(String task) {
+        return tmp.resolve("FragCast-" + task.toUpperCase() + ".finetuned.onnx").toFile();
+    }
+
+    // A fast MS2 fine-tune announces its export in words of its own. Read as no export, it would
+    // stop a run with options set, blaming them for a model that was written.
+    @Test
+    public void withOptionsAFastMs2FineTuneThatExportedIsKept() throws Exception {
+        Constants.FragCastFineTuneCmdOpts = "--epochs 5";
+        FakeFragCast fake = new FakeFragCast("spec", job -> {
+            assertTrue(job.baseOnnx.endsWith("FragCast-Spec-Fast.onnx"), job.baseOnnx);
+            Files.write(job.saveOnnx.toPath(), "onnx".getBytes(StandardCharsets.UTF_8));
+            return FragCastFineTuneOutcome.parse(job.task, 0, job.saveOnnx,
+                    List.of("[t INFO] Wrote fine-tuned FAST model -> " + job.saveOnnx));
+        });
+        FragCastWeights accepted = FragCastTransferLearner.fineTuneAll(FragCastWeights.base(),
+                tmp.resolve("library.tsv").toFile(), tmp.toFile(), true, fake);
+
+        assertEquals(List.of(FragCastWeights.TASKS), fake.ran);
+        assertEquals(saved("spec").getAbsolutePath(), accepted.forTask("spec"));
+    }
+
+    // With no options of the user's own, a failed task costs only that task, however it failed: the
+    // others still run and their models are kept, and the pretrained weights stand in for the rest.
+    @Test
+    public void withoutOptionsAFailedTaskCostsOnlyThatTask() throws Exception {
+        for (String blank : new String[] {"", "   "}) {
+            Constants.FragCastFineTuneCmdOpts = blank;
+            for (FragCastTransferLearner.Trainer failure : List.<FragCastTransferLearner.Trainer>of(
+                    FragCastTransferLearnerTest::cannotStart, exitsWith(2),
+                    FragCastTransferLearnerTest::wroteNothing)) {
+                FakeFragCast fake = new FakeFragCast("im", failure);
+                FragCastWeights accepted = fineTuneAll(FragCastWeights.base(), fake);
+
+                assertEquals(List.of(FragCastWeights.TASKS), fake.ran, "a failed task stopped the others");
+                assertEquals(saved("rt").getAbsolutePath(), accepted.forTask("rt"));
+                assertEquals("", accepted.forTask("im"), "the failed task named a model");
+                assertEquals(saved("spec").getAbsolutePath(), accepted.forTask("spec"));
+            }
+        }
+    }
+
+    // With options, they are the likeliest cause of a failure and every task gets the same ones, so
+    // the first failure ends the run, naming them, before another task spends hours failing the same
+    // way - whether FragCast could not be run, exited non-zero, or wrote no usable weights.
+    @Test
+    public void withOptionsAFailedTaskStopsTheRunAndNamesThem() {
+        Constants.FragCastFineTuneCmdOpts = " --epochs 5 --fast ";
+        for (FragCastTransferLearner.Trainer failure : List.<FragCastTransferLearner.Trainer>of(
+                FragCastTransferLearnerTest::cannotStart, exitsWith(2), exitsWith(101),
+                FragCastTransferLearnerTest::wroteNothing)) {
+            FakeFragCast fake = new FakeFragCast("im", failure);
+            FragCastTransferLearner.CmdOptsFailure e = assertThrows(
+                    FragCastTransferLearner.CmdOptsFailure.class,
+                    () -> fineTuneAll(FragCastWeights.base(), fake));
+
+            assertEquals(List.of("rt", "im"), fake.ran, "a task ran after the run should have stopped");
+            String message = e.getMessage();
+            assertTrue(message.contains("FragCast im fine-tune"), message);
+            assertTrue(message.contains("FragCastFineTuneCmdOpts"), message);
+            assertTrue(message.contains("likely cause"), message);
+            assertTrue(message.endsWith("--epochs 5 --fast"), "the options were not named: " + message);
+        }
+    }
+
+    // The reason the task failed is part of the message, not lost behind it.
+    @Test
+    public void theStopSaysHowTheTaskFailed() {
+        Constants.FragCastFineTuneCmdOpts = "--bogus 1";
+        assertTrue(assertThrows(FragCastTransferLearner.CmdOptsFailure.class,
+                () -> fineTuneAll(FragCastWeights.base(), new FakeFragCast("rt", exitsWith(2))))
+                .getMessage().contains("FragCast exited with code 2"));
+        assertTrue(assertThrows(FragCastTransferLearner.CmdOptsFailure.class,
+                () -> fineTuneAll(FragCastWeights.base(),
+                        new FakeFragCast("rt", FragCastTransferLearnerTest::cannotStart)))
+                .getMessage().contains("Cannot run program"));
+    }
+
+    // A library with nothing to train a task on - no ion mobility, most often - says nothing about
+    // the options, so it is skipped as it always was.
+    @Test
+    public void withOptionsALibraryWithNothingToTrainOnIsStillSkipped() throws Exception {
+        Constants.FragCastFineTuneCmdOpts = "--epochs 5";
+        FakeFragCast fake = new FakeFragCast("im",
+                exitsWith(FragCastFineTuneOutcome.EXIT_NO_TRAINING_DATA));
+        FragCastWeights accepted = fineTuneAll(FragCastWeights.base(), fake);
+
+        assertEquals(List.of(FragCastWeights.TASKS), fake.ran);
+        assertEquals("", accepted.forTask("im"));
+        assertEquals(saved("spec").getAbsolutePath(), accepted.forTask("spec"));
+    }
+
+    // Nor does a task that would overwrite the weights it starts from; FragCast is never run for it.
+    @Test
+    public void withOptionsATaskThatWouldOverwriteItsOwnWeightsIsStillSkipped() throws Exception {
+        Constants.FragCastFineTuneCmdOpts = "--epochs 5";
+        FragCastWeights before = FragCastWeights.base().withTask("rt", saved("rt").getPath());
+        FakeFragCast fake = new FakeFragCast("rt", job -> {
+            throw new AssertionError("the rt task was run over its own weights");
+        });
+        FragCastWeights accepted = fineTuneAll(before, fake);
+
+        assertEquals(List.of("im", "spec"), fake.ran);
+        assertEquals(saved("rt").getPath(), accepted.forTask("rt"));
     }
 }

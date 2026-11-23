@@ -44,6 +44,7 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
+import testutils.ExitTrap;
 import testutils.ParquetFooters;
 
 /**
@@ -291,6 +292,56 @@ public class FragCastPredictorTest {
         allconstants.Constants.FragCastLicense = "";
         applyAsPredictorWould(FragCastPredictor.pinPathArgs(params.getAbsolutePath(), "0", "", "rev_", false));
         assertEquals(license, allconstants.Constants.FragCastLicense);
+    }
+
+    // FragPipe's library options also arrive in the parameter file and nowhere else. They must reach
+    // the library command on both paths, quotes and backslashes as the user typed them: the file
+    // keeps a value's quotes, and only the split into arguments removes them.
+    @Test
+    public void theLibraryOptionsInTheParameterFileReachTheLibraryCommandOnBothPaths() throws Exception {
+        String opts = "--max-memory 8 --rt-onnx \"C:\\My models\\RT.onnx\"";
+        List<String> expected = Arrays.asList("--max-memory", "8", "--rt-onnx", "C:\\My models\\RT.onnx");
+        File params = paramsFileNaming("FragCastLibraryCmdOpts = " + opts,
+                "outputDirectory = " + tmp.toAbsolutePath().toString().replace("\\", "/"));
+
+        allconstants.Constants.FragCastLibraryCmdOpts = "";
+        applyAsPredictorWould(FragCastPredictor.peptideListArgs(params.getAbsolutePath(), "1", "", "rev_"));
+        assertEquals(opts, allconstants.Constants.FragCastLibraryCmdOpts);
+        assertEquals(expected, modelcallers.FragCastModelCaller.libraryCmdOpts());
+
+        allconstants.Constants.FragCastLibraryCmdOpts = "";
+        applyAsPredictorWould(FragCastPredictor.pinPathArgs(params.getAbsolutePath(), "0", "", "rev_", false));
+        assertEquals(opts, allconstants.Constants.FragCastLibraryCmdOpts);
+        assertEquals(expected, modelcallers.FragCastModelCaller.libraryCmdOpts());
+    }
+
+    // Library options with an unclosed quote stop the run with exit code 1 before last run's library
+    // is deleted. Left to the library command, they would throw only after the delete, and the user
+    // would be left with no library at all.
+    @Test
+    public void libraryOptionsWithAnUnclosedQuoteStopTheRunBeforeTheOldLibraryGoes() throws Exception {
+        File list = peptideList("PEPTIDEK2");
+        File out = tmp.resolve("out").toFile();
+        assertTrue(out.mkdirs());
+        File old = new File(out, "lib.parquet");
+        Files.write(old.toPath(), "last run".getBytes(StandardCharsets.UTF_8));
+        File params = paramsFileNaming("FragCast = " + tmp.resolve("no-such-fragcast"),
+                "outputDirectory = " + tmp.toAbsolutePath().toString().replace("\\", "/"),
+                "FragCastLibraryCmdOpts = --max-memory \"8");
+
+        //main installs both for the whole JVM
+        Thread.UncaughtExceptionHandler handler = Thread.getDefaultUncaughtExceptionHandler();
+        java.util.Locale locale = java.util.Locale.getDefault();
+        try (ExitTrap trap = ExitTrap.install()) {
+            assertEquals(1, assertThrows(ExitTrap.ExitCalled.class,
+                    () -> FragCastPredictor.main(new String[] {"--paramsList", params.getPath(),
+                            "--peptide-list-to-predict", list.getPath(),
+                            "--output-dir", out.getPath(), "--basename", "lib"})).status);
+        } finally {
+            Thread.setDefaultUncaughtExceptionHandler(handler);
+            java.util.Locale.setDefault(locale);
+        }
+        assertTrue(old.isFile(), "last run's library was deleted before the run stopped");
     }
 
     @Test

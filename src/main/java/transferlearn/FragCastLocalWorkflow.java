@@ -19,6 +19,7 @@ import allconstants.FragCastModels;
 import allconstants.FragCastWeights;
 import mainsteps.FragCastTransferLearner;
 import mainsteps.ParameterUtils;
+import modelcallers.FragCastFineTuneCaller;
 import peptideptmformatting.PTMhandler;
 import utils.Print;
 
@@ -49,8 +50,11 @@ import static utils.Print.printInfo;
  * Splitting the two is what lets FragPipe queue them as the separate steps they are.
  *
  * <p>Every model FragCast exports is used: nothing here withholds one for scoring worse than the
- * model it started from. Nothing about how the fine-tune runs is settable: every property FragCast
- * can be trained for is trained, and the only thing the caller chooses is where the result goes.
+ * model it started from. Every property FragCast can be trained for is trained, and MSBooster sets
+ * no training flag of its own; the caller chooses where the result goes and, through
+ * {@link Constants#FragCastFineTuneCmdOpts}, any FragCast flags it wants added to every task. While
+ * those are set, a task that fails or writes no weights ends the run with exit code 1, since the
+ * options are its likeliest cause (see {@link FragCastTransferLearner#fineTuneAll}).
  */
 public class FragCastLocalWorkflow {
     /** Flags that belong to the server workflow, refused here rather than quietly ignored. */
@@ -143,8 +147,8 @@ public class FragCastLocalWorkflow {
      * because a library carries no pin files - the output is the models, and their paths are printed
      * so a later run can name them.
      */
-    private static void fineTuneOnLibrary(String params, String library,
-                                          String outputDir, String basename) throws Exception {
+    static void fineTuneOnLibrary(String params, String library,
+                                  String outputDir, String basename) throws Exception {
         HashMap<String, String> paramsMap = new HashMap<>();
         ParameterUtils.processCommandLineInputs(
                 new String[] {"--paramsList", params, "--requirePinMzml", "false"}, paramsMap);
@@ -152,6 +156,14 @@ public class FragCastLocalWorkflow {
 
         if (Constants.FragCast == null || Constants.FragCast.isEmpty()) {
             Print.printError("The FragCast parameter must point at the FragCast executable.");
+            System.exit(1);
+        }
+        //split once before any task starts, so options FragCast could not be handed stop the run
+        //with the parameter named rather than as a failure of the first task
+        try {
+            FragCastFineTuneCaller.cmdOpts();
+        } catch (IllegalArgumentException e) {
+            Print.printError(e.getMessage());
             System.exit(1);
         }
         if (!new File(library).isFile()) {
@@ -170,8 +182,17 @@ public class FragCastLocalWorkflow {
         FragCastWeights before = FragCastWeights.fromConstants();
         //no pin files here, so the job's models are whatever the parameter file selects: the MS2
         //task starts from the fast weights exactly when that is the Spec model the user predicts with
-        FragCastWeights accepted = FragCastTransferLearner.fineTuneAll(before, new File(library),
-                dir, FragCastModels.usesFastSpecModel(Constants.spectraModel));
+        FragCastWeights accepted;
+        try {
+            accepted = FragCastTransferLearner.fineTuneAll(before, new File(library), dir,
+                    FragCastModels.usesFastSpecModel(Constants.spectraModel));
+        } catch (FragCastTransferLearner.CmdOptsFailure e) {
+            //a failure, not "no model was produced": the caller asked for training the options
+            //describe, and exiting 0 would report that it got it
+            Print.printError(e.getMessage());
+            System.exit(1);
+            return;
+        }
 
         if (accepted.equals(before)) {
             //every runnable task was skipped, failed, or left no usable weights, so there is no

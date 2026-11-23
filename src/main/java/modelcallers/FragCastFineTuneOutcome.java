@@ -48,8 +48,9 @@ public class FragCastFineTuneOutcome {
 
     private static final Pattern RT_COUNTS =
             Pattern.compile("^Loaded train n=(\\d+).*eval n=(\\d+)");
+    //the fast MS2 model labels its lines "Spec[FAST]" and reports both cosines on one line
     private static final Pattern SPEC_COUNTS =
-            Pattern.compile("^Spec: train precursors=(\\d+) eval precursors=(\\d+)");
+            Pattern.compile("^Spec(?:\\[FAST\\])?: train precursors=(\\d+) eval precursors=(\\d+)");
     //the error is printed to exactly three decimals with its unit appended and no separator,
     //so ion mobility reads "MAE=0.1491/K0" - a looser number pattern swallows the unit's
     //leading digit and reports an error that is not the one FragCast measured. The unit is captured
@@ -63,11 +64,15 @@ public class FragCastFineTuneOutcome {
             Pattern.compile("^Spec baseline: cosine=(\\S+)");
     private static final Pattern SPEC_FINAL =
             Pattern.compile("^Spec fine-tuned: cosine=(\\S+)");
+    private static final Pattern SPEC_FAST_COSINES =
+            Pattern.compile("^Spec\\[FAST\\] cosine: (\\S+) -> (\\S+)");
     private static final Pattern EXPORT_DENORM =
             Pattern.compile("^Wrote fine-tuned model \\(de-normalized to physical units, "
                     + "mu=(\\S+) sd=(\\S+)\\) -> (.*)$");
+    //the fast MS2 model writes "Wrote fine-tuned FAST model"; missing that word read every fast
+    //fine-tune that wrote its weights as one that wrote none
     private static final Pattern EXPORT_PLAIN =
-            Pattern.compile("^Wrote fine-tuned model -> (.*)$");
+            Pattern.compile("^Wrote fine-tuned (?:FAST )?model -> (.*)$");
 
     /**
      * FragCast's exit code for "this library carries nothing this task can be trained on" - a
@@ -191,6 +196,12 @@ public class FragCastFineTuneOutcome {
             m = SPEC_FINAL.matcher(line);
             if (m.find()) {
                 finalMetric = parseDouble(m.group(1));
+                continue;
+            }
+            m = SPEC_FAST_COSINES.matcher(line);
+            if (m.find()) {
+                baselineMetric = parseDouble(m.group(1));
+                finalMetric = parseDouble(m.group(2));
                 continue;
             }
             m = EXPORT_DENORM.matcher(line);

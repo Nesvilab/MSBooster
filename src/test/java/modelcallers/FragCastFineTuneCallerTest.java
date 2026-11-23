@@ -223,6 +223,26 @@ public class FragCastFineTuneCallerTest {
                 "MS2 reports no error, so the summary must not claim one");
     }
 
+    // The fast MS2 model labels its lines "Spec[FAST]" and calls its export a "FAST model". Reading
+    // that export as none dropped every fast fine-tune, and with FragCastFineTuneCmdOpts set it
+    // would stop the run over a model that was written.
+    @Test
+    public void aFastMs2RunIsReadOutOfItsOwnLog() {
+        FragCastFineTuneOutcome outcome = FragCastFineTuneOutcome.parse("spec", 0, existingFile(),
+                Arrays.asList(
+                        "[2026-11-22 21:21:34 INFO] Spec[FAST cnn_bigru]: base=FragCast-Spec-Fast.onnx d=96 trainable=149574 of 251910 params (BiGRU+prepare+post+head)",
+                        "[2026-11-22 21:21:34 INFO] No --eval given: holding out 10% of --train (1 precursors) for model selection",
+                        "[2026-11-22 21:21:34 INFO] Spec[FAST]: train precursors=11 eval precursors=1",
+                        "[2026-11-22 21:21:34 INFO]   fast-ft epoch  0  lr=3.00e-6  val_cos=0.9514  BEST",
+                        "[2026-11-22 21:21:34 INFO]   fast-ft epoch  1  lr=6.00e-6  val_cos=0.9540  BEST",
+                        "[2026-11-22 21:21:34 INFO] Best validation cosine: 0.9540 at epoch 1",
+                        "[2026-11-22 21:21:34 INFO] Spec[FAST] cosine: 0.9501 -> 0.9540  (0.1s)",
+                        "[2026-11-22 21:21:34 INFO] Wrote fine-tuned FAST model -> out.onnx"));
+        assertTrue(outcome.exported, "the fast export line was not read");
+        assertNull(outcome.unusableReason(), "a fast fine-tune that wrote its weights was refused");
+        assertEquals("spec: train=11 eval=1 cosine 0.9501 -> 0.9540", outcome.summary());
+    }
+
     @Test
     public void aGenuineImprovementIsUsable() {
         FragCastFineTuneOutcome rt = FragCastFineTuneOutcome.parse("rt", 0, existingFile(), RT_LOG);

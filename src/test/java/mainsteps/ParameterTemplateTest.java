@@ -107,10 +107,30 @@ public class ParameterTemplateTest {
         assertEquals("", value, "the template names a license file");
     }
 
+    // The options parameters are how a user discovers they can hand FragCast flags of their own. The
+    // template leaves both empty: a set one would change every fine-tune or library prediction run
+    // from a copy of it, and the fine-tune one would make a failed task stop the run.
+    @Test
+    public void theTemplateDocumentsTheFragCastCmdOptsAndLeavesThemEmpty() throws Exception {
+        for (String key : Arrays.asList("FragCastFineTuneCmdOpts", "FragCastLibraryCmdOpts")) {
+            String value = null;
+            for (String line : Files.readAllLines(TEMPLATE.toPath(), StandardCharsets.UTF_8)) {
+                String[] keyValue = line.split("#", 2)[0].split("=", 2);
+                if (keyValue.length == 2 && keyValue[0].trim().equals(key)) {
+                    value = keyValue[1].trim();
+                }
+            }
+            assertNotNull(value, key + " is missing from msbooster_params.txt");
+            assertEquals("", value, "the template sets " + key);
+        }
+    }
+
     // Nothing about how the fine-tune is run belongs to MSBooster. Pinning a hyperparameter here
     // would freeze it at whatever was true when this integration was written, and choosing a
     // threshold or a holdout fraction would override a decision FragCast already makes against its
-    // own held-out slice. A parameter reintroduced by accident would be silently authoritative.
+    // own held-out slice. A parameter reintroduced by accident would be silently authoritative. A
+    // user who wants another value names FragCast's own flag in FragCastFineTuneCmdOpts, which
+    // MSBooster passes on and never fills in itself.
     @Test
     public void nothingAboutHowTheFineTuneRunsIsExposed() throws Exception {
         HashSet<String> settable = settableParameters();

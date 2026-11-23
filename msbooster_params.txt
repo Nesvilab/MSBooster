@@ -87,9 +87,11 @@ DiaNN = null                                     # path to the DIA-NN executable
 # selects the best epoch against that - so there is no second library to supply
 # and no holdout fraction to choose.
 #
-# Nothing about HOW the fine-tune runs is settable here: epochs, learning rate,
-# batch size, warmup, training depth and seed are FragCast's own, and MSBooster
-# omits those flags so each task trains the way the executable considers right.
+# MSBooster adds no training flags of its own: epochs, learning rate, batch
+# size, warmup, training depth and seed are FragCast's own, and MSBooster omits
+# those flags so each task trains the way the executable considers right. To
+# pass FragCast flags of your own, use FragCastFineTuneCmdOpts at the end of
+# this block.
 #
 # The library's headers must be the ones FragCast's fine-tune reads:
 # ModifiedPeptideSequence and PrecursorCharge are required; NormalizedRetentionTime,
@@ -112,6 +114,23 @@ FragCastSpecOnnx =                               # supersedes FragCast-Fast: the
 # three parameters above was left empty. Anything named above wins over it, and
 # the run says so rather than overriding it quietly.
 FragCastModelZip =
+
+# FragCast flags of your own, added after every flag MSBooster passes, so one
+# named here wins over MSBooster's value; nothing is checked or filtered.
+# Whitespace separates arguments, and "..." or '...' keeps spaces inside one.
+# There is no escape character: a backslash is a backslash. A # starts a
+# comment in this file, so it cannot be part of a value.
+# FragCastFineTuneCmdOpts goes to each of the rt, im and spec fine-tunes of
+# transferlearn.FragCastLocalWorkflow, so name only flags all three accept,
+# such as --epochs, --patience, --lr, --batch or --topk (--fast is refused by
+# rt and im). While it is set, a task that fails or writes no weights stops the
+# run with exit code 1 instead of being skipped.
+# FragCastLibraryCmdOpts goes to the library transferlearn.FragCastPredictor
+# builds, such as --max-memory, --write-chunk-size or --no-im, and never to
+# rescoring. Leave --in, --out, --format and --meta alone: MSBooster reads the
+# library from where it asked FragCast to write it.
+FragCastFineTuneCmdOpts =
+FragCastLibraryCmdOpts =
 
 ############################################################
 # Reusing existing prediction files (skip if regenerating)

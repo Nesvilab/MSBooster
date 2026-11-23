@@ -195,6 +195,15 @@ a model that was never bundled. Anything named here wins over <code>FragCastMode
 run says so rather than overriding it quietly. <code>FragCastSpecOnnx</code> supersedes the
 <code>FragCast-Fast</code> model: an ONNX declares its own architecture, so the weights file is what
 decides which MS2 model runs
+  <li><code>FragCastFineTuneCmdOpts (String)</code>: FragCast flags of your own, added after every flag
+MSBooster passes to each of the <code>rt</code>, <code>im</code> and <code>spec</code> fine-tunes of
+<code>transferlearn.FragCastLocalWorkflow</code> (see
+<a href="#local-transfer-learning-fragcast">Local transfer learning</a>). Empty by default, which passes
+nothing
+  <li><code>FragCastLibraryCmdOpts (String)</code>: FragCast flags of your own, added after every flag
+MSBooster passes to the library <code>transferlearn.FragCastPredictor</code> builds (see
+<a href="#predicting-a-library-locally">Predicting a library, locally</a>). Rescoring never gets them.
+Empty by default, which passes nothing
 </ul>
 </details>
 
@@ -270,6 +279,17 @@ that parameter; FragPipe queues the two as the separate steps they are. `--outpu
 the zip is written and `--basename` its stem; `--custom-mods` names modifications outside UniMod, so
 that FragCast resolves them instead of dropping the precursors carrying them.
 
+MSBooster adds no training flags of its own (see the caveats below). FragCast flags of your own go in
+`FragCastFineTuneCmdOpts`, for example `FragCastFineTuneCmdOpts = --epochs 20 --patience 5`. They are
+added after every flag MSBooster passes - `--task`, `--train`, `--onnx`, `--save-onnx`, `--threads`
+and `--license` - and FragCast takes the last value of a flag given twice, so a flag named there
+overrides MSBooster's. Nothing is checked or filtered. The same options go to each of the three
+tasks, so name only flags all three accept: `--fast`, for one, is refused by `rt` and `im`. Whitespace
+separates arguments, and `"..."` or `'...'` keeps spaces inside one; there is no escape character, so
+a backslash is just a backslash, and a `#` cannot be part of a value because it starts a comment in
+the parameter file. `fragcast --help` lists the flags and their defaults, and each task's command is
+printed in the run log.
+
 Each task prints what it measured. This is the run log, not a verdict on the model:
 
 ```
@@ -313,6 +333,14 @@ is absent. `--output-format` takes `parquet` or `librarytsv`; `librarytsv` needs
 where gene names come from - neither backend returns them. `--model` is optional,
 and without it the pretrained weights predict. `--min-charge`/`--max-charge` expand only those
 peptide-list rows that do not already name a charge.
+
+FragCast flags of your own go in `FragCastLibraryCmdOpts` - `--max-memory` or `--write-chunk-size`
+to bound the memory a large library takes, say, or `--no-im` for data without ion mobility. They are
+added after every flag MSBooster passes, `--meta` included, so a flag named there overrides
+MSBooster's, and they are split by the same rules as `FragCastFineTuneCmdOpts`. Rescoring never gets
+them. Nothing is checked or filtered, so leave `--in`, `--out`, `--format` and `--meta` alone:
+MSBooster reads the library from where it asked FragCast to write it, and FragCast refuses a second
+`--meta`.
 
 What a library records about itself - above all the enzyme its peptides were digested with, which
 FragDIA reads from the Parquet footer because it takes no digestion flags of its own - comes from a
@@ -376,11 +404,13 @@ Costs and caveats worth knowing:
  - Fine-tuning benefits from data, and nothing here rules on whether it got enough: FragCast selects
    the best epoch against its own held-out slice, and whatever it then exports goes into the zip -
    MSBooster never withholds a model the user asked for on account of the numbers it reports.
- - **How the fine-tune runs is FragCast's decision, not MSBooster's.** Epochs, learning rate, batch
-   size, warmup, training depth, seed and the held-out fraction are not exposed as parameters:
-   MSBooster omits those flags entirely, so each task trains the way the executable considers right
-   for it and the tuned values move with FragCast rather than being frozen at whatever this
-   integration was written against. MSBooster checks only that a model was actually written.
+ - **How the fine-tune runs is FragCast's decision or yours, not MSBooster's.** Epochs, learning
+   rate, batch size, warmup, training depth, seed and the held-out fraction are not MSBooster
+   parameters: MSBooster omits those flags entirely, so each task trains the way the executable
+   considers right for it and the tuned values move with FragCast rather than being frozen at
+   whatever this integration was written against. To change one, pass FragCast's own flag in
+   `FragCastFineTuneCmdOpts`; MSBooster still sets no default of its own, and checks only that a
+   model was actually written.
  - Both MS2 models fine-tune, the `FragCast-Fast` one through FragCast's CPU BPTT backward. Which
    of the two a fine-tune starts from follows the `spectraModel` in your parameter file, so it
    patches the weights you actually predict with. Predicting with the result names those weights
@@ -390,6 +420,11 @@ Costs and caveats worth knowing:
    task that cannot be trained - no ion mobility in the library, a FragCast error, no weights file
    written - is reported and skipped, and the zip holds whatever the other tasks produced. A run in
    which every task was skipped writes no zip and says so, leaving the pretrained models in place.
+ - The exception is a run with `FragCastFineTuneCmdOpts` set. Its options are then the likeliest
+   cause of a failure, and every task is handed the same ones, so a task that fails or writes no
+   weights file stops the run with exit code 1 and a message naming them, rather than letting it end
+   in success without the training you asked for. A library with nothing to train a task on is
+   still skipped.
 
 Three things about the method are worth understanding before relying on it:
 
@@ -412,14 +447,14 @@ Three things about the method are worth understanding before relying on it:
    model over. The honest check is to compare identifications at your FDR threshold with and without
    the fine-tuned model.
 
-Nothing about how the fine-tune trains is a parameter - it is driven entirely by the flags above.
-The parameter file still names the FragCast executable (`FragCast`) and, for a commercial FragCast,
-its license file (`FragCastLicense`), which every fine-tune task is given as `--license` just as
-prediction is. Left empty, no flag is passed and a commercial FragCast looks for a `license*.dat`
-under its own folder; an academic FragCast needs no license. The parameters for *predicting* with
-what it produced (`FragCastModelZip`, `FragCastRtOnnx` and its
-siblings) are documented in [msbooster_params.txt](msbooster_params.txt) and under
-[Optional parameters](#optional-parameters).
+How the fine-tune trains is not an MSBooster parameter - it is driven by the flags above, and by any
+FragCast flags you add in `FragCastFineTuneCmdOpts`. The parameter file still names the FragCast
+executable (`FragCast`) and, for a commercial FragCast, its license file (`FragCastLicense`), which
+every fine-tune task is given as `--license` just as prediction is. Left empty, no flag is passed
+and a commercial FragCast looks for a `license*.dat` under its own folder; an academic FragCast
+needs no license. The parameters for *predicting* with what it produced (`FragCastModelZip`,
+`FragCastRtOnnx` and its siblings) are documented in [msbooster_params.txt](msbooster_params.txt)
+and under [Optional parameters](#optional-parameters).
 
 ## Output files
  - .pin file with new features. By default, new pin files will be produced ending in "_edited.pin". The

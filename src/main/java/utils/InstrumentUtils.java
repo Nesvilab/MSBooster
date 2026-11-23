@@ -17,6 +17,8 @@ package utils;
 import allconstants.Constants;
 import koinaclasses.KoinaModelSpec;
 import umich.ms.datatypes.LCMSDataSubset;
+import umich.ms.datatypes.lcmsrun.LCMSRunInfo;
+import umich.ms.datatypes.scan.props.Instrument;
 import umich.ms.datatypes.scancollection.impl.ScanCollectionDefault;
 import umich.ms.fileio.exceptions.FileParsingException;
 
@@ -24,6 +26,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Objects;
 
 import static utils.Print.printError;
 import static utils.Print.printInfo;
@@ -41,9 +44,9 @@ public class InstrumentUtils {
     public static String getInstrument(ScanCollectionDefault scans) {
         if (Constants.instrument.isEmpty()) {
             try {
-                scans.loadData(LCMSDataSubset.STRUCTURE_ONLY);
-                String model = scans.getRunInfo().getDefaultInstrument().getModel();
-                String analyzer = scans.getRunInfo().getDefaultInstrument().getAnalyzer();
+                Instrument instrument = defaultInstrument(scans);
+                String model = instrument == null ? "" : Objects.toString(instrument.getModel(), "");
+                String analyzer = instrument == null ? "" : Objects.toString(instrument.getAnalyzer(), "");
                 for (String k : LumosKeys) {
                     if (model.contains(k) || analyzer.contains(k)) {
                         printInfo("Instrument detected: LUMOS");
@@ -79,15 +82,7 @@ public class InstrumentUtils {
                         return "THERMOTOF";
                     }
                 }
-                printInfo("Could not detect instrument type. Setting to QE. " +
-                        "If a different instrument was used, specify using '--instrument' via the command line " +
-                        "or 'instrument=' in the param file.");
-                Constants.instrument = "QE";
-                return "QE"; //default if nothing found
-            } catch (NullPointerException e) {
-                printInfo("Could not detect instrument type. Setting to QE. " +
-                        "If a different instrument was used, specify using '--instrument' via the command line " +
-                        "or 'instrument=' in the param file.");
+                printInfo(undetectedInstrumentMessage(model, analyzer));
                 Constants.instrument = "QE";
                 return "QE"; //default if nothing found
             } catch (FileParsingException e) {
@@ -98,6 +93,29 @@ public class InstrumentUtils {
         } else {
             return Constants.instrument;
         }
+    }
+
+    //the run's default instrument, or null when there is none to read (the scans of an MGF input are null)
+    private static Instrument defaultInstrument(ScanCollectionDefault scans) throws FileParsingException {
+        if (scans == null) {
+            return null;
+        }
+        try {
+            scans.loadData(LCMSDataSubset.STRUCTURE_ONLY);
+            LCMSRunInfo runInfo = scans.getRunInfo();
+            return runInfo == null ? null : runInfo.getDefaultInstrument();
+        } catch (NullPointerException e) {
+            //a reader failure on an odd run header; the QE default has always covered it
+            return null;
+        }
+    }
+
+    //names the model and analyzer that matched no keyword, so the log shows what the mzML said
+    private static String undetectedInstrumentMessage(String model, String analyzer) {
+        return "Could not detect instrument type from model [" + model + "], analyzer [" + analyzer + "]. " +
+                "Setting to QE. " +
+                "If a different instrument was used, specify using '--instrument' via the command line " +
+                "or 'instrument=' in the param file.";
     }
 
     //the run's instrument as a Koina model is sent it (KoinaModelSpec.InstrumentMap)

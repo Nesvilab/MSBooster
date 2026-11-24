@@ -96,6 +96,15 @@ class InstrumentUtilsTest {
     // A keyword in the analyzer alone still decides, as it did before.
     @Test
     void anAnalyzerKeywordIsEnough() {
+        Instrument instrument = new Instrument("Bruker", "Model N/A", "timsTOF");
+
+        assertEquals("TIMSTOF", getInstrument(scansWith(instrument)));
+        assertTrue(printed.contains("Instrument detected: TIMSTOF"), printed);
+    }
+
+    // A null model used to throw on the first keyword check and fall back to QE.
+    @Test
+    void aNullModelLeavesTheAnalyzerToDecide() {
         Instrument instrument = new Instrument("Bruker", null, "timsTOF");
 
         assertEquals("TIMSTOF", getInstrument(scansWith(instrument)));

@@ -106,7 +106,7 @@ locally:
 
 You can run MSBooster using a command similar to the following: 
 
-    java -jar MSBooster-1.11.0.jar --paramsList msbooster_params.txt
+    java -jar MSBooster-1.11.1.jar --paramsList msbooster_params.txt
     
 The minimum parameters needing to be passed are:
 

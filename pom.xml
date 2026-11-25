@@ -47,6 +47,13 @@
             <artifactId>ssj</artifactId>
             <version>3.3.2</version>
             <exclusions>
+                <!-- SSJ reaches colt only through Num.expBesselK1 (cern.jet.math.Bessel), which only
+                     NormalInverseGaussianDist calls; MSBooster uses EmpiricalDist, NormalDist and the kernel density
+                     classes -->
+                <exclusion>
+                    <groupId>colt</groupId>
+                    <artifactId>colt</artifactId>
+                </exclusion>
                 <exclusion>
                     <groupId>com.google.code.gson</groupId>
                     <artifactId>gson</artifactId>

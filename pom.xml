@@ -58,6 +58,16 @@
                     <groupId>com.google.code.gson</groupId>
                     <artifactId>gson</artifactId>
                 </exclusion>
+                <!-- SSJ reaches jcommon and jfreechart only from umontreal.ssj.charts, which only DiscrepancyContainer
+                     and ArrayOfComparableChains use; MSBooster reaches none of them and plots with XChart -->
+                <exclusion>
+                    <groupId>org.jfree</groupId>
+                    <artifactId>jcommon</artifactId>
+                </exclusion>
+                <exclusion>
+                    <groupId>org.jfree</groupId>
+                    <artifactId>jfreechart</artifactId>
+                </exclusion>
             </exclusions>
         </dependency>
         <dependency>
